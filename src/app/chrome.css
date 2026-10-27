@@ -1,0 +1,292 @@
+/* ==========================================================================
+   Chrome: header, navigation, footer
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Header
+   -------------------------------------------------------------------------- */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: background-color var(--dur) ease, border-color var(--dur) ease,
+    backdrop-filter var(--dur) ease;
+}
+
+.site-header.is-scrolled {
+  background: rgba(10, 11, 13, 0.88);
+  border-bottom-color: var(--line);
+}
+
+.site-header__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+  min-height: var(--header-h);
+}
+
+/* Typographic wordmark. */
+.wordmark {
+  font-size: 0.82rem;
+  font-weight: 560;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--text);
+  white-space: nowrap;
+  transition: color var(--dur-fast) ease;
+}
+
+.wordmark:hover {
+  color: var(--accent);
+}
+
+/* --------------------------------------------------------------------------
+   Primary navigation
+
+   One nav in the DOM. Desktop: inline row. Mobile without JavaScript: a quiet
+   wrapped row under the wordmark. Mobile with JavaScript: a labelled dialog.
+   The trigger is hidden unless scripting is confirmed (html[data-js]).
+   -------------------------------------------------------------------------- */
+
+.site-nav__list {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.9rem, 2vw, 1.6rem);
+}
+
+.site-nav__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 0.2em;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--text-muted);
+  border-bottom: 1px solid transparent;
+  transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease;
+}
+
+.site-nav__link:hover {
+  color: var(--text);
+}
+
+.site-nav__link.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Contact stays available even inside the dialog styles below. */
+.site-nav__contact {
+  font-weight: 480;
+  color: var(--text);
+}
+
+.site-nav__contact:hover {
+  color: var(--accent);
+}
+
+/* The menu trigger only exists when scripting is confirmed. */
+.menu-btn {
+  display: none;
+  align-items: center;
+  gap: 0.6em;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.4em 0.7em;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.menu-btn__label {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.menu-btn__icon,
+.menu-btn__icon::before,
+.menu-btn__icon::after {
+  display: block;
+  inline-size: 16px;
+  block-size: 2px;
+  background: currentColor;
+  transition: transform var(--dur-fast) ease, translate var(--dur-fast) ease;
+}
+
+.menu-btn__icon {
+  position: relative;
+}
+
+.menu-btn__icon::before,
+.menu-btn__icon::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+}
+
+.menu-btn__icon::before { top: -5px; }
+.menu-btn__icon::after { top: 5px; }
+
+nav[data-open] .menu-btn__icon { translate: 0 0; }
+nav[data-open] .menu-btn__icon { background: transparent; }
+nav[data-open] .menu-btn__icon::before { translate: 0 5px; rotate: 45deg; }
+nav[data-open] .menu-btn__icon::after { translate: 0 -5px; rotate: -45deg; }
+
+@media (max-width: 899px) {
+  html[data-js] .menu-btn {
+    display: inline-flex;
+  }
+
+  html[data-js] .site-nav__list {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: none;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: var(--space-s);
+    padding: calc(var(--header-h) + 1rem) var(--gutter) 3rem;
+    background: rgba(10, 11, 13, 0.97);
+    border-top: 1px solid var(--line);
+  }
+
+  html[data-js] nav[data-open] .site-nav__list {
+    display: flex;
+  }
+
+  html[data-js] .site-nav__link {
+    min-height: 44px;
+    font-size: clamp(1.5rem, 1.2rem + 3vw, 2.25rem);
+    font-family: var(--font-sans);
+    letter-spacing: -0.01em;
+    text-transform: none;
+    color: var(--text);
+    border-bottom: 1px solid var(--line);
+    inline-size: 100%;
+    justify-content: flex-start;
+    padding-block: 0.35em;
+  }
+
+  html[data-js] .site-nav__link .n {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    margin-right: 0.9em;
+    min-width: 2.2em;
+  }
+
+  html[data-js] .site-nav__link:hover,
+  html[data-js] .site-nav__link.is-active {
+    color: var(--accent);
+  }
+
+  html[data-js] .site-nav__contact {
+    font-size: clamp(1.5rem, 1.2rem + 3vw, 2.25rem);
+  }
+}
+
+@media (min-width: 900px) {
+  .site-nav__link .n {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  padding-block: var(--space-xl) var(--space-l);
+  background: var(--bg);
+}
+
+.site-footer__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+}
+
+.site-footer__wordmark {
+  font-size: 0.72rem;
+  font-weight: 560;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.site-footer__wordmark:hover {
+  color: var(--accent);
+}
+
+.site-footer__meta {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.site-footer__base {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+  margin-top: var(--space-l);
+}
+
+.site-footer__legal {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+/* Social icons: quiet marks, generous targets, accent on hover/focus. */
+.social-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.site-footer .social-list {
+  margin-top: var(--space-l);
+}
+
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 44px;
+  block-size: 44px;
+  color: var(--text-muted);
+  border-radius: 2px;
+  transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease;
+}
+
+.social-link:hover {
+  color: var(--accent);
+  background: rgba(242, 240, 234, 0.06);
+}
+
+.social-link svg {
+  inline-size: 19px;
+  block-size: 19px;
+}
