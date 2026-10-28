@@ -15,6 +15,12 @@
 
 # --- Defaults -------------------------------------------------
 DirectoryIndex index.html
+# NOTE on the line below: 'Options' is a core Apache directive whose
+# permission depends on the server's AllowOverride setting. Standard
+# cPanel (AllowOverride All) permits it; a host that restricts
+# .htaccess would answer every request with HTTP 500 because of it.
+# If a 500 appears right after deploy, remove this line and ask the
+# provider to disable directory listings server-side instead.
 Options -Indexes -MultiViews
 AddDefaultCharset utf-8
 

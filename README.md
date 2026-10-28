@@ -182,7 +182,8 @@ assets-src/           official font sources + vendored icon SVGs
 public/               boot.js, ui.js, _headers, .htaccess, llms.txt, og/og.png
 hosting/              HOSTING-README.txt (shipped inside hosting-bundle.zip)
 scripts/              generate-assets, strip-next-runtime, verify-export,
-                      extract-social-paths, serve, make-hosting-bundle
+                      extract-social-paths, serve, make-hosting-bundle,
+                      make-zip.ps1, inspect-zip.ps1
 LICENSES/             OFL-Estedad.txt, OFL-GeistMono.txt
 ```
 

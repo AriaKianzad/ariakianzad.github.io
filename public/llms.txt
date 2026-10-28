@@ -1,6 +1,6 @@
 # Aria Kianzad
 
-> Brand strategist and copywriter. Website: https://ariakianzad.ir/
+> Brand strategist and copywriter. Website: [ariakianzad.ir](https://ariakianzad.ir/)
 
 Aria Kianzad is an independent brand strategist and copywriter. The work has
 two disciplines: brand strategy (positioning, differentiation, brand voice)
@@ -20,18 +20,18 @@ Sections, in order:
 - Approach (#approach): clarity before volume; difference needs a reason;
   words are part of the strategy.
 - Rexo (#rexo): the independent studio Aria founded in 2024, at
-  https://rexo.agency/
+  [rexo.agency](https://rexo.agency/)
 - About (#about): how Aria thinks.
-- Contact (#contact): email kianzadaria@gmail.com
+- Contact (#contact): email [kianzadaria@gmail.com](mailto:kianzadaria@gmail.com)
 
 ## Contact
 
-Email: kianzadaria@gmail.com
+Email: [kianzadaria@gmail.com](mailto:kianzadaria@gmail.com)
 
 ## Related
 
 Rexo, the independent brand strategy and creative studio founded by Aria
-Kianzad: https://rexo.agency/
+Kianzad: [rexo.agency](https://rexo.agency/)
 
 ## Notes
 
