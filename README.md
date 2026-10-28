@@ -7,7 +7,7 @@ completely separate from the Rexo agency site (Rexo is only linked at
 
 ## Stack
 
-- Next.js 16.4.2 (App Router), React 19.3.1, TypeScript 5.9.3, ESLint 10
+- Next.js 16.4.3 (App Router), React 19.3.1, TypeScript 5.9.3, ESLint 10
 - `output: "export"`: the build is a fully static site in `out/`
 - **Zero client runtime.** No `"use client"` components, no hydration. The only
   scripts shipped are two small same-origin files: `public/boot.js` (sets
@@ -20,12 +20,15 @@ completely separate from the Rexo agency site (Rexo is only linked at
 
 ```bash
 npm install
-npm run build        # next build + postbuild strip → out/
+npm run build        # next build + postbuild strip + export verification → out/
 npm run typecheck    # tsc --noEmit
 npm run lint         # eslint .
+npm run hosting      # build hosting-bundle.zip from the final out/ (cPanel-ready)
 npm run assets       # regenerate og.png / icon.png / apple-icon.png (also re-verifies the font)
 npm run dev          # dev server
 node scripts/serve.mjs 4173   # preview out/ locally with the real security headers applied
+                     # test-only flags: --allow-framing, --csp-noscript,
+                     # --root=<dir>, --headers-file=<path>
 ```
 
 ## Fonts
@@ -77,19 +80,29 @@ icons as vector paths (no system fonts involved in rendering).
   styled: no `data-reveal` element is ever hidden without `html[data-js]`,
   the menu falls back to a plain link row, and the email address is a normal
   `mailto:` link.
-- **The postbuild strip** (`scripts/strip-next-runtime.mjs`) removes inline
-  scripts (except the JSON-LD data block), `/_next/` chunk scripts, and
-  script/fetch preloads from every exported HTML file (font preloads,
-  `as="font"`, are kept), then deletes the now-unreferenced runtime JS,
-  build manifests, and RSC payload `.txt` files (`llms.txt` stays: it is
-  content). Latest run: `index.html` 54,124 → 20,416 bytes; 10 inline
-  scripts, 18 runtime chunks, 3 script preloads removed; 15 dead artifacts
-  cleaned.
+- **The postbuild strip** (`scripts/strip-next-runtime.mjs`) removes only
+  output that belongs to Next.js' runtime, matched by signature: the React
+  Flight inline scripts (`self.__next_f…`, including the array initializer and
+  the Turbopack bootstrap), `/_next/` chunk scripts, and script/fetch preloads
+  (font preloads, `as="font"`, are kept). JSON-LD is data, not code, and is
+  always kept; any unknown inline script is left in place with a loud build
+  warning instead of being silently deleted. It then removes exactly the
+  now-unreferenced runtime artifacts (chunk JS, build manifests, RSC payload
+  text files matching `index.txt` / `_not-found.txt` / `__next.*`, the
+  `_not-found` directory) — real content such as `robots.txt` and `llms.txt`
+  never matches. `scripts/verify-export.mjs` runs after it and fails the build
+  if any page-referenced asset is missing from `out/`, a runtime or unexpected
+  inline script remains, the `_headers` and `.htaccess` CSPs disagree or
+  contain `unsafe-inline`, or a required deployment file is absent.
+  Latest run: `index.html` 54,124 → 20,416 bytes; 10 inline scripts, 18
+  runtime chunks, 3 script preloads removed; 14 dead artifacts cleaned.
 
 ## Security
 
-`public/_headers` (applied by the hosting layer, e.g. Netlify or Cloudflare
-Pages; `scripts/serve.mjs` applies the same headers locally):
+`public/_headers` (Netlify/Cloudflare Pages format) and `public/.htaccess`
+(Apache/cPanel) declare the same policy; `scripts/verify-export.mjs` fails the
+build if the two CSPs disagree or either contains `unsafe-inline`/`unsafe-eval`
+(`scripts/serve.mjs` applies the same headers locally):
 
 - `Content-Security-Policy`: `default-src 'self'; script-src 'self'; no
   'unsafe-inline'`. Styles are same-origin files (there are no inline
@@ -103,8 +116,15 @@ Pages; `scripts/serve.mjs` applies the same headers locally):
   `Cross-Origin-Opener-Policy: same-origin`.
 - No tracking, analytics, cookies, forms, or backend of any kind.
 
+HSTS is active in `_headers` (for platform-managed HTTPS hosts) but ships
+commented-out in `.htaccess`: on cPanel it must be enabled by a human only
+after HTTPS is confirmed working on the domain and subdomains, because it
+instructs browsers to refuse plain HTTP for a full year (see
+`hosting/HOSTING-README.txt`).
+
 Verified in the browser under exactly this CSP: the console is completely
-clean (zero violations), fonts load, and all interactions work.
+clean (zero violations), fonts load, and all interactions work. The same
+tests were re-run on the extracted `hosting-bundle.zip` copy.
 
 ## Accessibility (WCAG 2.2 AA target)
 
@@ -159,17 +179,28 @@ src/
   lib/metadata.ts     title/description/OG/Twitter
   lib/social-icons.json
 assets-src/           official font sources + vendored icon SVGs
-public/               boot.js, ui.js, _headers, llms.txt, og/og.png
-scripts/              generate-assets, strip-next-runtime, extract-social-paths, serve
+public/               boot.js, ui.js, _headers, .htaccess, llms.txt, og/og.png
+hosting/              HOSTING-README.txt (shipped inside hosting-bundle.zip)
+scripts/              generate-assets, strip-next-runtime, verify-export,
+                      extract-social-paths, serve, make-hosting-bundle
 LICENSES/             OFL-Estedad.txt, OFL-GeistMono.txt
 ```
+
+At the repository root, `hosting-bundle.zip` (built by `npm run hosting`) is
+the ready-to-upload cPanel deliverable.
 
 ## Deployment
 
 1. `npm run build`
-2. Deploy `out/` to a host that honors the `_headers` file (Netlify and
-   Cloudflare Pages do). If headers are configured at the edge instead, copy
-   the directives from `public/_headers`.
+2. Then, depending on the host:
+   - **cPanel / Apache (ariakianzad.ir):** `npm run hosting`, then upload
+     `hosting-bundle.zip` through cPanel File Manager and extract it directly
+     into the domain's document root. `hosting/HOSTING-README.txt` (also inside
+     the archive) has the step-by-step guide. `.htaccess` supplies the security
+     headers, caching, compression, custom 404 page, and HTTPS/canonical-host
+     redirects — no rebuild or server-side dependencies on the recipient side.
+   - **Netlify / Cloudflare Pages:** deploy `out/` directly; the `_headers`
+     file is honored there.
 
 Nothing in this repository modifies or depends on the Rexo agency project;
 the only connection between the two sites is the link to
