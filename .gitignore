@@ -3,3 +3,14 @@ node_modules/
 out/
 *.tsbuildinfo
 .DS_Store
+
+# Environment and secret files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+secrets*.json

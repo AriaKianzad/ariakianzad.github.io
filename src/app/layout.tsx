@@ -19,32 +19,44 @@ export const viewport: Viewport = {
  * ProfilePage + Person structured data. Every value comes from src/lib/site;
  * nothing asserted here that the site does not show.
  */
+const personId = `${site.url}/#person`;
+const rexoId = `${rexo.url.replace(/\/$/, "")}/#organization`;
+const siteHost = new URL(site.url).host;
+
 const structuredData = {
   "@context": "https://schema.org",
-  "@type": "ProfilePage",
-  "@id": `${site.url}/#profilepage`,
-  inLanguage: "en",
-  mainEntity: {
-    "@type": "Person",
-    "@id": `${site.url}/#person`,
-    name: site.displayName,
-    givenName: site.givenName,
-    url: site.url,
-    email: `mailto:${site.email}`,
-    jobTitle: site.title,
-    description: site.description,
-    image: `${site.url}/og/og.png`,
-    sameAs: socials.map((entry) => entry.href),
-    knowsAbout: [...knowsAbout],
-    founder: {
+  "@graph": [
+    {
+      "@type": "ProfilePage",
+      "@id": `${site.url}/#profilepage`,
+      inLanguage: "en",
+      mainEntity: { "@id": personId },
+      about: { "@id": personId },
+    },
+    {
+      "@type": "Person",
+      "@id": personId,
+      name: site.displayName,
+      givenName: site.givenName,
+      url: site.url,
+      email: `mailto:${site.email}`,
+      jobTitle: site.title,
+      description: site.description,
+      image: `${site.url}/og/og.png`,
+      sameAs: socials.map((entry) => entry.href),
+      knowsAbout: [...knowsAbout],
+      worksFor: { "@id": rexoId },
+    },
+    {
       "@type": "Organization",
+      "@id": rexoId,
       name: rexo.name,
       url: rexo.url,
       foundingDate: rexo.founded,
       description: rexo.description,
+      founder: { "@id": personId },
     },
-  },
-  about: { "@id": `${site.url}/#person` },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -122,7 +134,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </ul>
             <div className="site-footer__base">
               <p className="site-footer__legal">{footer.copyright}</p>
-              <p className="site-footer__legal">ariakianzad.ir</p>
+              <p className="site-footer__legal">{siteHost}</p>
             </div>
           </div>
         </footer>

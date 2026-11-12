@@ -129,6 +129,15 @@ SETTINGS THAT DEPEND ON THE HOSTING PROVIDER
   restricted on the account - contact the provider rather than removing
   the <IfModule> guards.
 
-Built from the project's final production export (out/) by
-scripts/make-hosting-bundle.mjs. Everything needed to serve the site is
-inside this archive.
+PACKAGE PROVENANCE
+-----------------
+This archive was assembled from the static export (out/) supplied with the
+project, together with the repository's hosting guide and font licenses.
+The archive was integrity-checked and extracted successfully. A clean Next.js
+production rebuild was not completed during this audit because the supplied
+native dependencies target Windows and the npm registry was unreachable from
+the audit environment. Treat this as a verified package of the supplied
+static export, not as evidence that the export was freshly rebuilt from the
+current source tree. For a source-fresh release, run `npm ci`, `npm run build`,
+then `npm run hosting` in the project's supported Windows environment and
+validate the resulting archive before deployment.

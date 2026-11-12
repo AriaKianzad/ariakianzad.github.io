@@ -4,10 +4,9 @@
 # same-origin files plus hashed inline next/font face rules, whose hashes are
 # appended to style-src at build time by scripts/strip-next-runtime.mjs.
 #
-# HSTS note: 'preload' is a long-term commitment (submission to the HSTS
-# preload list via the hosting provider's program). Only ship it once the
-# domain is confirmed HTTPS-only, including subdomains; otherwise drop the
-# 'preload' token and keep the rest.
+# HSTS is intentionally omitted from this default policy. Consider enabling
+# it only after HTTPS is confirmed on the domain and every subdomain; do not
+# use the preload token without a deliberate, long-term decision.
 #
 /*
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
@@ -15,7 +14,6 @@
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), browsing-topics=()
-  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   Cross-Origin-Opener-Policy: same-origin
   Cache-Control: public, max-age=0, must-revalidate
 

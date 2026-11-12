@@ -29,6 +29,44 @@ const walk = (dir) => {
 const files = walk(outDir);
 
 /** The canonical link defines which absolute URLs are this site's own. */
+const indexHtml = readFileSync(join(outDir, "index.html"), "utf8");
+
+/* Validate the profile graph and the founder relationship, not just JSON syntax. */
+try {
+  const tag = indexHtml.match(/<script\s+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i);
+  if (!tag) {
+    problems.push("index.html: JSON-LD ProfilePage block is missing");
+  } else {
+    const jsonLd = JSON.parse(tag[1]);
+    const graph = Array.isArray(jsonLd["@graph"]) ? jsonLd["@graph"] : [jsonLd];
+    const byType = (type) => graph.find((entry) => entry["@type"] === type);
+    const profile = byType("ProfilePage");
+    const person = byType("Person");
+    const organization = graph.find((entry) => entry["@type"] === "Organization" && entry.url === "https://rexo.agency/");
+    const personId = person?.["@id"];
+    const organizationId = organization?.["@id"];
+    if (!profile || profile.mainEntity?.["@id"] !== personId) {
+      problems.push("index.html: ProfilePage.mainEntity must reference the Person entity");
+    }
+    if (!person || !Array.isArray(person.sameAs) || person.sameAs.length !== 6) {
+      problems.push("index.html: Person.sameAs must contain the six supplied social profiles");
+    }
+    if (!organization || organization.founder?.["@id"] !== personId) {
+      problems.push("index.html: Rexo Organization.founder must reference the Person entity");
+    }
+    if (!person || person.worksFor?.["@id"] !== organizationId) {
+      problems.push("index.html: Person.worksFor must reference the Rexo Organization entity");
+    }
+    const socialHrefs = [...indexHtml.matchAll(/<a\s+class="social-link"\s+href="([^"]+)"/g)].map((match) => match[1]);
+    if (person && Array.isArray(person.sameAs) &&
+        (socialHrefs.length !== 6 || socialHrefs.some((href) => !person.sameAs.includes(href)))) {
+      problems.push("index.html: Person.sameAs does not match the six rendered social links");
+    }
+  }
+} catch (error) {
+  problems.push(`index.html: invalid JSON-LD (${error.message})`);
+}
+
 const siteOrigin = (() => {
   try {
     const index = readFileSync(join(outDir, "index.html"), "utf8");
@@ -71,6 +109,12 @@ const headersCsp = (headersRaw.match(/Content-Security-Policy:\s*(.+)/) || [])[1
 const htaccessCsp = (htaccessRaw.match(/Header\s+always\s+set\s+Content-Security-Policy\s+"([^"]+)"/) || [])[1] ?? null;
 if (headersCsp === null) problems.push("_headers: no Content-Security-Policy directive found");
 if (htaccessCsp === null) problems.push(".htaccess: no Content-Security-Policy header found");
+if (/^\s*Strict-Transport-Security\s*:/im.test(headersRaw)) {
+  problems.push("_headers: HSTS is disabled by default; confirm HTTPS readiness for all subdomains before enabling it");
+}
+if (/^\s*Header\s+always\s+set\s+Strict-Transport-Security\b/im.test(htaccessRaw)) {
+  problems.push(".htaccess: HSTS is disabled by default; confirm HTTPS readiness for all subdomains before enabling it");
+}
 if (headersCsp !== null && htaccessCsp !== null && headersCsp !== htaccessCsp) {
   problems.push("CSP mismatch: public/_headers and public/.htaccess declare different policies");
 }

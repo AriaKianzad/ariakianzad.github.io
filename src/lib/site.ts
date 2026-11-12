@@ -1,5 +1,5 @@
 /**
- * Central site configuration for ariakianzad.ir.
+ * Central site configuration for the GitHub Pages website.
  *
  * Everything here is a supplied fact from the brief. Nothing is invented:
  * no clients, metrics, awards, or testimonials exist anywhere in this project.
@@ -13,7 +13,7 @@ const env = (key: string, fallback: string) => {
 };
 
 /** Canonical site origin, with scheme, no trailing slash. */
-export const siteUrl = env("NEXT_PUBLIC_SITE_URL", "https://ariakianzad.ir").replace(/\/+$/, "");
+export const siteUrl = env("NEXT_PUBLIC_SITE_URL", "https://ariakianzad.github.io").replace(/\/+$/, "");
 
 export const site = {
   name: "Aria Kianzad",
