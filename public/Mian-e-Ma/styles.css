@@ -39,10 +39,19 @@
   object-fit: contain;
   object-position: center;
 }
+.footer-icon.rexo-agency {
+  background-color: currentColor;
+  -webkit-mask-image: url("./assets/rexo-agency-logo-white.png");
+  mask-image: url("./assets/rexo-agency-logo-white.png");
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 26px 26px;
+  mask-size: 26px 26px;
+}
 .footer-icon.rexo-agency img {
-  width: 27px;
-  height: 27px;
-  object-fit: contain;
+  display: none;
 }
 
 @media (max-width: 680px) {
