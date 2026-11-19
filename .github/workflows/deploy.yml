@@ -34,7 +34,7 @@ jobs:
       - name: Install Mian-e-Ma package
         shell: bash
         env:
-          MIAN_PACKAGE_URL: 'https://uc9329068148453916b95856866e.dl.dropboxusercontent.com/cd/0/get/DMPEc9lmf6eC4QPPEewTy6PurbvFiO0Se5VxGzOkEH68IvNVn9q6n9Wq5oUebVfUov4NN2HhAV4D-Z0jgYILnV0Uzif44EG3jaXzpVZ_VRI9s9JdG3Pwa8KkiM49EHD78S8Sqs5JTrnruuTK3RbeIjoVVjOmzSB8KcBGQf6-Vz4d7g/file?c_luid=4d89e625'
+          MIAN_PACKAGE_URL: ''
         run: |
           set -euo pipefail
           if [ -n "${MIAN_PACKAGE_URL:-}" ]; then
