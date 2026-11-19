@@ -35,7 +35,6 @@ jobs:
         shell: bash
         env:
           MIAN_PACKAGE_URL: ''
-          MIAN_ASSETS_URL: 'https://ucf557e3cf43d6a133bcfd81f5d2.dl.dropboxusercontent.com/cd/0/get/DMOiKkpDDWe4B0AvIXnHkcMSsqYOuUgRZKyVsbwhm1M6i5Tvube1mwrTU9C2mK_Ln6mcHqVkBd1WmtVXKrcF2u3hjjeqfq1M5tJVGtfVI_oFaj95bRQ26wJFkINQhzpO-8BT5Qo8pWnBKUugdSyHr6HggSzF8OujOJVXkYQqTrxroA/file?c_luid=4d89e625'
         run: |
           set -euo pipefail
           if [ -n "${MIAN_PACKAGE_URL:-}" ]; then
@@ -68,7 +67,7 @@ jobs:
       - name: Apply Mian-e-Ma visual assets
         shell: bash
         env:
-          MIAN_ASSETS_URL: ${{ env.MIAN_ASSETS_URL }}
+          MIAN_ASSETS_URL: 'https://ucf557e3cf43d6a133bcfd81f5d2.dl.dropboxusercontent.com/cd/0/get/DMOiKkpDDWe4B0AvIXnHkcMSsqYOuUgRZKyVsbwhm1M6i5Tvube1mwrTU9C2mK_Ln6mcHqVkBd1WmtVXKrcF2u3hjjeqfq1M5tJVGtfVI_oFaj95bRQ26wJFkINQhzpO-8BT5Qo8pWnBKUugdSyHr6HggSzF8OujOJVXkYQqTrxroA/file?c_luid=4d89e625'
         run: |
           set -euo pipefail
           if [ -n "${MIAN_ASSETS_URL:-}" ]; then
