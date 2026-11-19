@@ -30,6 +30,25 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Install Mian-e-Ma landing page package
+        shell: bash
+        run: |
+          if [ -f "Mian-e-Ma-GitHub-Overlay.zip" ]; then
+            tmp_dir="$(mktemp -d)"
+            unzip -tq "Mian-e-Ma-GitHub-Overlay.zip"
+            unzip -q "Mian-e-Ma-GitHub-Overlay.zip" -d "$tmp_dir"
+            package_dir="$tmp_dir/Mian-e-Ma-GitHub-Overlay/public/Mian-e-Ma"
+            test -s "$package_dir/index.html"
+            test -s "$package_dir/styles.css"
+            test -s "$package_dir/assets/Mian-e-Ma.pdf"
+            mkdir -p public
+            rm -rf public/Mian-e-Ma
+            cp -a "$package_dir" public/Mian-e-Ma
+            echo "Mian-e-Ma landing page and PDF installed under public/Mian-e-Ma."
+          else
+            echo "::notice::Mian-e-Ma package not present; deploying the personal site only."
+          fi
+
       - name: Type-check
         run: npm run typecheck
 
@@ -42,12 +61,17 @@ jobs:
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://ariakianzad.github.io' }}
 
       - name: Prepare GitHub Pages artifact
+        shell: bash
         run: |
           test -s out/index.html
           test -s out/404.html
+          if [ -f "Mian-e-Ma-GitHub-Overlay.zip" ]; then
+            test -s out/Mian-e-Ma/index.html
+            test -s out/Mian-e-Ma/assets/Mian-e-Ma.pdf
+          fi
           rm -f out/.htaccess out/_headers
           touch out/.nojekyll
-          printf 'GitHub Pages artifact: %s files\n' "$(find out -type f | wc -l)"
+          printf 'GitHub Pages artifact: %s files\\n' "$(find out -type f | wc -l)"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6
