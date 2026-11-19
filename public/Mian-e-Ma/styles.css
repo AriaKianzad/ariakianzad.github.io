@@ -15,3 +15,50 @@
 @media(max-width:900px){.main-nav{gap:15px}.hero-grid{gap:38px}.hero-visual{min-height:420px}.art-frame{min-height:410px}.hero-lineart{height:380px}.topics-grid{grid-template-columns:repeat(2,1fr)}.about-grid,.audience-grid{gap:42px}.faq-grid{gap:45px}}
 @media(max-width:680px){.container{width:min(100% - 34px,var(--content))}.header-inner{min-height:70px;gap:12px}.main-nav{display:none}.header-download{min-height:40px;padding-inline:13px;font-size:11px}.brand-mark{width:34px;height:34px}.hero{padding-top:52px}.hero-grid{grid-template-columns:1fr;gap:34px}.hero-copy{order:1}.hero-visual{order:2;min-height:350px}.art-frame{width:min(100%,430px);min-height:360px}.hero-lineart{height:340px}.hero-index{inset-inline-end:4px}h1{font-size:clamp(56px,15vw,78px)}.hero-description{font-size:14px}.hero-actions{align-items:stretch;flex-direction:column}.button-primary{width:100%}.text-link{justify-content:center;min-height:42px}.hero-note{align-items:start}.facts-grid{grid-template-columns:repeat(2,1fr)}.fact{min-height:82px;padding:14px}.fact:nth-child(2){border-inline-start:0}.fact:nth-child(n+3){border-top:1px solid var(--line)}.about-grid,.audience-grid,.faq-grid{grid-template-columns:1fr}.about-aside{max-width:480px}.topics-header{display:block}.topics-header .section-lead{margin-top:12px}.topic-card{min-height:210px;padding:20px 18px}.topic-number{margin-bottom:20px}.credits-panel{grid-template-columns:1fr}.credit-item{min-height:auto}.download-panel{display:block;padding:34px 25px}.download-panel .button-primary{margin-top:24px}.faq-intro{position:static}.faq-list details p{margin-right:0}.footer-top,.footer-bottom{flex-direction:column;align-items:start}.footer-links{gap:17px 20px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+
+/* Keep the book-cover thumbnail proportional at every viewport. */
+.about-aside {
+  grid-template-columns: minmax(88px, 105px) minmax(0, 1fr);
+  min-width: 0;
+}
+.about-aside > div:last-child {
+  min-width: 0;
+}
+.cover-thumb {
+  width: 105px;
+  height: auto;
+  aspect-ratio: 699 / 992;
+  flex: 0 0 auto;
+}
+.cover-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 699 / 992;
+  object-fit: contain;
+  object-position: center;
+}
+.footer-icon.rexo-agency img {
+  width: 27px;
+  height: 27px;
+  object-fit: contain;
+}
+
+@media (max-width: 680px) {
+  .about-aside {
+    grid-template-columns: minmax(88px, 105px) minmax(0, 1fr);
+    gap: 18px;
+  }
+  .cover-thumb {
+    width: 100%;
+    max-width: 105px;
+  }
+}
+@media (max-width: 360px) {
+  .about-aside {
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 14px;
+    padding: 18px;
+  }
+}

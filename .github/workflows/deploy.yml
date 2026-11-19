@@ -35,6 +35,7 @@ jobs:
         shell: bash
         env:
           MIAN_PACKAGE_URL: ''
+          MIAN_ASSETS_URL: 'https://ucf557e3cf43d6a133bcfd81f5d2.dl.dropboxusercontent.com/cd/0/get/DMOiKkpDDWe4B0AvIXnHkcMSsqYOuUgRZKyVsbwhm1M6i5Tvube1mwrTU9C2mK_Ln6mcHqVkBd1WmtVXKrcF2u3hjjeqfq1M5tJVGtfVI_oFaj95bRQ26wJFkINQhzpO-8BT5Qo8pWnBKUugdSyHr6HggSzF8OujOJVXkYQqTrxroA/file?c_luid=4d89e625'
         run: |
           set -euo pipefail
           if [ -n "${MIAN_PACKAGE_URL:-}" ]; then
@@ -62,6 +63,36 @@ jobs:
             test -s public/Mian-e-Ma/styles.css
             test -s public/Mian-e-Ma/assets/Mian-e-Ma.pdf
             echo "Existing Mian-e-Ma source files are present."
+          fi
+
+      - name: Apply Mian-e-Ma visual assets
+        shell: bash
+        env:
+          MIAN_ASSETS_URL: ${{ env.MIAN_ASSETS_URL }}
+        run: |
+          set -euo pipefail
+          if [ -n "${MIAN_ASSETS_URL:-}" ]; then
+            assets_zip="$RUNNER_TEMP/Mian-e-Ma-Visual-Fix.zip"
+            assets_tmp="$RUNNER_TEMP/mian-e-ma-visual-fix"
+            curl --fail --silent --show-error --location "$MIAN_ASSETS_URL" --output "$assets_zip"
+            unzip -tq "$assets_zip"
+            mkdir -p "$assets_tmp"
+            unzip -q "$assets_zip" -d "$assets_tmp"
+            assets_dir="$assets_tmp/Mian-e-Ma-Visual-Fix/public/Mian-e-Ma/assets"
+            test -s "$assets_dir/mian-e-ma-cover.webp"
+            test -s "$assets_dir/rexo-agency-logo-white.png"
+            cp "$assets_dir/mian-e-ma-cover.webp" public/Mian-e-Ma/assets/mian-e-ma-cover-v2.webp
+            cp "$assets_dir/rexo-agency-logo-white.png" public/Mian-e-Ma/assets/rexo-agency-logo-white.png
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add public/Mian-e-Ma/assets/mian-e-ma-cover-v2.webp public/Mian-e-Ma/assets/rexo-agency-logo-white.png
+            git commit -m "Fix Mian-e-Ma cover and Rexo footer logo"
+            git push origin HEAD:main
+            echo "Updated cover and white Rexo Agency logo committed."
+          else
+            test -s public/Mian-e-Ma/assets/mian-e-ma-cover-v2.webp
+            test -s public/Mian-e-Ma/assets/rexo-agency-logo-white.png
+            echo "Updated visual assets already exist."
           fi
 
       - name: Type-check
