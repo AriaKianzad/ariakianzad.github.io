@@ -31,10 +31,10 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
-      - name: Install and commit Mian-e-Ma package
+      - name: Install Mian-e-Ma package
         shell: bash
         env:
-          MIAN_PACKAGE_URL: 'https://uc1dd6702844d0156608bad051b2.dl.dropboxusercontent.com/cd/0/get/DMPjJqVSYh0vtd92fJdhch857EcF6gbOoobNW5k46yY_iVhACtmBQovKB93D6trNnRnpRy3La6RM5lCULlnGuVBOD6D1nWorj9wDtNdCW-pDPxz05U17WzDIGQw5sMKiI5MOrjMwIq4mE1aDBpV9iwFO9YRswXGhIEPERmfZGfuBPw/file?c_luid=4d89e625'
+          MIAN_PACKAGE_URL: 'https://uc9329068148453916b95856866e.dl.dropboxusercontent.com/cd/0/get/DMPEc9lmf6eC4QPPEewTy6PurbvFiO0Se5VxGzOkEH68IvNVn9q6n9Wq5oUebVfUov4NN2HhAV4D-Z0jgYILnV0Uzif44EG3jaXzpVZ_VRI9s9JdG3Pwa8KkiM49EHD78S8Sqs5JTrnruuTK3RbeIjoVVjOmzSB8KcBGQf6-Vz4d7g/file?c_luid=4d89e625'
         run: |
           set -euo pipefail
           if [ -n "${MIAN_PACKAGE_URL:-}" ]; then
@@ -51,24 +51,12 @@ jobs:
             mkdir -p public
             rm -rf public/Mian-e-Ma
             cp -a "$package_dir" public/Mian-e-Ma
-
-            python3 - <<'PY'
-          from pathlib import Path
-          import re
-          path = Path(".github/workflows/deploy.yml")
-          source = path.read_text(encoding="utf-8")
-          cleaned, count = re.subn(r"(?m)^          MIAN_PACKAGE_URL: '.*'$", "          MIAN_PACKAGE_URL: ''", source)
-          if count != 1:
-              raise SystemExit(f"Expected one temporary URL entry, found {count}")
-          path.write_text(cleaned, encoding="utf-8")
-          PY
-
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add public/Mian-e-Ma .github/workflows/deploy.yml
+            git add public/Mian-e-Ma
             git commit -m "Publish Mian-e-Ma landing page and book"
             git push origin HEAD:main
-            echo "Mian-e-Ma source files committed; temporary download URL removed from the workflow."
+            echo "Mian-e-Ma source files committed under public/Mian-e-Ma."
           else
             test -s public/Mian-e-Ma/index.html
             test -s public/Mian-e-Ma/styles.css
