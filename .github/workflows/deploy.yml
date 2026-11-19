@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -16,7 +16,6 @@ concurrency:
 
 jobs:
   build:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
@@ -31,69 +30,6 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
-      - name: Install Mian-e-Ma package
-        shell: bash
-        env:
-          MIAN_PACKAGE_URL: ''
-        run: |
-          set -euo pipefail
-          if [ -n "${MIAN_PACKAGE_URL:-}" ]; then
-            package_zip="$RUNNER_TEMP/Mian-e-Ma-GitHub-Overlay.zip"
-            package_tmp="$RUNNER_TEMP/mian-e-ma-unpack"
-            curl --fail --silent --show-error --location "$MIAN_PACKAGE_URL" --output "$package_zip"
-            unzip -tq "$package_zip"
-            mkdir -p "$package_tmp"
-            unzip -q "$package_zip" -d "$package_tmp"
-            package_dir="$package_tmp/Mian-e-Ma-GitHub-Overlay/public/Mian-e-Ma"
-            test -s "$package_dir/index.html"
-            test -s "$package_dir/styles.css"
-            test -s "$package_dir/assets/Mian-e-Ma.pdf"
-            mkdir -p public
-            rm -rf public/Mian-e-Ma
-            cp -a "$package_dir" public/Mian-e-Ma
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add public/Mian-e-Ma
-            git commit -m "Publish Mian-e-Ma landing page and book"
-            git push origin HEAD:main
-            echo "Mian-e-Ma source files committed under public/Mian-e-Ma."
-          else
-            test -s public/Mian-e-Ma/index.html
-            test -s public/Mian-e-Ma/styles.css
-            test -s public/Mian-e-Ma/assets/Mian-e-Ma.pdf
-            echo "Existing Mian-e-Ma source files are present."
-          fi
-
-      - name: Apply Mian-e-Ma visual assets
-        shell: bash
-        env:
-          MIAN_ASSETS_URL: 'https://ucf557e3cf43d6a133bcfd81f5d2.dl.dropboxusercontent.com/cd/0/get/DMOiKkpDDWe4B0AvIXnHkcMSsqYOuUgRZKyVsbwhm1M6i5Tvube1mwrTU9C2mK_Ln6mcHqVkBd1WmtVXKrcF2u3hjjeqfq1M5tJVGtfVI_oFaj95bRQ26wJFkINQhzpO-8BT5Qo8pWnBKUugdSyHr6HggSzF8OujOJVXkYQqTrxroA/file?c_luid=4d89e625'
-        run: |
-          set -euo pipefail
-          if [ -n "${MIAN_ASSETS_URL:-}" ]; then
-            assets_zip="$RUNNER_TEMP/Mian-e-Ma-Visual-Fix.zip"
-            assets_tmp="$RUNNER_TEMP/mian-e-ma-visual-fix"
-            curl --fail --silent --show-error --location "$MIAN_ASSETS_URL" --output "$assets_zip"
-            unzip -tq "$assets_zip"
-            mkdir -p "$assets_tmp"
-            unzip -q "$assets_zip" -d "$assets_tmp"
-            assets_dir="$assets_tmp/Mian-e-Ma-Visual-Fix/public/Mian-e-Ma/assets"
-            test -s "$assets_dir/mian-e-ma-cover.webp"
-            test -s "$assets_dir/rexo-agency-logo-white.png"
-            cp "$assets_dir/mian-e-ma-cover.webp" public/Mian-e-Ma/assets/mian-e-ma-cover-v2.webp
-            cp "$assets_dir/rexo-agency-logo-white.png" public/Mian-e-Ma/assets/rexo-agency-logo-white.png
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add public/Mian-e-Ma/assets/mian-e-ma-cover-v2.webp public/Mian-e-Ma/assets/rexo-agency-logo-white.png
-            git commit -m "Fix Mian-e-Ma cover and Rexo footer logo"
-            git push origin HEAD:main
-            echo "Updated cover and white Rexo Agency logo committed."
-          else
-            test -s public/Mian-e-Ma/assets/mian-e-ma-cover-v2.webp
-            test -s public/Mian-e-Ma/assets/rexo-agency-logo-white.png
-            echo "Updated visual assets already exist."
-          fi
-
       - name: Type-check
         run: npm run typecheck
 
@@ -105,14 +41,22 @@ jobs:
         env:
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://ariakianzad.github.io' }}
 
-      - name: Prepare GitHub Pages artifact
+      - name: Verify personal site and Mian-e-Ma assets
         shell: bash
         run: |
           set -euo pipefail
           test -s out/index.html
           test -s out/404.html
           test -s out/Mian-e-Ma/index.html
+          test -s out/Mian-e-Ma/styles.css
           test -s out/Mian-e-Ma/assets/Mian-e-Ma.pdf
+          test -s out/Mian-e-Ma/assets/estedad-variable.woff2
+          test -s out/Mian-e-Ma/assets/mian-e-ma-cover-v2.webp
+          test -s out/Mian-e-Ma/assets/mian-e-ma-lineart.webp
+          test -s out/Mian-e-Ma/assets/rexo-agency-logo-white.png
+          ! grep -Fq 'مجله رکسو (RexoMag)' out/Mian-e-Ma/index.html
+          ! grep -Fq 'class="publisher-mark"' out/Mian-e-Ma/index.html
+          grep -Fq 'width="699" height="992"' out/Mian-e-Ma/index.html
           rm -f out/.htaccess out/_headers
           touch out/.nojekyll
           printf 'GitHub Pages artifact: %s files\\n' "$(find out -type f | wc -l)"
@@ -126,7 +70,6 @@ jobs:
           path: out
 
   deploy:
-    if: github.actor != 'github-actions[bot]'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
