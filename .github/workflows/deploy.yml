@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
@@ -30,23 +31,49 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
-      - name: Install Mian-e-Ma landing page package
+      - name: Install and commit Mian-e-Ma package
         shell: bash
+        env:
+          MIAN_PACKAGE_URL: 'https://uc1dd6702844d0156608bad051b2.dl.dropboxusercontent.com/cd/0/get/DMPjJqVSYh0vtd92fJdhch857EcF6gbOoobNW5k46yY_iVhACtmBQovKB93D6trNnRnpRy3La6RM5lCULlnGuVBOD6D1nWorj9wDtNdCW-pDPxz05U17WzDIGQw5sMKiI5MOrjMwIq4mE1aDBpV9iwFO9YRswXGhIEPERmfZGfuBPw/file?c_luid=4d89e625'
         run: |
-          if [ -f "Mian-e-Ma-GitHub-Overlay.zip" ]; then
-            tmp_dir="$(mktemp -d)"
-            unzip -tq "Mian-e-Ma-GitHub-Overlay.zip"
-            unzip -q "Mian-e-Ma-GitHub-Overlay.zip" -d "$tmp_dir"
-            package_dir="$tmp_dir/Mian-e-Ma-GitHub-Overlay/public/Mian-e-Ma"
+          set -euo pipefail
+          if [ -n "${MIAN_PACKAGE_URL:-}" ]; then
+            package_zip="$RUNNER_TEMP/Mian-e-Ma-GitHub-Overlay.zip"
+            package_tmp="$RUNNER_TEMP/mian-e-ma-unpack"
+            curl --fail --silent --show-error --location "$MIAN_PACKAGE_URL" --output "$package_zip"
+            unzip -tq "$package_zip"
+            mkdir -p "$package_tmp"
+            unzip -q "$package_zip" -d "$package_tmp"
+            package_dir="$package_tmp/Mian-e-Ma-GitHub-Overlay/public/Mian-e-Ma"
             test -s "$package_dir/index.html"
             test -s "$package_dir/styles.css"
             test -s "$package_dir/assets/Mian-e-Ma.pdf"
             mkdir -p public
             rm -rf public/Mian-e-Ma
             cp -a "$package_dir" public/Mian-e-Ma
-            echo "Mian-e-Ma landing page and PDF installed under public/Mian-e-Ma."
+
+            python3 - <<'PY'
+          from pathlib import Path
+          import re
+          path = Path(".github/workflows/deploy.yml")
+          source = path.read_text(encoding="utf-8")
+          cleaned, count = re.subn(r"(?m)^          MIAN_PACKAGE_URL: '.*'$", "          MIAN_PACKAGE_URL: ''", source)
+          if count != 1:
+              raise SystemExit(f"Expected one temporary URL entry, found {count}")
+          path.write_text(cleaned, encoding="utf-8")
+          PY
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add public/Mian-e-Ma .github/workflows/deploy.yml
+            git commit -m "Publish Mian-e-Ma landing page and book"
+            git push origin HEAD:main
+            echo "Mian-e-Ma source files committed; temporary download URL removed from the workflow."
           else
-            echo "::notice::Mian-e-Ma package not present; deploying the personal site only."
+            test -s public/Mian-e-Ma/index.html
+            test -s public/Mian-e-Ma/styles.css
+            test -s public/Mian-e-Ma/assets/Mian-e-Ma.pdf
+            echo "Existing Mian-e-Ma source files are present."
           fi
 
       - name: Type-check
@@ -63,12 +90,11 @@ jobs:
       - name: Prepare GitHub Pages artifact
         shell: bash
         run: |
+          set -euo pipefail
           test -s out/index.html
           test -s out/404.html
-          if [ -f "Mian-e-Ma-GitHub-Overlay.zip" ]; then
-            test -s out/Mian-e-Ma/index.html
-            test -s out/Mian-e-Ma/assets/Mian-e-Ma.pdf
-          fi
+          test -s out/Mian-e-Ma/index.html
+          test -s out/Mian-e-Ma/assets/Mian-e-Ma.pdf
           rm -f out/.htaccess out/_headers
           touch out/.nojekyll
           printf 'GitHub Pages artifact: %s files\\n' "$(find out -type f | wc -l)"
@@ -82,6 +108,7 @@ jobs:
           path: out
 
   deploy:
+    if: github.actor != 'github-actions[bot]'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
