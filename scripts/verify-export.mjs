@@ -107,9 +107,11 @@ const checkRef = (rel, ref, kind) => {
 
   const cleanPath = pathname.replace(/^\/+/, "");
   const direct = resolve(outDir, cleanPath || "index.html");
-  const candidates = pathname.endsWith("/")
-    ? [resolve(direct, "index.html")]
-    : [direct, direct + ".html", resolve(direct, "index.html")];
+  const candidates = [
+    direct,
+    direct + ".html",
+    resolve(direct, "index.html"),
+  ];
 
   const found = candidates.some((candidate) =>
     isInsideExport(candidate) &&
