@@ -12,8 +12,25 @@ const env = (key: string, fallback: string) => {
   return value && value.trim().length > 0 ? value.trim() : fallback;
 };
 
-/** Canonical site origin, with scheme, no trailing slash. */
-export const siteUrl = env("NEXT_PUBLIC_SITE_URL", "https://ariakianzad.github.io").replace(/\/+$/, "");
+/** Canonical origin only. Reject malformed URLs and paths before metadata is generated. */
+const normalizeSiteOrigin = (raw: string): string => {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error("NEXT_PUBLIC_SITE_URL must be a valid absolute URL.");
+  }
+  const isLocalHost = parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+  if (parsed.protocol !== "https:" && !(parsed.protocol === "http:" && isLocalHost)) {
+    throw new Error("NEXT_PUBLIC_SITE_URL must use HTTPS (HTTP is allowed only for localhost).");
+  }
+  if (parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) {
+    throw new Error("NEXT_PUBLIC_SITE_URL must contain only an origin, without credentials, path, query or fragment.");
+  }
+  return parsed.origin;
+};
+
+export const siteUrl = normalizeSiteOrigin(env("NEXT_PUBLIC_SITE_URL", "https://ariakianzad.github.io"));
 
 export const site = {
   name: "Aria Kianzad",

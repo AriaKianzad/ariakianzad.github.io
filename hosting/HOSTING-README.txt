@@ -1,9 +1,9 @@
 HOSTING BUNDLE - ariakianzad.ir
 ===============================
 
-This archive contains the complete, final production build of the personal
-website at https://ariakianzad.ir plus an Apache configuration for shared
-cPanel hosting. It is fully self-contained: no Node.js, no build step, and
+This archive contains the complete, final production build of my personal
+website at https://ariakianzad.ir, including the standalone Persian book
+page for «میانِ ما», plus an Apache configuration for shared cPanel hosting. It is fully self-contained: no Node.js, no build step, and
 no PHP execution is required on the server.
 
 WHAT PHP DOES HERE: nothing. The site is completely static. PHP 8.5 can
@@ -13,7 +13,10 @@ are needed for this site to work.
 
 PACKAGE CONTENTS
 ----------------
-index.html              the website (single page)
+index.html              the personal homepage (single page)
+Mian-e-Ma/              standalone Persian book landing page
+                        with its own HTML, CSS, cover artwork, line art,
+                        Estedad font and direct PDF download
 404.html                custom not-found page
 .htaccess               Apache config: security headers, caching,
                         compression, custom error page, HTTPS +
@@ -28,10 +31,25 @@ _next/static/           hashed CSS and font assets (paths referenced by
                         index.html - keep the folder names exactly)
 boot.js, ui.js          site scripts (progressive enhancement)
 icon.png, apple-icon.png, og/og.png     favicon icons and social image
-robots.txt, sitemap.xml, llms.txt       SEO files
+robots.txt, sitemap.xml, llms.txt       SEO files; sitemap includes both
+                        the homepage and the Persian book page
 licenses/               open-source font licenses (SIL OFL 1.1:
                         OFL-Estedad.txt, OFL-GeistMono.txt)
 HOSTING-README.txt      this file
+
+BUILDING THE BUNDLE FOR THIS DOMAIN
+-----------------------------------
+Before creating a bundle for ariakianzad.ir, set the public canonical origin
+and build a fresh export from the repository root (PowerShell):
+
+  $env:NEXT_PUBLIC_SITE_URL = "https://ariakianzad.ir"
+  npm ci
+  npm run build
+  npm run hosting
+
+This keeps canonical URLs, Open Graph URLs and sitemap entries aligned with
+the host's HTTPS redirect. For GitHub Pages, do not use this cPanel bundle;
+the Actions workflow builds with https://ariakianzad.github.io by default.
 
 DEPLOYMENT THROUGH cPANEL FILE MANAGER
 --------------------------------------
@@ -131,13 +149,11 @@ SETTINGS THAT DEPEND ON THE HOSTING PROVIDER
 
 PACKAGE PROVENANCE
 -----------------
-This archive was assembled from the static export (out/) supplied with the
-project, together with the repository's hosting guide and font licenses.
-The archive was integrity-checked and extracted successfully. A clean Next.js
-production rebuild was not completed during this audit because the supplied
-native dependencies target Windows and the npm registry was unreachable from
-the audit environment. Treat this as a verified package of the supplied
-static export, not as evidence that the export was freshly rebuilt from the
-current source tree. For a source-fresh release, run `npm ci`, `npm run build`,
-then `npm run hosting` in the project's supported Windows environment and
-validate the resulting archive before deployment.
+The archive is generated locally from the current production export in out/
+by `npm run hosting`. The command stages the export, includes the font
+licences and this guide, validates the ZIP structure, independently lists and
+extracts it, compares extracted file hashes, and runs an HTTP smoke test for
+the homepage, the Persian book page and its PDF. Always run `npm ci` and
+`npm run build` before generating a new bundle. The bundle is an optional
+cPanel deliverable; the live GitHub Pages site is published separately by
+the GitHub Actions workflow.

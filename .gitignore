@@ -1,16 +1,35 @@
 node_modules/
 .next/
 out/
+dist/
+coverage/
+playwright-report/
+test-results/
+.cache/
+.turbo/
 *.tsbuildinfo
+*.log
 .DS_Store
 
-# Environment and secret files
+# Generated deployment archive
+/hosting-bundle.zip
+
+# Local environment and credentials
 .env
 .env.*
 !.env.example
+.npmrc
 *.pem
 *.key
 *.p12
 *.pfx
+*.p8
+*.crt
+*.cer
+*.der
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
 credentials*.json
 secrets*.json

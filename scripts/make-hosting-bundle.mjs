@@ -49,9 +49,9 @@
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { extname, join } from "node:path";
+import { extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import http from "node:http";
 
 const repoRoot = process.cwd();
@@ -75,6 +75,15 @@ const REQUIRED = [
   "HOSTING-README.txt",
   "licenses/OFL-Estedad.txt",
   "licenses/OFL-GeistMono.txt",
+  "Mian-e-Ma/index.html",
+  "Mian-e-Ma/styles.css",
+  "Mian-e-Ma/assets/Mian-e-Ma.pdf",
+  "Mian-e-Ma/assets/estedad-variable.woff2",
+  "Mian-e-Ma/assets/mian-e-ma-cover-v2.webp",
+  "Mian-e-Ma/assets/mian-e-ma-lineart.webp",
+  "Mian-e-Ma/assets/rexo-agency-logo-white.png",
+  "Mian-e-Ma/assets/rexo-mag-logo.png",
+  "Mian-e-Ma/assets/OFL.txt",
 ];
 const FORBIDDEN = [
   "node_modules/", ".git/", ".next/", "out/", "dist/", "hosting-bundle/",
@@ -276,34 +285,67 @@ async function main() {
     ".ico": "image/x-icon",
     ".txt": "text/plain; charset=utf-8",
     ".xml": "application/xml",
+    ".pdf": "application/pdf",
+    ".webp": "image/webp",
   };
+  const extractRoot = resolve(extract);
+  const insideExtract = (candidate) => {
+    const rel = relative(extractRoot, candidate);
+    return rel === "" || (rel !== ".." && !rel.startsWith(".." + sep) && !isAbsolute(rel));
+  };
+
   const server = http.createServer((req, res) => {
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      res.writeHead(405, { Allow: "GET, HEAD", "X-Content-Type-Options": "nosniff" });
+      res.end(req.method === "HEAD" ? undefined : "Method not allowed");
+      return;
+    }
     try {
-      const pathname = decodeURIComponent(new URL(req.url, "http://127.0.0.1").pathname);
-      let resolved = join(extract, pathname.replace(/^\/+/, ""));
-      if (!existsSync(resolved) || statSync(resolved).isDirectory()) {
-        if (existsSync(join(resolved, "index.html"))) {
-          resolved = join(resolved, "index.html");
-        } else if (existsSync(`${resolved}.html`)) {
-          resolved += ".html";
-        }
+      const rawPath = new URL(req.url || "/", "http://127.0.0.1").pathname;
+      const pathname = decodeURIComponent(rawPath);
+      if (pathname.includes("\0") || pathname.includes("\\")) {
+        res.writeHead(400, { "X-Content-Type-Options": "nosniff" });
+        res.end(req.method === "HEAD" ? undefined : "Invalid path");
+        return;
       }
-      if (!resolved.startsWith(extract) || !existsSync(resolved) || !statSync(resolved).isFile()) {
-        const notFound = join(extract, "404.html");
+
+      let resolved = resolve(extractRoot, "." + (pathname.startsWith("/") ? pathname : "/" + pathname));
+      if (!insideExtract(resolved)) {
+        res.writeHead(403, { "X-Content-Type-Options": "nosniff" });
+        res.end(req.method === "HEAD" ? undefined : "Forbidden");
+        return;
+      }
+      if (existsSync(resolved) && statSync(resolved).isDirectory()) {
+        resolved = join(resolved, "index.html");
+      } else if (!existsSync(resolved) && existsSync(resolved + ".html")) {
+        resolved += ".html";
+      }
+
+      if (!existsSync(resolved) || !statSync(resolved).isFile()) {
+        const notFound = join(extractRoot, "404.html");
         res.writeHead(404, { "Content-Type": "text/html; charset=utf-8", "X-Content-Type-Options": "nosniff" });
-        res.end(existsSync(notFound) ? readFileSync(notFound) : "404");
+        res.end(req.method === "HEAD" ? undefined : (existsSync(notFound) ? readFileSync(notFound) : "404"));
+        return;
+      }
+
+      const realFile = realpathSync(resolved);
+      if (!insideExtract(realFile)) {
+        res.writeHead(403, { "X-Content-Type-Options": "nosniff" });
+        res.end(req.method === "HEAD" ? undefined : "Forbidden");
         return;
       }
       res.writeHead(200, {
-        "Content-Type": types[extname(resolved).toLowerCase()] || "application/octet-stream",
+        "Content-Type": types[extname(realFile).toLowerCase()] || "application/octet-stream",
         "X-Content-Type-Options": "nosniff",
       });
-      res.end(readFileSync(resolved));
-    } catch {
-      res.writeHead(500);
-      res.end("error");
+      res.end(req.method === "HEAD" ? undefined : readFileSync(realFile));
+    } catch (error) {
+      const status = error instanceof URIError ? 400 : 500;
+      res.writeHead(status, { "X-Content-Type-Options": "nosniff" });
+      res.end(req.method === "HEAD" ? undefined : "Request failed");
     }
   });
+
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
   const smoke = [];
@@ -353,6 +395,37 @@ async function main() {
       smoke.push(`GET ${path} missing marker: ${marker}`);
     }
   }
+  const bookPage = await get("/Mian-e-Ma/");
+  const bookHtml = bookPage.body.toString("utf8");
+  if (bookPage.status !== 200 || !bookHtml.includes("میانِ ما")) {
+    smoke.push("GET /Mian-e-Ma/ did not return the Persian book page");
+  }
+
+  const bookRefs = new Set();
+  for (const match of bookHtml.matchAll(/(?:href|src)="([^"]+)"/g)) {
+    const url = new URL(match[1], base + "/Mian-e-Ma/");
+    if (url.origin === base) bookRefs.add(url.pathname);
+  }
+  for (const ref of bookRefs) {
+    const res = await get(ref);
+    if (res.status !== 200) {
+      smoke.push("GET " + ref + " -> " + res.status);
+      continue;
+    }
+    const expected = {
+      ".css": "text/css", ".js": "text/javascript", ".woff2": "font/woff2",
+      ".png": "image/png", ".pdf": "application/pdf", ".webp": "image/webp",
+    }[extname(new URL(ref, base).pathname).toLowerCase()];
+    const type = res.type.split(";")[0];
+    if (expected && type !== expected) {
+      smoke.push("GET " + ref + " content-type " + type + ", expected " + expected);
+    }
+    if (ref.endsWith("/Mian-e-Ma/assets/Mian-e-Ma.pdf") &&
+        res.body.subarray(0, 5).toString("ascii") !== "%PDF-") {
+      smoke.push("Book PDF does not have a valid PDF signature");
+    }
+  }
+
   const unknown = await get("/definitely-missing-404-test");
   if (unknown.status !== 404) smoke.push(`unknown path returned ${unknown.status}, expected 404`);
 

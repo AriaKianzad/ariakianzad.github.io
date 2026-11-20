@@ -10,7 +10,7 @@
  * - the files a deployment needs are present
  */
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { createHash } from "node:crypto";
 
 const outDir = join(process.cwd(), "out");
@@ -80,24 +80,43 @@ const siteOrigin = (() => {
   }
 })();
 
-/** Map an href/src/content reference to a path inside out/, or null if external. */
-const toLocalPath = (ref) => {
+/** Resolve same-origin references relative to the HTML file that contains them. */
+const toLocalPath = (ref, relativeFile) => {
   if (typeof ref !== "string" || ref.length === 0) return null;
-  let path = null;
-  if (ref.startsWith("/")) path = ref;
-  else if (siteOrigin && ref.startsWith(siteOrigin)) path = ref.slice(siteOrigin.length);
-  else return null;
-  path = path.split("#")[0].split("?")[0];
-  if (path === "" || path === "/") return "index.html";
-  return path.replace(/^\/+/, "");
+  try {
+    const origin = siteOrigin || "https://local.invalid";
+    const base = new URL(relativeFile, origin + "/");
+    const resolved = new URL(ref, base);
+    if (resolved.origin !== base.origin) return null;
+    const pathname = decodeURIComponent(resolved.pathname);
+    if (!pathname.startsWith("/") || pathname.includes("\0") || pathname.includes("\\")) return null;
+    return pathname;
+  } catch {
+    return null;
+  }
+};
+
+const isInsideExport = (candidate) => {
+  const rel = relative(outDir, candidate);
+  return rel === "" || (rel !== ".." && !rel.startsWith(".." + sep) && !isAbsolute(rel));
 };
 
 const checkRef = (rel, ref, kind) => {
-  const local = toLocalPath(ref);
-  if (local === null) return;
-  if (!existsSync(join(outDir, local))) {
-    problems.push(`${rel}: missing ${kind} target: ${ref}`);
-  }
+  const pathname = toLocalPath(ref, rel);
+  if (pathname === null) return;
+
+  const cleanPath = pathname.replace(/^\/+/, "");
+  const direct = resolve(outDir, cleanPath || "index.html");
+  const candidates = pathname.endsWith("/")
+    ? [resolve(direct, "index.html")]
+    : [direct, direct + ".html", resolve(direct, "index.html")];
+
+  const found = candidates.some((candidate) =>
+    isInsideExport(candidate) &&
+    existsSync(candidate) &&
+    statSync(candidate).isFile()
+  );
+  if (!found) problems.push(rel + ": missing " + kind + " target: " + ref);
 };
 
 const headersRaw = existsSync(join(outDir, "_headers")) ? readFileSync(join(outDir, "_headers"), "utf8") : "";
@@ -185,9 +204,30 @@ const required = [
   "boot.js",
   "ui.js",
   join("og", "og.png"),
+  join("Mian-e-Ma", "index.html"),
+  join("Mian-e-Ma", "styles.css"),
+  join("Mian-e-Ma", "assets", "Mian-e-Ma.pdf"),
+  join("Mian-e-Ma", "assets", "estedad-variable.woff2"),
+  join("Mian-e-Ma", "assets", "mian-e-ma-cover-v2.webp"),
+  join("Mian-e-Ma", "assets", "mian-e-ma-lineart.webp"),
+  join("Mian-e-Ma", "assets", "rexo-agency-logo-white.png"),
+  join("Mian-e-Ma", "assets", "rexo-mag-logo.png"),
+  join("Mian-e-Ma", "assets", "OFL.txt"),
 ];
 for (const name of required) {
   if (!existsSync(join(outDir, name))) problems.push(`required file missing: ${name}`);
+}
+
+const sitemapPath = join(outDir, "sitemap.xml");
+if (existsSync(sitemapPath)) {
+  const sitemap = readFileSync(sitemapPath, "utf8");
+  const bookUrl = siteOrigin ? siteOrigin + "/Mian-e-Ma/" : null;
+  if (!sitemap.includes("<urlset") || !sitemap.includes("</urlset>")) {
+    problems.push("sitemap.xml: invalid or incomplete urlset");
+  }
+  if (bookUrl && !sitemap.includes(bookUrl)) {
+    problems.push("sitemap.xml: the Persian book page is missing");
+  }
 }
 
 if (problems.length > 0) {

@@ -59,6 +59,9 @@ const structuredData = {
   ],
 };
 
+// Escape "<" so future text values cannot terminate the JSON-LD script element.
+const structuredDataJson = JSON.stringify(structuredData).replace(/</g, "\\u003c");
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${estedad.variable} ${geistMono.variable}`}>
@@ -140,7 +143,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </footer>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          dangerouslySetInnerHTML={{ __html: structuredDataJson }}
         />
       </body>
     </html>

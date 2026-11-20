@@ -1,41 +1,37 @@
 # Aria Kianzad
 
-> Brand strategist and copywriter. Website: [ariakianzad.github.io](https://ariakianzad.github.io/)
+> Brand strategist and copywriter. Personal website: [ariakianzad.github.io](https://ariakianzad.github.io/)
 
-Aria Kianzad is an independent brand strategist and copywriter. The work has
-two disciplines: brand strategy (positioning, differentiation, brand voice)
-and copywriting (messaging, web copy, naming). The working principle is
-simple: understand what a brand should stand for and why it deserves to be
-chosen, then write language that expresses that clearly.
+I work on brand strategy and copywriting. My focus is helping brands understand what they should stand for, why that difference matters, and how to communicate it clearly.
 
-## Site
+## Personal website
 
-A single static page (no tracking, no analytics, no forms, no backend).
-Sections, in order:
+The personal website is a static, single-page introduction to my work:
 
-- Hero: what Aria does, with a strategist's index of the three ideas behind
-  the headline (positioning, relevance, expression).
-- Perspective (#perspective): fewer, clearer decisions over more output.
-- Disciplines (#disciplines): 01 Brand Strategy, 02 Copywriting.
-- Approach (#approach): clarity before volume; difference needs a reason;
-  words are part of the strategy.
-- Rexo (#rexo): the independent studio Aria founded in 2024, at
-  [rexo.agency](https://rexo.agency/)
-- About (#about): how Aria thinks.
-- Contact (#contact): email [kianzadaria@gmail.com](mailto:kianzadaria@gmail.com)
+- Perspective: why more output is not always the answer.
+- Disciplines: brand strategy and copywriting.
+- Approach: clarity before volume, meaningful differentiation, and language as part of strategy.
+- Rexo: the independent brand strategy and creative studio I founded in 2024, at [rexo.agency](https://rexo.agency/).
+- About and contact: [kianzadaria@gmail.com](mailto:kianzadaria@gmail.com).
 
-## Contact
+## Persian book: «میانِ ما»
 
-Email: [kianzadaria@gmail.com](mailto:kianzadaria@gmail.com)
+I also publish the Persian book page for **«میانِ ما»**, about understanding relationships, emotional intimacy, commitment, communication and emotional responsibility.
+
+- Book page: [ariakianzad.github.io/Mian-e-Ma/](https://ariakianzad.github.io/Mian-e-Ma/)
+- Direct PDF: [Mian-e-Ma.pdf](https://ariakianzad.github.io/Mian-e-Ma/assets/Mian-e-Ma.pdf)
+- Language: Persian (fa-IR).
+- Publisher: مجله رکسو.
+- Author: آریا کیانزاد.
 
 ## Related
 
-Rexo, the independent brand strategy and creative studio founded by Aria
-Kianzad: [rexo.agency](https://rexo.agency/)
+- Rexo, my brand strategy and creative studio: [rexo.agency](https://rexo.agency/).
+- My Persian editorial platform: [RexoMag](https://rexo.agency/mag).
 
 ## Notes
 
-- Structured data: ProfilePage / Person (schema.org), listing the social
-  profiles also linked in the footer.
-- Typeface: Estedad by Amin Abedi, SIL Open Font License 1.1.
-- No cookies, no client-side data collection of any kind.
+- The personal homepage uses ProfilePage / Person / Organization structured data.
+- The book page has Book and FAQ structured data.
+- The site uses Estedad by Amin Abedi under the SIL Open Font License 1.1.
+- The website does not use analytics, tracking cookies or a backend.
