@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f1e9">
   <meta name="robots" content="index,follow,max-image-preview:large">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' https://www.google-analytics.com; font-src 'self'; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests">
   <title>دانلود رایگان کتاب «میانِ ما»؛ شناخت رابطه و مسئولیت‌پذیری عاطفی</title>
   <meta name="description" content="نسخۀ رایگان کتاب میانِ ما، نوشتۀ آریا کیانزاد و منتشرشده توسط مجله رکسو؛ درباره‌ی شناخت رابطه، صمیمیت، تعهد، گفت‌وگو و مسئولیت‌پذیری عاطفی.">
   <link rel="canonical" href="https://ariakianzad.github.io/Mian-e-Ma/">
@@ -214,5 +214,25 @@
       <div class="footer-bottom"><span>© آریا کیانزاد. حقوق مادی و معنوی اثر محفوظ است.</span><span>تایپوگرافی با فونت <a class="font-credit" href="https://github.com/aminabedi68/Estedad" target="_blank" rel="noopener noreferrer">استعداد (Estedad)</a></span></div>
     </div>
   </footer>
+
+  <section
+    id="analytics-consent"
+    class="analytics-consent"
+    role="dialog"
+    aria-label="تنظیمات آمار بازدید"
+    aria-describedby="analytics-consent-description"
+    hidden
+  >
+    <div class="analytics-consent__copy">
+      <strong id="analytics-consent-title">تنظیمات آمار بازدید</strong>
+      <p id="analytics-consent-description">برای شناخت بهتر بازدیدهای سایت از Google Analytics استفاده می‌کنیم. با پذیرش، داده‌های آماری بازدید و تعامل شما ثبت می‌شن.</p>
+    </div>
+    <div class="analytics-consent__actions">
+      <button id="analytics-consent-accept" class="analytics-consent__accept" type="button">پذیرش آمارگیری</button>
+      <button id="analytics-consent-reject" class="analytics-consent__reject" type="button">موافقت نمی‌کنم</button>
+    </div>
+  </section>
+  <button id="analytics-preferences" class="analytics-preferences" type="button" hidden>تنظیمات حریم خصوصی</button>
+  <script src="/analytics-consent.js" defer></script>
 </body>
 </html>
