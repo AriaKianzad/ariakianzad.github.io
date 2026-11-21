@@ -25,7 +25,6 @@
         accept: "پذیرش آمارگیری",
         reject: "موافقت نمی‌کنم",
         settings: "تنظیمات حریم خصوصی",
-        on: "فعال",
         off: "غیرفعال",
       }
     : {
@@ -35,7 +34,6 @@
         accept: "Allow analytics",
         reject: "Decline",
         settings: "Privacy settings",
-        on: "On",
         off: "Off",
       };
 
@@ -53,8 +51,8 @@
     }
   }
 
-  function updatePreferencesLabel(choice) {
-    preferences.textContent = copy.settings + " · " + (choice === "granted" ? copy.on : copy.off);
+  function updatePreferencesLabel() {
+    preferences.textContent = copy.settings + " · " + copy.off;
   }
 
   function loadGoogleAnalytics() {
@@ -106,16 +104,17 @@
     }
 
     panel.hidden = true;
-    preferences.hidden = false;
-    updatePreferencesLabel(choice);
 
     if (choice === "granted") {
+      preferences.hidden = true;
       if (typeof window.gtag === "function") {
         window.gtag("consent", "update", { analytics_storage: "granted" });
       } else {
         loadGoogleAnalytics();
       }
     } else {
+      updatePreferencesLabel();
+      preferences.hidden = false;
       revokeGoogleAnalytics();
     }
   }
@@ -128,11 +127,10 @@
 
   const savedChoice = getSavedChoice();
   if (savedChoice === "granted") {
-    updatePreferencesLabel(savedChoice);
-    preferences.hidden = false;
+    preferences.hidden = true;
     loadGoogleAnalytics();
   } else if (savedChoice === "denied") {
-    updatePreferencesLabel(savedChoice);
+    updatePreferencesLabel();
     preferences.hidden = false;
   } else {
     panel.hidden = false;
