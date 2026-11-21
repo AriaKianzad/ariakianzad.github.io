@@ -1,10 +1,6 @@
 /**
  * Central site configuration for the GitHub Pages website.
- *
- * Everything here is a supplied fact from the brief. Nothing is invented:
- * no clients, metrics, awards, or testimonials exist anywhere in this project.
- * The only environment override is the canonical origin, so a deployment can
- * be tested on a staging hostname without touching copy.
+ * Public facts only. No clients, metrics, awards or testimonials are implied.
  */
 
 const env = (key: string, fallback: string) => {
@@ -12,7 +8,6 @@ const env = (key: string, fallback: string) => {
   return value && value.trim().length > 0 ? value.trim() : fallback;
 };
 
-/** Canonical origin only. Reject malformed URLs and paths before metadata is generated. */
 const normalizeSiteOrigin = (raw: string): string => {
   let parsed: URL;
   try {
@@ -34,28 +29,26 @@ export const siteUrl = normalizeSiteOrigin(env("NEXT_PUBLIC_SITE_URL", "https://
 
 export const site = {
   name: "Aria Kianzad",
-  /** Public-facing name, always rendered this way. */
   displayName: "Aria Kianzad",
   givenName: "Aria",
-  title: "Brand Strategist & Copywriter",
+  title: "Brand Strategist & Personal Branding Consultant",
   description:
-    "Aria Kianzad is a brand strategist and copywriter focused on brand positioning, clear communication, and the ideas behind meaningful brands.",
+    "Aria Kianzad is a brand strategist and personal branding consultant working across positioning, research, identity and communication.",
   locale: "en",
   ogLocale: "en_US",
   url: siteUrl,
   email: "kianzadaria@gmail.com",
 } as const;
 
-/** Rexo: the studio Aria founded in 2024. Related but distinct entity. */
+/** Rexo is the independent creative studio Aria founded in 2024. */
 export const rexo = {
   name: "Rexo",
   url: "https://rexo.agency/",
   founded: "2024",
   description:
-    "Independent brand strategy and creative studio founded by Aria Kianzad.",
+    "Independent creative studio founded by Aria Kianzad, bringing brand strategy and creative execution together.",
 } as const;
 
-/** Social profiles. Exact destinations, verified against the brief. */
 export const socials = [
   { id: "youtube", label: "Aria Kianzad on YouTube", href: "https://www.youtube.com/@AriaKianzad" },
   { id: "instagram", label: "Aria Kianzad on Instagram", href: "https://www.instagram.com/ariakianzad" },
@@ -67,25 +60,26 @@ export const socials = [
 
 export type SocialId = (typeof socials)[number]["id"];
 
-/**
- * In-page navigation. Anchors only: the site is genuinely single-page, so
- * every destination is a plain `#section` link that works without JavaScript.
- */
 export const primaryNav = [
-  { label: "Disciplines", href: "/#disciplines" },
-  { label: "Approach", href: "/#approach" },
+  { label: "Expertise", href: "/#expertise" },
+  { label: "Method", href: "/#method" },
   { label: "Rexo", href: "/#rexo" },
+  { label: "Writing", href: "/#notes" },
   { label: "About", href: "/#about" },
 ] as const;
 
-/** Areas of knowledge asserted in structured data, led by the two disciplines. */
 export const knowsAbout = [
   "Brand strategy",
-  "Copywriting",
+  "Personal branding",
   "Brand positioning",
-  "Brand communication",
+  "Market research",
+  "Consumer insight",
+  "Brand identity development",
   "Brand differentiation",
-  "Strategic copywriting",
-  "Verbal identity",
+  "Brand communication",
+  "Content strategy",
+  "SEO content strategy",
+  "Brand storytelling",
+  "Copywriting",
   "Creative direction",
 ] as const;
