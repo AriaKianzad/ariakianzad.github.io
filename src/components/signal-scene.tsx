@@ -260,8 +260,9 @@ export default function SignalScene({ onReady }: SignalSceneProps) {
       }
     };
 
-    const resizeObserver = new ResizeObserver(resize);
-    resizeObserver.observe(host);
+    const resizeObserver = "ResizeObserver" in window ? new ResizeObserver(resize) : null;
+    if (resizeObserver) resizeObserver.observe(host);
+    else window.addEventListener("resize", resize, { passive: true });
     canvas.addEventListener("pointermove", onPointerMove, { passive: true });
     document.addEventListener("visibilitychange", onVisibilityChange);
     motionQuery.addEventListener("change", onMotionPreferenceChange);
@@ -272,7 +273,8 @@ export default function SignalScene({ onReady }: SignalSceneProps) {
 
     return () => {
       stop();
-      resizeObserver.disconnect();
+      resizeObserver?.disconnect();
+      if (!resizeObserver) window.removeEventListener("resize", resize);
       canvas.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       motionQuery.removeEventListener("change", onMotionPreferenceChange);
