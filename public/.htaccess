@@ -2,8 +2,8 @@
 # ariakianzad.ir - Apache/cPanel configuration (static site)
 #
 # The public pages and admin interface are static exports. The dashboard calls a remote Supabase backend; this host does not run that backend. The export includes index.html, a custom 404 page,
-# hashed CSS/font assets, and same-origin scripts. There is no
-# backend and PHP never executes.
+# hashed Next.js assets, standalone book assets, and same-origin scripts,
+# including a code-split Three.js hero. There is no local backend and PHP never executes.
 #
 # Required modules: mod_headers (security headers + cache rules).
 # Optional: mod_rewrite (HTTPS + canonical-host redirects),
