@@ -7,13 +7,13 @@ This repository contains my personal website and the standalone Persian microsit
 - **Private analytics dashboard:** https://ariakianzad.github.io/admin/
 - **Book PDF release:** https://github.com/AriaKianzad/ariakianzad.github.io/releases/tag/mian-e-ma-v1
 
-The personal website and book page are static frontends. The personal homepage is a Next.js static export with one isolated client-side island for a locally bundled, lazy-loaded Three.js hero scene. Its main copy, navigation, expertise, method and structured data are rendered into static HTML. The analytics dashboard is also served as static files, but it talks to a separate Supabase backend for authentication and reporting. Rexo has its own website at https://rexo.agency/.
+The personal website, book page and dashboard are static frontends. The personal homepage is generated with Next.js, but ships as static HTML without a Next.js hydration runtime. Its 3D hero is a separate same-origin ESM module built with esbuild; it requests a locally bundled, code-split Three.js scene only when the hero approaches the viewport. The dashboard uses a separate Supabase backend for authentication and reporting. Rexo is the creative agency at https://rexo.agency/.
 
 ## Project architecture
 
 | Area | Implementation |
 | --- | --- |
-| Personal website | Next.js App Router, React, TypeScript and Three.js for the optional 3D hero scene |
+| Personal website | Next.js App Router static export; TypeScript/React at build time, standalone esbuild + Three.js ESM hero |
 | Book microsite | Standalone HTML, CSS and JavaScript |
 | Admin interface | Static HTML, CSS and JavaScript |
 | Hosting | GitHub Pages, with an optional Apache/cPanel bundle |
@@ -22,7 +22,7 @@ The personal website and book page are static frontends. The personal homepage i
 | Site analytics | Google Analytics 4 and Google Search Console, queried server-side |
 | Consent | First-party consent panel; the Google tag loads only after consent |
 
-The Next.js application is exported as static files. The deployed website does not run a Next.js server, has no Next.js API routes and performs no request-time server rendering. The homepage's Three.js scene is bundled with the site, dynamically imported only when the hero approaches the viewport, and never fetched from a third-party CDN. If WebGL is unavailable or the visitor prefers reduced motion, a CSS-built static visual remains. The rest of the homepage is server-rendered HTML with progressive-enhancement scripts. The dashboard is not a hidden or private deployment: its HTML and JavaScript are public. Access to its data is enforced by Supabase, not by the dashboard URL or its noindex metadata.
+The Next.js application is exported as static files. The deployed website does not run a Next.js server, has no Next.js API routes and performs no request-time server rendering. The build removes the unused Next.js hydration payload, then esbuild produces a same-origin /_hero/hero-visual.js entrypoint and a hashed Three.js scene chunk. The entrypoint is loaded from the same origin and imports the scene only when the hero approaches the viewport. No 3D code, shader, texture or font is fetched from a third-party CDN. If WebGL is unavailable or the visitor prefers reduced motion, a CSS-built static visual remains. The homepage copy and structured data stay in static HTML, while public/boot.js and public/ui.js provide progressive enhancement. The dashboard is not a hidden or private deployment: its HTML and JavaScript are public. Access to its data is enforced by Supabase, not by the dashboard URL or its noindex metadata.
 
 ### Main routes
 
@@ -45,7 +45,7 @@ The dashboard combines three independent data sources:
 
 A Supabase Cron job captures the GitHub cumulative count once per day at **00:15 UTC (03:45 Asia/Tehran)**. A private PostgreSQL function fetches the public GitHub Release API and upserts the snapshot using the Tehran calendar date. Opening the dashboard also refreshes the current day's value. Daily differences are calculated from consecutive cumulative snapshots; the first snapshot is a baseline, not historical daily data.
 
-The personal and book pages ask visitors for analytics consent. The Google Analytics tag is not requested until a visitor accepts. A refusal keeps analytics disabled; visitors can reopen the privacy settings later. The consent choice is stored in browser local storage.
+The personal and book pages ask visitors for analytics consent. The Google Analytics tag is not requested until a visitor accepts. The privacy-settings control remains available after both acceptance and refusal, so visitors can review or withdraw consent later. The choice is stored in browser local storage.
 
 ## Dashboard security model
 
@@ -61,7 +61,7 @@ The dashboard's config.js contains only the Supabase project URL and a **publish
 
 ### Remembered sign-in
 
-When **«مرا به خاطر بسپار»** is enabled, the browser stores the rotating Supabase refresh token in localStorage so the session can be restored after closing the browser. The password and access token are not stored there. However, any JavaScript executing on the same origin can read local storage. On a shared or public device, turn this option off and use the dashboard's explicit **خروج** action when finished.
+Remembered sign-in is **off by default** and requires an explicit opt-in. When **«مرا به خاطر بسپار»** is enabled, the browser stores the rotating Supabase refresh token in localStorage so the session can be restored after closing the browser. The password and access token are not stored there. However, any JavaScript executing on the same origin can read local storage. On a shared or public device, leave this option off and use the dashboard's **خروج** action when finished. Logout clears browser state and requests local-session revocation from Supabase.
 
 ### Google credentials
 
@@ -94,10 +94,11 @@ Useful checks and production commands:
     npm run check:security
     npm run test:consent
     npm run test:homepage
+    npm run test:supabase
     npm run build
     npm run preview
 
-The production build runs the static-export cleanup and invariant checks automatically. The preview server serves the generated out/ directory on loopback and applies the repository's static-host headers for local testing.
+The production build runs the static-export cleanup, compiles the standalone lazy hero module and its hashed scene chunk, then verifies the export. The preview server serves the generated out/ directory on loopback and applies the repository's static-host headers for local testing.
 
 Additional asset and packaging tasks:
 
@@ -114,7 +115,8 @@ Additional asset and packaging tasks:
 GitHub Actions builds and deploys the main branch to GitHub Pages. Pull requests targeting main run the checks and build but do not deploy. The workflow:
 
 - installs the locked dependency tree with npm ci;
-- scans the repository for common credential patterns;
+- scans the working tree for high-confidence credential patterns, including legacy Supabase service-role JWTs;
+- runs the analytics-consent, homepage and Supabase security-contract tests;
 - runs npm audit, TypeScript and ESLint checks;
 - verifies generated social icon paths and build scripts;
 - creates and validates the static export;
@@ -150,13 +152,14 @@ To deploy function source changes using the Supabase CLI:
     supabase functions deploy download-stats
     supabase functions deploy site-analytics
 
-Both functions set verify_jwt = false in supabase/config.toml because the handler performs its own explicit user-token verification and admin-allowlist check. Do not remove those checks. Production database migrations have already been applied; review migration state before applying any new migration.
+Both Edge Functions use the exact Supabase JS version declared in their respective deno.json import maps. They set verify_jwt = false because each handler explicitly validates the bearer token with auth.getUser(token), requires a confirmed email and checks the active email allowlist. CORS is restricted to the personal-site origin, but CORS is not an authorization boundary; do not remove the handler-level checks. Production database migrations have already been applied; review migration state before applying any new migration.
 
 ## Repository layout
 
     src/
       app/                 Personal website layout, sections, responsive styles and metadata
-      components/          Reusable interface components, icons and the lazy 3D hero scene
+      components/          Reusable server-rendered interface components and icons
+      client/              Standalone ESM entrypoint and code-split Three.js hero scene
       content/             Website copy and brand narrative
       lib/                 Site settings, metadata and structured data
 
@@ -175,7 +178,7 @@ Both functions set verify_jwt = false in supabase/config.toml because the handle
       config.toml           Function runtime configuration
       README.md             Backend setup and operational notes
 
-    scripts/                Asset generation, security checks, homepage regression tests, build and packaging
+    scripts/                Asset generation, credential scan, consent/Supabase tests, build and packaging
     assets-src/             Original fonts and SVG icon sources
     LICENSES/               Font licence files
     hosting/                 Optional cPanel hosting instructions
