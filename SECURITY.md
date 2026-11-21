@@ -18,7 +18,7 @@ Please do not publish an exploitable issue, proof-of-concept or sensitive data b
 - Google Analytics is loaded only after a visitor accepts the consent prompt. The settings control remains visible after acceptance or refusal, so a visitor can withdraw consent later.
 - Remembered dashboard sessions are opt-in and off by default. If enabled, only the rotating Supabase refresh token is stored in browser localStorage. It does not store the password or access token, but same-origin JavaScript can read local storage. Sign out on shared devices; logout also requests local-session revocation from Supabase.
 - The build checks high-confidence credential patterns, including legacy Supabase service-role JWTs, and validates the static Content Security Policy. This is an accidental-commit guard; it is not a substitute for reviewing changes or scanning the complete Git history.
-- The 3D hero uses a local, code-split Three.js ESM bundle and does not fetch JavaScript, shaders, textures or fonts from third-party CDNs. Its small entrypoint waits until the hero approaches the viewport before requesting the scene chunk. Animation pauses when the document is hidden and respects reduced-motion preferences. A CSS fallback remains visible if WebGL cannot initialize.
+- The 3D hero uses a local, code-split Three.js ESM bundle and does not fetch JavaScript, shaders, textures or fonts from third-party CDNs. Its small entrypoint waits until the hero approaches the viewport before requesting the scene chunk. Animation pauses when the document is hidden and respects reduced-motion preferences. WebGL resources are disposed on pagehide and reinitialized after a back-forward cache restore. A CSS fallback remains visible if WebGL cannot initialize.
 
 ## Dashboard request boundary
 
