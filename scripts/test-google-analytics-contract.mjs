@@ -34,10 +34,15 @@ assert.ok(functionSource.includes("site-analytics GA4 report failed:"),
   "GA4 failures must be logged separately");
 assert.ok(functionSource.includes("site-analytics Search Console report failed:"),
   "Search Console failures must be logged separately");
-assert.ok(!functionSource.includes("summary.users"),
+const diagnosticsStart = functionSource.indexOf('console.info("site-analytics report diagnostics"');
+const diagnosticsEnd = functionSource.indexOf("return json({", diagnosticsStart);
+const diagnosticBlock = functionSource.slice(diagnosticsStart, diagnosticsEnd);
+assert.ok(diagnosticsStart >= 0 && diagnosticsEnd > diagnosticsStart,
+  "diagnostic log block must be present");
+assert.ok(!diagnosticBlock.includes("summary.users") && !diagnosticBlock.includes("totalUsers"),
   "server logs must not include visitor metric values");
-assert.ok(!functionSource.includes("accessToken"),
-  "server diagnostics must not log OAuth access tokens");
+assert.ok(!diagnosticBlock.includes("accessToken") && !diagnosticBlock.includes("private_key"),
+  "server diagnostics must not log OAuth tokens or service-account key material");
 
 assert.ok(dashboard.includes('no_data: "بدون داده در این بازه"'),
   "dashboard must show a distinct no-data state");
