@@ -21,11 +21,11 @@ import wawoff2Module from "wawoff2";
 const wawoff2 = wawoff2Module.default ?? wawoff2Module;
 
 const ROOT = process.cwd();
-const BG = "#0a0b0d";
-const TEXT = "#f2f0ea";
-const MUTED = "#a5a7ae";
-const ACCENT = "#c7f36b";
-const LINE = "#292d34";
+const BG = "#090d0c";
+const TEXT = "#edf0e8";
+const MUTED = "#89958a";
+const ACCENT = "#c6e887";
+const LINE = "#26332b";
 
 const toBufferSource = (data) =>
   data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
@@ -79,13 +79,15 @@ const nameSize = 116;
 const nameAdv = advance(semiBold, "Aria Kianzad", nameSize);
 const nameX = (W - nameAdv) / 2;
 
-const tagline = "Brand Strategist & Copywriter";
+const tagline = "Brand Strategy / Personal Branding";
 const taglineSize = 38;
 const taglineAdv = advance(regular, tagline, taglineSize);
 const taglineX = (W - taglineAdv) / 2;
 
-const emailSize = 26;
-const urlAdv = advance(regular, "ariakianzad.ir", emailSize);
+const emailSize = 23;
+const url = "ariakianzad.github.io";
+const urlSize = 21;
+const urlAdv = advance(regular, url, urlSize);
 
 const ogSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
 <rect width="${W}" height="${H}" fill="${BG}"/>
@@ -94,7 +96,7 @@ ${textPath(semiBold, "Aria Kianzad", nameX, 300, nameSize, TEXT)}
 ${textPath(regular, tagline, taglineX, 424, taglineSize, MUTED)}
 <rect x="90" y="500" width="${W - 180}" height="1" fill="${LINE}"/>
 ${textPath(regular, "kianzadaria@gmail.com", 90, 556, emailSize, MUTED)}
-${textPath(regular, "ariakianzad.ir", W - 90 - urlAdv, 556, emailSize, MUTED)}
+${textPath(regular, url, W - 90 - urlAdv, 556, urlSize, MUTED)}
 </svg>`;
 
 mkdirSync(join(ROOT, "public", "og"), { recursive: true });
@@ -107,7 +109,7 @@ console.log("public/og/og.png written (1200x630)");
 
 const iconSvg = (size) => {
   const markSize = size * 0.5;
-  const text = "A.";
+  const text = "AK";
   const adv = advance(semiBold, text, markSize);
   const x = (size - adv) / 2;
   const y = size * 0.5 + markSize * 0.36;

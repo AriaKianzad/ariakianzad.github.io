@@ -18,6 +18,7 @@ Please do not publish an exploitable issue, proof-of-concept or sensitive data b
 - Google Analytics is loaded only after a visitor accepts the consent prompt.
 - The optional remembered dashboard session stores a rotating Supabase refresh token in browser localStorage. It does not store the password or access token, but same-origin JavaScript can read local storage. Disable the option and sign out on shared devices.
 - The build checks common credential patterns and validates the static Content Security Policy. This scan is a guard against accidental commits; it is not a substitute for reviewing changes or scanning the complete Git history.
+- The 3D hero scene uses the locally bundled Three.js package. It does not fetch JavaScript, shaders, textures or fonts from third-party CDNs. The scene is loaded only near the hero viewport, pauses when the document is hidden, disposes WebGL resources on unmount, and does not load when reduced motion is requested. A CSS fallback remains visible if WebGL cannot initialize.
 
 ## Auth password-protection limitation
 
