@@ -43,3 +43,44 @@ Both migrations have been applied to the production project.
 GitHub exposes the current cumulative asset download count, not historical daily counts. Every successful dashboard refresh records or updates the current day's snapshot using the Tehran calendar date. The dashboard can calculate day-to-day deltas once snapshots exist, but days when the dashboard is not opened will not have a snapshot. The first recorded day is a baseline and does not include older daily history.
 
 The number represents downloads, not unique people. A scheduled daily snapshot job can be added separately if a continuous daily chart is required.
+
+
+## Google Analytics 4 and Search Console reporting
+
+A second Edge Function, `site-analytics`, reads Google Analytics 4 and Google Search Console reports for the private dashboard.
+
+- GA4 Property ID: `565407137`
+- GA4 Measurement ID: `G-0CKL90M5R2`
+- Search Console URL-prefix property: `https://ariakianzad.github.io/`
+- Edge Function: `site-analytics`
+- Required Supabase Edge Function secret: `GOOGLE_SERVICE_ACCOUNT_JSON`
+
+The function requests only these Google OAuth scopes:
+
+- `https://www.googleapis.com/auth/analytics.readonly`
+- `https://www.googleapis.com/auth/webmasters.readonly`
+
+It uses a Google service-account key stored only in Supabase Edge Function Secrets. Never add that JSON key to GitHub, the browser's `config.js`, or chat messages.
+
+### One-time Google Cloud setup
+
+1. Create a Google Cloud project. No billing account is needed for the GA4 Data API and Search Console API reporting used here.
+2. Enable **Google Analytics Data API** and **Google Search Console API** in APIs & Services.
+3. Create a service account. Project-wide Editor/Owner roles are not required; access to the two reporting properties is granted separately.
+4. Create a JSON key for the service account and download it securely. Do not commit or share this file.
+5. Copy the service account's `client_email`.
+6. In GA4, open **Admin → Property access management** and add that email as **Viewer** to Property `565407137`.
+7. In Search Console, open the property `https://ariakianzad.github.io/` → **Settings → Users and permissions** and add the same email with **Restricted** permission.
+
+### Store the key in Supabase
+
+1. Open **Supabase Dashboard → Project → Edge Functions → Secrets**.
+2. Add a secret named exactly `GOOGLE_SERVICE_ACCOUNT_JSON`.
+3. Paste the complete contents of the downloaded service-account JSON file as its value.
+4. Save the secret. Do not send the key to anyone or place it in the repository.
+
+Then sign in to `https://ariakianzad.github.io/admin/` and select **به‌روزرسانی آمار**. The dashboard calls `site-analytics` using the existing Supabase session and admin allowlist.
+
+The dashboard reports GA4 users, sessions, page views, file-download events, session source/medium, page referrers on `/Mian-e-Ma/`, and top pages. Search Console reports clicks, impressions, CTR, average position, top queries, pages, and devices. GA4 reports cover the previous 30 complete days; Search Console ends three days before the current date to reduce incomplete-day results.
+
+If one Google product has not granted access, its section displays its error independently; download statistics remain available.
