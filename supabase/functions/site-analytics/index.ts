@@ -9,6 +9,38 @@ const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/webmasters.readonly",
 ].join(" ");
 
+interface GoogleAnalyticsValue {
+  value?: string;
+}
+
+interface GoogleAnalyticsRow {
+  dimensionValues?: GoogleAnalyticsValue[];
+  metricValues?: GoogleAnalyticsValue[];
+}
+
+interface GoogleAnalyticsReport {
+  dimensionHeaders?: Array<{ name: string }>;
+  metricHeaders?: Array<{ name: string }>;
+  rows?: GoogleAnalyticsRow[];
+}
+
+interface SearchConsoleRow {
+  keys?: string[];
+  clicks?: number;
+  impressions?: number;
+  ctr?: number;
+  position?: number;
+}
+
+interface SearchConsoleReport {
+  rows?: SearchConsoleRow[];
+}
+
+interface GoogleApiErrorPayload {
+  error?: string | { message?: string };
+  error_description?: string;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": SITE_ORIGIN,
   "Access-Control-Allow-Headers": "authorization, apikey, content-type",
@@ -179,7 +211,11 @@ async function getGoogleAccessToken() {
   return { configured: true as const, accessToken: payload.access_token as string };
 }
 
-async function googlePost(url: string, accessToken: string, body: unknown) {
+async function googlePost<T extends object>(
+  url: string,
+  accessToken: string,
+  body: unknown,
+): Promise<T> {
   const response = await fetch(url, {
     method: "POST",
     headers: {
@@ -188,18 +224,25 @@ async function googlePost(url: string, accessToken: string, body: unknown) {
     },
     body: JSON.stringify(body),
   });
-  const payload = await response.json().catch(() => ({}));
+  const payload: unknown = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const message = payload.error?.message || payload.error_description || payload.error || response.status;
+    const details = payload && typeof payload === "object"
+      ? payload as GoogleApiErrorPayload
+      : {};
+    const errorField = details.error;
+    const apiMessage = errorField && typeof errorField === "object"
+      ? errorField.message
+      : errorField;
+    const message = apiMessage || details.error_description || response.status;
     throw new Error("Google API HTTP " + response.status + ": " + String(message).slice(0, 260));
   }
-  return payload;
+  return payload as T;
 }
 
-function reportRows(report: any) {
-  const dimensions = (report.dimensionHeaders || []).map((item: any) => item.name);
-  const metrics = (report.metricHeaders || []).map((item: any) => item.name);
-  return (report.rows || []).map((row: any) => {
+function reportRows(report: GoogleAnalyticsReport): Array<Record<string, string | number>> {
+  const dimensions = (report.dimensionHeaders || []).map((item) => item.name);
+  const metrics = (report.metricHeaders || []).map((item) => item.name);
+  return (report.rows || []).map((row) => {
     const result: Record<string, string | number> = {};
     dimensions.forEach((name: string, index: number) => {
       result[name] = row.dimensionValues?.[index]?.value ?? "";
@@ -215,7 +258,7 @@ function reportRows(report: any) {
 async function ga4Report(accessToken: string, body: unknown) {
   const url = "https://analyticsdata.googleapis.com/v1beta/properties/" +
     GA4_PROPERTY_ID + ":runReport";
-  return reportRows(await googlePost(url, accessToken, body));
+  return reportRows(await googlePost<GoogleAnalyticsReport>(url, accessToken, body));
 }
 
 function isoDateDaysAgo(daysAgo: number): string {
@@ -231,7 +274,7 @@ async function searchConsoleReport(
 ) {
   const url = "https://www.googleapis.com/webmasters/v3/sites/" +
     encodeURIComponent(GSC_SITE_URL) + "/searchAnalytics/query";
-  return googlePost(url, accessToken, body);
+  return googlePost<SearchConsoleReport>(url, accessToken, body);
 }
 
 async function getAnalyticsData(accessToken: string) {
@@ -313,16 +356,16 @@ async function getAnalyticsData(accessToken: string) {
       engagedSessions: Number(summary.engagedSessions || 0),
       fileDownloadEvents: downloadEventCount,
     },
-    sources: sources.map((row: any) => ({
+    sources: sources.map((row) => ({
       sourceMedium: String(row.sessionSourceMedium || "(not set)"),
       sessions: Number(row.sessions || 0),
       users: Number(row.totalUsers || 0),
     })),
-    referrers: referrers.map((row: any) => ({
+    referrers: referrers.map((row) => ({
       referrer: String(row.pageReferrer || "(direct / unknown)"),
       events: Number(row.eventCount || 0),
     })),
-    pages: pages.map((row: any) => ({
+    pages: pages.map((row) => ({
       path: String(row.pagePath || "(not set)"),
       views: Number(row.screenPageViews || 0),
       users: Number(row.totalUsers || 0),
@@ -346,7 +389,7 @@ async function getSearchConsoleData(accessToken: string) {
   ]);
 
   const totals = (summary.rows || [])[0] || {};
-  const mapRows = (rows: any[], key: string) => (rows || []).map((row: any) => ({
+  const mapRows = (rows: SearchConsoleRow[] | undefined, key: string) => (rows || []).map((row) => ({
     name: String(row.keys?.[0] || "(نامشخص)"),
     clicks: Number(row.clicks || 0),
     impressions: Number(row.impressions || 0),
