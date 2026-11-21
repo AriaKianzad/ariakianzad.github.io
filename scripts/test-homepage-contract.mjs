@@ -5,6 +5,7 @@ const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 const [
   page,
+  content,
   layout,
   metadata,
   site,
@@ -17,6 +18,7 @@ const [
   llms,
 ] = await Promise.all([
   read("src/app/page.tsx"),
+  read("src/content/home.ts"),
   read("src/app/layout.tsx"),
   read("src/lib/metadata.ts"),
   read("src/lib/site.ts"),
@@ -40,7 +42,7 @@ for (const heading of [
   "Strategy first. Everything else follows.",
   "The most important work happens before the first line.",
 ]) {
-  assert.ok(page.includes(heading), `new homepage copy must include: ${heading}`);
+  assert.ok(content.includes(heading), `new homepage copy must include: ${heading}`);
 }
 assert.ok(page.includes("<HeroVisual />"), "the 3D hero must be mounted in the homepage");
 assert.ok(page.includes('data-reveal="up"'), "scroll-reveal hooks must exist in homepage sections");
