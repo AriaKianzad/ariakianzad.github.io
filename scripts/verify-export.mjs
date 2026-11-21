@@ -139,6 +139,11 @@ if (/^\s*Header\s+always\s+set\s+Strict-Transport-Security\b/im.test(htaccessRaw
 if (headersCsp !== null && htaccessCsp !== null && headersCsp !== htaccessCsp) {
   problems.push("CSP mismatch: public/_headers and public/.htaccess declare different policies");
 }
+for (const [name, csp] of [["public/_headers", headersCsp], ["public/.htaccess", htaccessCsp]]) {
+  if (csp !== null && !/connect-src\s+[^;]*https:\/\/bkohdqwecnvbmeaiuyyx\.supabase\.co/i.test(csp)) {
+    problems.push(name + ": CSP connect-src must allow the Supabase project endpoint");
+  }
+}
 for (const [name, csp] of [
   ["_headers", headersCsp],
   [".htaccess", htaccessCsp],
@@ -151,6 +156,18 @@ for (const [name, csp] of [
 for (const file of files) {
   const html = readFileSync(file, "utf8");
   const rel = file.slice(outDir.length + 1);
+
+  const cspTag = html.match(/<meta\b(?=[^>]*\bhttp-equiv=["']Content-Security-Policy["'])[^>]*>/i)?.[0];
+  const cspContent = cspTag?.match(/\bcontent=["']([^"']+)["']/i)?.[1] ?? null;
+  if (cspContent === null) {
+    problems.push(rel + ": Content-Security-Policy meta tag is missing");
+  } else if (/unsafe-inline|unsafe-eval/.test(cspContent)) {
+    problems.push(rel + ": CSP meta must not allow unsafe-inline or unsafe-eval");
+  }
+  if (rel === "admin/index.html" &&
+      !/connect-src\s+[^;]*https:\/\/bkohdqwecnvbmeaiuyyx\.supabase\.co/i.test(cspContent || "")) {
+    problems.push("admin/index.html: CSP meta must allow the Supabase project endpoint");
+  }
 
   for (const match of html.matchAll(/<script\b[^>]*>/g)) {
     const tag = match[0];
@@ -191,6 +208,9 @@ for (const file of files) {
     }
     if (!htaccessRaw.includes(hash)) {
       problems.push(`${rel}: inline <style> present but its sha256 is not in .htaccess style-src`);
+    }
+    if (!cspContent || !cspContent.includes(hash)) {
+      problems.push(`${rel}: inline <style> present but its sha256 is not in the page CSP meta style-src`);
     }
   }
 }
