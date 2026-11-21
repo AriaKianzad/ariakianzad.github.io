@@ -76,6 +76,13 @@ jobs:
           test -s out/robots.txt
           test -s out/llms.txt
           test -s out/Mian-e-Ma/index.html
+          test -s out/admin/index.html
+          test -s out/admin/admin.css
+          test -s out/admin/app.js
+          test -s out/admin/config.js
+          grep -Fq 'noindex, nofollow, noarchive' out/admin/index.html
+          node --check public/admin/app.js
+          ! grep -Eq 'sb_secret_|service_role|ghp_' out/admin/config.js
           test -s out/Mian-e-Ma/styles.css
           test -s out/Mian-e-Ma/assets/Mian-e-Ma.pdf
           test -s out/Mian-e-Ma/assets/estedad-variable.woff2
