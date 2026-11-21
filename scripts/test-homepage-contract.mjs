@@ -46,7 +46,7 @@ for (const heading of [
 }
 assert.ok(page.includes("<HeroVisual />"), "the 3D hero must be mounted in the homepage");
 assert.ok(page.includes('data-reveal="up"'), "scroll-reveal hooks must exist in homepage sections");
-assert.ok(page.includes('href="/Mian-e-Ma/"'), "the Persian book remains discoverable from the footer");
+assert.ok(layout.includes('href="/Mian-e-Ma/"'), "the Persian book remains discoverable from the footer");
 
 // The 3D scene is local, lazy-loaded, progressive and respects accessibility preferences.
 assert.ok(hero.includes('dynamic(() => import("./signal-scene")'), "Three.js scene must be dynamically imported");
