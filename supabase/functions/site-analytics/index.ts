@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "@supabase/supabase-js";
 
 const SITE_ORIGIN = "https://ariakianzad.github.io";
 const GA4_PROPERTY_ID = "565407137";
