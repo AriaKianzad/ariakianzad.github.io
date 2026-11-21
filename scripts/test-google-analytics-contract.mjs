@@ -24,6 +24,10 @@ assert.ok(functionSource.includes("emptyReason: summaryReport.metadata?.emptyRea
   "GA4 diagnostics must record Google's reason when a report is empty");
 assert.ok(functionSource.includes("rowCount: report.rowCount"),
   "GA4 report parsing must preserve the API row count and metadata");
+assert.ok(functionSource.includes('const dateRanges = [{ startDate: "29daysAgo", endDate: "today" }]'),
+  "GA4 must include the current property-local day in the 30-day reporting window");
+assert.ok(functionSource.includes("امروز ممکن است ناقص باشد"),
+  "GA4 reporting period must disclose that the current day may be incomplete");
 
 assert.ok(functionSource.includes("const summaryRows = summary.rows || []"),
   "Search Console summary rows must be inspected explicitly");
