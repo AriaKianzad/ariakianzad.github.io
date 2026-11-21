@@ -2,6 +2,7 @@
   "use strict";
 
   const config = window.MIAN_E_MA_DASHBOARD_CONFIG || {};
+  const SESSION_STORAGE_KEY = "mian-e-ma-dashboard-refresh-v1";
   const $ = (selector) => document.querySelector(selector);
   const state = { accessToken: "", refreshToken: "", stats: null, range: 30, busy: false };
   let refreshInFlight = null;
@@ -10,6 +11,7 @@
   const dashboardView = $("#dashboard-view");
   const loginForm = $("#login-form");
   const loginButton = $("#login-button");
+  const rememberSession = $("#remember-session");
   const loginMessage = $("#login-message");
   const setupMessage = $("#setup-message");
   const dashboardMessage = $("#dashboard-message");
@@ -76,6 +78,9 @@
     }
     state.accessToken = payload.access_token;
     state.refreshToken = payload.refresh_token;
+    if (!persistRememberedSession()) {
+      setLoginMessage("ورود انجام شد، اما مرورگر اجازهٔ ذخیرهٔ نشست رو نداد؛ ممکنه دفعهٔ بعد نیاز به ورود مجدد داشته باشی.");
+    }
   }
 
   async function refreshSession() {
@@ -90,6 +95,7 @@
     if (!payload.access_token) return false;
     state.accessToken = payload.access_token;
     state.refreshToken = payload.refresh_token || state.refreshToken;
+    persistRememberedSession();
     return true;
   }
 
@@ -100,6 +106,62 @@
       });
     }
     return refreshInFlight;
+  }
+
+  function clearRememberedSession() {
+    try {
+      window.localStorage.removeItem(SESSION_STORAGE_KEY);
+    } catch {
+      // Storage may be disabled by the browser; the in-memory session still works.
+    }
+  }
+
+  function persistRememberedSession() {
+    if (!rememberSession.checked || !state.refreshToken) {
+      clearRememberedSession();
+      return true;
+    }
+    try {
+      // Store only the rotating refresh token, never the password or access token.
+      window.localStorage.setItem(SESSION_STORAGE_KEY, state.refreshToken);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function restoreRememberedSession() {
+    let savedRefreshToken = "";
+    try {
+      savedRefreshToken = window.localStorage.getItem(SESSION_STORAGE_KEY) || "";
+    } catch {
+      return;
+    }
+    if (!savedRefreshToken) return;
+
+    state.refreshToken = savedRefreshToken;
+    loginButton.disabled = true;
+    setLoginMessage("در حال بازیابی نشست قبلی…");
+
+    try {
+      const restored = await refreshSessionOnce();
+      if (!restored) {
+        clearRememberedSession();
+        state.refreshToken = "";
+        setLoginMessage("نشست قبلی معتبر نیست؛ دوباره وارد شو.");
+        return;
+      }
+      showDashboard();
+      await loadDashboard();
+    } catch {
+      clearRememberedSession();
+      state.accessToken = "";
+      state.refreshToken = "";
+      showLogin();
+      setLoginMessage("بازیابی نشست قبلی انجام نشد؛ دوباره وارد شو.");
+    } finally {
+      loginButton.disabled = !hasConfig;
+    }
   }
 
   async function requestSiteAnalytics(retried) {
@@ -141,7 +203,7 @@
       body: JSON.stringify({ mode: "dashboard" })
     });
 
-    if (response.status === 401 && !retried && await refreshSession()) {
+    if (response.status === 401 && !retried && await refreshSessionOnce()) {
       return requestStats(true);
     }
     if (response.status === 401 || response.status === 403) {
@@ -163,6 +225,7 @@
   }
 
   function logout() {
+    clearRememberedSession();
     state.accessToken = "";
     state.refreshToken = "";
     state.stats = null;
@@ -440,6 +503,11 @@
     }
   });
 
+  rememberSession.addEventListener("change", () => {
+    if (!rememberSession.checked) clearRememberedSession();
+    else if (state.refreshToken) persistRememberedSession();
+  });
+
   $("#refresh-button").addEventListener("click", loadDashboard);
   $("#logout-button").addEventListener("click", logout);
 
@@ -452,4 +520,6 @@
       if (state.stats) renderChart(state.stats.history, state.range);
     });
   });
+
+  void restoreRememberedSession();
 })();
