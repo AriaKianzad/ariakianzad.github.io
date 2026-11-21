@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: github-pages
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -56,6 +56,9 @@ jobs:
       - name: Test homepage redesign contract
         run: npm run test:homepage
 
+      - name: Test Supabase security contract
+        run: npm run test:supabase
+
       - name: Audit dependencies
         run: npm audit --audit-level=high
 
@@ -74,6 +77,7 @@ jobs:
           node --check scripts/verify-export.mjs
           node --check scripts/verify-secrets.mjs
           node --check scripts/test-homepage-contract.mjs
+          node --check scripts/test-supabase-contract.mjs
           node --check scripts/test-analytics-consent.mjs
           node --check public/analytics-consent.js
           node --check scripts/make-hosting-bundle.mjs
@@ -92,6 +96,11 @@ jobs:
           test -s out/index.html
           grep -Fq '<meta name="google-site-verification" content="UhIDVQ1toOjgUhS7bONWQB-lmnoRW5gbZkI1ZRpjpo8"/>' out/index.html
           test -s out/404.html
+          test -s out/icon.png
+          test -s out/apple-icon.png
+          test -s out/_hero/hero-visual.js
+          test -d out/_hero/chunks
+          find out/_hero/chunks -type f -name '*.js' -print -quit | grep -q .
           test -s out/sitemap.xml
           test -s out/robots.txt
           test -s out/llms.txt
@@ -131,9 +140,11 @@ jobs:
           test -s out/Mian-e-Ma/assets/mian-e-ma-cover-v2.webp
           test -s out/Mian-e-Ma/assets/mian-e-ma-lineart.webp
           test -s out/Mian-e-Ma/assets/rexo-agency-logo-white.png
-          test -s out/Mian-e-Ma/assets/rexo-mag-logo.png
           test -s out/Mian-e-Ma/assets/OFL.txt
-          ! grep -Fq 'مجله رکسو (RexoMag)' out/Mian-e-Ma/index.html
+          grep -Fq 'href="/icon.png"' out/Mian-e-Ma/index.html
+          grep -Fq 'href="/apple-icon.png"' out/Mian-e-Ma/index.html
+          test "$(grep -c 'http-equiv="Content-Security-Policy"' out/Mian-e-Ma/index.html)" -eq 1
+          ! grep -R -Fq 'rexo-mag-logo.png' out/Mian-e-Ma/          ! grep -Fq 'مجله رکسو (RexoMag)' out/Mian-e-Ma/index.html
           ! grep -Fq 'class="publisher-mark"' out/Mian-e-Ma/index.html
           grep -Fq '<title>دانلود رایگان کتاب «میانِ ما»؛ شناخت رابطه و مسئولیت‌پذیری عاطفی</title>' out/Mian-e-Ma/index.html
           grep -Fq '<h3>از شناخت خود و دیگری تا ساختن یک رابطۀ سالم و ماندگار</h3>' out/Mian-e-Ma/index.html
@@ -177,7 +188,7 @@ jobs:
           path: out
 
   deploy:
-    if: github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
