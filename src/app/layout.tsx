@@ -83,6 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a className="skip-link" href="#main">Skip to content</a>
         <script src="/boot.js" />
         <script src="/ui.js" defer />
+        <script type="module" src="/_hero/hero-visual.js" />
         <header className="site-header" data-header>
           <div className="shell site-header__row">
             <a className="wordmark" href="/#top" aria-label="Aria Kianzad, home">

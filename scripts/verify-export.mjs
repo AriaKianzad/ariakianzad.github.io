@@ -157,6 +157,16 @@ for (const file of files) {
   const html = readFileSync(file, "utf8");
   const rel = file.slice(outDir.length + 1);
 
+  if (rel === "Mian-e-Ma/index.html") {
+    const policies = [...html.matchAll(/<meta\b(?=[^>]*\bhttp-equiv=["']Content-Security-Policy["'])[^>]*>/gi)];
+    if (policies.length !== 1) {
+      problems.push("Mian-e-Ma/index.html: expected exactly one Content-Security-Policy meta tag");
+    }
+    if (!html.includes('href="/icon.png"') || !html.includes('href="/apple-icon.png"')) {
+      problems.push("Mian-e-Ma/index.html: personal-site favicon and Apple touch icon must be used");
+    }
+  }
+
   const cspTag = html.match(/<meta\b(?=[^>]*\bhttp-equiv=["']Content-Security-Policy["'])[^>]*>/i)?.[0];
   const cspContent = cspTag?.match(/\bcontent="([^"]+)"/i)?.[1] ?? null;
   if (cspContent === null) {
@@ -225,6 +235,9 @@ const required = [
   "404.html",
   "boot.js",
   "ui.js",
+  "icon.png",
+  "apple-icon.png",
+  join("_hero", "hero-visual.js"),
   join("og", "og.png"),
   join("Mian-e-Ma", "index.html"),
   join("Mian-e-Ma", "styles.css"),
@@ -233,11 +246,26 @@ const required = [
   join("Mian-e-Ma", "assets", "mian-e-ma-cover-v2.webp"),
   join("Mian-e-Ma", "assets", "mian-e-ma-lineart.webp"),
   join("Mian-e-Ma", "assets", "rexo-agency-logo-white.png"),
-  join("Mian-e-Ma", "assets", "rexo-mag-logo.png"),
   join("Mian-e-Ma", "assets", "OFL.txt"),
 ];
 for (const name of required) {
   if (!existsSync(join(outDir, name))) problems.push(`required file missing: ${name}`);
+}
+
+const heroChunksDir = join(outDir, "_hero", "chunks");
+if (!existsSync(heroChunksDir) || !statSync(heroChunksDir).isDirectory()) {
+  problems.push("_hero/chunks: split WebGL scene directory is missing");
+} else {
+  const heroChunks = readdirSync(heroChunksDir).filter((name) => name.endsWith(".js"));
+  if (heroChunks.length === 0) {
+    problems.push("_hero/chunks: no lazy Three.js scene chunk was emitted");
+  } else {
+    const heroEntry = readFileSync(join(outDir, "_hero", "hero-visual.js"), "utf8");
+    const lazyImport = heroEntry.match(/import\(\s*["']\.\/chunks\/([^"']+\.js)["']\s*\)/);
+    if (!lazyImport || !heroChunks.includes(lazyImport[1])) {
+      problems.push("_hero/hero-visual.js: dynamic scene import does not resolve to an emitted chunk");
+    }
+  }
 }
 
 const sitemapPath = join(outDir, "sitemap.xml");

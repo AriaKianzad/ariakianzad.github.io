@@ -1,10 +1,10 @@
 HOSTING BUNDLE - ariakianzad.ir
 ===============================
 
-This archive contains the complete, final production build of my personal
-website at https://ariakianzad.ir, including the standalone Persian book
-page for «میانِ ما», plus an Apache configuration for shared cPanel hosting. It is fully self-contained: no Node.js, no build step, and
-no PHP execution is required on the server.
+This archive contains the complete production build of my personal website
+at https://ariakianzad.ir, including the standalone Persian book page for
+«میانِ ما» and an Apache configuration for shared cPanel hosting. It is
+self-contained: no Node.js, build step or PHP execution is required on the server.
 
 WHAT PHP DOES HERE: nothing. The site is completely static. PHP 8.5 can
 stay selected in cPanel - it simply never runs, because there is no PHP
@@ -27,8 +27,8 @@ _headers                security headers in the format used by Netlify /
                         active configuration. _headers ships only so the
                         same site can later move to one of those hosts
                         unchanged.
-_next/static/           hashed CSS and font assets (paths referenced by
-                        index.html - keep the folder names exactly)
+_next/static/           hashed CSS and font assets (keep the folder names)
+_hero/                  hero ESM entrypoint plus hashed Three.js chunk
 boot.js, ui.js          site scripts (progressive enhancement)
 icon.png, apple-icon.png, og/og.png     favicon icons and social image
 robots.txt, sitemap.xml, llms.txt       SEO files; sitemap includes both
@@ -79,8 +79,9 @@ DEPLOYMENT THROUGH cPANEL FILE MANAGER
    dialog the destination must be the DOCUMENT ROOT ITSELF
    (for example /home/USERNAME/public_html) - not a subfolder. Confirm.
    Afterwards, index.html, .htaccess, 404.html, robots.txt, sitemap.xml,
-   boot.js, ui.js, icon.png, og/, licenses/, and _next/ must sit DIRECTLY
-   inside the document root - not inside another folder. Once verified you
+   boot.js, ui.js, icon.png, apple-icon.png, og/, licenses/, _next/ and
+   _hero/ must sit DIRECTLY inside the document root - not inside another
+   folder. Once verified you
    may delete the ZIP (keep your backup).
 
 5. CONFIRM HIDDEN FILES WERE EXTRACTED
@@ -135,7 +136,8 @@ SETTINGS THAT DEPEND ON THE HOSTING PROVIDER
 - SSL certificate issuance and renewal (AutoSSL).
 - Apache modules: mod_headers (security headers + caching), mod_rewrite
   (HTTPS/canonical redirects), mod_deflate + mod_filter (compression),
-  mod_mime (MIME types). All directives are <IfModule>-guarded, so a
+  mod_mime (MIME types), and mod_setenvif (hashed-asset cache rules). The
+  directives are <IfModule>-guarded, so a
   missing module never breaks the site - but without mod_headers the
   security and cache headers are silently absent. Ask the provider to
   enable the module, or configure the same headers in the hosting panel.
@@ -152,8 +154,8 @@ PACKAGE PROVENANCE
 The archive is generated locally from the current production export in out/
 by `npm run hosting`. The command stages the export, includes the font
 licences and this guide, validates the ZIP structure, independently lists and
-extracts it, compares extracted file hashes, and runs an HTTP smoke test for
-the homepage, the Persian book page and its PDF. Always run `npm ci` and
-`npm run build` before generating a new bundle. The bundle is an optional
-cPanel deliverable; the live GitHub Pages site is published separately by
-the GitHub Actions workflow.
+extracts it, compares extracted file hashes, and runs HTTP smoke tests for the
+homepage, the hero module and its hashed scene chunk, the Persian book page,
+and the PDF. Always run `npm ci` and `npm run build` before generating a new
+bundle. The bundle is an optional cPanel deliverable; GitHub Pages is
+published separately by the GitHub Actions workflow.

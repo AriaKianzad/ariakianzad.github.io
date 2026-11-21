@@ -20,3 +20,11 @@
 # Immutable: every URL below is content-hashed, so it can be cached forever.
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
+
+# The hero entrypoint is a stable filename; keep it on a short revalidation cache.
+/_hero/*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+# The split Three.js chunk is content-hashed and safe to cache immutably.
+/_hero/chunks/*
+  Cache-Control: public, max-age=31536000, immutable

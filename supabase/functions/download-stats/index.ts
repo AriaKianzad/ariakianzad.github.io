@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "@supabase/supabase-js";
 
 const SITE_ORIGIN = "https://ariakianzad.github.io";
 const GITHUB_RELEASE_API =
@@ -10,7 +10,7 @@ const TIME_ZONE = "Asia/Tehran";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": SITE_ORIGIN,
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-cron-secret",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Max-Age": "86400",
   "Vary": "Origin",

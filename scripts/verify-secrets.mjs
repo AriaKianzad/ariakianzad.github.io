@@ -80,6 +80,21 @@ function inspectFile(path) {
       findings.push({ path: normalized, reason: item.label });
     }
   }
+
+  // Legacy Supabase service_role keys are JWTs rather than sb_secret_* strings.
+  // Inspect only the decoded claims and never print the candidate token.
+  for (const match of content.matchAll(/\\b[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}\\b/g)) {
+    try {
+      const payload = match[0].split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      const claims = JSON.parse(Buffer.from(payload, "base64").toString("utf8"));
+      if (claims && claims.role === "service_role") {
+        findings.push({ path: normalized, reason: "legacy Supabase service_role JWT" });
+        break;
+      }
+    } catch {
+      // Not a decodable JWT payload; continue scanning other candidates.
+    }
+  }
 }
 
 function walk(directory) {

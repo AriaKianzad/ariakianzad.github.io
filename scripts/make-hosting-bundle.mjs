@@ -69,6 +69,7 @@ const REQUIRED = [
   "llms.txt",
   "boot.js",
   "ui.js",
+  "_hero/hero-visual.js",
   "icon.png",
   "apple-icon.png",
   "og/og.png",
@@ -82,7 +83,6 @@ const REQUIRED = [
   "Mian-e-Ma/assets/mian-e-ma-cover-v2.webp",
   "Mian-e-Ma/assets/mian-e-ma-lineart.webp",
   "Mian-e-Ma/assets/rexo-agency-logo-white.png",
-  "Mian-e-Ma/assets/rexo-mag-logo.png",
   "Mian-e-Ma/assets/OFL.txt",
 ];
 const FORBIDDEN = [
@@ -363,6 +363,24 @@ async function main() {
   }
   if (!text.toLowerCase().includes("estedad")) smoke.push("homepage missing: estedad font reference");
   if (text.includes("localhost")) smoke.push("homepage contains a development URL");
+
+  /* Verify the hero entrypoint and its code-split Three.js chunk. */
+  const heroModule = await get("/_hero/hero-visual.js");
+  if (heroModule.status !== 200 || !heroModule.type.startsWith("text/javascript")) {
+    smoke.push("GET /_hero/hero-visual.js did not return the hero module");
+  } else {
+    const heroCode = heroModule.body.toString("utf8");
+    const heroChunkNames = readdirSync(join(extractRoot, "_hero", "chunks")).filter((name) => name.endsWith(".js"));
+    const referencedChunk = heroChunkNames.find((name) => heroCode.includes(name));
+    if (!referencedChunk) {
+      smoke.push("hero module does not reference an emitted Three.js chunk");
+    } else {
+      const chunk = await get("/_hero/chunks/" + referencedChunk);
+      if (chunk.status !== 200 || !chunk.type.startsWith("text/javascript")) {
+        smoke.push("GET /_hero/chunks/" + referencedChunk + " did not return JavaScript");
+      }
+    }
+  }
 
   /* Every local asset referenced by index.html must resolve. */
   const refs = new Set();

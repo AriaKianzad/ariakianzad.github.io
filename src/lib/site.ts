@@ -40,13 +40,13 @@ export const site = {
   email: "kianzadaria@gmail.com",
 } as const;
 
-/** Rexo is the independent creative studio Aria founded in 2024. */
+/** Rexo is the independent creative agency Aria founded in 2024. */
 export const rexo = {
   name: "Rexo",
   url: "https://rexo.agency/",
   founded: "2024",
   description:
-    "Independent creative studio founded by Aria Kianzad, bringing brand strategy and creative execution together.",
+    "Independent creative agency founded by Aria Kianzad, bringing brand strategy and creative execution together.",
 } as const;
 
 export const socials = [

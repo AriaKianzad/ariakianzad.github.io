@@ -15,7 +15,7 @@ The source for both deployed Edge Functions is tracked in this repository:
 - supabase/functions/download-stats/index.ts
 - supabase/functions/site-analytics/index.ts
 
-The deployed versions were checked against the Supabase project during the repository review. Keep the tracked source and deployed function in sync when making changes.
+The repository source is the version-controlled reference for future function deployments. Edge Function deployments are independent from the GitHub Pages site deployment. This repository audit did not deploy or replace the production functions; check the deployed version after any future function deployment and keep it aligned with this source.
 
 ## Security and authorization model
 
@@ -26,7 +26,9 @@ The deployed versions were checked against the Supabase project during the repos
 5. Only after these checks does the function use server-side Supabase credentials to read/write dashboard data or request Google reports.
 6. Both public.dashboard_admins and public.download_snapshots have RLS enabled. Browser roles anon and authenticated have no table privileges; the functions access the tables with server-side credentials.
 
-The two functions have verify_jwt = false in supabase/config.toml because they implement their own explicit access-token validation and allowlist check. This is intentional. Do not remove the checks in the function handlers or change verify_jwt without reviewing the complete authentication flow.
+Each function's deno.json pins the direct @supabase/supabase-js dependency to an exact version and maps the package to its source import. The current pin is 2.119.2. There is not yet a committed deno.lock, so transitive Deno dependency resolution is not completely frozen; generate and commit per-function lockfiles before treating builds as fully reproducible.
+
+The two functions have verify_jwt = false in supabase/config.toml because they implement their own explicit access-token validation and allowlist check. Each handler calls auth.getUser(token), requires a confirmed email and checks the active allowlist. This is intentional. Do not remove the checks in the function handlers or change verify_jwt without reviewing the complete authentication flow.
 
 The client configuration contains only the Supabase project URL and an sb_publishable_ key. Publishable keys are intended for browser use. Never put a Supabase secret key, legacy service-role key, GitHub token or Google private key in public/admin/config.js, any other browser asset or Git history.
 
@@ -51,7 +53,7 @@ These are fallback controls; they do **not** provide the breached-password datab
 4. Keep public sign-ups disabled after creating the intended administrator account.
 5. Open https://ariakianzad.github.io/admin/ and sign in.
 
-The dashboard's **«مرا به خاطر بسپار»** option stores only the rotating Supabase refresh token in localStorage. It does not store the password or access token. Same-origin JavaScript can nevertheless read local storage, so disable the option and use **خروج** on a shared or public device.
+The dashboard's **«مرا به خاطر بسپار»** option is off by default. Only when a user explicitly enables it does the browser store the rotating Supabase refresh token in localStorage; the password and access token are not stored there. Same-origin JavaScript can nevertheless read local storage, so leave it disabled and use **خروج** on shared or public devices. Logout also requests local-session revocation from Supabase.
 
 ## Data and scheduled download snapshots
 
@@ -115,4 +117,4 @@ To deploy a changed Edge Function with the Supabase CLI:
     supabase functions deploy download-stats
     supabase functions deploy site-analytics
 
-The CLI reads verify_jwt = false from supabase/config.toml. Function deployment replaces the live function version, so review the full source and confirm its authentication checks before deploying. Database migrations are separate from Edge Function deployment.
+The CLI reads verify_jwt = false from supabase/config.toml. Function deployment replaces the live function version. Review the full source, exact dependency pin and authentication checks first, then verify the deployed function version after deployment. Database migrations are a separate operation. The GitHub Pages workflow does not deploy Supabase Edge Functions or modify production database migrations.

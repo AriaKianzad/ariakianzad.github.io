@@ -15,10 +15,18 @@ Please do not publish an exploitable issue, proof-of-concept or sensitive data b
 - The browser uses only the Supabase publishable key. Supabase secret keys and the Google service-account JSON are kept in Supabase Edge Function Secrets.
 - The download_snapshots and dashboard_admins tables have RLS enabled, and browser roles have no table privileges.
 - The Google service account uses read-only Analytics and Search Console scopes and property-level permissions.
-- Google Analytics is loaded only after a visitor accepts the consent prompt.
-- The optional remembered dashboard session stores a rotating Supabase refresh token in browser localStorage. It does not store the password or access token, but same-origin JavaScript can read local storage. Disable the option and sign out on shared devices.
-- The build checks common credential patterns and validates the static Content Security Policy. This scan is a guard against accidental commits; it is not a substitute for reviewing changes or scanning the complete Git history.
-- The 3D hero scene uses the locally bundled Three.js package. It does not fetch JavaScript, shaders, textures or fonts from third-party CDNs. The scene is loaded only near the hero viewport, pauses when the document is hidden, disposes WebGL resources on unmount, and does not load when reduced motion is requested. A CSS fallback remains visible if WebGL cannot initialize.
+- Google Analytics is loaded only after a visitor accepts the consent prompt. The settings control remains visible after acceptance or refusal, so a visitor can withdraw consent later.
+- Remembered dashboard sessions are opt-in and off by default. If enabled, only the rotating Supabase refresh token is stored in browser localStorage. It does not store the password or access token, but same-origin JavaScript can read local storage. Sign out on shared devices; logout also requests local-session revocation from Supabase.
+- The build checks high-confidence credential patterns, including legacy Supabase service-role JWTs, and validates the static Content Security Policy. This is an accidental-commit guard; it is not a substitute for reviewing changes or scanning the complete Git history.
+- The 3D hero uses a local, code-split Three.js ESM bundle and does not fetch JavaScript, shaders, textures or fonts from third-party CDNs. Its small entrypoint waits until the hero approaches the viewport before requesting the scene chunk. Animation pauses when the document is hidden and respects reduced-motion preferences. WebGL resources are disposed on pagehide and reinitialized after a back-forward cache restore. A CSS fallback remains visible if WebGL cannot initialize.
+
+## Dashboard request boundary
+
+The dashboard configuration validates the exact Supabase project origin and accepts only a publishable key before sending credentials. The Edge Functions use an explicit site-origin CORS allowlist, but CORS is not an authorization boundary. Both functions have `verify_jwt = false` because they perform their own `auth.getUser(token)` check, require a confirmed email and enforce the server-side administrator allowlist. Those checks must remain in the handlers.
+
+The tables `public.dashboard_admins` and `public.download_snapshots` have RLS enabled and browser roles have no table privileges. There are deliberately no browser policies: a missing-policy advisor notice is expected with this permission model and must not be “fixed” by adding broad read policies. A private `SECURITY DEFINER` snapshot function uses a fixed `search_path` and is executable only by the database `postgres` role.
+
+On GitHub Pages, the repository's `_headers` and `.htaccess` files are not applied as HTTP response headers. The static pages carry CSP meta policies, but meta CSP cannot replace response headers such as HSTS, X-Frame-Options, Referrer-Policy or Permissions-Policy. Do not assume those headers are active on GitHub Pages; they are configured for compatible hosts such as Apache/cPanel and supported static hosts.
 
 ## Auth password-protection limitation
 

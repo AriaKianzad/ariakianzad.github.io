@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "node scripts/strip-next-runtime.mjs && esbuild --allow-overwrite --minify out/boot.js out/ui.js --outdir=out && node scripts/verify-export.mjs",
+    "postbuild": "node scripts/strip-next-runtime.mjs && esbuild src/client/hero-visual.ts --bundle --splitting --format=esm --target=es2020 --outdir=out/_hero --entry-names=hero-visual --chunk-names=chunks/[name]-[hash] && esbuild --allow-overwrite --minify out/boot.js out/ui.js --outdir=out && node scripts/verify-export.mjs",
     "hosting": "node scripts/make-hosting-bundle.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
@@ -16,7 +16,8 @@
     "social-icons": "node scripts/extract-social-paths.mjs",
     "check:security": "node scripts/verify-secrets.mjs",
     "test:consent": "node scripts/test-analytics-consent.mjs",
-    "test:homepage": "node scripts/test-homepage-contract.mjs"
+    "test:homepage": "node scripts/test-homepage-contract.mjs",
+    "test:supabase": "node scripts/test-supabase-contract.mjs"
   },
   "dependencies": {
     "next": "16.4.6",

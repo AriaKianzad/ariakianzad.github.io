@@ -2,12 +2,12 @@
 # ariakianzad.ir - Apache/cPanel configuration (static site)
 #
 # The public pages and admin interface are static exports. The dashboard calls a remote Supabase backend; this host does not run that backend. The export includes index.html, a custom 404 page,
-# hashed CSS/font assets, and same-origin scripts. There is no
-# backend and PHP never executes.
+# hashed Next.js assets, standalone book assets, and same-origin scripts,
+# including a code-split Three.js hero. There is no local backend and PHP never executes.
 #
 # Required modules: mod_headers (security headers + cache rules).
 # Optional: mod_rewrite (HTTPS + canonical-host redirects),
-# mod_deflate + mod_filter (compression), mod_mime (MIME types).
+# mod_deflate + mod_filter (compression), mod_mime (MIME types), mod_setenvif (hashed asset cache rules).
 # Every non-core directive is guarded by <IfModule>, so a server
 # without an optional module still serves the site instead of
 # failing with HTTP 500. See HOSTING-README.txt.
@@ -56,6 +56,10 @@ ErrorDocument 404 /404.html
 # first condition with:
 #   RewriteCond %{HTTP:X-Forwarded-Proto} !https
 
+<IfModule mod_setenvif.c>
+  SetEnvIf Request_URI "^/(?:_next/static/|_hero/chunks/)" aria_hashed_asset
+</IfModule>
+
 # --- Security headers -------------------------------------------
 # Same policy as public/_headers (kept in sync; both files are
 # cross-checked by scripts/verify-export.mjs on every build).
@@ -78,10 +82,10 @@ ErrorDocument 404 /404.html
   <FilesMatch "\.html?$">
     Header always set Cache-Control "public, max-age=0, must-revalidate"
   </FilesMatch>
-  # Hashed framework assets (the only .css/.woff2 files are under
-  # /_next/static/ with content-hashed names): cache forever.
-  <FilesMatch "\.(css|woff2)$">
-    Header always set Cache-Control "public, max-age=31536000, immutable"
+  # Fixed-name CSS and fonts (including the standalone book page) revalidate
+  # hourly. Content-hashed Next/hero chunks are overridden by the env rule below.
+  <FilesMatch "\\.(css|woff2)$">
+    Header always set Cache-Control "public, max-age=3600, must-revalidate"
   </FilesMatch>
   # Site scripts (boot.js, ui.js are NOT content-hashed): short cache.
   <FilesMatch "\.js$">
@@ -91,6 +95,9 @@ ErrorDocument 404 /404.html
   <FilesMatch "\.(png|ico)$">
     Header always set Cache-Control "public, max-age=604800"
   </FilesMatch>
+  # Only content-hashed Next and hero chunks can be cached forever.
+  Header always set Cache-Control "public, max-age=31536000, immutable" env=aria_hashed_asset
+
   # SEO text files: revalidate hourly.
   <FilesMatch "\.(txt|xml)$">
     Header always set Cache-Control "public, max-age=3600, must-revalidate"

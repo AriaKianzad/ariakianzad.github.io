@@ -2,9 +2,10 @@
  * Postbuild: make the static export compatible with a strict CSP
  * (script-src 'self', no 'unsafe-inline') and drop dead runtime output.
  *
- * This site has no client runtime: there are no "use client" components, so
- * nothing on the page needs React in the browser. The only scripts the site
- * ships are the two same-origin files public/boot.js, public/ui.js, and public/analytics-consent.js.
+ * Exported pages contain no Next.js client components, so React hydration is
+ * not required in the browser. The interactive hero is compiled separately
+ * as a same-origin ESM entrypoint after this cleanup; its Three.js chunk is
+ * requested only when the hero approaches the viewport.
  *
  * Next.js' export nevertheless contains machinery for hydration and client
  * navigation. Everything removed here exists only for that machinery, and is
@@ -16,7 +17,7 @@
  *        initializer (self.__next_f=self.__next_f||[]).push([0]);
  *      - the Turbopack chunk bootstrap:
  *        (globalThis["TURBOPACK"] ||= []).push({"otherChunks": ...}).
- *    These are the only inline scripts Next.js emits for this site; they
+ *    These are the inline scripts Next.js emits for these static pages; they
  *    would be blocked by the CSP anyway. A JSON-LD data block
  *    (type="application/ld+json") is data, not code, and is always kept. Any
  *    OTHER inline script is left untouched and reported loudly: silently

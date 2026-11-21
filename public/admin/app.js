@@ -16,10 +16,19 @@
   const setupMessage = $("#setup-message");
   const dashboardMessage = $("#dashboard-message");
 
-  const hasConfig = typeof config.supabaseUrl === "string" &&
-    config.supabaseUrl.startsWith("https://") &&
-    typeof config.supabaseAnonKey === "string" &&
-    config.supabaseAnonKey.length > 20;
+  const hasConfig = (() => {
+    if (typeof config.supabaseUrl !== "string" || typeof config.supabaseAnonKey !== "string") return false;
+    try {
+      const endpoint = new URL(config.supabaseUrl);
+      return endpoint.origin === "https://bkohdqwecnvbmeaiuyyx.supabase.co" &&
+        endpoint.pathname === "/" && !endpoint.username && !endpoint.password &&
+        !endpoint.search && !endpoint.hash &&
+        config.supabaseAnonKey.startsWith("sb_publishable_") &&
+        config.supabaseAnonKey.length > 20;
+    } catch {
+      return false;
+    }
+  })();
 
   if (!hasConfig) {
     setupMessage.hidden = false;
@@ -131,6 +140,11 @@
   }
 
   async function restoreRememberedSession() {
+    if (!rememberSession.checked) {
+      clearRememberedSession();
+      return;
+    }
+
     let savedRefreshToken = "";
     try {
       savedRefreshToken = window.localStorage.getItem(SESSION_STORAGE_KEY) || "";
@@ -225,12 +239,26 @@
   }
 
   function logout() {
+    const accessToken = state.accessToken;
     clearRememberedSession();
     state.accessToken = "";
     state.refreshToken = "";
     state.stats = null;
     showLogin();
     setLoginMessage("از حساب خارج شدی.");
+
+    // Revoke the current local Supabase session as well as clearing browser state.
+    if (accessToken && hasConfig) {
+      void fetch(apiUrl("/auth/v1/logout?scope=local"), {
+        method: "POST",
+        headers: {
+          apikey: config.supabaseAnonKey,
+          Authorization: "Bearer " + accessToken
+        }
+      }).catch(() => {
+        // The browser session is already cleared; remote revocation is best-effort.
+      });
+    }
   }
 
   function renderMetrics(stats) {
@@ -491,10 +519,12 @@
     setLoginMessage("");
     try {
       await signIn(email, password);
+      $("#password").value = "";
       showDashboard();
       await loadDashboard();
-      $("#password").value = "";
     } catch (error) {
+      $("#password").value = "";
+      clearRememberedSession();
       state.accessToken = "";
       state.refreshToken = "";
       setLoginMessage(error.message || "ورود ناموفق بود.");
