@@ -350,11 +350,11 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
     justify-content: space-between;
   }
 
-  .menu-btn {
+  html[data-js] .menu-btn {
     display: inline-flex;
   }
 
-  .site-nav__list {
+  html[data-js] .site-nav__list {
     position: fixed;
     z-index: 90;
     inset: var(--header-h) 0 0;
@@ -368,8 +368,23 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
     background: rgba(9, 13, 12, 0.985);
   }
 
-  nav[data-open] .site-nav__list {
+  html[data-js] nav[data-open] .site-nav__list {
     display: flex;
+  }
+
+  html:not([data-js]) .site-header__row {
+    flex-wrap: wrap;
+    padding-block: 0.7rem;
+  }
+
+  html:not([data-js]) .site-nav {
+    width: 100%;
+    order: 3;
+  }
+
+  html:not([data-js]) .site-nav__list {
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
   }
 
   .site-nav__link {
