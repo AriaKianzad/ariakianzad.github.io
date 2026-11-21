@@ -18,6 +18,12 @@ assert.ok(functionSource.includes("summaryAvailable,"),
   "GA4 response must expose summary-row availability");
 assert.ok(functionSource.includes("summaryRows: summaryRows.length"),
   "GA4 diagnostics must record the summary row count");
+assert.ok(functionSource.includes("propertyTimeZone: summaryReport.metadata?.timeZone ?? null"),
+  "GA4 diagnostics must record the property's reporting timezone");
+assert.ok(functionSource.includes("emptyReason: summaryReport.metadata?.emptyReason ?? null"),
+  "GA4 diagnostics must record Google's reason when a report is empty");
+assert.ok(functionSource.includes("rowCount: report.rowCount"),
+  "GA4 report parsing must preserve the API row count and metadata");
 
 assert.ok(functionSource.includes("const summaryRows = summary.rows || []"),
   "Search Console summary rows must be inspected explicitly");
