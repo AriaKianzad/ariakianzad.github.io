@@ -1,37 +1,41 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 
 const SignalScene = dynamic(() => import("./signal-scene"), {
   ssr: false,
   loading: () => null,
 });
 
+const subscribeToMotionPreference = (callback: () => void) => {
+  const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+  query.addEventListener("change", callback);
+  return () => query.removeEventListener("change", callback);
+};
+
+const getMotionPreference = () =>
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Conservatively render the static fallback during SSR and first hydration.
+const getServerMotionPreference = () => true;
+
 export default function HeroVisual() {
   const rootRef = useRef<HTMLDivElement>(null);
   const [shouldLoad, setShouldLoad] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const reducedMotion = useSyncExternalStore(
+    subscribeToMotionPreference,
+    getMotionPreference,
+    getServerMotionPreference,
+  );
 
   const handleReady = useCallback(() => setSceneReady(true), []);
 
   useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updatePreference = () => setReducedMotion(query.matches);
-    updatePreference();
-    query.addEventListener("change", updatePreference);
-    return () => query.removeEventListener("change", updatePreference);
-  }, []);
-
-  useEffect(() => {
     if (reducedMotion) return;
 
-    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (motionPreference.matches) {
-      setReducedMotion(true);
-      return;
-    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const root = rootRef.current;
     if (!root) return;
@@ -79,7 +83,7 @@ export default function HeroVisual() {
       <span className="hero-visual__label hero-visual__label--bottom">
         FIND THE SIGNAL IN THE NOISE
       </span>
-      <span className="hero-visual__coordinate">35° 41' N / 51° 25' E</span>
+      <span className="hero-visual__coordinate">35° 41&apos; N / 51° 25&apos; E</span>
     </div>
   );
 }
