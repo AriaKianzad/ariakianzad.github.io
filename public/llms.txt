@@ -1,37 +1,56 @@
 # Aria Kianzad
 
-> Brand strategist and copywriter. Personal website: [ariakianzad.github.io](https://ariakianzad.github.io/)
+> Aria Kianzad is a brand strategist and personal branding consultant working across research, positioning, brand identity and communication.
 
-I work on brand strategy and copywriting. My focus is helping brands understand what they should stand for, why that difference matters, and how to communicate it clearly.
+Canonical website: https://ariakianzad.github.io/
 
-## Personal website
+## Professional focus
 
-The personal website is a static, single-page introduction to my work:
+Aria helps brands turn research and insight into a distinct position, then translate that thinking into identity and communication people can understand, remember and choose.
 
-- Perspective: why more output is not always the answer.
-- Disciplines: brand strategy and copywriting.
-- Approach: clarity before volume, meaningful differentiation, and language as part of strategy.
-- Rexo: the independent brand strategy and creative studio I founded in 2024, at [rexo.agency](https://rexo.agency/).
-- About and contact: [kianzadaria@gmail.com](mailto:kianzadaria@gmail.com).
+Core areas of work:
+- Brand strategy and positioning
+- Consumer insight and market research
+- Competitive and category analysis
+- Brand identity development and verbal identity
+- Content strategy and brand storytelling
+- Copywriting and SEO content strategy
+- Personal branding
 
-## Persian book: «میانِ ما»
+## Website sections
 
-I also publish the Persian book page for **«میانِ ما»**, about understanding relationships, emotional intimacy, commitment, communication and emotional responsibility.
+- Perspective: clarity, relevance and communicating with intention rather than volume.
+- Expertise: research and insight, positioning and identity, content and communication.
+- Method: listen, investigate, position and express.
+- Rexo: an independent creative studio founded by Aria Kianzad in 2024, connecting brand strategy with creative execution.
+- Writing: links to RexoMag and Aria's Medium profile.
+- About and contact: professional background and direct contact.
 
-- Book page: [ariakianzad.github.io/Mian-e-Ma/](https://ariakianzad.github.io/Mian-e-Ma/)
-- Direct PDF: [Mian-e-Ma.pdf](https://ariakianzad.github.io/Mian-e-Ma/assets/Mian-e-Ma.pdf)
-- Language: Persian (fa-IR).
-- Publisher: مجله رکسو.
-- Author: آریا کیانزاد.
+## Related projects
 
-## Related
+- Rexo: https://rexo.agency/
+- Rexo brand strategy: https://rexo.agency/services/brand-strategy
+- Rexo creative campaigns: https://rexo.agency/services/creative-campaigns
+- RexoMag: https://rexo.agency/mag
+- Medium: https://medium.com/@AriaKianzad
 
-- Rexo, my brand strategy and creative studio: [rexo.agency](https://rexo.agency/).
-- My Persian editorial platform: [RexoMag](https://rexo.agency/mag).
+## Persian book
 
-## Notes
+Aria Kianzad is the author of the Persian book «میانِ ما», published by مجله رکسو. It explores relationships, emotional intimacy, commitment, communication and emotional responsibility.
 
-- The personal homepage uses ProfilePage / Person / Organization structured data.
-- The book page has Book and FAQ structured data.
-- The site uses Estedad by Amin Abedi under the SIL Open Font License 1.1.
-- The website does not use analytics, tracking cookies or a backend.
+- Book page: https://ariakianzad.github.io/Mian-e-Ma/
+- Direct PDF: https://ariakianzad.github.io/Mian-e-Ma/assets/Mian-e-Ma.pdf
+- Language: Persian (fa-IR)
+- Publisher: مجله رکسو
+- Author: آریا کیانزاد
+
+## Structured information
+
+The personal website provides Schema.org WebSite, ProfilePage, Person and Organization entities.
+The book page provides Book and FAQ structured data.
+
+## Technical notes
+
+The personal website is a static Next.js export hosted on GitHub Pages.
+The 3D hero scene is bundled locally and loaded only when the hero enters the viewport. A static fallback is available for reduced-motion preferences or browsers without WebGL.
+The site uses Estedad by Amin Abedi under the SIL Open Font License 1.1.
