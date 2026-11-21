@@ -59,6 +59,9 @@ jobs:
       - name: Test Supabase security contract
         run: npm run test:supabase
 
+      - name: Test Google Analytics and Search Console reporting
+        run: npm run test:analytics
+
       - name: Audit dependencies
         run: npm audit --audit-level=high
 
@@ -78,6 +81,8 @@ jobs:
           node --check scripts/verify-secrets.mjs
           node --check scripts/test-homepage-contract.mjs
           node --check scripts/test-supabase-contract.mjs
+          node --check scripts/test-google-analytics-contract.mjs
+          node --check public/admin/app.js
           node --check scripts/test-analytics-consent.mjs
           node --check public/analytics-consent.js
           node --check scripts/make-hosting-bundle.mjs
