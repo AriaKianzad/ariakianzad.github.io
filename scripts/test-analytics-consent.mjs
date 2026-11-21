@@ -120,6 +120,7 @@ function createPage(pathname, initialChoice = null) {
 
   preferences.click();
   assert.equal(page.elements.get("analytics-consent").hidden, false);
+  assert.equal(preferences.hidden, true, "floating shortcut must hide while the dialog is open");
 
   page.elements.get("analytics-consent-accept").click();
   assert.equal(preferences.hidden, true, "control must disappear after acceptance");

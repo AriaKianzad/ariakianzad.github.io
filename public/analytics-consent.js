@@ -116,6 +116,7 @@
       updatePreferencesLabel();
       preferences.hidden = false;
       revokeGoogleAnalytics();
+      preferences.focus?.();
     }
   }
 
@@ -123,6 +124,8 @@
   reject.addEventListener("click", () => saveChoice("denied"));
   preferences.addEventListener("click", () => {
     panel.hidden = false;
+    preferences.hidden = true;
+    accept.focus?.();
   });
 
   const savedChoice = getSavedChoice();
