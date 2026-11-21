@@ -48,17 +48,6 @@ function getSecrets() {
   };
 }
 
-function constantTimeEqual(left: string, right: string): boolean {
-  const a = new TextEncoder().encode(left);
-  const b = new TextEncoder().encode(right);
-  let mismatch = a.length ^ b.length;
-  const length = Math.max(a.length, b.length);
-  for (let index = 0; index < length; index += 1) {
-    mismatch |= (a[index] || 0) ^ (b[index] || 0);
-  }
-  return mismatch === 0;
-}
-
 function dateInTehran(date: Date): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: TIME_ZONE,

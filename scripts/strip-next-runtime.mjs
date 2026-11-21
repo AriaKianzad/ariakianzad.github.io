@@ -43,8 +43,9 @@
  * or referenced file is missing.
  *
  * Inline <style> blocks (e.g. if a next/font change ever inlines CSS) are not
- * removed; their sha256 hashes are appended to style-src in out/_headers so
- * the CSP keeps holding without 'unsafe-inline'.
+ * removed. Their sha256 hashes are added to each page's CSP meta tag and to
+ * the shared _headers/.htaccess response policies, preserving strict style-src
+ * without 'unsafe-inline'.
  */
 import { readFileSync, writeFileSync, readdirSync, statSync, rmSync } from "node:fs";
 import { join } from "node:path";
