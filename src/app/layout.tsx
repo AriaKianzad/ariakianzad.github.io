@@ -115,7 +115,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </ul>
             </nav>
             <a className="header-cta" href={`mailto:${site.email}`}>
-              <span>Let's talk</span>
+              <span>Let&apos;s talk</span>
               <ExtArrow />
             </a>
           </div>
