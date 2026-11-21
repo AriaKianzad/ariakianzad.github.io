@@ -31,10 +31,13 @@ function releaseScenes() {
   observer = null;
 
   for (const root of roots) {
-    disposers.get(root)?.();
+    const dispose = disposers.get(root);
+    if (!dispose) continue;
+
+    dispose();
     disposers.delete(root);
     root.classList.remove("is-live");
-    if (root.dataset.sceneLoaded === "true") root.dataset.sceneLoaded = "";
+    root.dataset.sceneLoaded = "";
   }
 }
 
