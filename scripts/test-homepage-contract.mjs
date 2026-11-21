@@ -54,7 +54,7 @@ assert.ok(hero.includes("ssr: false"), "WebGL scene must stay client-only for st
 assert.ok(hero.includes("IntersectionObserver"), "scene must load only near the hero viewport");
 assert.ok(hero.includes("prefers-reduced-motion: reduce"), "hero must read reduced-motion preference");
 assert.ok(hero.includes("hero-visual__fallback"), "hero must provide a CSS visual fallback");
-assert.ok(hero.includes('className="hero-visual"'), "hero visual must be present without WebGL");
+assert.ok(hero.includes("className={`hero-visual"), "hero visual must be present without WebGL");
 assert.ok(heroScene.includes('from "three"'), "Three.js must be bundled as a local dependency");
 assert.ok(heroScene.includes("new THREE.WebGLRenderer"), "hero must render a real WebGL scene");
 assert.ok(heroScene.includes("visibilitychange"), "scene animation must pause when the tab is hidden");
