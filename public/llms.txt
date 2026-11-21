@@ -22,7 +22,7 @@ Core areas of work:
 - Perspective: clarity, relevance and communicating with intention rather than volume.
 - Expertise: research and insight, positioning and identity, content and communication.
 - Method: listen, investigate, position and express.
-- Rexo: an independent creative studio founded by Aria Kianzad in 2024, connecting brand strategy with creative execution.
+- Rexo: an independent creative agency founded by Aria Kianzad in 2024, connecting brand strategy with creative execution.
 - Writing: links to RexoMag and Aria's Medium profile.
 - About and contact: professional background and direct contact.
 
@@ -51,6 +51,6 @@ The book page provides Book and FAQ structured data.
 
 ## Technical notes
 
-The personal website is a static Next.js export hosted on GitHub Pages.
-The 3D hero scene is bundled locally and loaded only when the hero enters the viewport. A static fallback is available for reduced-motion preferences or browsers without WebGL.
+The personal website is a static Next.js export hosted on GitHub Pages, with no Next.js hydration runtime.
+The 3D hero uses a same-origin ESM entrypoint and a locally bundled Three.js chunk, requested only when the hero approaches the viewport. A static fallback is available for reduced-motion preferences or browsers without WebGL.
 The site uses Estedad by Amin Abedi under the SIL Open Font License 1.1.
