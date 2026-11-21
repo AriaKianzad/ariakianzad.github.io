@@ -406,9 +406,16 @@
   function setIntegrationStatus(prefix, status, message) {
     const badge = $("#" + prefix + "-status");
     const box = $("#" + prefix + "-message");
+    const labels = {
+      ok: "متصل",
+      error: "خطا در اتصال",
+      not_configured: "نیازمند راه‌اندازی",
+      no_data: "بدون داده در این بازه",
+      partial: "گزارش ناقص",
+    };
     if (badge) {
       badge.className = "status-pill " + (status === "ok" ? "ok" : status === "error" ? "error" : "pending");
-      badge.textContent = status === "ok" ? "متصل" : status === "not_configured" ? "نیازمند راه‌اندازی" : "خطا در اتصال";
+      badge.textContent = labels[status] || "وضعیت نامشخص";
     }
     if (box) {
       box.textContent = message || "";
@@ -423,19 +430,37 @@
 
   function renderGoogleAnalytics(payload) {
     if (!payload || payload.status === "not_configured") {
-      setIntegrationStatus("ga4", "not_configured", payload?.message || "برای اتصال، کلید Service Account گوگل باید در Secrets پروژه Supabase ثبت بشه.");
-      setIntegrationStatus("gsc", "not_configured", payload?.message || "برای اتصال، کلید Service Account گوگل باید در Secrets پروژه Supabase ثبت بشه.");
+      const message = payload?.message || "برای اتصال، کلید Service Account گوگل باید در Secrets پروژه Supabase ثبت بشه.";
+      setIntegrationStatus("ga4", "not_configured", message);
+      setIntegrationStatus("gsc", "not_configured", message);
+      return;
+    }
+
+    // A top-level failure (for example, OAuth or Supabase configuration) is
+    // different from an individual GA4 or Search Console report failure.
+    if (payload.status === "error" && !payload.ga4 && !payload.searchConsole) {
+      const message = payload.message || payload.error || "دریافت گزارش‌های گوگل ناموفق بود.";
+      setIntegrationStatus("ga4", "error", message);
+      setIntegrationStatus("gsc", "error", message);
+      ["#ga-users", "#ga-sessions", "#ga-views", "#ga-download-events",
+        "#gsc-clicks", "#gsc-impressions", "#gsc-ctr", "#gsc-position"]
+        .forEach((selector) => { $(selector).textContent = "—"; });
       return;
     }
 
     const ga = payload.ga4 || {};
     setIntegrationStatus("ga4", ga.status, ga.message);
-    if (ga.status === "ok") {
+    const gaPeriod = $("#ga4-period");
+    if (gaPeriod && ga.period) {
+      gaPeriod.textContent = "بازهٔ گزارش GA4: " + ga.period + " · بر اساس منطقۀ زمانی Property";
+    }
+    if (["ok", "partial", "no_data"].includes(ga.status)) {
       const summary = ga.summary || {};
-      $("#ga-users").textContent = formatNumber(summary.users);
-      $("#ga-sessions").textContent = formatNumber(summary.sessions);
-      $("#ga-views").textContent = formatNumber(summary.pageViews);
-      $("#ga-download-events").textContent = formatNumber(summary.fileDownloadEvents);
+      const summaryAvailable = ga.summaryAvailable !== false && ga.status !== "no_data";
+      $("#ga-users").textContent = summaryAvailable ? formatNumber(summary.users) : "—";
+      $("#ga-sessions").textContent = summaryAvailable ? formatNumber(summary.sessions) : "—";
+      $("#ga-views").textContent = summaryAvailable ? formatNumber(summary.pageViews) : "—";
+      $("#ga-download-events").textContent = summaryAvailable ? formatNumber(summary.fileDownloadEvents) : "—";
       setTableRows("#ga-sources-body", (ga.sources || []).map((row) => ({
         cells: [row.sourceMedium, formatNumber(row.sessions), formatNumber(row.users)]
       })), 3);
@@ -445,16 +470,26 @@
       setTableRows("#ga-pages-body", (ga.pages || []).map((row) => ({
         cells: [row.path, formatNumber(row.views), formatNumber(row.users)]
       })), 3);
+    } else {
+      ["#ga-users", "#ga-sessions", "#ga-views", "#ga-download-events"]
+        .forEach((selector) => { $(selector).textContent = "—"; });
     }
 
     const gsc = payload.searchConsole || {};
     setIntegrationStatus("gsc", gsc.status, gsc.message);
-    if (gsc.status === "ok") {
+    const gscPeriod = $("#gsc-period");
+    if (gscPeriod && gsc.startDate && gsc.endDate) {
+      gscPeriod.textContent = "بازهٔ گزارش Search Console: " + gsc.startDate + " تا " + gsc.endDate;
+    }
+    if (["ok", "partial", "no_data"].includes(gsc.status)) {
       const summary = gsc.summary || {};
-      $("#gsc-clicks").textContent = formatNumber(summary.clicks);
-      $("#gsc-impressions").textContent = formatNumber(summary.impressions);
-      $("#gsc-ctr").textContent = formatPercent(summary.ctr);
-      $("#gsc-position").textContent = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(Number(summary.position || 0));
+      const summaryAvailable = gsc.summaryAvailable !== false && gsc.status !== "no_data";
+      $("#gsc-clicks").textContent = summaryAvailable ? formatNumber(summary.clicks) : "—";
+      $("#gsc-impressions").textContent = summaryAvailable ? formatNumber(summary.impressions) : "—";
+      $("#gsc-ctr").textContent = summaryAvailable ? formatPercent(summary.ctr) : "—";
+      $("#gsc-position").textContent = summaryAvailable
+        ? new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(Number(summary.position || 0))
+        : "—";
       const reportRows = (rows) => (rows || []).map((row) => ({
         cells: [row.name, formatNumber(row.clicks), formatNumber(row.impressions), formatPercent(row.ctr)]
       }));
@@ -463,6 +498,9 @@
       setTableRows("#gsc-devices-body", (gsc.devices || []).map((row) => ({
         cells: [row.name, formatNumber(row.clicks), formatNumber(row.impressions), new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(row.position)]
       })), 4);
+    } else {
+      ["#gsc-clicks", "#gsc-impressions", "#gsc-ctr", "#gsc-position"]
+        .forEach((selector) => { $(selector).textContent = "—"; });
     }
   }
 

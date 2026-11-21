@@ -343,11 +343,20 @@ async function getAnalyticsData(accessToken: string) {
     }),
   ]);
 
+  const summaryAvailable = summaryRows.length > 0;
+  const hasBreakdownRows = sources.length + pages.length + referrers.length + downloads.length > 0;
+  const status = summaryAvailable ? "ok" : hasBreakdownRows ? "partial" : "no_data";
   const summary = summaryRows[0] || {};
   const downloadEventCount = Number(downloads[0]?.eventCount || 0);
 
   return {
-    status: "ok",
+    status,
+    summaryAvailable,
+    message: status === "no_data"
+      ? "در بازۀ ۳۰ روز کامل اخیر برای GA4 Property " + GA4_PROPERTY_ID + " هیچ ردیفی برنگشت. Property انتخاب‌شده و فعال‌بودن اندازه‌گیری در همین بازه را بررسی کن."
+      : status === "partial"
+      ? "گزارش خلاصۀ GA4 خالی برگشته، اما بعضی گزارش‌های جزئی داده دارند. اعداد خلاصه نمایش داده نمی‌شوند تا به‌اشتباه صفر تلقی نشوند."
+      : "",
     period: "30daysAgo–yesterday",
     summary: {
       users: Number(summary.totalUsers || 0),
@@ -370,6 +379,13 @@ async function getAnalyticsData(accessToken: string) {
       views: Number(row.screenPageViews || 0),
       users: Number(row.totalUsers || 0),
     })),
+    diagnostics: {
+      summaryRows: summaryRows.length,
+      sourceRows: sources.length,
+      pageRows: pages.length,
+      referrerRows: referrers.length,
+      downloadRows: downloads.length,
+    },
     quota: null,
   };
 }
@@ -388,7 +404,14 @@ async function getSearchConsoleData(accessToken: string) {
     searchConsoleReport(accessToken, { ...date, dimensions: ["device"], rowLimit: 5 }),
   ]);
 
-  const totals = (summary.rows || [])[0] || {};
+  const summaryRows = summary.rows || [];
+  const queryRows = queries.rows || [];
+  const pageRows = pages.rows || [];
+  const deviceRows = devices.rows || [];
+  const summaryAvailable = summaryRows.length > 0;
+  const hasBreakdownRows = queryRows.length + pageRows.length + deviceRows.length > 0;
+  const status = summaryAvailable ? "ok" : hasBreakdownRows ? "partial" : "no_data";
+  const totals = summaryRows[0] || {};
   const mapRows = (rows: SearchConsoleRow[] | undefined, key: string) => (rows || []).map((row) => ({
     name: String(row.keys?.[0] || "(نامشخص)"),
     clicks: Number(row.clicks || 0),
@@ -399,7 +422,13 @@ async function getSearchConsoleData(accessToken: string) {
   }));
 
   return {
-    status: "ok",
+    status,
+    summaryAvailable,
+    message: status === "no_data"
+      ? "در بازۀ " + startDate + " تا " + endDate + " هیچ ردیفی از Search Console برای " + GSC_SITE_URL + " برنگشت. Property و بازۀ زمانی را در Search Console بررسی کن."
+      : status === "partial"
+      ? "گزارش خلاصۀ Search Console خالی برگشته، اما بعضی گزارش‌های جزئی داده دارند. اعداد خلاصه نمایش داده نمی‌شوند تا به‌اشتباه صفر تلقی نشوند."
+      : "",
     startDate,
     endDate,
     summary: {
@@ -408,9 +437,15 @@ async function getSearchConsoleData(accessToken: string) {
       ctr: Number(totals.ctr || 0),
       position: Number(totals.position || 0),
     },
-    queries: mapRows(queries.rows, "query"),
-    pages: mapRows(pages.rows, "page"),
-    devices: mapRows(devices.rows, "device"),
+    queries: mapRows(queryRows, "query"),
+    pages: mapRows(pageRows, "page"),
+    devices: mapRows(deviceRows, "device"),
+    diagnostics: {
+      summaryRows: summaryRows.length,
+      queryRows: queryRows.length,
+      pageRows: pageRows.length,
+      deviceRows: deviceRows.length,
+    },
   };
 }
 
@@ -454,6 +489,23 @@ Deno.serve(async (request: Request) => {
     const searchConsole = gscResult.status === "fulfilled"
       ? gscResult.value
       : { status: "error", message: String(gscResult.reason?.message || gscResult.reason) };
+
+    // Log only report status and row counts. Never log visitor metrics, OAuth
+    // tokens, service-account fields or raw Google API response bodies.
+    console.info("site-analytics report diagnostics", {
+      ga4: ga4Result.status === "fulfilled"
+        ? { status: ga4.status, ...ga4.diagnostics }
+        : { status: "error" },
+      searchConsole: gscResult.status === "fulfilled"
+        ? { status: searchConsole.status, ...searchConsole.diagnostics }
+        : { status: "error" },
+    });
+    if (ga4Result.status === "rejected") {
+      console.warn("site-analytics GA4 report failed:", String(ga4Result.reason?.message || ga4Result.reason).slice(0, 240));
+    }
+    if (gscResult.status === "rejected") {
+      console.warn("site-analytics Search Console report failed:", String(gscResult.reason?.message || gscResult.reason).slice(0, 240));
+    }
 
     return json({
       generatedAt: new Date().toISOString(),
