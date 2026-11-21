@@ -34,12 +34,17 @@ function requiredEnv(name: string): string {
 }
 
 function getSecrets() {
+  const publishableKeys = JSON.parse(requiredEnv("SUPABASE_PUBLISHABLE_KEYS"));
+  const secretKeys = JSON.parse(requiredEnv("SUPABASE_SECRET_KEYS"));
+  const publishableKey = publishableKeys.default;
+  const secretKey = secretKeys.default;
+  if (!publishableKey || !secretKey) {
+    throw new Error("Supabase default publishable/secret keys are unavailable.");
+  }
   return {
     supabaseUrl: requiredEnv("SUPABASE_URL").replace(/\/+$/, ""),
-    publishableKey: requiredEnv("DASHBOARD_SUPABASE_PUBLISHABLE_KEY"),
-    secretKey: requiredEnv("DASHBOARD_SUPABASE_SECRET_KEY"),
-    adminEmail: requiredEnv("DASHBOARD_ADMIN_EMAIL").toLowerCase(),
-    cronSecret: requiredEnv("DASHBOARD_CRON_SECRET"),
+    publishableKey,
+    secretKey,
   };
 }
 
@@ -115,7 +120,19 @@ async function isAllowedAdmin(
 
   const email = data.user.email?.toLowerCase() || "";
   const confirmed = Boolean(data.user.email_confirmed_at || data.user.confirmed_at);
-  return confirmed && email === secrets.adminEmail;
+  if (!confirmed || !email) return false;
+
+  const adminClient = createClient(secrets.supabaseUrl, secrets.secretKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: allowedAdmin, error: allowlistError } = await adminClient
+    .from("dashboard_admins")
+    .select("email")
+    .eq("email", email)
+    .eq("active", true)
+    .maybeSingle();
+
+  return !allowlistError && Boolean(allowedAdmin);
 }
 
 async function saveSnapshot(
@@ -195,27 +212,6 @@ function sumFrom(history: Array<{ date: string; downloads: number }>, start: str
     .reduce((sum, row) => sum + Number(row.downloads || 0), 0);
 }
 
-async function handleScheduledSync(
-  request: Request,
-  secrets: ReturnType<typeof getSecrets>,
-  admin: ReturnType<typeof createClient>,
-) {
-  const providedSecret = request.headers.get("x-cron-secret") || "";
-  if (!constantTimeEqual(providedSecret, secrets.cronSecret)) {
-    return json({ error: "Unauthorized." }, 401);
-  }
-
-  const totalDownloads = await getGitHubDownloadCount();
-  const snapshotDate = dateInTehran(new Date());
-  await saveSnapshot(admin, snapshotDate, totalDownloads);
-
-  return json({
-    success: true,
-    totalDownloads,
-    snapshotDate,
-  });
-}
-
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -230,10 +226,6 @@ Deno.serve(async (request: Request) => {
     const admin = createClient(secrets.supabaseUrl, secrets.secretKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-
-    if (request.headers.has("x-cron-secret")) {
-      return await handleScheduledSync(request, secrets, admin);
-    }
 
     const origin = request.headers.get("origin");
     if (origin && origin !== SITE_ORIGIN) {
