@@ -1,0 +1,109 @@
+name: Validate and refresh personal-site redesign
+
+on:
+  push:
+    branches:
+      - redesign/aria-personal-site
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aria-redesign-validation
+  cancel-in-progress: true
+
+jobs:
+  validate-and-lock:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out redesign branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.ref_name }}
+          persist-credentials: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          package-manager-cache: false
+
+      - name: Resolve package lock for the new local Three.js dependency
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Install exact locked dependencies
+        run: npm ci
+
+      - name: Regenerate social card and application icons
+        run: npm run assets
+
+      - name: Check dependencies for known high and critical advisories
+        run: npm audit --audit-level=high
+
+      - name: Run repository credential scan
+        run: npm run check:security
+
+      - name: Run analytics consent regression tests
+        run: npm run test:consent
+
+      - name: Run homepage redesign regression tests
+        run: npm run test:homepage
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check build scripts parse
+        run: |
+          node --check scripts/serve.mjs
+          node --check scripts/strip-next-runtime.mjs
+          node --check scripts/generate-assets.mjs
+          node --check scripts/extract-social-paths.mjs
+          node --check scripts/verify-export.mjs
+          node --check scripts/verify-secrets.mjs
+          node --check scripts/test-homepage-contract.mjs
+          node --check scripts/test-analytics-consent.mjs
+          node --check public/analytics-consent.js
+          node --check scripts/make-hosting-bundle.mjs
+
+      - name: Build and verify static export
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: https://ariakianzad.github.io
+
+      - name: Verify the redesigned homepage export
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s out/index.html
+          grep -Fq '<title>Aria Kianzad | Brand Strategy &amp; Personal Branding</title>' out/index.html
+          grep -Fq 'Find the difference.' out/index.html
+          grep -Fq 'Make it matter.' out/index.html
+          grep -Fq 'hero-visual__fallback' out/index.html
+          grep -Fq 'ProfilePage' out/index.html
+          grep -Fq 'Person' out/index.html
+          grep -Fq 'Personal branding' out/llms.txt
+          test -s out/og/og.png
+          test -s out/index.html
+          test -s out/Mian-e-Ma/index.html
+          test -s out/admin/index.html
+          grep -Fq 'http-equiv="Content-Security-Policy"' out/index.html
+
+      - name: Commit updated lockfile and generated brand assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add package-lock.json public/og/og.png src/app/icon.png src/app/apple-icon.png
+          if git diff --cached --quiet; then
+            echo "Dependency lock and generated brand assets are already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: lock Three.js and regenerate social assets"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
