@@ -3,6 +3,8 @@ name: Deploy personal website to GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 # The build job reads the repository; only the deploy job can publish Pages.
@@ -40,6 +42,9 @@ jobs:
           npm run social-icons
           git diff --exit-code -- src/lib/social-icons.json
 
+      - name: Scan repository for leaked credentials
+        run: npm run check:security
+
       - name: Audit dependencies
         run: npm audit --audit-level=high
 
@@ -56,6 +61,7 @@ jobs:
           node --check scripts/generate-assets.mjs
           node --check scripts/extract-social-paths.mjs
           node --check scripts/verify-export.mjs
+          node --check scripts/verify-secrets.mjs
           node --check public/analytics-consent.js
           node --check scripts/make-hosting-bundle.mjs
 
@@ -81,6 +87,10 @@ jobs:
           test -s out/admin/admin.css
           test -s out/admin/app.js
           test -s out/admin/config.js
+          grep -Fq 'http-equiv="Content-Security-Policy"' out/index.html
+          grep -Fq 'http-equiv="Content-Security-Policy"' out/Mian-e-Ma/index.html
+          grep -Fq 'http-equiv="Content-Security-Policy"' out/admin/index.html
+          grep -Fq 'bkohdqwecnvbmeaiuyyx.supabase.co' out/admin/index.html
           grep -Fq 'ga4-title' out/admin/index.html
           grep -Fq 'gsc-title' out/admin/index.html
           grep -Fq 'site-analytics' out/admin/app.js
@@ -147,6 +157,7 @@ jobs:
           path: out
 
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
