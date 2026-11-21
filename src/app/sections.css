@@ -359,9 +359,10 @@ html[data-js] .hero-intro {
 }
 
 .hero__scroll-cue {
-  position: absolute;
-  right: 0;
-  bottom: 0;
+  position: relative;
+  display: flex;
+  width: fit-content;
+  margin: 1.2rem 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: 1rem;
@@ -468,7 +469,7 @@ html[data-js] .hero-intro {
   transform: translateX(-100%);
 }
 
-.manifesto.is-visible .manifesto__axis-line i {
+.manifesto__axis.is-visible .manifesto__axis-line i {
   animation: axis-flow 2.8s var(--ease-in-out) infinite;
 }
 
