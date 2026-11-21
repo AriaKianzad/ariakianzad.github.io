@@ -71,3 +71,98 @@
     padding: 18px;
   }
 }
+
+
+/* Google Analytics consent controls */
+#analytics-consent[hidden],
+#analytics-preferences[hidden] {
+  display: none;
+}
+.analytics-consent {
+  position: fixed;
+  z-index: 1000;
+  inset-inline: max(16px, calc((100vw - 900px) / 2));
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 20px;
+  border: 1px solid rgba(29,52,50,.22);
+  border-radius: 16px;
+  background: rgba(251,249,244,.98);
+  color: #1d3432;
+  box-shadow: 0 18px 56px rgba(29,52,50,.18);
+}
+.analytics-consent__copy {
+  display: grid;
+  gap: 4px;
+  max-width: 58ch;
+}
+.analytics-consent__copy strong {
+  font-size: 14px;
+  font-weight: 750;
+}
+.analytics-consent__copy p {
+  margin: 0;
+  color: #596863;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.analytics-consent__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+.analytics-consent__actions button,
+.analytics-preferences {
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid rgba(29,52,50,.3);
+  border-radius: 999px;
+  font: 650 12px/1.4 Estedad,Tahoma,sans-serif;
+  cursor: pointer;
+}
+.analytics-consent__accept {
+  border-color: #1d3432 !important;
+  background: #1d3432;
+  color: #fff;
+}
+.analytics-consent__accept:hover {
+  background: #294845;
+}
+.analytics-consent__reject {
+  background: transparent;
+  color: #1d3432;
+}
+.analytics-consent__reject:hover,
+.analytics-preferences:hover {
+  border-color: #a86f54;
+  color: #a86f54;
+}
+.analytics-preferences {
+  position: fixed;
+  z-index: 999;
+  inset-inline-start: 14px;
+  bottom: 14px;
+  background: rgba(251,249,244,.96);
+  color: #405653;
+  box-shadow: 0 8px 28px rgba(29,52,50,.12);
+}
+@media (max-width: 640px) {
+  .analytics-consent {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 15px;
+  }
+  .analytics-consent__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .analytics-preferences {
+    inset-inline-start: 10px;
+    bottom: 10px;
+  }
+}
