@@ -1,120 +1,162 @@
 /**
- * All public-facing copy for the single-page site, in one place.
- *
- * Editorial rules applied throughout:
- * - first person, conversational, understated;
- * - no em dashes (commas, periods, colons, or parentheses instead);
- * - no invented facts: clients, numbers, awards, testimonials, or results.
+ * Public-facing copy for Aria Kianzad's personal website.
+ * First-person, precise and understated. No invented clients, outcomes or metrics.
  */
 
 export const hero = {
-  eyebrow: "Brand Strategy / Copywriting",
-  headline: {
-    lead: "I work on what a brand",
-    middle: "needs to say, and why",
-    end: "it should matter.",
-  },
-  lede: "I'm Aria. I help brands find a clearer position, then turn that thinking into words people can understand, remember, and act on.",
-  primaryCta: { label: "Let's talk", href: "mailto:kianzadaria@gmail.com" },
-  secondaryCta: { label: "Meet Rexo", href: "/#rexo" },
-  /**
-   * The strategist's index: each headline fragment named for the concept
-   * behind it. This is the visual signature of the site.
-   */
-  index: [
-    { n: "01", concept: "positioning", fragment: "what a brand needs to say" },
-    { n: "02", concept: "relevance", fragment: "why it should matter" },
-    { n: "03", concept: "expression", fragment: "words people can understand" },
+  eyebrow: "Brand strategy / Positioning / Communication",
+  titleLead: "Find the difference.",
+  titleAccent: "Make it matter.",
+  lede:
+    "I'm Aria Kianzad. I help brands turn research and insight into a distinct position, then translate that thinking into identity and communication people can understand, remember and choose.",
+  primaryCta: { label: "Start a conversation", href: "mailto:kianzadaria@gmail.com" },
+  secondaryCta: { label: "Explore my approach", href: "/#method" },
+  signals: [
+    { number: "01", label: "Insight", note: "Understand what is true" },
+    { number: "02", label: "Position", note: "Decide what should matter" },
+    { number: "03", label: "Expression", note: "Make the meaning clear" },
   ],
 } as const;
 
-export const perspective = {
-  eyebrow: "A point of view",
-  heading: "More words aren't always the answer.",
-  body: "Sometimes a brand doesn't need another campaign, another tagline, or another round of content. It needs a clearer answer to a simpler question.",
-  /** Rendered as the accent moment of the section. */
-  question: "what makes it worth choosing?",
-  closing: "Strategy finds that answer. Writing gives it a form people can actually take in.",
+export const manifesto = {
+  eyebrow: "The point of view",
+  heading: "Clarity is not the opposite of ambition. It is how a brand earns attention.",
+  body:
+    "The market is full of messages competing to be noticed. The useful question is not how to say more. It is what deserves to be said, who needs to hear it, and why it should matter to them.",
+  closing: "Brands grow when they communicate with intention, not volume.",
 } as const;
 
-export const disciplines = {
-  eyebrow: "The two disciplines",
-  heading: "Two disciplines, one direction.",
-  bridge: "Strategy decides the direction. Writing gives it a language.",
+export const expertise = {
+  eyebrow: "Where I work",
+  heading: "Strategy first. Everything else follows.",
+  intro:
+    "A strong brand is not a collection of disconnected deliverables. It is a clear idea, understood by the right people and expressed consistently.",
   items: [
     {
-      n: "01",
-      title: "Brand Strategy",
-      body: "Before deciding what to say, I want to understand what a brand should stand for, who it needs to reach, and why someone should choose it over the alternatives.",
-      notes: ["Positioning", "Differentiation", "Brand voice"],
+      number: "01",
+      code: "DISCOVER",
+      title: "Research & insight",
+      body:
+        "Understand the people, category and context around a business. I look at customer behaviour, market dynamics and the competitive landscape before deciding what a brand should say.",
+      tags: ["Consumer insight", "Market research", "Competitive analysis"],
     },
     {
-      n: "02",
-      title: "Copywriting",
-      body: "Once the direction is clear, words have a job to do. I work on language that expresses the strategy clearly, sounds like the brand, and gives people a reason to pay attention.",
-      notes: ["Messaging", "Web copy", "Naming"],
+      number: "02",
+      code: "DEFINE",
+      title: "Positioning & identity",
+      body:
+        "Find the difference a brand can credibly own, why it matters, and how that position should shape its identity, voice and place in the market.",
+      tags: ["Brand positioning", "Brand identity", "Verbal identity"],
+    },
+    {
+      number: "03",
+      code: "EXPRESS",
+      title: "Content & communication",
+      body:
+        "Turn strategic direction into a coherent communication system, from messaging and storytelling to content strategy, copywriting and search-led content.",
+      tags: ["Content strategy", "Storytelling", "Copywriting", "SEO content"],
     },
   ],
 } as const;
 
-export const approach = {
-  eyebrow: "How I work",
-  heading: "Understand the problem before choosing the words.",
-  items: [
+export const method = {
+  eyebrow: "The working method",
+  heading: "The most important work happens before the first line.",
+  intro:
+    "I don't begin with a format or a predetermined deliverable. I begin by understanding the decision a brand needs to make.",
+  steps: [
     {
-      n: "01",
-      title: "Clarity before volume",
-      body: "More output won't fix a message that doesn't make sense.",
+      number: "01",
+      title: "Listen",
+      body: "Understand the business, its ambitions, its constraints and the question that brought us here.",
+      output: "The real problem",
     },
     {
-      n: "02",
-      title: "Difference needs a reason",
-      body: "Being different is useful when there's something meaningful behind the difference.",
+      number: "02",
+      title: "Investigate",
+      body: "Study the audience, category, competition and behaviour around the brand. Separate assumptions from useful signals.",
+      output: "A sharper view",
     },
     {
-      n: "03",
-      title: "Words are part of the strategy",
-      body: "The way a brand speaks isn't the finishing touch. It shapes how the strategy reaches people.",
+      number: "03",
+      title: "Position",
+      body: "Define the difference worth owning, the people it matters to and the reason they should care.",
+      output: "A clear direction",
+    },
+    {
+      number: "04",
+      title: "Express",
+      body: "Translate the position into identity, messaging and communication people can recognise and understand.",
+      output: "A coherent system",
     },
   ],
-  closing: "In practice, this looks less like producing more words and more like making the next decision well.",
 } as const;
 
 export const rexoSection = {
-  eyebrow: "The biggest thing I've built",
-  heading: "Meet Rexo.",
-  body: "I founded Rexo to bring brand strategy and creative direction into the same conversation. The idea is simple: understand what makes a business different, decide why that difference matters, and give it a coherent way to show up in the world.",
+  eyebrow: "Strategy put into practice",
+  meta: "Founded in 2024",
+  heading: "A place for ideas to become real.",
+  body:
+    "I founded Rexo to bring strategic thinking and creative execution into the same conversation. The work starts by understanding what makes a business different, deciding why that difference matters, and giving it a coherent way to show up.",
   secondary:
-    "At Rexo, the work starts with the problem, not a predetermined deliverable. Sometimes the answer is a sharper position. Sometimes it's a brand identity or a creative campaign. The scope follows what the business actually needs.",
-  meta: "Independent studio, founded 2024",
-  cta: { label: "Explore Rexo", href: "https://rexo.agency/", external: true },
+    "Rexo works across brand strategy, creative direction, identity and campaigns. The scope follows the problem, not the other way around.",
   diagram: [
-    { label: "Observe", note: "what the business is actually like" },
-    { label: "Position", note: "why it deserves to be chosen" },
-    { label: "Express", note: "how it speaks, consistently" },
+    { number: "01", label: "Understand", note: "The business and its context" },
+    { number: "02", label: "Position", note: "The difference worth owning" },
+    { number: "03", label: "Express", note: "A clear and consistent presence" },
+  ],
+  ctas: [
+    { label: "Rexo brand strategy", href: "https://rexo.agency/services/brand-strategy" },
+    { label: "Rexo creative campaigns", href: "https://rexo.agency/services/creative-campaigns" },
+  ],
+} as const;
+
+export const notes = {
+  eyebrow: "Ideas in progress",
+  heading: "Thinking is part of the work.",
+  body:
+    "I write about the choices behind brands: positioning, communication, content and the small details that change how people understand a business.",
+  items: [
+    {
+      type: "Persian editorial platform",
+      title: "RexoMag",
+      description:
+        "A Persian publication for practical ideas on branding, content and business.",
+      href: "https://rexo.agency/mag",
+      action: "Explore RexoMag",
+    },
+    {
+      type: "Essays and notes",
+      title: "Medium",
+      description:
+        "Longer thoughts on brand strategy, positioning, storytelling and communication.",
+      href: "https://medium.com/@AriaKianzad",
+      action: "Read on Medium",
+    },
   ],
 } as const;
 
 export const about = {
-  eyebrow: "About",
-  heading: "A little about how I think.",
+  eyebrow: "A little context",
+  heading: "Curious about what makes people understand.",
   paragraphs: [
-    "I'm interested in the space between what a business is and how people understand it. Brand strategy helps make sense of that gap. Copywriting gives the answers a language of their own.",
-    "My path into this work began closer to technology, but over time I became more interested in the questions behind the output: what we're trying to communicate, who needs to understand it, and what makes the message worth remembering.",
-    "These days, brand strategy and copywriting are at the center of my work. I'm especially interested in the decisions that make communication clearer, more distinctive, and more useful.",
+    "I'm Aria Kianzad, a brand strategist and personal branding consultant. I'm interested in the gap between what a business is and what people understand about it. My work begins with research, customer behaviour and market context, then moves into positioning and the way that position gets communicated.",
+    "My path started closer to technology. It left me with a habit of looking for patterns, asking better questions and not taking the first answer at face value. Today, that same curiosity shapes how I think about brands.",
+    "I founded Rexo in 2024 to bring strategy and creative execution closer together. Alongside that work, I write about branding, communication and the decisions that shape perception.",
   ],
 } as const;
 
 export const contactSection = {
-  eyebrow: "Contact",
-  heading: "Have something worth thinking through?",
-  body: "Tell me a little about the brand, the problem, or the question you're working on. We can start there.",
-  cta: { label: "Email me", href: "mailto:kianzadaria@gmail.com" },
-  copyLabel: "Copy address",
+  eyebrow: "Start here",
+  heading: "Have a brand question worth getting clear on?",
+  body:
+    "Tell me what you're building, what feels unresolved, or what you want people to understand. We can start with the question before deciding on the answer.",
   email: "kianzadaria@gmail.com",
+  cta: { label: "Email Aria", href: "mailto:kianzadaria@gmail.com" },
+  copyLabel: "Copy email",
 } as const;
 
 export const footer = {
-  note: "Brand strategy & copywriting",
+  note: "Brand strategy / Positioning / Communication",
   copyright: `© ${new Date().getFullYear()} Aria Kianzad. All rights reserved.`,
 } as const;
