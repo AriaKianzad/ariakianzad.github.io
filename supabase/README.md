@@ -95,6 +95,12 @@ select vault.create_secret(
   'mian_e_ma_cron_secret',
   'Secret used by the Mian-e-Ma daily download snapshot job'
 );
+
+select vault.create_secret(
+  'PASTE_THE_DASHBOARD_SUPABASE_SECRET_KEY_HERE',
+  'mian_e_ma_supabase_key',
+  'Server-side key used only by the Mian-e-Ma scheduled snapshot job'
+);
 ```
 
 Then create the schedule. Replace `YOUR_PROJECT_REF` with the project ref. The cron expression runs at 20:35 UTC, which is 00:05 the next day in Iran (Asia/Tehran).
@@ -108,6 +114,12 @@ select cron.schedule(
     url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/download-stats',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
+      'apikey', (
+        select decrypted_secret
+        from vault.decrypted_secrets
+        where name = 'mian_e_ma_supabase_key'
+        limit 1
+      ),
       'x-cron-secret', (
         select decrypted_secret
         from vault.decrypted_secrets
