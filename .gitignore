@@ -33,3 +33,12 @@ id_ed25519
 id_ed25519.pub
 credentials*.json
 secrets*.json
+
+# Supabase local CLI state
+.supabase/
+supabase/.temp/
+supabase/.branches/
+
+# Local credentials and service-account exports
+*service-account*.json
+*service_account*.json

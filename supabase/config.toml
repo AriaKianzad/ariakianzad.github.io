@@ -1,6 +1,11 @@
-# Supabase project configuration for the Mian-e-Ma download dashboard.
+# Supabase project configuration for the Mian-e-Ma analytics dashboard.
+#
+# Both Edge Functions verify the supplied Supabase access token with Auth,
+# require a confirmed email and check the active dashboard_admins allowlist.
+# Keep those checks in the handlers when verify_jwt is disabled.
 
 [functions.download-stats]
-# The Edge Function validates Supabase Auth JWTs itself. The same endpoint also
-# accepts a separately authenticated scheduled request using x-cron-secret.
+verify_jwt = false
+
+[functions.site-analytics]
 verify_jwt = false

@@ -13,7 +13,8 @@
     "audit": "npm audit --audit-level=high",
     "preview": "node scripts/serve.mjs",
     "assets": "node scripts/generate-assets.mjs",
-    "social-icons": "node scripts/extract-social-paths.mjs"
+    "social-icons": "node scripts/extract-social-paths.mjs",
+    "check:security": "node scripts/verify-secrets.mjs"
   },
   "dependencies": {
     "next": "16.4.6",

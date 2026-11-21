@@ -1,89 +1,105 @@
-# Mian-e-Ma download dashboard
+# Mian-e-Ma analytics backend
 
-The dashboard is hosted at `https://ariakianzad.github.io/admin/` and reads the public GitHub Release asset counter for `Mian-e-Ma.pdf`.
+The private dashboard frontend is hosted at https://ariakianzad.github.io/admin/. Its HTML, CSS, JavaScript and public client configuration are visible to everyone. Supabase is responsible for authentication, authorization and access to analytics data.
 
-## Supabase project
+## Project
 
-- Project: `mian-e-ma-analytics`
-- Project ref: `bkohdqwecnvbmeaiuyyx`
-- Region: `eu-central-1`
-- Edge Function: `download-stats`
+- Supabase project: mian-e-ma-analytics
+- Project ref: bkohdqwecnvbmeaiuyyx
+- Region: eu-central-1
+- Edge Functions: download-stats, site-analytics
+- Database schema: public plus a private schema for the scheduled snapshot function
 
-The Edge Function uses Supabase's built-in `SUPABASE_PUBLISHABLE_KEYS` and `SUPABASE_SECRET_KEYS` environment variables. No custom service-role key, GitHub token, or password is stored in this repository. The browser config contains only the project URL and publishable key.
+The source for both deployed Edge Functions is tracked in this repository:
 
-## Security model
+- supabase/functions/download-stats/index.ts
+- supabase/functions/site-analytics/index.ts
 
-1. The dashboard is a static page. Its URL is not a security boundary.
-2. Supabase Auth validates the email/password login.
-3. The Edge Function independently validates the user's access token with Supabase Auth.
-4. The authenticated email must also exist as an active row in `public.dashboard_admins`.
-5. The Edge Function uses the built-in server-side Supabase secret key to access the database.
-6. Both `download_snapshots` and `dashboard_admins` have Row Level Security enabled, and browser roles have no table privileges.
-7. The login page can remember this browser by storing only the rotating Supabase refresh token in `localStorage`; it never stores the password or access token. Explicit logout removes the stored refresh token.
+The deployed versions were checked against the Supabase project during the repository review. Keep the tracked source and deployed function in sync when making changes.
 
-## Finish admin setup
+## Security and authorization model
 
-1. In Supabase Dashboard, open **Authentication → Users** and create the one admin user. Use the email address you intend to enter on the dashboard and set a strong password. Mark the email as confirmed.
-2. Add that exact email, in lowercase, to `public.dashboard_admins`. The user must be confirmed in Auth and present in this allowlist to see statistics.
-3. Keep public sign-ups disabled after creating the admin user. Do not share the password or any secret key in chat or commit them to Git.
-4. Open `https://ariakianzad.github.io/admin/` and sign in.
+1. The browser signs in through Supabase Auth using the public publishable key in public/admin/config.js.
+2. The browser sends its Supabase access token to the Edge Function.
+3. Each function verifies the token with Supabase Auth using auth.getUser(token); it does not trust an unverified JWT payload.
+4. The user must have a confirmed email and an active matching lowercase email in public.dashboard_admins.
+5. Only after these checks does the function use server-side Supabase credentials to read/write dashboard data or request Google reports.
+6. Both public.dashboard_admins and public.download_snapshots have RLS enabled. Browser roles anon and authenticated have no table privileges; the functions access the tables with server-side credentials.
 
-The public client configuration is in `public/admin/config.js`. It contains only the Supabase URL and publishable key, both designed for browser use.
+The two functions have verify_jwt = false in supabase/config.toml because they implement their own explicit access-token validation and allowlist check. This is intentional. Do not remove the checks in the function handlers or change verify_jwt without reviewing the complete authentication flow.
 
-## Database migrations
+The client configuration contains only the Supabase project URL and an sb_publishable_ key. Publishable keys are intended for browser use. Never put a Supabase secret key, legacy service-role key, GitHub token or Google private key in public/admin/config.js, any other browser asset or Git history.
 
-The migrations in `supabase/migrations/` create:
+## Authentication setup
 
-- `download_snapshots`: daily cumulative GitHub download totals.
-- `dashboard_admins`: the private email allowlist for dashboard access.
+1. In Supabase Dashboard, open Authentication → Users and create the intended admin user.
+2. Confirm the email address and use a strong, unique password.
+3. Add the same email in lowercase to public.dashboard_admins and keep active = true.
+4. Keep public sign-ups disabled after creating the intended administrator account.
+5. Open https://ariakianzad.github.io/admin/ and sign in.
 
-Both migrations have been applied to the production project.
+The dashboard's **«مرا به خاطر بسپار»** option stores only the rotating Supabase refresh token in localStorage. It does not store the password or access token. Same-origin JavaScript can nevertheless read local storage, so disable the option and use **خروج** on a shared or public device.
 
-## Download history
+## Data and scheduled download snapshots
 
-GitHub exposes the current cumulative asset download count, not historical daily counts. A successful dashboard refresh records or updates the current day's snapshot using the Tehran calendar date. In addition, the Supabase Cron job `mian-e-ma-daily-download-snapshot` records a daily snapshot at 00:15 UTC (03:45 Asia/Tehran), even when the dashboard is not opened.
+The database tables are:
 
-The scheduled PostgreSQL function `private.capture_github_download_snapshot()` reads the public GitHub Release API through the `http` extension and upserts the cumulative count into `public.download_snapshots`. It runs as the database's `postgres` role and is not executable by browser roles. The extensions `pg_cron` and `http` are enabled for this purpose; no GitHub token, Supabase admin token, additional Edge Function secret, or paid scheduler is needed.
+- public.download_snapshots: one cumulative GitHub Release count per Tehran calendar date.
+- public.dashboard_admins: active administrator email allowlist.
 
-The number represents downloads, not unique people. Daily figures are calculated as differences between cumulative snapshots. The first recorded day is a baseline and does not include older daily history. Cron runs can be inspected under Supabase **Integrations → Cron** or in `cron.job_run_details`.
+Both tables have RLS enabled, with browser-role privileges revoked. The Supabase Security Advisor may report rls_enabled_no_policy for these tables. That informational finding is expected for the current model: no browser role is granted table access, and the Edge Functions use server-side credentials. Do not add broad policies merely to silence the notice.
 
+The GitHub Release API is public and returns the current cumulative asset count for Mian-e-Ma.pdf in tag mian-e-ma-v1. The dashboard can refresh the current day's snapshot on demand. A PostgreSQL Cron job named mian-e-ma-daily-download-snapshot also runs at **00:15 UTC (03:45 Asia/Tehran)**, even when nobody opens the dashboard.
 
-## Google Analytics 4 and Search Console reporting
+The scheduled job runs private.capture_github_download_snapshot(), a private-schema function with a fixed search path and restricted execute privileges. It calls the GitHub Releases API through the http extension and upserts the cumulative count using the Tehran calendar date. Only the database postgres role can execute it; browser roles and the Edge Function service role cannot invoke it directly.
 
-A second Edge Function, `site-analytics`, reads Google Analytics 4 and Google Search Console reports for the private dashboard.
+The daily count is derived from differences between cumulative snapshots. The first available snapshot is a baseline and cannot reconstruct earlier day-by-day activity. GitHub's count is not a count of unique people. Cron execution history is available in cron.job_run_details or the Supabase Integrations → Cron page.
 
-- GA4 Property ID: `565407137`
-- GA4 Measurement ID: `G-0CKL90M5R2`
-- Search Console URL-prefix property: `https://ariakianzad.github.io/`
-- Edge Function: `site-analytics`
-- Required Supabase Edge Function secret: `GOOGLE_SERVICE_ACCOUNT_JSON`
+## Google Analytics 4 and Search Console
 
-The function requests only these Google OAuth scopes:
+The site-analytics Edge Function requests Google reporting data on behalf of the authenticated dashboard administrator.
 
-- `https://www.googleapis.com/auth/analytics.readonly`
-- `https://www.googleapis.com/auth/webmasters.readonly`
+- GA4 Property ID: 565407137
+- GA4 Measurement ID: G-0CKL90M5R2
+- Search Console property: https://ariakianzad.github.io/
+- Required Supabase secret: GOOGLE_SERVICE_ACCOUNT_JSON
 
-It uses a Google service-account key stored only in Supabase Edge Function Secrets. Never add that JSON key to GitHub, the browser's `config.js`, or chat messages.
+The function requests only these OAuth scopes:
+
+- https://www.googleapis.com/auth/analytics.readonly
+- https://www.googleapis.com/auth/webmasters.readonly
+
+The service account needs **Viewer** access on the specified GA4 property and **Restricted** permission on the specified Search Console property. Project-wide Google Cloud Editor or Owner permissions are not required.
 
 ### One-time Google Cloud setup
 
-1. Create a Google Cloud project. No billing account is needed for the GA4 Data API and Search Console API reporting used here.
-2. Enable **Google Analytics Data API** and **Google Search Console API** in APIs & Services.
-3. Create a service account. Project-wide Editor/Owner roles are not required; access to the two reporting properties is granted separately.
-4. Create a JSON key for the service account and download it securely. Do not commit or share this file.
-5. Copy the service account's `client_email`.
-6. In GA4, open **Admin → Property access management** and add that email as **Viewer** to Property `565407137`.
-7. In Search Console, open the property `https://ariakianzad.github.io/` → **Settings → Users and permissions** and add the same email with **Restricted** permission.
+1. Create a Google Cloud project and enable Google Analytics Data API and Google Search Console API.
+2. Create a service account and generate a JSON key.
+3. Copy the service account's client_email.
+4. Add that email as Viewer under GA4 Admin → Property access management.
+5. Add that email with Restricted permission in Search Console Settings → Users and permissions for the URL-prefix property above.
 
-### Store the key in Supabase
+### Store the private key
 
-1. Open **Supabase Dashboard → Project → Edge Functions → Secrets**.
-2. Add a secret named exactly `GOOGLE_SERVICE_ACCOUNT_JSON`.
-3. Paste the complete contents of the downloaded service-account JSON file as its value.
-4. Save the secret. Do not send the key to anyone or place it in the repository.
+1. Open Supabase Dashboard → Edge Functions → Secrets.
+2. Add a secret named exactly GOOGLE_SERVICE_ACCOUNT_JSON.
+3. Set its value to the complete service-account JSON file contents.
+4. Keep the downloaded JSON file outside the repository and delete local copies when they are no longer needed.
 
-Then sign in to `https://ariakianzad.github.io/admin/` and select **به‌روزرسانی آمار**. The dashboard calls `site-analytics` using the existing Supabase session and admin allowlist.
+Do not put the JSON key in GitHub Actions variables, public/admin/config.js, static HTML, chat messages or the repository. If it is exposed, revoke the key in Google Cloud and replace the Supabase secret.
 
-The dashboard reports GA4 users, sessions, page views, file-download events, session source/medium, page referrers on `/Mian-e-Ma/`, and top pages. Search Console reports clicks, impressions, CTR, average position, top queries, pages, and devices. GA4 reports cover the previous 30 complete days; Search Console ends three days before the current date to reduce incomplete-day results.
+The dashboard displays GA4 users, sessions, page views, file_download events, acquisition sources, page referrers and top pages. A GA4 file_download event records an interaction and is not proof the PDF was fully downloaded or opened. Search Console provides clicks, impressions, CTR, average position, queries, pages and devices.
 
-If one Google product has not granted access, its section displays its error independently; download statistics remain available.
+GA4 reports cover the previous 30 complete days through yesterday. Search Console reports end three days before the current date to reduce the effect of incomplete recent data. Each provider's status is handled independently; an error from Google does not prevent GitHub download statistics from being returned.
+
+## Migrations and deployments
+
+The migration files in supabase/migrations/ create the tables, enable pg_cron and http, define the private snapshot function and schedule the daily job. The production project has these migrations applied. Do not edit already-applied migration files; add a new migration for any future database schema or function change.
+
+To deploy a changed Edge Function with the Supabase CLI:
+
+    supabase link --project-ref bkohdqwecnvbmeaiuyyx
+    supabase functions deploy download-stats
+    supabase functions deploy site-analytics
+
+The CLI reads verify_jwt = false from supabase/config.toml. Function deployment replaces the live function version, so review the full source and confirm its authentication checks before deploying. Database migrations are separate from Edge Function deployment.
