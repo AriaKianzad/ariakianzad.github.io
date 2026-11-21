@@ -19,6 +19,10 @@ Please do not publish an exploitable issue, proof-of-concept or sensitive data b
 - The optional remembered dashboard session stores a rotating Supabase refresh token in browser localStorage. It does not store the password or access token, but same-origin JavaScript can read local storage. Disable the option and sign out on shared devices.
 - The build checks common credential patterns and validates the static Content Security Policy. This scan is a guard against accidental commits; it is not a substitute for reviewing changes or scanning the complete Git history.
 
+## Auth password-protection limitation
+
+The current Supabase organization uses the Free plan. Supabase's breached-password screening is a Pro-and-above feature, so the `auth_leaked_password_protection` advisor warning remains until the plan changes. This warning does not mean an existing password has been found in a breach. Use a unique 12+ character administrator password, enable all four character classes in the Email provider's password-strength settings, keep public sign-ups disabled, and enable MFA where practical. Do not attempt to implement Have I Been Pwned screening in browser code.
+
 ## Supported version
 
 The main branch is the supported version. The site is deployed through GitHub Actions. No static-hosting configuration or third-party service control can eliminate every risk.
