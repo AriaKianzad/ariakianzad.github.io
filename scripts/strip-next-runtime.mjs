@@ -84,6 +84,25 @@ const NEXT_INLINE = /\bself\.__next_f\b|globalThis\s*\[\s*["']TURBOPACK["']\s*\]
 
 const files = walk(outDir);
 const hashes = new Set();
+
+const CSP_META_TAG = /<meta\b(?=[^>]*\bhttp-equiv=["']Content-Security-Policy["'])[^>]*>/i;
+
+function addHashesToCsp(csp, values) {
+  const directive = csp.match(/style-src\s+([^;]*)/i);
+  if (!directive) throw new Error("Content Security Policy has no style-src directive.");
+  const tokens = new Set(directive[1].trim().split(/\s+/).filter(Boolean));
+  for (const value of values) tokens.add(value);
+  return csp.replace(/style-src\s+[^;]*/i, "style-src " + Array.from(tokens).join(" "));
+}
+
+function addHashesToPageMeta(html, values, file) {
+  const tag = html.match(CSP_META_TAG)?.[0];
+  if (!tag) throw new Error(file + ": required Content-Security-Policy meta tag is missing.");
+  const content = tag.match(/\bcontent="([^"]*)"/i);
+  if (!content) throw new Error(file + ": CSP meta tag has no double-quoted content attribute.");
+  const updatedTag = tag.replace(content[0], 'content="' + addHashesToCsp(content[1], values) + '"');
+  return html.replace(tag, updatedTag);
+}
 let inlineScripts = 0;
 let unknownInline = 0;
 let chunkScripts = 0;
@@ -95,9 +114,12 @@ for (const file of files) {
   const before = Buffer.byteLength(original);
   let html = original;
 
+  const pageHashes = new Set();
   for (const match of html.matchAll(STYLE_BLOCK)) {
     const digest = createHash("sha256").update(match[1], "utf8").digest("base64");
-    hashes.add(`'sha256-${digest}'`);
+    const hash = `'sha256-${digest}'`;
+    hashes.add(hash);
+    pageHashes.add(hash);
   }
 
   html = html.replace(CHUNK_SCRIPT, () => (chunkScripts++, ""));
@@ -120,6 +142,7 @@ for (const file of files) {
     runtimeReferenced = true;
   }
 
+  if (pageHashes.size > 0) html = addHashesToPageMeta(html, pageHashes, file.slice(outDir.length + 1));
   writeFileSync(file, html);
   console.log(`${file.slice(outDir.length + 1)}: ${before} -> ${Buffer.byteLength(html)} bytes`);
 }
@@ -131,19 +154,34 @@ console.log(
 );
 
 if (hashes.size > 0) {
+  const orderedHashes = Array.from(hashes);
   const headersPath = join(outDir, "_headers");
+  const htaccessPath = join(outDir, ".htaccess");
+
   try {
     const headers = readFileSync(headersPath, "utf8");
     const updated = headers.replace(
-      "style-src 'self'",
-      `style-src 'self' ${Array.from(hashes).join(" ")}`,
+      /^(\s*Content-Security-Policy:\s*)(.+)$/im,
+      (_line, prefix, csp) => prefix + addHashesToCsp(csp, orderedHashes),
     );
-    if (updated !== headers) {
-      writeFileSync(headersPath, updated);
-      console.log(`_headers: style-src extended with ${hashes.size} inline style hash(es)`);
-    }
-  } catch {
-    console.log("_headers: not found next to the export; skipped hash injection");
+    if (updated === headers) throw new Error("Content-Security-Policy header was not found.");
+    writeFileSync(headersPath, updated);
+    console.log("_headers: style-src extended with " + orderedHashes.length + " inline style hash(es)");
+  } catch (error) {
+    throw new Error("_headers CSP hash update failed: " + String(error));
+  }
+
+  try {
+    const htaccess = readFileSync(htaccessPath, "utf8");
+    const updated = htaccess.replace(
+      /(Header\s+always\s+set\s+Content-Security-Policy\s+")([^"]+)(")/i,
+      (_line, before, csp, after) => before + addHashesToCsp(csp, orderedHashes) + after,
+    );
+    if (updated === htaccess) throw new Error("Content-Security-Policy header was not found.");
+    writeFileSync(htaccessPath, updated);
+    console.log(".htaccess: style-src extended with " + orderedHashes.length + " inline style hash(es)");
+  } catch (error) {
+    throw new Error(".htaccess CSP hash update failed: " + String(error));
   }
 }
 
