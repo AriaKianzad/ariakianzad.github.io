@@ -27,6 +27,12 @@ export default function HeroVisual() {
   useEffect(() => {
     if (reducedMotion) return;
 
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (motionPreference.matches) {
+      setReducedMotion(true);
+      return;
+    }
+
     const root = rootRef.current;
     if (!root) return;
 
