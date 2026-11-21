@@ -16,7 +16,8 @@
     "social-icons": "node scripts/extract-social-paths.mjs",
     "check:security": "node scripts/verify-secrets.mjs",
     "test:consent": "node scripts/test-analytics-consent.mjs",
-    "test:homepage": "node scripts/test-homepage-contract.mjs"
+    "test:homepage": "node scripts/test-homepage-contract.mjs",
+    "test:supabase": "node scripts/test-supabase-contract.mjs"
   },
   "dependencies": {
     "next": "16.4.6",
