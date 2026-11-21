@@ -48,6 +48,24 @@ assert.ok(page.includes("<HeroVisual />"), "the 3D hero must be mounted in the h
 assert.ok(page.includes('data-reveal="up"'), "scroll-reveal hooks must exist in homepage sections");
 assert.ok(layout.includes('href="/Mian-e-Ma/"'), "the Persian book remains discoverable from the footer");
 
+// Accessibility and consent controls stay out of the normal page flow.
+assert.ok(layout.includes('className="skip-link" href="#main"'), "keyboard skip navigation must remain available");
+assert.ok(chrome.includes(".skip-link:focus-visible"), "skip navigation must appear when keyboard-focused");
+assert.ok(chrome.includes(".analytics-consent {\n  position: fixed;"), "analytics dialog must be viewport-fixed");
+assert.ok(chrome.includes(".analytics-preferences {\n  position: fixed;"), "analytics shortcut must be viewport-fixed");
+assert.ok(chrome.includes(".analytics-consent[hidden]") && chrome.includes("display: none !important"), "hidden consent controls must respect the hidden attribute");
+assert.ok(chrome.includes("@media (max-width: 560px)"), "consent controls need a narrow-screen layout");
+assert.ok(globals.includes("overflow-x: clip"), "the document must clip accidental horizontal overflow");
+const mobileStyles = sections.split("@media (max-width: 760px)")[1]?.split("@media (max-width: 480px)")[0] ?? "";
+const mobileHeroStart = mobileStyles.indexOf(".hero-visual {");
+const mobileHeroEnd = mobileStyles.indexOf("}", mobileHeroStart);
+const mobileHeroRule = mobileHeroStart >= 0 && mobileHeroEnd > mobileHeroStart
+  ? mobileStyles.slice(mobileHeroStart, mobileHeroEnd)
+  : "";
+assert.ok(mobileHeroRule.includes("margin-block:"), "mobile hero spacing must use vertical margins");
+assert.ok(!mobileHeroRule.includes("margin-inline: -"), "mobile hero must not extend horizontally beyond its container");
+assert.ok(sections.includes("overflow-wrap: anywhere"), "long contact details must wrap on narrow screens");
+
 // The 3D scene is local, lazy-loaded, progressive and respects accessibility preferences.
 assert.ok(hero.includes('dynamic(() => import("./signal-scene")'), "Three.js scene must be dynamically imported");
 assert.ok(hero.includes("ssr: false"), "WebGL scene must stay client-only for static export");
