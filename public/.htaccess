@@ -82,10 +82,10 @@ ErrorDocument 404 /404.html
   <FilesMatch "\.html?$">
     Header always set Cache-Control "public, max-age=0, must-revalidate"
   </FilesMatch>
-  # Hashed framework assets (the only .css/.woff2 files are under
-  # /_next/static/ with content-hashed names): cache forever.
-  <FilesMatch "\.(css|woff2)$">
-    Header always set Cache-Control "public, max-age=31536000, immutable"
+  # Fixed-name CSS and fonts (including the standalone book page) revalidate
+  # hourly. Content-hashed Next/hero chunks are overridden by the env rule below.
+  <FilesMatch "\\.(css|woff2)$">
+    Header always set Cache-Control "public, max-age=3600, must-revalidate"
   </FilesMatch>
   # Site scripts (boot.js, ui.js are NOT content-hashed): short cache.
   <FilesMatch "\.js$">
