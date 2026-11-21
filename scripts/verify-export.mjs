@@ -158,7 +158,7 @@ for (const file of files) {
   const rel = file.slice(outDir.length + 1);
 
   const cspTag = html.match(/<meta\b(?=[^>]*\bhttp-equiv=["']Content-Security-Policy["'])[^>]*>/i)?.[0];
-  const cspContent = cspTag?.match(/\bcontent=["']([^"']+)["']/i)?.[1] ?? null;
+  const cspContent = cspTag?.match(/\bcontent="([^"]+)"/i)?.[1] ?? null;
   if (cspContent === null) {
     problems.push(rel + ": Content-Security-Policy meta tag is missing");
   } else if (/unsafe-inline|unsafe-eval/.test(cspContent)) {
