@@ -173,7 +173,7 @@ Both Edge Functions use the exact Supabase JS version declared in their respecti
       boot.js, ui.js        Progressive enhancement and interface behavior
 
     supabase/
-      functions/            Edge Function source, including both deployed functions
+      functions/            Edge Function source, per-function Deno import maps and both API handlers
       migrations/           Versioned database and scheduled-job migrations
       config.toml           Function runtime configuration
       README.md             Backend setup and operational notes
