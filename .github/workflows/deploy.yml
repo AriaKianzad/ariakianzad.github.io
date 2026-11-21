@@ -45,6 +45,9 @@ jobs:
       - name: Scan repository for leaked credentials
         run: npm run check:security
 
+      - name: Test analytics consent states
+        run: npm run test:consent
+
       - name: Audit dependencies
         run: npm audit --audit-level=high
 
