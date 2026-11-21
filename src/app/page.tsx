@@ -76,7 +76,7 @@ export default function HomePage() {
               <p className="manifesto__closing">{manifesto.closing}</p>
             </div>
           </div>
-          <div className="manifesto__axis" aria-hidden="true">
+          <div className="manifesto__axis" aria-hidden="true" data-reveal="up">
             <span>NOISE</span>
             <span className="manifesto__axis-line"><i /></span>
             <span>SIGNAL</span>
