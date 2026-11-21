@@ -2,7 +2,7 @@
 # ariakianzad.ir - Apache/cPanel configuration (static site)
 #
 # The site is a fully static export: index.html, a custom 404 page,
-# hashed CSS/font assets, and two same-origin scripts. There is no
+# hashed CSS/font assets, and same-origin scripts. There is no
 # backend and PHP never executes.
 #
 # Required modules: mod_headers (security headers + cache rules).
@@ -60,7 +60,7 @@ ErrorDocument 404 /404.html
 # Same policy as public/_headers (kept in sync; both files are
 # cross-checked by scripts/verify-export.mjs on every build).
 <IfModule mod_headers.c>
-  Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests"
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' data: https://www.google-analytics.com; font-src 'self'; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests"
   Header always set X-Content-Type-Options "nosniff"
   Header always set X-Frame-Options "DENY"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
