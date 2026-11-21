@@ -41,8 +41,8 @@ export default function HeroVisual() {
     if (!root) return;
 
     if (!("IntersectionObserver" in window)) {
-      setShouldLoad(true);
-      return;
+      const frameId = window.requestAnimationFrame(() => setShouldLoad(true));
+      return () => window.cancelAnimationFrame(frameId);
     }
 
     const observer = new IntersectionObserver(
