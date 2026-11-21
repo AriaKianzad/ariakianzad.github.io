@@ -450,6 +450,10 @@
 
     const ga = payload.ga4 || {};
     setIntegrationStatus("ga4", ga.status, ga.message);
+    const gaPeriod = $("#ga4-period");
+    if (gaPeriod && ga.period) {
+      gaPeriod.textContent = "بازهٔ گزارش GA4: " + ga.period + " · بر اساس منطقۀ زمانی Property";
+    }
     if (["ok", "partial", "no_data"].includes(ga.status)) {
       const summary = ga.summary || {};
       const summaryAvailable = ga.summaryAvailable !== false && ga.status !== "no_data";
@@ -473,6 +477,10 @@
 
     const gsc = payload.searchConsole || {};
     setIntegrationStatus("gsc", gsc.status, gsc.message);
+    const gscPeriod = $("#gsc-period");
+    if (gscPeriod && gsc.startDate && gsc.endDate) {
+      gscPeriod.textContent = "بازهٔ گزارش Search Console: " + gsc.startDate + " تا " + gsc.endDate;
+    }
     if (["ok", "partial", "no_data"].includes(gsc.status)) {
       const summary = gsc.summary || {};
       const summaryAvailable = gsc.summaryAvailable !== false && gsc.status !== "no_data";
