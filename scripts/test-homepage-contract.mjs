@@ -80,6 +80,8 @@ assert.ok(heroEntry.includes('import("./signal-scene")'), "Three.js scene must r
 assert.ok(heroEntry.includes("IntersectionObserver"), "scene must load only near the hero viewport");
 assert.ok(heroEntry.includes("prefers-reduced-motion: reduce"), "entrypoint must respect reduced-motion preference");
 assert.ok(heroEntry.includes("rootMargin: \"220px 0px\""), "scene should load shortly before entering the viewport");
+assert.ok(heroEntry.includes('window.addEventListener("pagehide", releaseScenes)'), "scene resources must be released when the page is hidden for navigation");
+assert.ok(heroEntry.includes('window.addEventListener("pageshow"'), "the scene must recover after a back-forward cache restore");
 assert.ok(hero.includes("hero-visual__fallback"), "hero must provide a CSS visual fallback");
 assert.ok(heroScene.includes('from "three"'), "Three.js must be bundled as a local dependency");
 assert.ok(heroScene.includes("new THREE.WebGLRenderer"), "hero must render a real WebGL scene");
