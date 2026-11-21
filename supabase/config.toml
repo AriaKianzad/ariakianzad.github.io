@@ -1,0 +1,6 @@
+# Supabase project configuration for the Mian-e-Ma download dashboard.
+
+[functions.download-stats]
+# The Edge Function validates Supabase Auth JWTs itself. The same endpoint also
+# accepts a separately authenticated scheduled request using x-cron-secret.
+verify_jwt = false
