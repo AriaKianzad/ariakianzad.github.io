@@ -290,7 +290,9 @@ async function searchConsoleReport(
 }
 
 async function getAnalyticsData(accessToken: string) {
-  const dateRanges = [{ startDate: "30daysAgo", endDate: "yesterday" }];
+  // Include the current GA4 property-local day. The dashboard chart showed traffic
+  // on that day, while ending at yesterday excluded all of it. Today may be partial.
+  const dateRanges = [{ startDate: "29daysAgo", endDate: "today" }];
 
   const [summaryReport, sourcesReport, pagesReport, referrersReport, downloadsReport] = await Promise.all([
     ga4Report(accessToken, {
@@ -370,11 +372,11 @@ async function getAnalyticsData(accessToken: string) {
     status,
     summaryAvailable,
     message: status === "no_data"
-      ? "در بازۀ ۳۰ روز کامل اخیر برای GA4 Property " + GA4_PROPERTY_ID + " هیچ ردیفی برنگشت. Property انتخاب‌شده و فعال‌بودن اندازه‌گیری در همین بازه را بررسی کن."
+      ? "در بازۀ ۳۰ روز اخیر تا امروز (با احتساب روز جاری که ممکن است ناقص باشد) برای GA4 Property " + GA4_PROPERTY_ID + " هیچ ردیفی برنگشت. Property انتخاب‌شده و فعال‌بودن اندازه‌گیری در همین بازه را بررسی کن."
       : status === "partial"
       ? "گزارش خلاصۀ GA4 خالی برگشته، اما بعضی گزارش‌های جزئی داده دارند. اعداد خلاصه نمایش داده نمی‌شوند تا به‌اشتباه صفر تلقی نشوند."
       : "",
-    period: "30daysAgo–yesterday",
+    period: "۳۰ روز اخیر تا امروز (امروز ممکن است ناقص باشد)",
     summary: {
       users: Number(summary.totalUsers || 0),
       sessions: Number(summary.sessions || 0),
