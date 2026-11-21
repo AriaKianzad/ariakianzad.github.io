@@ -7,13 +7,13 @@ This repository contains my personal website and the standalone Persian microsit
 - **Private analytics dashboard:** https://ariakianzad.github.io/admin/
 - **Book PDF release:** https://github.com/AriaKianzad/ariakianzad.github.io/releases/tag/mian-e-ma-v1
 
-The personal website and book page are static frontends. The analytics dashboard is also served as static files, but it talks to a separate Supabase backend for authentication and reporting. Rexo has its own website at https://rexo.agency/.
+The personal website and book page are static frontends. The personal homepage is a Next.js static export with one isolated client-side island for a locally bundled, lazy-loaded Three.js hero scene. Its main copy, navigation, expertise, method and structured data are rendered into static HTML. The analytics dashboard is also served as static files, but it talks to a separate Supabase backend for authentication and reporting. Rexo has its own website at https://rexo.agency/.
 
 ## Project architecture
 
 | Area | Implementation |
 | --- | --- |
-| Personal website | Next.js App Router, React and TypeScript |
+| Personal website | Next.js App Router, React, TypeScript and Three.js for the optional 3D hero scene |
 | Book microsite | Standalone HTML, CSS and JavaScript |
 | Admin interface | Static HTML, CSS and JavaScript |
 | Hosting | GitHub Pages, with an optional Apache/cPanel bundle |
@@ -22,7 +22,7 @@ The personal website and book page are static frontends. The analytics dashboard
 | Site analytics | Google Analytics 4 and Google Search Console, queried server-side |
 | Consent | First-party consent panel; the Google tag loads only after consent |
 
-The Next.js application is exported as static files. The deployed website does not run a Next.js server and has no Next.js API routes or request-time server rendering. The dashboard is not a hidden or private deployment: its HTML and JavaScript are public. Access to its data is enforced by Supabase, not by the dashboard URL or its noindex metadata.
+The Next.js application is exported as static files. The deployed website does not run a Next.js server, has no Next.js API routes and performs no request-time server rendering. The homepage's Three.js scene is bundled with the site, dynamically imported only when the hero approaches the viewport, and never fetched from a third-party CDN. If WebGL is unavailable or the visitor prefers reduced motion, a CSS-built static visual remains. The rest of the homepage is server-rendered HTML with progressive-enhancement scripts. The dashboard is not a hidden or private deployment: its HTML and JavaScript are public. Access to its data is enforced by Supabase, not by the dashboard URL or its noindex metadata.
 
 ### Main routes
 
@@ -30,6 +30,8 @@ The Next.js application is exported as static files. The deployed website does n
 - /Mian-e-Ma/: Persian book information and download page.
 - /admin/: password-protected analytics interface.
 - /robots.txt, /sitemap.xml, /llms.txt: public discovery and metadata files.
+
+The redesigned homepage is organized around research and insight, positioning and identity, content and communication, a four-step method, Rexo, writing, about and contact. It uses a restrained dark editorial system, Estedad typography, a locally bundled 3D signal sculpture in the hero, scroll-triggered section entrances and subtle interactive diagrams. Motion respects `prefers-reduced-motion`; the hero has a CSS fallback and is not required to read or navigate the page.
 
 The book download links point to the PDF asset attached to GitHub Release mian-e-ma-v1. The Release download_count is the source of truth for total file downloads. It counts download requests reported by GitHub, not unique readers or confirmed reading sessions.
 
@@ -90,6 +92,8 @@ Useful checks and production commands:
     npm run lint
     npm run audit
     npm run check:security
+    npm run test:consent
+    npm run test:homepage
     npm run build
     npm run preview
 
@@ -151,9 +155,9 @@ Both functions set verify_jwt = false in supabase/config.toml because the handle
 ## Repository layout
 
     src/
-      app/                 Personal website layout, pages, styles and metadata
-      components/          Reusable interface components and icons
-      content/             Website copy
+      app/                 Personal website layout, sections, responsive styles and metadata
+      components/          Reusable interface components, icons and the lazy 3D hero scene
+      content/             Website copy and brand narrative
       lib/                 Site settings, metadata and structured data
 
     public/
@@ -171,7 +175,7 @@ Both functions set verify_jwt = false in supabase/config.toml because the handle
       config.toml           Function runtime configuration
       README.md             Backend setup and operational notes
 
-    scripts/                Asset generation, security checks, build and packaging
+    scripts/                Asset generation, security checks, homepage regression tests, build and packaging
     assets-src/             Original fonts and SVG icon sources
     LICENSES/               Font licence files
     hosting/                 Optional cPanel hosting instructions
