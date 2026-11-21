@@ -15,7 +15,8 @@
     "assets": "node scripts/generate-assets.mjs",
     "social-icons": "node scripts/extract-social-paths.mjs",
     "check:security": "node scripts/verify-secrets.mjs",
-    "test:consent": "node scripts/test-analytics-consent.mjs"
+    "test:consent": "node scripts/test-analytics-consent.mjs",
+    "test:homepage": "node scripts/test-homepage-contract.mjs"
   },
   "dependencies": {
     "next": "16.4.6",
