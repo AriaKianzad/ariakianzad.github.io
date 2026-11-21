@@ -4,6 +4,7 @@
   const config = window.MIAN_E_MA_DASHBOARD_CONFIG || {};
   const $ = (selector) => document.querySelector(selector);
   const state = { accessToken: "", refreshToken: "", stats: null, range: 30, busy: false };
+  let refreshInFlight = null;
 
   const loginView = $("#login-view");
   const dashboardView = $("#dashboard-view");
@@ -92,6 +93,15 @@
     return true;
   }
 
+  function refreshSessionOnce() {
+    if (!refreshInFlight) {
+      refreshInFlight = refreshSession().finally(() => {
+        refreshInFlight = null;
+      });
+    }
+    return refreshInFlight;
+  }
+
   async function requestSiteAnalytics(retried) {
     const response = await fetch(apiUrl("/functions/v1/site-analytics"), {
       method: "POST",
@@ -103,7 +113,7 @@
       body: JSON.stringify({ mode: "dashboard" })
     });
 
-    if (response.status === 401 && !retried && await refreshSession()) {
+    if (response.status === 401 && !retried && await refreshSessionOnce()) {
       return requestSiteAnalytics(true);
     }
     if (response.status === 401 || response.status === 403) {
