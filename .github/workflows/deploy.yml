@@ -81,6 +81,11 @@ jobs:
           test -s out/admin/admin.css
           test -s out/admin/app.js
           test -s out/admin/config.js
+          test -s out/analytics-consent.js
+          grep -Fq 'analytics-consent' out/index.html
+          grep -Fq '/analytics-consent.js' out/index.html
+          grep -Fq 'analytics-consent' out/Mian-e-Ma/index.html
+          grep -Fq '/analytics-consent.js' out/Mian-e-Ma/index.html
           grep -Fq 'noindex, nofollow, noarchive' out/admin/index.html
           node --check public/admin/app.js
           ! grep -Eq 'sb_secret_|service_role|ghp_' out/admin/config.js
