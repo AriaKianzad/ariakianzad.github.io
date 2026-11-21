@@ -1,10 +1,9 @@
 /*
- * Public client settings only.
- * The URL and publishable/anon key are intended to be exposed in the browser.
+ * Public Supabase client settings.
+ * This publishable key is intended for browser use; Row Level Security protects private tables.
  * Never put a Supabase secret/service-role key or GitHub token in this file.
- * Fill these after deploying the Supabase backend.
  */
 window.MIAN_E_MA_DASHBOARD_CONFIG = Object.freeze({
-  supabaseUrl: "",
-  supabaseAnonKey: ""
+  supabaseUrl: "https://bkohdqwecnvbmeaiuyyx.supabase.co",
+  supabaseAnonKey: "sb_publishable_FZBK8LPOyf2nAtS8jhchUw_3SVXvo6h"
 });
