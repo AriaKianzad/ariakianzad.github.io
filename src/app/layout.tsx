@@ -65,6 +65,9 @@ const structuredDataJson = JSON.stringify(structuredData).replace(/</g, "\\u003c
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${estedad.variable} ${geistMono.variable}`}>
+      <head>
+        <meta httpEquiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' data: https://www.google-analytics.com; font-src 'self'; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests" />
+      </head>
       <body>
         <a className="skip-link" href="#main">
           Skip to content
