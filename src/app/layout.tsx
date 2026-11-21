@@ -4,6 +4,7 @@ import { rootMetadata } from "@/lib/metadata";
 import { site, socials, primaryNav, knowsAbout, rexo } from "@/lib/site";
 import { footer } from "@/content/home";
 import { SocialIcon } from "@/components/icons";
+import { AnalyticsConsent } from "@/components/analytics-consent";
 import "./globals.css";
 import "./chrome.css";
 import "./sections.css";
@@ -141,6 +142,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </footer>
+        <AnalyticsConsent />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: structuredDataJson }}
