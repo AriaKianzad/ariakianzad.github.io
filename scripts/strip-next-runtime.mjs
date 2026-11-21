@@ -4,7 +4,7 @@
  *
  * This site has no client runtime: there are no "use client" components, so
  * nothing on the page needs React in the browser. The only scripts the site
- * ships are the two same-origin files public/boot.js and public/ui.js.
+ * ships are the two same-origin files public/boot.js, public/ui.js, and public/analytics-consent.js.
  *
  * Next.js' export nevertheless contains machinery for hydration and client
  * navigation. Everything removed here exists only for that machinery, and is
