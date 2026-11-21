@@ -56,6 +56,7 @@ jobs:
           node --check scripts/generate-assets.mjs
           node --check scripts/extract-social-paths.mjs
           node --check scripts/verify-export.mjs
+          node --check public/analytics-consent.js
           node --check scripts/make-hosting-bundle.mjs
 
       - name: Build static website
