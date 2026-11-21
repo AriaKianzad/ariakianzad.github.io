@@ -106,6 +106,10 @@
     if (response.status === 401 && !retried && await refreshSession()) {
       return requestStats(true);
     }
+    if (response.status === 401 || response.status === 403) {
+      logout();
+      throw new Error("این حساب مجاز به دیدن داشبورد نیست یا نشست آن منقضی شده. دوباره وارد شو.");
+    }
     return parseResponse(response);
   }
 
