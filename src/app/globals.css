@@ -53,6 +53,7 @@
 }
 
 html {
+  overflow-x: clip;
   scroll-behavior: smooth;
   scroll-padding-top: calc(var(--header-h) + 1.25rem);
   -webkit-text-size-adjust: 100%;
@@ -64,6 +65,7 @@ body {
   isolation: isolate;
   margin: 0;
   min-width: 320px;
+  max-width: 100%;
   overflow-x: clip;
   background: var(--bg);
   color: var(--ink);
