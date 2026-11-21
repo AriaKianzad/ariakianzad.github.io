@@ -4,7 +4,6 @@ import { rootMetadata } from "@/lib/metadata";
 import { site, socials, primaryNav, knowsAbout, rexo } from "@/lib/site";
 import { footer } from "@/content/home";
 import { SocialIcon } from "@/components/icons";
-import { AnalyticsConsent } from "@/components/analytics-consent";
 import "./globals.css";
 import "./chrome.css";
 import "./sections.css";
@@ -142,7 +141,33 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </footer>
-        <AnalyticsConsent />
+        <section
+          id="analytics-consent"
+          className="analytics-consent"
+          role="dialog"
+          aria-label="Analytics preferences"
+          aria-describedby="analytics-consent-description"
+          hidden
+        >
+          <div className="analytics-consent__copy">
+            <strong id="analytics-consent-title">Analytics preferences</strong>
+            <p id="analytics-consent-description">
+              We use Google Analytics to understand site traffic and improve the experience. Allow analytics to share usage data with Google.
+            </p>
+          </div>
+          <div className="analytics-consent__actions">
+            <button id="analytics-consent-accept" className="analytics-consent__accept" type="button">
+              Allow analytics
+            </button>
+            <button id="analytics-consent-reject" className="analytics-consent__reject" type="button">
+              Decline
+            </button>
+          </div>
+        </section>
+        <button id="analytics-preferences" className="analytics-preferences" type="button" hidden>
+          Privacy settings
+        </button>
+        <script src="/analytics-consent.js" defer />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: structuredDataJson }}
