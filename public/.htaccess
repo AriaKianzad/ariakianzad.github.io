@@ -7,7 +7,7 @@
 #
 # Required modules: mod_headers (security headers + cache rules).
 # Optional: mod_rewrite (HTTPS + canonical-host redirects),
-# mod_deflate + mod_filter (compression), mod_mime (MIME types).
+# mod_deflate + mod_filter (compression), mod_mime (MIME types), mod_setenvif (hashed asset cache rules).
 # Every non-core directive is guarded by <IfModule>, so a server
 # without an optional module still serves the site instead of
 # failing with HTTP 500. See HOSTING-README.txt.
@@ -56,6 +56,10 @@ ErrorDocument 404 /404.html
 # first condition with:
 #   RewriteCond %{HTTP:X-Forwarded-Proto} !https
 
+<IfModule mod_setenvif.c>
+  SetEnvIf Request_URI "^/(?:_next/static/|_hero/chunks/)" aria_hashed_asset
+</IfModule>
+
 # --- Security headers -------------------------------------------
 # Same policy as public/_headers (kept in sync; both files are
 # cross-checked by scripts/verify-export.mjs on every build).
@@ -91,6 +95,9 @@ ErrorDocument 404 /404.html
   <FilesMatch "\.(png|ico)$">
     Header always set Cache-Control "public, max-age=604800"
   </FilesMatch>
+  # Only content-hashed Next and hero chunks can be cached forever.
+  Header always set Cache-Control "public, max-age=31536000, immutable" env=aria_hashed_asset
+
   # SEO text files: revalidate hourly.
   <FilesMatch "\.(txt|xml)$">
     Header always set Cache-Control "public, max-age=3600, must-revalidate"
