@@ -1295,8 +1295,9 @@ html[data-js] .hero-intro {
   .hero-visual {
     order: 0;
     width: 100%;
+    max-width: 100%;
     height: clamp(260px, 68vw, 390px);
-    margin: -0.5rem -0.8rem -0.7rem;
+    margin-block: -0.5rem -0.7rem;
   }
 
   .hero__copy {
@@ -1419,7 +1420,7 @@ html[data-js] .hero-intro {
 
   .hero-visual {
     height: 260px;
-    margin-inline: -1rem;
+    margin-inline: 0;
   }
 
   .hero-visual__label--side {
@@ -1497,7 +1498,14 @@ html[data-js] .hero-intro {
   }
 
   .contact__email {
+    max-width: 100%;
+    flex-wrap: wrap;
     font-size: 1.4rem;
+    overflow-wrap: anywhere;
+  }
+
+  .contact__address {
+    max-width: 100%;
     overflow-wrap: anywhere;
   }
 }
