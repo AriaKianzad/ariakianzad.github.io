@@ -3,7 +3,7 @@ import { estedad, geistMono } from "./fonts";
 import { rootMetadata } from "@/lib/metadata";
 import { site, socials, primaryNav, knowsAbout, rexo } from "@/lib/site";
 import { footer } from "@/content/home";
-import { SocialIcon } from "@/components/icons";
+import { ExtArrow, SocialIcon } from "@/components/icons";
 import "./globals.css";
 import "./chrome.css";
 import "./sections.css";
@@ -11,25 +11,34 @@ import "./sections.css";
 export const metadata: Metadata = rootMetadata();
 
 export const viewport: Viewport = {
-  themeColor: "#0a0b0d",
+  themeColor: "#090d0c",
   colorScheme: "dark",
 };
 
-/**
- * ProfilePage + Person structured data. Every value comes from src/lib/site;
- * nothing asserted here that the site does not show.
- */
 const personId = `${site.url}/#person`;
 const rexoId = `${rexo.url.replace(/\/$/, "")}/#organization`;
+const siteId = `${site.url}/#website`;
 const siteHost = new URL(site.url).host;
 
 const structuredData = {
   "@context": "https://schema.org",
   "@graph": [
     {
+      "@type": "WebSite",
+      "@id": siteId,
+      name: site.name,
+      url: site.url,
+      inLanguage: site.locale,
+      publisher: { "@id": personId },
+    },
+    {
       "@type": "ProfilePage",
       "@id": `${site.url}/#profilepage`,
-      inLanguage: "en",
+      url: site.url,
+      name: "Aria Kianzad | Brand Strategy & Personal Branding",
+      description: site.description,
+      inLanguage: site.locale,
+      isPartOf: { "@id": siteId },
       mainEntity: { "@id": personId },
       about: { "@id": personId },
     },
@@ -59,28 +68,29 @@ const structuredData = {
   ],
 };
 
-// Escape "<" so future text values cannot terminate the JSON-LD script element.
 const structuredDataJson = JSON.stringify(structuredData).replace(/</g, "\\u003c");
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${estedad.variable} ${geistMono.variable}`}>
       <head>
-        <meta httpEquiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' data: https://www.google-analytics.com; font-src 'self'; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests" />
+        <meta
+          httpEquiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' data: https://www.google-analytics.com; font-src 'self'; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests"
+        />
       </head>
       <body>
-        <a className="skip-link" href="#main">
-          Skip to content
-        </a>
-        {/* Synchronous on purpose: confirms scripting before first paint
-            (see public/boot.js and the eslint config for the rationale). */}
+        <a className="skip-link" href="#main">Skip to content</a>
         <script src="/boot.js" />
-        {/* Enhancement layer: menu, scroll spy, reveals, copy email. */}
         <script src="/ui.js" defer />
         <header className="site-header" data-header>
           <div className="shell site-header__row">
-            <a className="wordmark" href="/#top">
-              Aria Kianzad
+            <a className="wordmark" href="/#top" aria-label="Aria Kianzad, home">
+              <span className="wordmark__mark" aria-hidden="true">AK</span>
+              <span className="wordmark__copy">
+                <strong>Aria Kianzad</strong>
+                <small>Brand strategy / Personal branding</small>
+              </span>
             </a>
             <nav className="site-nav" aria-label="Primary" data-nav>
               <button
@@ -102,28 +112,31 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </a>
                   </li>
                 ))}
-                <li>
-                  <a
-                    className="site-nav__link site-nav__contact"
-                    href={`mailto:${site.email}`}
-                  >
-                    Contact
-                  </a>
-                </li>
               </ul>
             </nav>
+            <a className="header-cta" href={`mailto:${site.email}`}>
+              <span>Let's talk</span>
+              <ExtArrow />
+            </a>
           </div>
         </header>
+
         <main id="main">{children}</main>
+
         <footer className="site-footer">
           <div className="shell">
-            <div className="site-footer__row">
-              <a className="site-footer__wordmark" href="/#top">
-                Aria Kianzad
-              </a>
-              <p className="site-footer__meta">{footer.note}</p>
+            <div className="site-footer__top">
+              <div className="site-footer__identity">
+                <a className="site-footer__wordmark" href="/#top">Aria Kianzad</a>
+                <p>{footer.note}</p>
+              </div>
+              <div className="site-footer__links" aria-label="Related projects">
+                <a href="https://rexo.agency/" target="_blank" rel="noopener noreferrer">Rexo <ExtArrow /></a>
+                <a href="/Mian-e-Ma/">میانِ ما</a>
+                <a href="mailto:kianzadaria@gmail.com">Email</a>
+              </div>
             </div>
-            <ul className="social-list">
+            <ul className="social-list" aria-label="Social profiles">
               {socials.map((entry) => (
                 <li key={entry.id}>
                   <a
@@ -141,9 +154,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="site-footer__base">
               <p className="site-footer__legal">{footer.copyright}</p>
               <p className="site-footer__legal">{siteHost}</p>
+              <a className="back-to-top" href="/#top">Back to top ↑</a>
             </div>
           </div>
         </footer>
+
         <section
           id="analytics-consent"
           className="analytics-consent"
