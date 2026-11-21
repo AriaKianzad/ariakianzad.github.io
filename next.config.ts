@@ -1,12 +1,11 @@
 import type { NextConfig } from "next";
 
 /**
- * Static export for GitHub Pages. Three.js is bundled locally and the
- * interactive hero scene is dynamically imported only in the browser.
+ * Static export for GitHub Pages. The interactive Three.js hero is bundled
+ * separately by esbuild after export, so it does not enter the Next.js runtime.
  */
 const nextConfig: NextConfig = {
   output: "export",
-  transpilePackages: ["three"],
 };
 
 export default nextConfig;
