@@ -18,6 +18,8 @@ const [
   ui,
   llms,
   packageJson,
+  hostHeaders,
+  apacheConfig,
 ] = await Promise.all([
   read("src/app/page.tsx"),
   read("src/content/home.ts"),
@@ -33,6 +35,8 @@ const [
   read("public/ui.js"),
   read("public/llms.txt"),
   read("package.json"),
+  read("public/_headers"),
+  read("public/.htaccess"),
 ]);
 
 // The homepage remains a semantic, server-rendered page with one primary heading.
@@ -91,6 +95,17 @@ assert.ok(heroEntry.includes("prefers-reduced-motion: reduce"), "entrypoint must
 assert.ok(!/https?:\/\//.test(heroScene), "3D scene must not load external resources");
 assert.ok(!/eval\s*\(|new Function\s*\(/.test(heroEntry + heroScene), "hero code must not use dynamic code execution");
 assert.ok(packageJson.includes("out/_hero") && packageJson.includes("--splitting"), "postbuild must create code-split hero assets");
+assert.ok(hostHeaders.includes("/_hero/*") && hostHeaders.includes("max-age=3600, must-revalidate"),
+  "stable hero entrypoint must use a revalidation cache");
+assert.ok(hostHeaders.includes("/_hero/chunks/*") && hostHeaders.includes("max-age=31536000, immutable"),
+  "content-hashed hero chunks should use immutable caching");
+assert.ok(apacheConfig.includes('SetEnvIf Request_URI "^/(?:_next/static/|_hero/chunks/)" aria_hashed_asset'),
+  "Apache config must identify only content-hashed asset paths");
+assert.ok(apacheConfig.includes('Header always set Cache-Control "public, max-age=3600, must-revalidate"'),
+  "fixed-name scripts, CSS and fonts must revalidate");
+assert.ok(apacheConfig.includes('env=aria_hashed_asset'),
+  "Apache immutable cache rule must be restricted to hashed assets");
+
 
 // Animation must degrade gracefully and remain responsive.
 assert.ok(globals.includes("@media (prefers-reduced-motion: reduce)"), "global reduced-motion fallback missing");
