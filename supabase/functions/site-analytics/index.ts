@@ -22,6 +22,13 @@ interface GoogleAnalyticsReport {
   dimensionHeaders?: Array<{ name: string }>;
   metricHeaders?: Array<{ name: string }>;
   rows?: GoogleAnalyticsRow[];
+  rowCount?: number;
+  metadata?: {
+    timeZone?: string;
+    emptyReason?: string;
+    subjectToThresholding?: boolean;
+    dataLossFromOtherRow?: boolean;
+  };
 }
 
 interface SearchConsoleRow {
@@ -258,7 +265,12 @@ function reportRows(report: GoogleAnalyticsReport): Array<Record<string, string 
 async function ga4Report(accessToken: string, body: unknown) {
   const url = "https://analyticsdata.googleapis.com/v1beta/properties/" +
     GA4_PROPERTY_ID + ":runReport";
-  return reportRows(await googlePost<GoogleAnalyticsReport>(url, accessToken, body));
+  const report = await googlePost<GoogleAnalyticsReport>(url, accessToken, body);
+  return {
+    rows: reportRows(report),
+    rowCount: report.rowCount,
+    metadata: report.metadata,
+  };
 }
 
 function isoDateDaysAgo(daysAgo: number): string {
@@ -280,7 +292,7 @@ async function searchConsoleReport(
 async function getAnalyticsData(accessToken: string) {
   const dateRanges = [{ startDate: "30daysAgo", endDate: "yesterday" }];
 
-  const [summaryRows, sources, pages, referrers, downloads] = await Promise.all([
+  const [summaryReport, sourcesReport, pagesReport, referrersReport, downloadsReport] = await Promise.all([
     ga4Report(accessToken, {
       dateRanges,
       metrics: [
@@ -343,6 +355,11 @@ async function getAnalyticsData(accessToken: string) {
     }),
   ]);
 
+  const summaryRows = summaryReport.rows;
+  const sources = sourcesReport.rows;
+  const pages = pagesReport.rows;
+  const referrers = referrersReport.rows;
+  const downloads = downloadsReport.rows;
   const summaryAvailable = summaryRows.length > 0;
   const hasBreakdownRows = sources.length + pages.length + referrers.length + downloads.length > 0;
   const status = summaryAvailable ? "ok" : hasBreakdownRows ? "partial" : "no_data";
@@ -381,6 +398,11 @@ async function getAnalyticsData(accessToken: string) {
     })),
     diagnostics: {
       summaryRows: summaryRows.length,
+      summaryRowCount: summaryReport.rowCount ?? summaryRows.length,
+      propertyTimeZone: summaryReport.metadata?.timeZone ?? null,
+      emptyReason: summaryReport.metadata?.emptyReason ?? null,
+      subjectToThresholding: summaryReport.metadata?.subjectToThresholding ?? false,
+      dataLossFromOtherRow: summaryReport.metadata?.dataLossFromOtherRow ?? false,
       sourceRows: sources.length,
       pageRows: pages.length,
       referrerRows: referrers.length,
