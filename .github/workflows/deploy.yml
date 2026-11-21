@@ -84,6 +84,9 @@ jobs:
           grep -Fq 'ga4-title' out/admin/index.html
           grep -Fq 'gsc-title' out/admin/index.html
           grep -Fq 'site-analytics' out/admin/app.js
+          grep -Fq 'remember-session' out/admin/index.html
+          grep -Fq 'mian-e-ma-dashboard-refresh-v1' out/admin/app.js
+          grep -Fq 'void restoreRememberedSession();' out/admin/app.js
           test -s out/analytics-consent.js
           grep -Fq 'analytics-consent' out/index.html
           grep -Fq '/analytics-consent.js' out/index.html
