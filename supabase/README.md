@@ -19,6 +19,7 @@ The Edge Function uses Supabase's built-in `SUPABASE_PUBLISHABLE_KEYS` and `SUPA
 4. The authenticated email must also exist as an active row in `public.dashboard_admins`.
 5. The Edge Function uses the built-in server-side Supabase secret key to access the database.
 6. Both `download_snapshots` and `dashboard_admins` have Row Level Security enabled, and browser roles have no table privileges.
+7. The login page can remember this browser by storing only the rotating Supabase refresh token in `localStorage`; it never stores the password or access token. Explicit logout removes the stored refresh token.
 
 ## Finish admin setup
 
@@ -40,9 +41,11 @@ Both migrations have been applied to the production project.
 
 ## Download history
 
-GitHub exposes the current cumulative asset download count, not historical daily counts. Every successful dashboard refresh records or updates the current day's snapshot using the Tehran calendar date. The dashboard can calculate day-to-day deltas once snapshots exist, but days when the dashboard is not opened will not have a snapshot. The first recorded day is a baseline and does not include older daily history.
+GitHub exposes the current cumulative asset download count, not historical daily counts. A successful dashboard refresh records or updates the current day's snapshot using the Tehran calendar date. In addition, the Supabase Cron job `mian-e-ma-daily-download-snapshot` records a daily snapshot at 00:15 UTC (03:45 Asia/Tehran), even when the dashboard is not opened.
 
-The number represents downloads, not unique people. A scheduled daily snapshot job can be added separately if a continuous daily chart is required.
+The scheduled PostgreSQL function `private.capture_github_download_snapshot()` reads the public GitHub Release API through the `http` extension and upserts the cumulative count into `public.download_snapshots`. It runs as the database's `postgres` role and is not executable by browser roles. The extensions `pg_cron` and `http` are enabled for this purpose; no GitHub token, Supabase admin token, additional Edge Function secret, or paid scheduler is needed.
+
+The number represents downloads, not unique people. Daily figures are calculated as differences between cumulative snapshots. The first recorded day is a baseline and does not include older daily history. Cron runs can be inspected under Supabase **Integrations → Cron** or in `cron.job_run_details`.
 
 
 ## Google Analytics 4 and Search Console reporting
