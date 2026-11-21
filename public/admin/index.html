@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="theme-color" content="#0a0b0d">
+  <title>مدیریت دانلودها | میانِ ما</title>
+  <meta name="description" content="داشبورد خصوصی آمار دانلود کتاب میانِ ما.">
+  <link rel="stylesheet" href="./admin.css">
+  <script src="./config.js"></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="../" aria-label="بازگشت به وب‌سایت">
+        <span class="brand-mark">م</span>
+        <span><strong>میانِ ما</strong><small>DOWNLOAD ANALYTICS</small></span>
+      </a>
+      <a class="site-link" href="../Mian-e-Ma/" target="_blank" rel="noopener noreferrer">صفحۀ کتاب <span>↗</span></a>
+    </header>
+
+    <section id="login-view" class="login-layout" aria-labelledby="login-title">
+      <div class="intro">
+        <span class="eyebrow"><i></i> PRIVATE AREA</span>
+        <h1>آمار، بدون حدس.</h1>
+        <p>نمای کلی دانلودهای کتاب «میانِ ما»؛ فقط برای مدیر داشبورد.</p>
+        <div class="intro-note"><b></b><span>این صفحه در نتایج موتورهای جست‌وجو نمایش داده نمی‌شه.</span></div>
+      </div>
+
+      <form id="login-form" class="login-card" autocomplete="on">
+        <div class="card-kicker"><span>ADMIN ACCESS</span><span>01 / 01</span></div>
+        <h2 id="login-title">ورود به داشبورد</h2>
+        <p class="muted">برای مشاهدۀ آمار، وارد حساب مدیریتی شو.</p>
+        <label for="email">ایمیل حساب</label>
+        <input id="email" name="email" type="email" inputmode="email" autocomplete="username" placeholder="name@example.com" required>
+        <label for="password">رمز عبور</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" placeholder="رمز عبور حساب" required>
+        <button id="login-button" class="button primary" type="submit"><span>ورود</span><span>←</span></button>
+        <p id="login-message" class="message" role="status" aria-live="polite"></p>
+        <p id="setup-message" class="setup-message" hidden>اتصال امن داشبورد هنوز پیکربندی نشده. ورود تا زمان راه‌اندازی سرویس غیرفعاله.</p>
+      </form>
+    </section>
+
+    <section id="dashboard-view" class="dashboard" hidden aria-labelledby="dashboard-title">
+      <div class="dashboard-heading">
+        <div>
+          <span class="eyebrow"><i></i> PRIVATE ANALYTICS</span>
+          <h1 id="dashboard-title">گزارش دانلودها</h1>
+          <p class="muted">کتاب «میانِ ما» <span class="accent">/</span> نسخۀ PDF</p>
+        </div>
+        <div class="actions">
+          <button id="refresh-button" class="button secondary" type="button">↻ <span>به‌روزرسانی آمار</span></button>
+          <button id="logout-button" class="button quiet" type="button">خروج</button>
+        </div>
+      </div>
+
+      <div id="dashboard-message" class="dashboard-message" role="status" aria-live="polite" hidden></div>
+
+      <div class="metrics">
+        <article class="metric featured">
+          <div class="metric-top"><span>مجموع دانلودها</span><small>01</small></div>
+          <strong id="total-downloads">—</strong>
+          <span class="metric-foot">از زمان انتشار Release</span>
+        </article>
+        <article class="metric">
+          <div class="metric-top"><span>دانلود امروز</span><small>02</small></div>
+          <strong id="today-downloads">—</strong>
+          <span class="metric-foot">بر اساس زمان تهران</span>
+        </article>
+        <article class="metric">
+          <div class="metric-top"><span>۷ روز اخیر</span><small>03</small></div>
+          <strong id="week-downloads">—</strong>
+          <span class="metric-foot">مجموع بازۀ هفت‌روزه</span>
+        </article>
+        <article class="metric">
+          <div class="metric-top"><span>۳۰ روز اخیر</span><small>04</small></div>
+          <strong id="month-downloads">—</strong>
+          <span class="metric-foot">مجموع بازۀ سی‌روزه</span>
+        </article>
+      </div>
+
+      <section class="panel chart-panel" aria-labelledby="chart-title">
+        <div class="panel-heading">
+          <div><span class="eyebrow">DOWNLOAD ACTIVITY</span><h2 id="chart-title">روند دانلود روزانه</h2></div>
+          <div class="range-switch" role="group" aria-label="بازهٔ نمودار">
+            <button type="button" data-range="7" aria-pressed="false">۷ روز</button>
+            <button type="button" data-range="30" aria-pressed="true">۳۰ روز</button>
+            <button type="button" data-range="90" aria-pressed="false">۹۰ روز</button>
+          </div>
+        </div>
+        <div id="chart-empty" class="chart-empty" hidden>هنوز دادهٔ کافی برای رسم روند وجود نداره. بعد از ثبت روزانۀ آمار، نمودار اینجا به‌روزرسانی می‌شه.</div>
+        <div id="chart-wrap" class="chart-wrap">
+          <svg id="download-chart" viewBox="0 0 920 260" role="img" aria-label="نمودار تعداد دانلودهای روزانه">
+            <defs><linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#c7f36b"/><stop offset="100%" stop-color="#c7f36b" stop-opacity="0"/></linearGradient></defs>
+            <g id="chart-grid"></g><path id="chart-area" class="chart-area" d=""></path><polyline id="chart-line" class="chart-line" points=""></polyline><g id="chart-points"></g>
+          </svg>
+          <div id="chart-labels" class="chart-labels"></div>
+        </div>
+        <div class="chart-legend"><i></i> دانلود ثبت‌شده در هر روز</div>
+      </section>
+
+      <div class="lower-grid">
+        <section class="panel" aria-labelledby="history-title">
+          <div class="panel-heading"><div><span class="eyebrow">RECENT ACTIVITY</span><h2 id="history-title">روزهای اخیر</h2></div><span id="history-count" class="panel-count">—</span></div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>تاریخ</th><th>دانلود روزانه</th><th>مجموع</th></tr></thead>
+              <tbody id="history-body"><tr><td colspan="3" class="empty-cell">در انتظار دریافت داده…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <aside class="panel source-panel" aria-labelledby="source-title">
+          <span class="eyebrow">SOURCE</span><h2 id="source-title">منبع آمار</h2>
+          <dl>
+            <div><dt>مخزن</dt><dd>AriaKianzad / ariakianzad.github.io</dd></div>
+            <div><dt>نسخه</dt><dd class="mono">mian-e-ma-v1</dd></div>
+            <div><dt>فایل</dt><dd class="mono">Mian-e-Ma.pdf</dd></div>
+            <div><dt>آخرین به‌روزرسانی</dt><dd id="last-updated">—</dd></div>
+          </dl>
+          <a class="release-link" href="https://github.com/AriaKianzad/ariakianzad.github.io/releases/tag/mian-e-ma-v1" target="_blank" rel="noopener noreferrer">مشاهدۀ Release در GitHub <span>↗</span></a>
+          <p class="source-note">GitHub تعداد دفعات دانلود فایل رو گزارش می‌کنه؛ این عدد به معنی تعداد افراد منحصربه‌فرد نیست.</p>
+        </aside>
+      </div>
+      <footer class="dashboard-footer"><span>MIAN-E-MA / DOWNLOAD ANALYTICS</span><span>PRIVATE ADMIN VIEW</span></footer>
+    </section>
+
+    <footer class="page-footer"><span>ARIA KIANZAD</span><span>MIAN-E-MA · PRIVATE DASHBOARD</span></footer>
+  </main>
+</body>
+</html>
