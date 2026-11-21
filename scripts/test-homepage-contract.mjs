@@ -70,20 +70,6 @@ assert.ok(mobileHeroRule.includes("margin-block:"), "mobile hero spacing must us
 assert.ok(!mobileHeroRule.includes("margin-inline: -"), "mobile hero must not extend horizontally beyond its container");
 assert.ok(sections.includes("overflow-wrap: anywhere"), "long contact details must wrap on narrow screens");
 
-// The 3D scene is local, lazy-loaded, progressive and respects accessibility preferences.
-assert.ok(hero.includes('dynamic(() => import("./signal-scene")'), "Three.js scene must be dynamically imported");
-assert.ok(hero.includes("ssr: false"), "WebGL scene must stay client-only for static export");
-assert.ok(hero.includes("IntersectionObserver"), "scene must load only near the hero viewport");
-assert.ok(hero.includes("prefers-reduced-motion: reduce"), "hero must read reduced-motion preference");
-assert.ok(hero.includes("hero-visual__fallback"), "hero must provide a CSS visual fallback");
-assert.ok(hero.includes("className={`hero-visual"), "hero visual must be present without WebGL");
-assert.ok(heroScene.includes('from "three"'), "Three.js must be bundled as a local dependency");
-assert.ok(heroScene.includes("new THREE.WebGLRenderer"), "hero must render a real WebGL scene");
-assert.ok(heroScene.includes("visibilitychange"), "scene animation must pause when the tab is hidden");
-assert.ok(heroScene.includes("renderer.dispose()"), "WebGL resources must be disposed on unmount");
-assert.ok(heroScene.includes("prefers-reduced-motion: reduce"), "scene itself must support reduced motion");
-assert.ok(!/https?:\/\//.test(heroScene), "3D scene must not load external resources");
-
 // The 3D scene is a standalone, same-origin progressive enhancement.
 // The static export deliberately has no React hydration runtime.
 assert.ok(!hero.includes('"use client"'), "hero markup must remain a server component");
@@ -99,7 +85,7 @@ assert.ok(heroScene.includes('from "three"'), "Three.js must be bundled as a loc
 assert.ok(heroScene.includes("new THREE.WebGLRenderer"), "hero must render a real WebGL scene");
 assert.ok(heroScene.includes("visibilitychange"), "scene animation must pause when the tab is hidden");
 assert.ok(heroScene.includes("renderer.dispose()"), "WebGL resources must be disposed during cleanup");
-assert.ok(heroScene.includes("prefers-reduced-motion: reduce"), "scene itself must support reduced motion");
+assert.ok(heroEntry.includes("prefers-reduced-motion: reduce"), "entrypoint must enforce reduced-motion preference");
 assert.ok(!/https?:\/\//.test(heroScene), "3D scene must not load external resources");
 assert.ok(!/eval\s*\(|new Function\s*\(/.test(heroEntry + heroScene), "hero code must not use dynamic code execution");
 assert.ok(packageJson.includes("out/_hero") && packageJson.includes("--splitting"), "postbuild must create code-split hero assets");
