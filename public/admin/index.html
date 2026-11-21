@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive">
   <meta name="theme-color" content="#0a0b0d">
-  <title>مدیریت دانلودها | میانِ ما</title>
+  <title>تحلیل عملکرد سایت و دانلودها | میانِ ما</title>
   <meta name="description" content="داشبورد خصوصی آمار دانلود کتاب میانِ ما.">
   <link rel="stylesheet" href="./admin.css">
   <script src="./config.js?v=20261121-2"></script>
@@ -16,7 +16,7 @@
     <header class="topbar">
       <a class="brand" href="../" aria-label="بازگشت به وب‌سایت">
         <span class="brand-mark">م</span>
-        <span><strong>میانِ ما</strong><small>DOWNLOAD ANALYTICS</small></span>
+        <span><strong>میانِ ما</strong><small>SITE & BOOK ANALYTICS</small></span>
       </a>
       <a class="site-link" href="../Mian-e-Ma/" target="_blank" rel="noopener noreferrer">صفحۀ کتاب <span>↗</span></a>
     </header>
@@ -47,8 +47,8 @@
       <div class="dashboard-heading">
         <div>
           <span class="eyebrow"><i></i> PRIVATE ANALYTICS</span>
-          <h1 id="dashboard-title">گزارش دانلودها</h1>
-          <p class="muted">کتاب «میانِ ما» <span class="accent">/</span> نسخۀ PDF</p>
+          <h1 id="dashboard-title">گزارش عملکرد سایت و کتاب</h1>
+          <p class="muted">وب‌سایت آریا کیانزاد <span class="accent">/</span> کتاب «میانِ ما»</p>
         </div>
         <div class="actions">
           <button id="refresh-button" class="button secondary" type="button">↻ <span>به‌روزرسانی آمار</span></button>
@@ -124,7 +124,66 @@
           <p class="source-note">GitHub تعداد دفعات دانلود فایل رو گزارش می‌کنه؛ این عدد به معنی تعداد افراد منحصربه‌فرد نیست.</p>
         </aside>
       </div>
-      <footer class="dashboard-footer"><span>MIAN-E-MA / DOWNLOAD ANALYTICS</span><span>PRIVATE ADMIN VIEW</span></footer>
+
+      <section class="google-section" aria-labelledby="ga4-title">
+        <div class="section-heading">
+          <div><span class="eyebrow">GOOGLE ANALYTICS 4</span><h2 id="ga4-title">رفتار و منابع ورود بازدیدکننده‌ها</h2>
+          <p class="section-subtitle">۳۰ روز اخیر، تا روز گذشته بر اساس منطقۀ زمانی Property در GA4</p></div>
+          <span id="ga4-status" class="status-pill pending">در انتظار اتصال</span>
+        </div>
+        <div id="ga4-message" class="integration-message" hidden></div>
+        <div class="metrics google-metrics">
+          <article class="metric"><div class="metric-top"><span>کاربران</span><small>GA4 / 01</small></div><strong id="ga-users">—</strong><span class="metric-foot">Total users</span></article>
+          <article class="metric"><div class="metric-top"><span>نشست‌ها</span><small>GA4 / 02</small></div><strong id="ga-sessions">—</strong><span class="metric-foot">Sessions</span></article>
+          <article class="metric"><div class="metric-top"><span>بازدید صفحات</span><small>GA4 / 03</small></div><strong id="ga-views">—</strong><span class="metric-foot">Screen page views</span></article>
+          <article class="metric"><div class="metric-top"><span>رویداد دانلود PDF</span><small>GA4 / 04</small></div><strong id="ga-download-events">—</strong><span class="metric-foot">file_download events</span></article>
+        </div>
+        <div class="lower-grid google-tables">
+          <section class="panel" aria-labelledby="ga-sources-title">
+            <div class="panel-heading"><div><span class="eyebrow">ACQUISITION</span><h3 id="ga-sources-title">منابع و کانال‌های ورود</h3></div></div>
+            <div class="table-scroll"><table><thead><tr><th>منبع / مدیوم</th><th>نشست</th><th>کاربر</th></tr></thead><tbody id="ga-sources-body"><tr><td colspan="3" class="empty-cell">در انتظار اتصال…</td></tr></tbody></table></div>
+          </section>
+          <section class="panel" aria-labelledby="ga-referrers-title">
+            <div class="panel-heading"><div><span class="eyebrow">REFERRERS</span><h3 id="ga-referrers-title">آدرس صفحات ارجاع‌دهنده</h3></div></div>
+            <div class="table-scroll"><table><thead><tr><th>صفحۀ مبدأ</th><th>رویداد</th></tr></thead><tbody id="ga-referrers-body"><tr><td colspan="2" class="empty-cell">در انتظار اتصال…</td></tr></tbody></table></div>
+          </section>
+        </div>
+        <section class="panel table-panel" aria-labelledby="ga-pages-title">
+          <div class="panel-heading"><div><span class="eyebrow">CONTENT</span><h3 id="ga-pages-title">صفحات پربازدید</h3></div></div>
+          <div class="table-scroll"><table><thead><tr><th>مسیر صفحه</th><th>بازدید</th><th>کاربر</th></tr></thead><tbody id="ga-pages-body"><tr><td colspan="3" class="empty-cell">در انتظار اتصال…</td></tr></tbody></table></div>
+        </section>
+      </section>
+
+      <section class="google-section" aria-labelledby="gsc-title">
+        <div class="section-heading">
+          <div><span class="eyebrow">GOOGLE SEARCH CONSOLE</span><h2 id="gsc-title">عملکرد در جست‌وجوی گوگل</h2>
+          <p class="section-subtitle">۳۰ روز اخیرِ پردازش‌شده؛ داده‌های چند روز آخر ممکنه هنوز کامل نباشن.</p></div>
+          <span id="gsc-status" class="status-pill pending">در انتظار اتصال</span>
+        </div>
+        <div id="gsc-message" class="integration-message" hidden></div>
+        <div class="metrics google-metrics">
+          <article class="metric"><div class="metric-top"><span>کلیک از گوگل</span><small>GSC / 01</small></div><strong id="gsc-clicks">—</strong><span class="metric-foot">Web search clicks</span></article>
+          <article class="metric"><div class="metric-top"><span>نمایش در نتایج</span><small>GSC / 02</small></div><strong id="gsc-impressions">—</strong><span class="metric-foot">Impressions</span></article>
+          <article class="metric"><div class="metric-top"><span>نرخ کلیک</span><small>GSC / 03</small></div><strong id="gsc-ctr">—</strong><span class="metric-foot">Click-through rate</span></article>
+          <article class="metric"><div class="metric-top"><span>میانگین جایگاه</span><small>GSC / 04</small></div><strong id="gsc-position">—</strong><span class="metric-foot">Average position</span></article>
+        </div>
+        <div class="lower-grid google-tables">
+          <section class="panel" aria-labelledby="gsc-queries-title">
+            <div class="panel-heading"><div><span class="eyebrow">SEARCH QUERIES</span><h3 id="gsc-queries-title">عبارت‌های جست‌وجوشده</h3></div></div>
+            <div class="table-scroll"><table><thead><tr><th>عبارت</th><th>کلیک</th><th>نمایش</th><th>CTR</th></tr></thead><tbody id="gsc-queries-body"><tr><td colspan="4" class="empty-cell">در انتظار اتصال…</td></tr></tbody></table></div>
+          </section>
+          <section class="panel" aria-labelledby="gsc-pages-title">
+            <div class="panel-heading"><div><span class="eyebrow">SEARCH PAGES</span><h3 id="gsc-pages-title">صفحات از جست‌وجو</h3></div></div>
+            <div class="table-scroll"><table><thead><tr><th>صفحه</th><th>کلیک</th><th>نمایش</th><th>CTR</th></tr></thead><tbody id="gsc-pages-body"><tr><td colspan="4" class="empty-cell">در انتظار اتصال…</td></tr></tbody></table></div>
+          </section>
+        </div>
+        <section class="panel table-panel" aria-labelledby="gsc-devices-title">
+          <div class="panel-heading"><div><span class="eyebrow">DEVICES</span><h3 id="gsc-devices-title">نوع دستگاه در جست‌وجوی گوگل</h3></div></div>
+          <div class="table-scroll"><table><thead><tr><th>دستگاه</th><th>کلیک</th><th>نمایش</th><th>جایگاه</th></tr></thead><tbody id="gsc-devices-body"><tr><td colspan="4" class="empty-cell">در انتظار اتصال…</td></tr></tbody></table></div>
+        </section>
+      </section>
+
+      <footer class="dashboard-footer"><span>MIAN-E-MA / SITE ANALYTICS</span><span>PRIVATE ADMIN VIEW</span></footer>
     </section>
 
     <footer class="page-footer"><span>ARIA KIANZAD</span><span>MIAN-E-MA · PRIVATE DASHBOARD</span></footer>
