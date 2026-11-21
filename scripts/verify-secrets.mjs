@@ -17,7 +17,7 @@ const MAX_TEXT_BYTES = 5 * 1024 * 1024;
 const patterns = [
   {
     label: "private key PEM",
-    regex: new RegExp("-{5}BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-{5}"),
+    regex: new RegExp("-{5}BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-{5}(?:\\r?\\n|\\\\n)[A-Za-z0-9+/=\\r\\n]{60,}(?:\\r?\\n|\\\\n)-{5}END (?:RSA |EC |OPENSSH )?PRIVATE KEY-{5}"),
   },
   {
     label: "Supabase secret API key",
