@@ -407,3 +407,108 @@ html[data-js] [data-reveal].d5 { transition-delay: 350ms; }
   white-space: nowrap;
   border: 0;
 }
+
+
+/* Google Analytics consent: lightweight, accessible, and self-hosted UI. */
+.analytics-consent {
+  position: fixed;
+  z-index: 1000;
+  inset-inline: max(1rem, var(--gutter));
+  bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  max-width: 900px;
+  margin-inline: auto;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--line-strong);
+  background: rgba(17, 20, 25, 0.98);
+  color: var(--text);
+  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.38);
+}
+
+.analytics-consent__copy {
+  display: grid;
+  gap: 0.3rem;
+  max-width: 58ch;
+}
+
+.analytics-consent__copy strong {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.analytics-consent__copy p {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.analytics-consent__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.analytics-consent__actions button,
+.analytics-preferences {
+  min-height: 38px;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.analytics-consent__accept {
+  border-color: var(--accent) !important;
+  background: var(--accent);
+  color: var(--ink);
+}
+
+.analytics-consent__accept:hover {
+  background: var(--accent-soft);
+}
+
+.analytics-consent__reject {
+  background: transparent;
+  color: var(--text);
+}
+
+.analytics-consent__reject:hover,
+.analytics-preferences:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.analytics-preferences {
+  position: fixed;
+  z-index: 999;
+  inset-inline-start: 1rem;
+  bottom: 1rem;
+  background: rgba(17, 20, 25, 0.94);
+  color: var(--text-muted);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 640px) {
+  .analytics-consent {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.9rem;
+    padding: 1rem;
+  }
+
+  .analytics-consent__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .analytics-preferences {
+    inset-inline-start: 0.65rem;
+    bottom: 0.65rem;
+  }
+}
