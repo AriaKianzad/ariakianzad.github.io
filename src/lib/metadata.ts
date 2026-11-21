@@ -30,6 +30,9 @@ export function rootMetadata(): Metadata {
     authors: [{ name: site.name, url: site.url }],
     creator: site.name,
     publisher: site.name,
+    verification: {
+      google: "UhIDVQ1toOjgUhS7bONWQB-lmnoRW5gbZkI1ZRpjpo8",
+    },
     formatDetection: { telephone: false, address: false, email: false },
     alternates: { canonical: "/" },
     openGraph: {

@@ -70,6 +70,7 @@ jobs:
         run: |
           set -euo pipefail
           test -s out/index.html
+          grep -Fq '<meta name="google-site-verification" content="UhIDVQ1toOjgUhS7bONWQB-lmnoRW5gbZkI1ZRpjpo8"/>' out/index.html
           test -s out/404.html
           test -s out/sitemap.xml
           test -s out/robots.txt
