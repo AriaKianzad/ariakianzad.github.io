@@ -92,6 +92,34 @@
     return true;
   }
 
+  async function requestSiteAnalytics(retried) {
+    const response = await fetch(apiUrl("/functions/v1/site-analytics"), {
+      method: "POST",
+      headers: {
+        apikey: config.supabaseAnonKey,
+        Authorization: "Bearer " + state.accessToken,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ mode: "dashboard" })
+    });
+
+    if (response.status === 401 && !retried && await refreshSession()) {
+      return requestSiteAnalytics(true);
+    }
+    if (response.status === 401 || response.status === 403) {
+      logout();
+      throw new Error("این حساب مجاز به دیدن داشبورد نیست یا نشست آن منقضی شده. دوباره وارد شو.");
+    }
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return {
+        status: payload.status || "error",
+        message: payload.message || payload.error || "دریافت آمار گوگل ناموفق بود."
+      };
+    }
+    return payload;
+  }
+
   async function requestStats(retried) {
     const response = await fetch(apiUrl("/functions/v1/download-stats"), {
       method: "POST",
@@ -248,6 +276,95 @@
     });
   }
 
+  function setTableRows(selector, rows, columns, emptyText) {
+    const body = $(selector);
+    if (!body) return;
+    body.replaceChildren();
+    if (!Array.isArray(rows) || rows.length === 0) {
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = columns;
+      td.className = "empty-cell";
+      td.textContent = emptyText || "داده‌ای برای این بازه ثبت نشده.";
+      tr.appendChild(td);
+      body.appendChild(tr);
+      return;
+    }
+    rows.forEach((row) => {
+      const tr = document.createElement("tr");
+      row.cells.forEach((value, index) => {
+        const td = document.createElement("td");
+        td.textContent = value;
+        if (index > 0) td.className = "number";
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    });
+  }
+
+  function setIntegrationStatus(prefix, status, message) {
+    const badge = $("#" + prefix + "-status");
+    const box = $("#" + prefix + "-message");
+    if (badge) {
+      badge.className = "status-pill " + (status === "ok" ? "ok" : status === "error" ? "error" : "pending");
+      badge.textContent = status === "ok" ? "متصل" : status === "not_configured" ? "نیازمند راه‌اندازی" : "خطا در اتصال";
+    }
+    if (box) {
+      box.textContent = message || "";
+      box.className = "integration-message" + (status === "error" ? " error" : "");
+      box.hidden = !message;
+    }
+  }
+
+  function formatPercent(value) {
+    return new Intl.NumberFormat("fa-IR", { style: "percent", maximumFractionDigits: 1 }).format(Number(value || 0));
+  }
+
+  function renderGoogleAnalytics(payload) {
+    if (!payload || payload.status === "not_configured") {
+      setIntegrationStatus("ga4", "not_configured", payload?.message || "برای اتصال، کلید Service Account گوگل باید در Secrets پروژه Supabase ثبت بشه.");
+      setIntegrationStatus("gsc", "not_configured", payload?.message || "برای اتصال، کلید Service Account گوگل باید در Secrets پروژه Supabase ثبت بشه.");
+      return;
+    }
+
+    const ga = payload.ga4 || {};
+    setIntegrationStatus("ga4", ga.status, ga.message);
+    if (ga.status === "ok") {
+      const summary = ga.summary || {};
+      $("#ga-users").textContent = formatNumber(summary.users);
+      $("#ga-sessions").textContent = formatNumber(summary.sessions);
+      $("#ga-views").textContent = formatNumber(summary.pageViews);
+      $("#ga-download-events").textContent = formatNumber(summary.fileDownloadEvents);
+      setTableRows("#ga-sources-body", (ga.sources || []).map((row) => ({
+        cells: [row.sourceMedium, formatNumber(row.sessions), formatNumber(row.users)]
+      })), 3);
+      setTableRows("#ga-referrers-body", (ga.referrers || []).map((row) => ({
+        cells: [row.referrer, formatNumber(row.events)]
+      })), 2);
+      setTableRows("#ga-pages-body", (ga.pages || []).map((row) => ({
+        cells: [row.path, formatNumber(row.views), formatNumber(row.users)]
+      })), 3);
+    }
+
+    const gsc = payload.searchConsole || {};
+    setIntegrationStatus("gsc", gsc.status, gsc.message);
+    if (gsc.status === "ok") {
+      const summary = gsc.summary || {};
+      $("#gsc-clicks").textContent = formatNumber(summary.clicks);
+      $("#gsc-impressions").textContent = formatNumber(summary.impressions);
+      $("#gsc-ctr").textContent = formatPercent(summary.ctr);
+      $("#gsc-position").textContent = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(Number(summary.position || 0));
+      const reportRows = (rows) => (rows || []).map((row) => ({
+        cells: [row.name, formatNumber(row.clicks), formatNumber(row.impressions), formatPercent(row.ctr)]
+      }));
+      setTableRows("#gsc-queries-body", reportRows(gsc.queries), 4);
+      setTableRows("#gsc-pages-body", reportRows(gsc.pages), 4);
+      setTableRows("#gsc-devices-body", (gsc.devices || []).map((row) => ({
+        cells: [row.name, formatNumber(row.clicks), formatNumber(row.impressions), new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(row.position)]
+      })), 4);
+    }
+  }
+
   function render(stats) {
     state.stats = stats;
     renderMetrics(stats);
@@ -258,11 +375,30 @@
   async function loadDashboard() {
     const button = $("#refresh-button");
     setBusy(true, button, "به‌روزرسانی آمار", "در حال دریافت…");
-    setDashboardMessage("در حال دریافت آمار از GitHub…");
+    setDashboardMessage("در حال دریافت آمار از GitHub و سرویس‌های گوگل…");
     try {
-      const stats = await requestStats(false);
-      render(stats);
-      setDashboardMessage("");
+      const [downloadResult, googleResult] = await Promise.allSettled([
+        requestStats(false),
+        requestSiteAnalytics(false)
+      ]);
+
+      if (downloadResult.status === "fulfilled") {
+        render(downloadResult.value);
+      } else {
+        setDashboardMessage(downloadResult.reason?.message || "دریافت آمار دانلود ناموفق بود.", "error");
+      }
+
+      if (googleResult.status === "fulfilled") {
+        renderGoogleAnalytics(googleResult.value);
+      } else {
+        setIntegrationStatus("ga4", "error", googleResult.reason?.message || "دریافت آمار GA4 ناموفق بود.");
+        setIntegrationStatus("gsc", "error", googleResult.reason?.message || "دریافت آمار سرچ کنسول ناموفق بود.");
+      }
+
+      if (downloadResult.status === "fulfilled" && googleResult.status === "fulfilled") {
+        setDashboardMessage("گزارش‌ها به‌روزرسانی شدن.");
+        window.setTimeout(() => setDashboardMessage(""), 3500);
+      }
     } catch (error) {
       setDashboardMessage(error.message || "دریافت آمار ناموفق بود.", "error");
     } finally {
