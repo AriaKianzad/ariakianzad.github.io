@@ -410,6 +410,10 @@ html[data-js] [data-reveal].d5 { transition-delay: 350ms; }
 
 
 /* Google Analytics consent: lightweight, accessible, and self-hosted UI. */
+#analytics-consent[hidden],
+#analytics-preferences[hidden] {
+  display: none;
+}
 .analytics-consent {
   position: fixed;
   z-index: 1000;
