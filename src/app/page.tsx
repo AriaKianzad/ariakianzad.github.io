@@ -136,7 +136,7 @@ export default function HomePage() {
             <p data-reveal="up">{method.intro}</p>
           </div>
           <ol className="method-list">
-            {method.steps.map((step, index) => (
+            {method.steps.map((step) => (
               <li className="method-step" key={step.number} data-reveal="left">
                 <div className="method-step__rail">
                   <span>{step.number}</span>
