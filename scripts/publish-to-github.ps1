@@ -29,6 +29,12 @@ try {
         Invoke-Git remote add origin $RepositoryUrl
     }
 
+    Write-Host 'Scanning the working tree for accidental credentials...'
+    & npm run check:security
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Credential scan failed. No files were staged or pushed.'
+    }
+
     Write-Host 'Staging changes in the personal website repository only...'
     Invoke-Git add -A
 
