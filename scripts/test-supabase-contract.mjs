@@ -10,6 +10,8 @@ const [
   downloadDeno,
   analyticsDeno,
   clientConfig,
+  adminApp,
+  adminHtml,
   allowlistMigration,
   snapshotsMigration,
   privateFunctionMigration,
@@ -21,6 +23,8 @@ const [
   read("supabase/functions/download-stats/deno.json"),
   read("supabase/functions/site-analytics/deno.json"),
   read("public/admin/config.js"),
+  read("public/admin/app.js"),
+  read("public/admin/index.html"),
   read("supabase/migrations/20261121001000_create_dashboard_admin_allowlist.sql"),
   read("supabase/migrations/20261121000000_create_download_snapshots.sql"),
   read("supabase/migrations/20261121171913_create_private_github_download_snapshot_job.sql"),
@@ -80,5 +84,16 @@ assert.ok(clientConfig.includes("sb_publishable_"),
   "browser config may contain only a publishable API key");
 assert.ok(!/sb_secret_|service_role|service-account|private_key/i.test(clientConfig),
   "browser config must never contain privileged credentials");
+
+assert.ok(adminApp.includes('endpoint.origin === "https://bkohdqwecnvbmeaiuyyx.supabase.co"'),
+  "dashboard must validate the exact Supabase project origin before sending credentials");
+assert.ok(adminApp.includes('config.supabaseAnonKey.startsWith("sb_publishable_")'),
+  "dashboard must reject non-publishable API keys");
+assert.ok(adminApp.includes("if (!rememberSession.checked)"),
+  "saved sessions must require explicit user opt-in before restoration");
+assert.ok(adminApp.includes('/auth/v1/logout?scope=local'),
+  "dashboard logout must request local Supabase session revocation");
+assert.ok(adminHtml.includes('id="remember-session"') && !/id="remember-session"[^>]*checked/.test(adminHtml),
+  "remembered sessions must be off by default");
 
 console.log("Supabase contract passed: SDK pinning, explicit Auth verification, admin allowlist, CORS, no-store, RLS grants, private SECURITY DEFINER function and cron schedule.");
