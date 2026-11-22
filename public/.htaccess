@@ -84,7 +84,7 @@ ErrorDocument 404 /404.html
   </FilesMatch>
   # Fixed-name CSS and fonts (including the standalone book page) revalidate
   # hourly. Content-hashed Next/hero chunks are overridden by the env rule below.
-  <FilesMatch "\\.(css|woff2)$">
+  <FilesMatch "\.(css|woff2)$">
     Header always set Cache-Control "public, max-age=3600, must-revalidate"
   </FilesMatch>
   # Site scripts (boot.js, ui.js are NOT content-hashed): short cache.
