@@ -65,6 +65,7 @@ const [
   hostHeaders,
   apacheConfig,
   bookPage,
+  bookStyles,
   socialGenerator,
 ] = await Promise.all([
   read("src/app/page.tsx"),
@@ -84,6 +85,7 @@ const [
   read("public/_headers"),
   read("public/.htaccess"),
   read("public/Mian-e-Ma/index.html"),
+  read("public/Mian-e-Ma/styles.css"),
   read("scripts/generate-social-previews.mjs"),
 ]);
 
@@ -133,6 +135,26 @@ const bookShareCopy = [
 assert.ok(bookShareCopy.every(Boolean), "book title, description and social image alt text must be present");
 assert.ok(!bookShareCopy.join(" ").includes("آریا کیانزاد"),
   "author name must not appear in the book page title, descriptions or social preview copy");
+const bookHeader = bookPage.match(/<header class="site-header">([\\s\\S]*?)<\\/header>/)?.[1] ?? "";
+assert.ok(bookHeader.includes('class="brand"') && bookHeader.includes('class="main-nav"'),
+  "book header must retain the brand and primary navigation");
+assert.ok(!bookHeader.includes("header-download"),
+  "the book header must not contain a redundant download CTA");
+assert.equal((bookPage.match(/class="button-primary"/g) ?? []).length, 2,
+  "the hero and download sections must retain their two primary download CTAs");
+assert.ok(!bookStyles.includes("header-download"),
+  "removed header CTA must not leave orphaned CSS rules");
+assert.ok(bookStyles.includes("grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)") &&
+  bookStyles.includes(".brand{grid-column:1;justify-self:start") &&
+  bookStyles.includes(".main-nav{grid-column:2;justify-self:center"),
+  "desktop header must balance the brand and center the navigation without a third visible item");
+assert.ok(bookStyles.includes("@media(max-width:900px){.header-inner{display:flex;flex-wrap:wrap") &&
+  bookStyles.includes(".brand{width:100%;justify-content:flex-start}.main-nav{width:100%;justify-content:center;flex-wrap:wrap"),
+  "tablet header must place the navigation on its own centered, wrapping row");
+assert.ok(bookStyles.includes("@media(max-width:680px){") &&
+  bookStyles.includes(".header-inner{min-height:70px;display:flex;flex-wrap:nowrap") &&
+  bookStyles.includes(".main-nav{display:none}"),
+  "mobile header must keep a compact single-row brand and hide the desktop navigation");
 assert.ok(packageJson.includes("node scripts/generate-social-previews.mjs"),
   "static build must generate the social preview images before export verification");
 assert.ok(socialGenerator.includes('toFile(join(outputRoot, "og/og.jpg"))') &&
