@@ -140,11 +140,9 @@
   }
 
   async function restoreRememberedSession() {
-    if (!rememberSession.checked) {
-      clearRememberedSession();
-      return;
-    }
-
+    // A saved refresh token is itself evidence of a previous explicit opt-in.
+    // Read it before consulting the checkbox, which is intentionally unchecked
+    // in the static HTML so first-time visitors are never opted in by default.
     let savedRefreshToken = "";
     try {
       savedRefreshToken = window.localStorage.getItem(SESSION_STORAGE_KEY) || "";
@@ -153,6 +151,9 @@
     }
     if (!savedRefreshToken) return;
 
+    // Keep the remembered-session preference enabled while rotating the token.
+    // refreshSession() calls persistRememberedSession(), which depends on this.
+    rememberSession.checked = true;
     state.refreshToken = savedRefreshToken;
     loginButton.disabled = true;
     setLoginMessage("در حال بازیابی نشست قبلی…");
@@ -162,6 +163,7 @@
       if (!restored) {
         clearRememberedSession();
         state.refreshToken = "";
+        rememberSession.checked = false;
         setLoginMessage("نشست قبلی معتبر نیست؛ دوباره وارد شو.");
         return;
       }
@@ -171,6 +173,7 @@
       clearRememberedSession();
       state.accessToken = "";
       state.refreshToken = "";
+      rememberSession.checked = false;
       showLogin();
       setLoginMessage("بازیابی نشست قبلی انجام نشد؛ دوباره وارد شو.");
     } finally {
