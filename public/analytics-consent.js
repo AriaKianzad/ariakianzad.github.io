@@ -107,7 +107,7 @@
 
     panel.hidden = true;
     updatePreferencesLabel(choice);
-    preferences.hidden = false;
+    preferences.hidden = choice === "granted";
 
     if (choice === "granted") {
       if (typeof window.gtag === "function") {
@@ -119,7 +119,7 @@
       revokeGoogleAnalytics();
     }
 
-    preferences.focus?.();
+    if (!preferences.hidden) preferences.focus?.();
   }
 
   accept.addEventListener("click", () => saveChoice("granted"));
@@ -133,7 +133,7 @@
   const savedChoice = getSavedChoice();
   if (savedChoice === "granted" || savedChoice === "denied") {
     updatePreferencesLabel(savedChoice);
-    preferences.hidden = false;
+    preferences.hidden = savedChoice === "granted";
     if (savedChoice === "granted") loadGoogleAnalytics();
   } else {
     panel.hidden = false;

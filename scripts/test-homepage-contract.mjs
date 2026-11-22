@@ -112,6 +112,27 @@ assert.ok(globals.includes("@media (prefers-reduced-motion: reduce)"), "global r
 assert.ok(sections.includes("@media (max-width: 760px)"), "tablet/mobile responsive breakpoint missing");
 assert.ok(sections.includes("@media (max-width: 480px)"), "small phone responsive breakpoint missing");
 assert.ok(chrome.includes("html:not([data-js]) .site-nav__list"), "navigation needs a no-JavaScript fallback");
+const mobileNavigation = chrome.split("@media (max-width: 780px)")[1]?.split("@media (max-width: 480px)")[0] ?? "";
+assert.ok(mobileNavigation.includes("position: absolute;") && mobileNavigation.includes("top: 100%;"),
+  "mobile menu must open beneath the sticky header rather than inside its backdrop-filter containing block");
+assert.ok(mobileNavigation.includes("height: calc(100dvh - var(--header-h));") && mobileNavigation.includes("overflow-y: auto;"),
+  "mobile menu must use the available dynamic viewport height and remain scrollable");
+assert.ok(mobileNavigation.includes(".header-cta {") && mobileNavigation.includes("flex: 0 0 auto;"),
+  "the Let's talk action must keep its layout space on mobile");
+const narrowHeader = chrome.split("@media (max-width: 480px)")[1]?.split("@media (max-width: 360px)")[0] ?? "";
+assert.ok(narrowHeader.includes(".wordmark__copy small {\n    display: none;"),
+  "small screens must compact the brand lockup to preserve the CTA");
+assert.ok(ui.includes("first.focus({ preventScroll: true })"),
+  "opening the mobile menu must not scroll the page behind its overlay");
+assert.ok(sections.includes(".expertise-card__graphic {\n  position: relative;\n  display: grid;\n  height: 190px;") &&
+  sections.includes("margin-block: 0.7rem 1.3rem;\n  overflow: visible;"),
+  "expertise card diagrams must have enough visible space for hover transforms");
+assert.ok(sections.includes("scale(1.16)") && sections.includes("scale(1.14)") &&
+  sections.includes(".expertise-card:hover .expertise-card__graphic-dot"),
+  "small expertise graphics should have more expressive hover motion");
+assert.ok(globals.includes("opacity 900ms var(--ease-out)") &&
+  globals.includes("translate3d(0, 38px, 0)"),
+  "in-section reveal motion should be more pronounced without changing the hero renderer");
 assert.ok(ui.includes('querySelectorAll("[data-reveal]")'), "existing progressive reveal controller should remain active");
 
 // Metadata and AI-readable site information must match the new positioning.

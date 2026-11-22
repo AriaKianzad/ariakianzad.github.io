@@ -44,7 +44,7 @@
     nav.setAttribute("data-open", "");
     btn.setAttribute("aria-expanded", "true");
     const first = nav.querySelector(".site-nav__link");
-    if (first) first.focus();
+    if (first) first.focus({ preventScroll: true });
   };
 
   if (btn && nav) {

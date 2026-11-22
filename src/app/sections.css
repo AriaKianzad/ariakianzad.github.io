@@ -517,7 +517,9 @@ html[data-js] .hero-intro {
   background:
     radial-gradient(ellipse at 50% 36%, rgba(94, 127, 70, 0.09), transparent 50%),
     var(--bg-raised);
-  transition: background-color var(--duration-slow) ease;
+  transition:
+    transform var(--duration-slow) var(--ease-out),
+    background-color var(--duration-slow) ease;
 }
 
 .expertise-card::before {
@@ -530,6 +532,7 @@ html[data-js] .hero-intro {
 }
 
 .expertise-card:hover {
+  transform: translateY(-5px);
   background:
     radial-gradient(ellipse at 50% 36%, rgba(128, 162, 89, 0.16), transparent 54%),
     #121b16;
@@ -558,10 +561,10 @@ html[data-js] .hero-intro {
 .expertise-card__graphic {
   position: relative;
   display: grid;
-  height: 170px;
+  height: 190px;
   place-items: center;
-  margin-block: 0.8rem 1.5rem;
-  overflow: hidden;
+  margin-block: 0.7rem 1.3rem;
+  overflow: visible;
 }
 
 .expertise-card__graphic-ring {
@@ -571,7 +574,8 @@ html[data-js] .hero-intro {
   border: 1px solid rgba(194, 219, 161, 0.42);
   border-radius: 50%;
   transform: rotateX(64deg) rotateZ(-28deg);
-  transition: transform 900ms var(--ease-out);
+  transition: transform 1100ms var(--ease-out);
+  will-change: transform;
 }
 
 .expertise-card__graphic-ring::before,
@@ -615,6 +619,9 @@ html[data-js] .hero-intro {
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 25px rgba(198, 232, 135, 0.75);
+  transition:
+    transform 760ms var(--ease-out),
+    box-shadow 760ms var(--ease-out);
 }
 
 .expertise-card__graphic-line {
@@ -622,16 +629,33 @@ html[data-js] .hero-intro {
   width: 75%;
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(198, 232, 135, 0.36), transparent);
+  opacity: 0.65;
   transform: rotate(-18deg);
+  transition:
+    opacity 760ms ease,
+    transform 900ms var(--ease-out);
 }
 
-.expertise-card:hover .expertise-card__graphic-ring--1,
-.expertise-card:hover .expertise-card__graphic-ring--3 {
-  transform: rotateX(64deg) rotateZ(22deg) scale(1.12);
+.expertise-card:hover .expertise-card__graphic-ring--1 {
+  transform: rotateX(64deg) rotateZ(38deg) scale(1.16);
 }
 
 .expertise-card:hover .expertise-card__graphic-ring--2 {
-  transform: rotateY(62deg) rotateZ(48deg) scale(1.08);
+  transform: rotateY(62deg) rotateZ(58deg) scale(1.14);
+}
+
+.expertise-card:hover .expertise-card__graphic-ring--3 {
+  transform: rotateX(48deg) rotateZ(76deg) scale(1.15);
+}
+
+.expertise-card:hover .expertise-card__graphic-dot {
+  transform: scale(1.45);
+  box-shadow: 0 0 38px rgba(198, 232, 135, 0.95);
+}
+
+.expertise-card:hover .expertise-card__graphic-line {
+  opacity: 1;
+  transform: rotate(-10deg) scaleX(1.12);
 }
 
 .expertise-card h3 {
@@ -1367,7 +1391,7 @@ html[data-js] .hero-intro {
   }
 
   .expertise-card__graphic {
-    height: 132px;
+    height: 190px;
   }
 
   .expertise-card h3 {
