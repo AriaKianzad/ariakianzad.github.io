@@ -97,7 +97,7 @@ const accept = (page) => get(page, "analytics-consent-accept").click();
 const reject = (page) => get(page, "analytics-consent-reject").click();
 const openPreferences = (page) => get(page, "analytics-preferences").click();
 
-// First visit: analytics stays unloaded until the user accepts.
+// First visit: analytics stays unloaded until the user explicitly accepts.
 {
   const page = createPage("/");
   assert.equal(get(page, "analytics-consent").hidden, false);
@@ -108,37 +108,19 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
 
   assert.equal(page.stored.get("aria-google-analytics-consent-v1"), "granted");
   assert.equal(get(page, "analytics-consent").hidden, true);
-  assert.equal(get(page, "analytics-preferences").hidden, false);
+  assert.equal(get(page, "analytics-preferences").hidden, true);
   assert.equal(get(page, "analytics-preferences").textContent, "Privacy settings · On");
   assert.equal(page.scripts.length, 1, "GA script should load only after consent");
   assert.equal(page.scripts[0].src, "https://www.googletagmanager.com/gtag/js?id=G-0CKL90M5R2");
-
-  // Accepted visitors can reopen settings and withdraw consent.
-  openPreferences(page);
-  assert.equal(get(page, "analytics-consent").hidden, false);
-  assert.equal(get(page, "analytics-preferences").hidden, true);
-  reject(page);
-
-  assert.equal(page.stored.get("aria-google-analytics-consent-v1"), "denied");
-  assert.equal(get(page, "analytics-preferences").textContent, "Privacy settings · Off");
-  assert.equal(get(page, "analytics-preferences").hidden, false);
-  assert.ok(page.cookieWrites.some((value) => value.startsWith("_ga=")), "withdrawal should expire GA cookies");
-  assert.ok(page.window.dataLayer.some((args) => args[0] === "consent" && args[1] === "update" && args[2].analytics_storage === "denied"),
-    "withdrawal should update Google consent state");
 }
 
-// Returning visitor who accepted previously: show the On control immediately.
+// Returning visitor who accepted previously: hide the persistent status control.
 {
   const page = createPage("/", "granted");
   assert.equal(get(page, "analytics-consent").hidden, true);
-  assert.equal(get(page, "analytics-preferences").hidden, false);
+  assert.equal(get(page, "analytics-preferences").hidden, true);
   assert.equal(get(page, "analytics-preferences").textContent, "Privacy settings · On");
   assert.equal(page.scripts.length, 1, "GA script should load for saved consent");
-
-  openPreferences(page);
-  reject(page);
-  assert.equal(get(page, "analytics-preferences").textContent, "Privacy settings · Off");
-  assert.equal(get(page, "analytics-consent").hidden, true);
 }
 
 // Returning visitor who declined previously: show the Off control and allow later acceptance.
@@ -150,22 +132,26 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
   assert.equal(page.scripts.length, 0);
 
   openPreferences(page);
+  assert.equal(get(page, "analytics-consent").hidden, false);
+  assert.equal(get(page, "analytics-preferences").hidden, true);
   accept(page);
+  assert.equal(get(page, "analytics-consent").hidden, true);
+  assert.equal(get(page, "analytics-preferences").hidden, true);
   assert.equal(get(page, "analytics-preferences").textContent, "Privacy settings · On");
   assert.equal(page.scripts.length, 1);
 }
 
-// The Persian book page exposes the same persistent control and translated state.
+// The Persian book page hides the status when analytics is on and shows it when off.
 {
-  const page = createPage("/Mian-e-Ma/", "granted");
-  assert.equal(get(page, "analytics-preferences").hidden, false);
-  assert.equal(get(page, "analytics-preferences").textContent, "تنظیمات حریم خصوصی · فعال");
-  assert.equal(page.scripts.length, 1);
+  const accepted = createPage("/Mian-e-Ma/", "granted");
+  assert.equal(get(accepted, "analytics-preferences").hidden, true);
+  assert.equal(get(accepted, "analytics-preferences").textContent, "تنظیمات حریم خصوصی · فعال");
+  assert.equal(accepted.scripts.length, 1);
 
-  openPreferences(page);
-  reject(page);
-  assert.equal(get(page, "analytics-preferences").textContent, "تنظیمات حریم خصوصی · غیرفعال");
-  assert.equal(get(page, "analytics-preferences").hidden, false);
+  const declined = createPage("/Mian-e-Ma/", "denied");
+  assert.equal(get(declined, "analytics-preferences").hidden, false);
+  assert.equal(get(declined, "analytics-preferences").textContent, "تنظیمات حریم خصوصی · غیرفعال");
+  assert.equal(declined.scripts.length, 0);
 }
 
 // Declining from the initial dialog exposes the Off control and does not load GA.
@@ -178,4 +164,4 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
   assert.equal(page.scripts.length, 0);
 }
 
-console.log("Analytics consent tests passed: consent is opt-in, the On/Off settings control persists, and users can withdraw or grant consent later.");
+console.log("Analytics consent tests passed: opt-in is preserved and the privacy-status control is visible only when analytics is inactive.");
