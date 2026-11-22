@@ -9,6 +9,8 @@ const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/webmasters.readonly",
 ].join(" ");
 
+let cachedGoogleAccessToken: { accessToken: string; expiresAt: number } | null = null;
+
 interface GoogleAnalyticsValue {
   value?: string;
 }
@@ -144,6 +146,11 @@ function importPrivateKey(pem: string): Promise<CryptoKey> {
 }
 
 async function getGoogleAccessToken() {
+  const currentTime = Math.floor(Date.now() / 1000);
+  if (cachedGoogleAccessToken && cachedGoogleAccessToken.expiresAt > currentTime + 60) {
+    return { configured: true as const, accessToken: cachedGoogleAccessToken.accessToken };
+  }
+
   const raw = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON")?.trim();
   if (!raw) {
     return {
@@ -215,7 +222,14 @@ async function getGoogleAccessToken() {
     );
   }
 
-  return { configured: true as const, accessToken: payload.access_token as string };
+  const accessToken = payload.access_token as string;
+  const expiresIn = Number(payload.expires_in);
+  cachedGoogleAccessToken = {
+    accessToken,
+    expiresAt: Math.floor(Date.now() / 1000) +
+      (Number.isFinite(expiresIn) && expiresIn > 0 ? expiresIn : 3600),
+  };
+  return { configured: true as const, accessToken };
 }
 
 async function googlePost<T extends object>(
