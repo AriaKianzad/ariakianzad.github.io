@@ -32,6 +32,27 @@ assert.ok(functionSource.includes("امروز ممکن است ناقص باشد"
 
 assert.ok(functionSource.includes("const summaryRows = summary.rows || []"),
   "Search Console summary rows must be inspected explicitly");
+assert.ok(functionSource.includes("https://www.googleapis.com/webmasters/v3/sites"),
+  "Search Console must enumerate properties visible to the service account before querying data");
+assert.ok(functionSource.includes("interface SearchConsoleSitesResponse"),
+  "Search Console property-list response must be typed");
+assert.ok(functionSource.includes("const exactProperty = availableSites.find"),
+  "Search Console must identify the configured URL-prefix property");
+assert.ok(functionSource.includes("const domainProperty = availableSites.find"),
+  "Search Console may fall back only to the same-host domain property when the URL-prefix property is absent");
+assert.ok(functionSource.includes("propertyAccess: false"),
+  "a missing Search Console property permission must be reported separately from an empty report");
+assert.ok(functionSource.includes("propertyAccess: true"),
+  "Search Console data responses must expose verified property access");
+assert.ok(functionSource.includes('timeZone: "America/Los_Angeles"'),
+  "Search Console date windows must use Pacific Time calendar days");
+assert.ok(functionSource.includes('dimensions: ["date"]'),
+  "Search Console must query date-dimension rows to diagnose when performance data exists");
+assert.ok(functionSource.includes("firstDataDate") && functionSource.includes("lastDataDate"),
+  "Search Console diagnostics must expose the first and last dates with returned data");
+assert.ok(functionSource.includes("selectedSiteUrl"),
+  "Search Console reports must query the exact property confirmed by the sites list");
+
 assert.ok(functionSource.includes('const status = summaryAvailable ? "ok" : hasBreakdownRows ? "partial" : "no_data"'),
   "Search Console must distinguish valid data, partial data and no rows");
 assert.ok(functionSource.includes("summaryAvailable,"),
@@ -55,8 +76,10 @@ assert.ok(!diagnosticBlock.includes("summary.users") && !diagnosticBlock.include
 assert.ok(!diagnosticBlock.includes("accessToken") && !diagnosticBlock.includes("private_key"),
   "server diagnostics must not log OAuth tokens or service-account key material");
 
-assert.ok(dashboard.includes('no_data: "بدون داده در این بازه"'),
-  "dashboard must show a distinct no-data state");
+assert.ok(dashboard.includes('no_data: "اتصال برقرار، بدون داده"'),
+  "dashboard must distinguish a connected property with no performance rows from a failed connection");
+assert.ok(dashboard.includes('gsc.propertyUrl ? " · Property: " + gsc.propertyUrl'),
+  "dashboard must show which Search Console property returned the report");
 assert.ok(dashboard.includes('partial: "گزارش ناقص"'),
   "dashboard must show partial reports distinctly");
 assert.ok(dashboard.includes('summaryAvailable ? formatNumber(summary.users) : "—"'),
