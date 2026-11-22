@@ -115,13 +115,14 @@ const bookSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height
     <path d="M652 246C686 196 731 183 775 192C834 205 879 257 879 320C879 375 838 432 793 469"/>
     <path d="M694 167C722 219 726 257 709 297C691 339 701 390 746 447"/>
   </g>
-  <text class="fa" x="770" y="154" text-anchor="start" direction="rtl" font-size="22" fill="#556b69">نسخۀ دیجیتال، برای مطالعۀ رایگان</text>
-  <text class="fa" x="770" y="218" text-anchor="start" direction="rtl" font-size="64" font-weight="700" fill="#244241">میان ما</text>
+  <!-- RTL text is end-anchored at x=770, keeping the copy column clear of the cover beginning at x=850. -->
+  <text class="fa" x="770" y="154" text-anchor="end" direction="rtl" font-size="22" fill="#556b69">نسخۀ دیجیتال، برای مطالعۀ رایگان</text>
+  <text class="fa" x="770" y="218" text-anchor="end" direction="rtl" font-size="64" font-weight="700" fill="#244241">میان ما</text>
   <rect x="678" y="258" width="92" height="4" rx="2" fill="#78958f"/>
-  <text class="fa" x="770" y="314" text-anchor="start" direction="rtl" font-size="34" font-weight="700" fill="#244241">شناخت رابطه، صمیمیت و</text>
-  <text class="fa" x="770" y="358" text-anchor="start" direction="rtl" font-size="34" font-weight="700" fill="#244241">مسئولیت‌پذیری عاطفی</text>
-  <text class="fa" x="770" y="412" text-anchor="start" direction="rtl" font-size="26" fill="#556b69">برای فهم بهترِ گفت‌وگو، تعهد و آنچه</text>
-  <text class="fa" x="770" y="449" text-anchor="start" direction="rtl" font-size="26" fill="#556b69">میان دو نفر شکل می‌گیرد.</text>
+  <text class="fa" x="770" y="314" text-anchor="end" direction="rtl" font-size="34" font-weight="700" fill="#244241">شناخت رابطه، صمیمیت و</text>
+  <text class="fa" x="770" y="358" text-anchor="end" direction="rtl" font-size="34" font-weight="700" fill="#244241">مسئولیت‌پذیری عاطفی</text>
+  <text class="fa" x="770" y="412" text-anchor="end" direction="rtl" font-size="26" fill="#556b69">برای فهم بهترِ گفت‌وگو، تعهد و آنچه</text>
+  <text class="fa" x="770" y="449" text-anchor="end" direction="rtl" font-size="26" fill="#556b69">میان دو نفر شکل می‌گیرد.</text>
   <text x="82" y="557" font-family="monospace" font-size="12" letter-spacing=".6" fill="#647b76">MIAN-E-MA  /  BETWEEN US</text>
   <image href="${coverData}" x="850" y="77" width="285" height="361" preserveAspectRatio="xMidYMid meet" filter="url(#coverShadow)"/>
 </svg>`;
