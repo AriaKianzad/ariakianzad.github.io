@@ -177,6 +177,7 @@ async function readDailyHistory(
     : null;
 
   const history = [];
+  let creationBaselineApplied = false;
   for (let offset = 0; offset < 90; offset += 1) {
     const date = shiftDate(firstDate, offset);
     if (!totals.has(date)) {
@@ -190,10 +191,14 @@ async function readDailyHistory(
 
     const dayTotal = Number(totals.get(date));
     // GitHub's asset counter starts at asset creation, not at the first
-    // dashboard snapshot. Seed that creation date from its cumulative total.
+    // dashboard snapshot. If no earlier baseline exists, seed the first
+    // recorded snapshot on or after publication with the cumulative count.
+    const firstSnapshotAfterCreation = previousTotal === null &&
+      !creationBaselineApplied && date >= assetCreatedDate;
     const dailyDownloads = previousTotal === null
-      ? (date === assetCreatedDate ? dayTotal : 0)
+      ? (firstSnapshotAfterCreation ? dayTotal : 0)
       : Math.max(0, dayTotal - previousTotal);
+    if (firstSnapshotAfterCreation) creationBaselineApplied = true;
 
     history.push({
       date,
