@@ -9,6 +9,8 @@ const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/webmasters.readonly",
 ].join(" ");
 
+let cachedGoogleAccessToken: { accessToken: string; expiresAt: number } | null = null;
+
 interface GoogleAnalyticsValue {
   value?: string;
 }
@@ -144,6 +146,11 @@ function importPrivateKey(pem: string): Promise<CryptoKey> {
 }
 
 async function getGoogleAccessToken() {
+  const currentTime = Math.floor(Date.now() / 1000);
+  if (cachedGoogleAccessToken && cachedGoogleAccessToken.expiresAt > currentTime + 60) {
+    return { configured: true as const, accessToken: cachedGoogleAccessToken.accessToken };
+  }
+
   const raw = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON")?.trim();
   if (!raw) {
     return {
@@ -215,7 +222,14 @@ async function getGoogleAccessToken() {
     );
   }
 
-  return { configured: true as const, accessToken: payload.access_token as string };
+  const accessToken = payload.access_token as string;
+  const expiresIn = Number(payload.expires_in);
+  cachedGoogleAccessToken = {
+    accessToken,
+    expiresAt: Math.floor(Date.now() / 1000) +
+      (Number.isFinite(expiresIn) && expiresIn > 0 ? expiresIn : 3600),
+  };
+  return { configured: true as const, accessToken };
 }
 
 async function googlePost<T extends object>(
@@ -270,6 +284,31 @@ async function ga4Report(accessToken: string, body: unknown) {
     rows: reportRows(report),
     rowCount: report.rowCount,
     metadata: report.metadata,
+  };
+}
+
+async function getRealtimeAnalyticsData(accessToken: string) {
+  const url = "https://analyticsdata.googleapis.com/v1beta/properties/" +
+    GA4_PROPERTY_ID + ":runRealtimeReport";
+  const report = await googlePost<GoogleAnalyticsReport>(url, accessToken, {
+    metrics: [
+      { name: "activeUsers" },
+      { name: "screenPageViews" },
+      { name: "eventCount" },
+    ],
+  });
+  const rows = reportRows(report);
+  const summary = rows[0] || {};
+
+  return {
+    status: "ok",
+    period: "۳۰ دقیقۀ اخیر",
+    summary: {
+      activeUsers: Number(summary.activeUsers || 0),
+      pageViews: Number(summary.screenPageViews || 0),
+      events: Number(summary.eventCount || 0),
+    },
+    diagnostics: { rows: rows.length, rowCount: report.rowCount ?? rows.length },
   };
 }
 
@@ -483,6 +522,11 @@ Deno.serve(async (request: Request) => {
     const origin = request.headers.get("origin");
     if (origin && origin !== SITE_ORIGIN) return json({ error: "Origin not allowed." }, 403);
 
+    const requestBody = await request.json().catch(() => ({}));
+    const requestMode = requestBody?.mode === "realtime" || requestBody?.mode === "ga4"
+      ? requestBody.mode
+      : "dashboard";
+
     const supabaseKeys = getSupabaseKeys();
     const allowed = await isAllowedAdmin(
       request.headers.get("authorization") || "",
@@ -494,12 +538,50 @@ Deno.serve(async (request: Request) => {
 
     const google = await getGoogleAccessToken();
     if (!google.configured) {
+      const message = "برای فعال‌شدن گزارش‌های گوگل، کلید Service Account باید در Secrets پروژه Supabase ذخیره بشه.";
+      if (requestMode === "realtime") {
+        return json({
+          status: "not_configured",
+          message,
+          ga4Realtime: { status: "not_configured", message },
+        }, 424);
+      }
+      if (requestMode === "ga4") {
+        return json({
+          status: "not_configured",
+          message,
+          ga4: { status: "not_configured", message },
+        }, 424);
+      }
       return json({
         status: "not_configured",
-        message: "برای فعال‌شدن گزارش‌های گوگل، کلید Service Account باید در Secrets پروژه Supabase ذخیره بشه.",
-        ga4: { status: "not_configured" },
-        searchConsole: { status: "not_configured" },
+        message,
+        ga4: { status: "not_configured", message },
+        searchConsole: { status: "not_configured", message },
       }, 424);
+    }
+
+    if (requestMode === "realtime") {
+      const ga4Realtime = await getRealtimeAnalyticsData(google.accessToken);
+      console.info("site-analytics realtime diagnostics", ga4Realtime.diagnostics);
+      return json({
+        generatedAt: new Date().toISOString(),
+        propertyId: GA4_PROPERTY_ID,
+        ga4Realtime,
+      });
+    }
+
+    if (requestMode === "ga4") {
+      const ga4 = await getAnalyticsData(google.accessToken);
+      console.info("site-analytics GA4 refresh diagnostics", {
+        status: ga4.status,
+        ...ga4.diagnostics,
+      });
+      return json({
+        generatedAt: new Date().toISOString(),
+        propertyId: GA4_PROPERTY_ID,
+        ga4,
+      });
     }
 
     const [ga4Result, gscResult] = await Promise.allSettled([

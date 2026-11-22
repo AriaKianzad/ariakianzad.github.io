@@ -5,7 +5,13 @@
   const SESSION_STORAGE_KEY = "mian-e-ma-dashboard-refresh-v1";
   const $ = (selector) => document.querySelector(selector);
   const state = { accessToken: "", refreshToken: "", stats: null, range: 30, busy: false };
+  const REALTIME_REFRESH_MS = 60_000;
+  const GA4_REPORT_REFRESH_MS = 15 * 60_000;
   let refreshInFlight = null;
+  let realtimeTimer = null;
+  let ga4ReportTimer = null;
+  let realtimeInFlight = null;
+  let ga4ReportInFlight = null;
 
   const loginView = $("#login-view");
   const dashboardView = $("#dashboard-view");
@@ -181,7 +187,7 @@
     }
   }
 
-  async function requestSiteAnalytics(retried) {
+  async function requestSiteAnalytics(retried, mode = "dashboard") {
     const response = await fetch(apiUrl("/functions/v1/site-analytics"), {
       method: "POST",
       headers: {
@@ -189,11 +195,11 @@
         Authorization: "Bearer " + state.accessToken,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ mode: "dashboard" })
+      body: JSON.stringify({ mode })
     });
 
     if (response.status === 401 && !retried && await refreshSessionOnce()) {
-      return requestSiteAnalytics(true);
+      return requestSiteAnalytics(true, mode);
     }
     if (response.status === 401 || response.status === 403) {
       logout();
@@ -203,7 +209,8 @@
     if (!response.ok) {
       return {
         status: payload.status || "error",
-        message: payload.message || payload.error || "دریافت آمار گوگل ناموفق بود."
+        message: payload.message || payload.error || "دریافت آمار گوگل ناموفق بود.",
+        requestMode: mode
       };
     }
     return payload;
@@ -242,6 +249,7 @@
   }
 
   function logout() {
+    stopAutoRefresh();
     const accessToken = state.accessToken;
     clearRememberedSession();
     state.accessToken = "";
@@ -444,10 +452,13 @@
     if (payload.status === "error" && !payload.ga4 && !payload.searchConsole) {
       const message = payload.message || payload.error || "دریافت گزارش‌های گوگل ناموفق بود.";
       setIntegrationStatus("ga4", "error", message);
-      setIntegrationStatus("gsc", "error", message);
-      ["#ga-users", "#ga-sessions", "#ga-views", "#ga-download-events",
-        "#gsc-clicks", "#gsc-impressions", "#gsc-ctr", "#gsc-position"]
+      ["#ga-users", "#ga-sessions", "#ga-views", "#ga-download-events"]
         .forEach((selector) => { $(selector).textContent = "—"; });
+      if (payload.requestMode !== "ga4") {
+        setIntegrationStatus("gsc", "error", message);
+        ["#gsc-clicks", "#gsc-impressions", "#gsc-ctr", "#gsc-position"]
+          .forEach((selector) => { $(selector).textContent = "—"; });
+      }
       return;
     }
 
@@ -456,6 +467,12 @@
     const gaPeriod = $("#ga4-period");
     if (gaPeriod && ga.period) {
       gaPeriod.textContent = "بازهٔ گزارش GA4: " + ga.period + " · بر اساس منطقۀ زمانی Property";
+    }
+    const gaUpdated = $("#ga4-updated");
+    if (gaUpdated && payload.generatedAt) {
+      gaUpdated.textContent = "آخرین دریافت از API: " + new Intl.DateTimeFormat("fa-IR", {
+        dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tehran"
+      }).format(new Date(payload.generatedAt)) + " · تازه‌سازی خودکار هر ۱۵ دقیقه";
     }
     if (["ok", "partial", "no_data"].includes(ga.status)) {
       const summary = ga.summary || {};
@@ -478,33 +495,93 @@
         .forEach((selector) => { $(selector).textContent = "—"; });
     }
 
-    const gsc = payload.searchConsole || {};
-    setIntegrationStatus("gsc", gsc.status, gsc.message);
-    const gscPeriod = $("#gsc-period");
-    if (gscPeriod && gsc.startDate && gsc.endDate) {
-      gscPeriod.textContent = "بازهٔ گزارش Search Console: " + gsc.startDate + " تا " + gsc.endDate;
+    if (payload.searchConsole) {
+      const gsc = payload.searchConsole;
+      setIntegrationStatus("gsc", gsc.status, gsc.message);
+      const gscPeriod = $("#gsc-period");
+      if (gscPeriod && gsc.startDate && gsc.endDate) {
+        gscPeriod.textContent = "بازهٔ گزارش Search Console: " + gsc.startDate + " تا " + gsc.endDate;
+      }
+      if (["ok", "partial", "no_data"].includes(gsc.status)) {
+        const summary = gsc.summary || {};
+        const summaryAvailable = gsc.summaryAvailable !== false && gsc.status !== "no_data";
+        $("#gsc-clicks").textContent = summaryAvailable ? formatNumber(summary.clicks) : "—";
+        $("#gsc-impressions").textContent = summaryAvailable ? formatNumber(summary.impressions) : "—";
+        $("#gsc-ctr").textContent = summaryAvailable ? formatPercent(summary.ctr) : "—";
+        $("#gsc-position").textContent = summaryAvailable
+          ? new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(Number(summary.position || 0))
+          : "—";
+        const reportRows = (rows) => (rows || []).map((row) => ({
+          cells: [row.name, formatNumber(row.clicks), formatNumber(row.impressions), formatPercent(row.ctr)]
+        }));
+        setTableRows("#gsc-queries-body", reportRows(gsc.queries), 4);
+        setTableRows("#gsc-pages-body", reportRows(gsc.pages), 4);
+        setTableRows("#gsc-devices-body", (gsc.devices || []).map((row) => ({
+          cells: [row.name, formatNumber(row.clicks), formatNumber(row.impressions), new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(row.position)]
+        })), 4);
+      } else {
+        ["#gsc-clicks", "#gsc-impressions", "#gsc-ctr", "#gsc-position"]
+          .forEach((selector) => { $(selector).textContent = "—"; });
+      }
     }
-    if (["ok", "partial", "no_data"].includes(gsc.status)) {
-      const summary = gsc.summary || {};
-      const summaryAvailable = gsc.summaryAvailable !== false && gsc.status !== "no_data";
-      $("#gsc-clicks").textContent = summaryAvailable ? formatNumber(summary.clicks) : "—";
-      $("#gsc-impressions").textContent = summaryAvailable ? formatNumber(summary.impressions) : "—";
-      $("#gsc-ctr").textContent = summaryAvailable ? formatPercent(summary.ctr) : "—";
-      $("#gsc-position").textContent = summaryAvailable
-        ? new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(Number(summary.position || 0))
-        : "—";
-      const reportRows = (rows) => (rows || []).map((row) => ({
-        cells: [row.name, formatNumber(row.clicks), formatNumber(row.impressions), formatPercent(row.ctr)]
-      }));
-      setTableRows("#gsc-queries-body", reportRows(gsc.queries), 4);
-      setTableRows("#gsc-pages-body", reportRows(gsc.pages), 4);
-      setTableRows("#gsc-devices-body", (gsc.devices || []).map((row) => ({
-        cells: [row.name, formatNumber(row.clicks), formatNumber(row.impressions), new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(row.position)]
-      })), 4);
-    } else {
-      ["#gsc-clicks", "#gsc-impressions", "#gsc-ctr", "#gsc-position"]
+  }
+
+  function renderGoogleRealtime(payload) {
+    const report = payload?.ga4Realtime;
+    if (!report || report.status !== "ok") {
+      const status = report?.status || payload?.status || "error";
+      const message = report?.message || payload?.message || payload?.error ||
+        "دریافت آمار لحظه‌ای GA4 ناموفق بود.";
+      setIntegrationStatus("ga4-realtime", status, message);
+      ["#ga4-realtime-users", "#ga4-realtime-views", "#ga4-realtime-events"]
         .forEach((selector) => { $(selector).textContent = "—"; });
+      return;
     }
+
+    setIntegrationStatus("ga4-realtime", "ok", "");
+    const summary = report.summary || {};
+    $("#ga4-realtime-users").textContent = formatNumber(summary.activeUsers);
+    $("#ga4-realtime-views").textContent = formatNumber(summary.pageViews);
+    $("#ga4-realtime-events").textContent = formatNumber(summary.events);
+    const updated = $("#ga4-realtime-updated");
+    if (updated && payload.generatedAt) {
+      updated.textContent = "آخرین دریافت: " + new Intl.DateTimeFormat("fa-IR", {
+        dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tehran"
+      }).format(new Date(payload.generatedAt));
+    }
+  }
+
+  async function refreshGoogleRealtime() {
+    if (!state.accessToken || document.hidden || state.busy || realtimeInFlight) return;
+    realtimeInFlight = requestSiteAnalytics(false, "realtime")
+      .then(renderGoogleRealtime)
+      .catch((error) => renderGoogleRealtime({ status: "error", message: error.message }))
+      .finally(() => { realtimeInFlight = null; });
+    return realtimeInFlight;
+  }
+
+  async function refreshGoogleReports() {
+    if (!state.accessToken || document.hidden || state.busy || ga4ReportInFlight) return;
+    ga4ReportInFlight = requestSiteAnalytics(false, "ga4")
+      .then(renderGoogleAnalytics)
+      .catch((error) => setIntegrationStatus("ga4", "error",
+        error.message || "به‌روزرسانی گزارش GA4 ناموفق بود."))
+      .finally(() => { ga4ReportInFlight = null; });
+    return ga4ReportInFlight;
+  }
+
+  function stopAutoRefresh() {
+    if (realtimeTimer !== null) window.clearInterval(realtimeTimer);
+    if (ga4ReportTimer !== null) window.clearInterval(ga4ReportTimer);
+    realtimeTimer = null;
+    ga4ReportTimer = null;
+  }
+
+  function startAutoRefresh() {
+    stopAutoRefresh();
+    if (!state.accessToken) return;
+    realtimeTimer = window.setInterval(() => { void refreshGoogleRealtime(); }, REALTIME_REFRESH_MS);
+    ga4ReportTimer = window.setInterval(() => { void refreshGoogleReports(); }, GA4_REPORT_REFRESH_MS);
   }
 
   function render(stats) {
@@ -519,9 +596,10 @@
     setBusy(true, button, "به‌روزرسانی آمار", "در حال دریافت…");
     setDashboardMessage("در حال دریافت آمار از GitHub و سرویس‌های گوگل…");
     try {
-      const [downloadResult, googleResult] = await Promise.allSettled([
+      const [downloadResult, googleResult, realtimeResult] = await Promise.allSettled([
         requestStats(false),
-        requestSiteAnalytics(false)
+        requestSiteAnalytics(false, "dashboard"),
+        requestSiteAnalytics(false, "realtime")
       ]);
 
       if (downloadResult.status === "fulfilled") {
@@ -537,6 +615,12 @@
         setIntegrationStatus("gsc", "error", googleResult.reason?.message || "دریافت آمار سرچ کنسول ناموفق بود.");
       }
 
+      if (realtimeResult.status === "fulfilled") {
+        renderGoogleRealtime(realtimeResult.value);
+      } else {
+        renderGoogleRealtime({ status: "error", message: realtimeResult.reason?.message });
+      }
+
       if (downloadResult.status === "fulfilled" && googleResult.status === "fulfilled") {
         setDashboardMessage("گزارش‌ها به‌روزرسانی شدن.");
         window.setTimeout(() => setDashboardMessage(""), 3500);
@@ -545,8 +629,16 @@
       setDashboardMessage(error.message || "دریافت آمار ناموفق بود.", "error");
     } finally {
       setBusy(false, button, "به‌روزرسانی آمار", "در حال دریافت…");
+      startAutoRefresh();
     }
   }
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && state.accessToken) {
+      void refreshGoogleRealtime();
+      void refreshGoogleReports();
+    }
+  });
 
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
