@@ -57,12 +57,11 @@ import http from "node:http";
 const repoRoot = process.cwd();
 const outDir = join(repoRoot, "out");
 const finalZipPath = join(repoRoot, "hosting-bundle.zip");
-// All destructive cleanup is confined to a fresh, unique temporary workspace.
-// User-controlled ARIA_HOSTING_STAGING/EXTRACT paths are deliberately unsupported.
-const workspaceRoot = mkdtempSync(join(tmpdir(), "aria-hosting-bundle-"));
-const zipPath = join(workspaceRoot, "hosting-bundle.zip");
-const staging = join(workspaceRoot, "staging");
-const extract = join(workspaceRoot, "extract");
+// Initialized only after required inputs and the non-overwrite guard pass.
+let workspaceRoot;
+let zipPath;
+let staging;
+let extract;
 
 const REQUIRED = [
   "index.html",
@@ -180,6 +179,13 @@ async function main() {
   if (lstatSync(finalZipPath, { throwIfNoEntry: false })) {
     fail("Refusing to overwrite an existing hosting-bundle.zip. Move or rename the existing archive, then run this command again.");
   }
+
+  // Create isolated temporary paths only after inputs and output are checked.
+  // Environment variables cannot redirect cleanup to user-selected directories.
+  workspaceRoot = mkdtempSync(join(tmpdir(), "aria-hosting-bundle-"));
+  zipPath = join(workspaceRoot, "hosting-bundle.zip");
+  staging = join(workspaceRoot, "staging");
+  extract = join(workspaceRoot, "extract");
 
   // Inspect the export before copying it: symlinks are never followed into staging.
   collect(outDir);
