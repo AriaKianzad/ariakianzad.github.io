@@ -66,7 +66,7 @@ function shiftDate(dateString: string, amount: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-async function getGitHubDownloadCount(): Promise<number> {
+async function getGitHubDownloadCount(): Promise<{ totalDownloads: number; createdAt: string }> {
   const response = await fetch(GITHUB_RELEASE_API, {
     headers: {
       "Accept": "application/vnd.github+json",
@@ -84,11 +84,19 @@ async function getGitHubDownloadCount(): Promise<number> {
     ? release.assets.find((item: { name?: string }) => item.name === ASSET_NAME)
     : null;
 
-  if (!asset || !Number.isSafeInteger(Number(asset.download_count))) {
-    throw new Error("The expected PDF asset was not found in the GitHub Release.");
+  if (
+    !asset ||
+    !Number.isSafeInteger(Number(asset.download_count)) ||
+    typeof asset.created_at !== "string" ||
+    Number.isNaN(Date.parse(asset.created_at))
+  ) {
+    throw new Error("The expected PDF asset or its creation timestamp was not found in the GitHub Release.");
   }
 
-  return Number(asset.download_count);
+  return {
+    totalDownloads: Number(asset.download_count),
+    createdAt: asset.created_at,
+  };
 }
 
 async function isAllowedAdmin(
@@ -144,6 +152,7 @@ async function readDailyHistory(
   admin: ReturnType<typeof createClient>,
   today: string,
   currentTotal: number,
+  assetCreatedDate: string,
 ) {
   const firstDate = shiftDate(today, -89);
   const baselineDate = shiftDate(firstDate, -1);
@@ -180,8 +189,10 @@ async function readDailyHistory(
     }
 
     const dayTotal = Number(totals.get(date));
+    // GitHub's asset counter starts at asset creation, not at the first
+    // dashboard snapshot. Seed that creation date from its cumulative total.
     const dailyDownloads = previousTotal === null
-      ? 0
+      ? (date === assetCreatedDate ? dayTotal : 0)
       : Math.max(0, dayTotal - previousTotal);
 
     history.push({
@@ -229,11 +240,13 @@ Deno.serve(async (request: Request) => {
       return json({ error: "You are not authorized to view this dashboard." }, 401);
     }
 
-    const totalDownloads = await getGitHubDownloadCount();
+    const downloadAsset = await getGitHubDownloadCount();
+    const totalDownloads = downloadAsset.totalDownloads;
+    const assetCreatedDate = dateInTehran(new Date(downloadAsset.createdAt));
     const today = dateInTehran(new Date());
 
     await saveSnapshot(admin, today, totalDownloads);
-    const history = await readDailyHistory(admin, today, totalDownloads);
+    const history = await readDailyHistory(admin, today, totalDownloads, assetCreatedDate);
 
     return json({
       totalDownloads,
