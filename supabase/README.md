@@ -15,7 +15,7 @@ The source for both deployed Edge Functions is tracked in this repository:
 - supabase/functions/download-stats/index.ts
 - supabase/functions/site-analytics/index.ts
 
-The repository source is the version-controlled reference for future function deployments. Edge Function deployments are independent from the GitHub Pages site deployment. This repository audit did not deploy or replace the production functions; check the deployed version after any future function deployment and keep it aligned with this source.
+The repository source is the version-controlled reference for deployments. Edge Function deployments are independent from the GitHub Pages site deployment: publishing the website does not update Supabase functions. After a function deployment, verify its active version and deployed source against the corresponding file and deno.json in this repository; do not assume the GitHub Pages workflow updates Supabase.
 
 ## Security and authorization model
 
@@ -105,7 +105,7 @@ Do not put the JSON key in GitHub Actions variables, public/admin/config.js, sta
 
 The dashboard displays GA4 users, sessions, page views, file_download events, acquisition sources, page referrers and top pages. A GA4 file_download event records an interaction and is not proof the PDF was fully downloaded or opened. Search Console provides clicks, impressions, CTR, average position, queries, pages and devices.
 
-GA4 reports cover the previous 30 complete days through yesterday. Search Console reports end three days before the current date to reduce the effect of incomplete recent data. Each provider's status is handled independently; an error from Google does not prevent GitHub download statistics from being returned.
+GA4 reports cover a rolling 30-day range ending today (`29daysAgo` through `today`); the current day can be incomplete. The dashboard distinguishes a valid zero-valued summary from an empty or partial report and does not display a missing summary row as zero. Search Console reports cover a 30-day range ending three days before the current date to reduce the effect of incomplete recent data. Each provider's status is handled independently; an error from Google does not prevent GitHub download statistics from being returned.
 
 ## Migrations and deployments
 
