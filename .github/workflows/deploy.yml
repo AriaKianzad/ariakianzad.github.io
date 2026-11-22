@@ -144,6 +144,8 @@ jobs:
           test -s out/Mian-e-Ma/assets/estedad-variable.woff2
           test -s out/Mian-e-Ma/assets/mian-e-ma-cover-v2.webp
           test -s out/Mian-e-Ma/assets/mian-e-ma-lineart.webp
+          test -s out/og/og.jpg
+          test -s out/Mian-e-Ma/assets/mian-e-ma-social-preview.jpg
           test -s out/Mian-e-Ma/assets/rexo-agency-logo-white.png
           test -s out/Mian-e-Ma/assets/OFL.txt
           grep -Fq 'href="/icon.png"' out/Mian-e-Ma/index.html
@@ -152,7 +154,7 @@ jobs:
           ! grep -R -Fq 'rexo-mag-logo.png' out/Mian-e-Ma/
           ! grep -Fq 'مجله رکسو (RexoMag)' out/Mian-e-Ma/index.html
           ! grep -Fq 'class="publisher-mark"' out/Mian-e-Ma/index.html
-          grep -Fq '<title>دانلود رایگان کتاب «میانِ ما»؛ شناخت رابطه و مسئولیت‌پذیری عاطفی</title>' out/Mian-e-Ma/index.html
+          grep -Fq '<title>میانِ ما؛ شناخت رابطه، صمیمیت و مسئولیت‌پذیری عاطفی</title>' out/Mian-e-Ma/index.html
           grep -Fq '<h3>از شناخت خود و دیگری تا ساختن یک رابطۀ سالم و ماندگار</h3>' out/Mian-e-Ma/index.html
           grep -Fq 'width="699" height="992"' out/Mian-e-Ma/index.html
           grep -Fq "<loc>${NEXT_PUBLIC_SITE_URL%/}/Mian-e-Ma/</loc>" out/sitemap.xml

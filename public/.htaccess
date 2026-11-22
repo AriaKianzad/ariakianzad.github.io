@@ -92,7 +92,7 @@ ErrorDocument 404 /404.html
     Header always set Cache-Control "public, max-age=3600, must-revalidate"
   </FilesMatch>
   # Icons and the social image (fixed names): one week.
-  <FilesMatch "\.(png|ico)$">
+  <FilesMatch "\.(png|ico|jpg|jpeg)$">
     Header always set Cache-Control "public, max-age=604800"
   </FilesMatch>
   # Only content-hashed Next and hero chunks can be cached forever.

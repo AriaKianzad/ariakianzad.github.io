@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { site } from "./site";
 
 export const socialImage = {
-  url: "/og/og.png",
+  url: "/og/og.jpg",
   width: 1200,
   height: 630,
-  alt: "Aria Kianzad, brand strategist and personal branding consultant.",
+  type: "image/jpeg",
+  alt: "Aria Kianzad. Brand strategy and personal branding. Find the difference. Make it matter.",
 } as const;
 
 const pageTitle = "Aria Kianzad | Brand Strategy & Personal Branding";
