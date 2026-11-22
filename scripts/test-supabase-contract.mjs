@@ -89,8 +89,24 @@ assert.ok(adminApp.includes('endpoint.origin === "https://bkohdqwecnvbmeaiuyyx.s
   "dashboard must validate the exact Supabase project origin before sending credentials");
 assert.ok(adminApp.includes('config.supabaseAnonKey.startsWith("sb_publishable_")'),
   "dashboard must reject non-publishable API keys");
+const restoreStart = adminApp.indexOf("async function restoreRememberedSession()");
+const restoreEnd = adminApp.indexOf("\\n  async function requestSiteAnalytics", restoreStart);
+const restoreSource = adminApp.slice(restoreStart, restoreEnd);
+const savedTokenRead = restoreSource.indexOf('window.localStorage.getItem(SESSION_STORAGE_KEY)');
+const noSavedTokenCheck = restoreSource.indexOf("if (!savedRefreshToken) return;");
+const rememberOptInRestore = restoreSource.indexOf("rememberSession.checked = true;");
+const sessionRefresh = restoreSource.indexOf("refreshSessionOnce()");
+assert.ok(restoreStart >= 0 && restoreEnd > restoreStart, "remembered-session restoration must remain explicit");
+assert.ok(savedTokenRead >= 0 && noSavedTokenCheck > savedTokenRead,
+  "dashboard must look for a previously saved token before deciding whether to restore");
+assert.ok(rememberOptInRestore > noSavedTokenCheck && sessionRefresh > rememberOptInRestore,
+  "a saved token must restore the opted-in checkbox before refresh rotates and persists it");
+assert.ok(!restoreSource.includes("if (!rememberSession.checked)"),
+  "the unchecked first-visit control must not erase a previously opted-in session");
+assert.ok(restoreSource.includes("rememberSession.checked = false;"),
+  "an invalid or failed remembered session must reset the checkbox");
 assert.ok(adminApp.includes("if (!rememberSession.checked)"),
-  "saved sessions must require explicit user opt-in before restoration");
+  "new logins must still require an explicit checkbox opt-in before persisting a session");
 assert.ok(adminApp.includes('/auth/v1/logout?scope=local'),
   "dashboard logout must request local Supabase session revocation");
 assert.ok(adminHtml.includes('id="remember-session"') && !/id="remember-session"[^>]*checked/.test(adminHtml),
