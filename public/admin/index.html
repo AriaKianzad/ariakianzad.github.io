@@ -8,9 +8,9 @@
   <meta name="theme-color" content="#0a0b0d">
   <title>تحلیل عملکرد سایت و دانلودها | میانِ ما</title>
   <meta name="description" content="داشبورد خصوصی آمار دانلود کتاب میانِ ما.">
-  <link rel="stylesheet" href="./admin.css?v=20261121-4">
+  <link rel="stylesheet" href="./admin.css?v=20261122-4">
   <script src="./config.js?v=20261121-2"></script>
-  <script src="./app.js?v=20261122-3" defer></script>
+  <script src="./app.js?v=20261122-4" defer></script>
 </head>
 <body>
   <main class="shell">
@@ -133,10 +133,28 @@
       <section class="google-section" aria-labelledby="ga4-title">
         <div class="section-heading">
           <div><span class="eyebrow">GOOGLE ANALYTICS 4</span><h2 id="ga4-title">رفتار و منابع ورود بازدیدکننده‌ها</h2>
-          <p class="section-subtitle" id="ga4-period">۳۰ روز اخیر، تا روز گذشته بر اساس منطقۀ زمانی Property در GA4</p></div>
+          <p class="section-subtitle" id="ga4-period">گزارش تجمیعی ۳۰ روز اخیر بر اساس منطقۀ زمانی Property در GA4</p>
+          <p class="section-subtitle" id="ga4-updated">آخرین دریافت از API: —</p></div>
           <span id="ga4-status" class="status-pill pending">در انتظار اتصال</span>
         </div>
         <div id="ga4-message" class="integration-message" hidden></div>
+        <section class="panel realtime-panel" aria-labelledby="ga4-realtime-title">
+          <div class="realtime-heading">
+            <div>
+              <span class="eyebrow">LIVE / REALTIME</span>
+              <h3 id="ga4-realtime-title">بازدید زندهٔ سایت</h3>
+              <p id="ga4-realtime-updated">آخرین دریافت: —</p>
+            </div>
+            <span id="ga4-realtime-status" class="status-pill pending">در انتظار اتصال</span>
+          </div>
+          <div id="ga4-realtime-message" class="integration-message" hidden></div>
+          <div class="metrics google-metrics realtime-metrics">
+            <article class="metric"><div class="metric-top"><span>کاربران فعال</span><small>۳۰ MIN / 01</small></div><strong id="ga4-realtime-users">—</strong><span class="metric-foot">Active users</span></article>
+            <article class="metric"><div class="metric-top"><span>بازدید صفحه</span><small>۳۰ MIN / 02</small></div><strong id="ga4-realtime-views">—</strong><span class="metric-foot">Page views</span></article>
+            <article class="metric"><div class="metric-top"><span>رویدادها</span><small>۳۰ MIN / 03</small></div><strong id="ga4-realtime-events">—</strong><span class="metric-foot">Event count</span></article>
+          </div>
+          <p class="realtime-note">این گزارش، فعالیت ۳۰ دقیقۀ اخیر رو نشون می‌ده و هر ۶۰ ثانیه خودکار به‌روزرسانی می‌شه.</p>
+        </section>
         <div class="metrics google-metrics">
           <article class="metric"><div class="metric-top"><span>کاربران</span><small>GA4 / 01</small></div><strong id="ga-users">—</strong><span class="metric-foot">Total users</span></article>
           <article class="metric"><div class="metric-top"><span>نشست‌ها</span><small>GA4 / 02</small></div><strong id="ga-sessions">—</strong><span class="metric-foot">Sessions</span></article>
