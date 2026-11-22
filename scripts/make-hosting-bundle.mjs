@@ -196,7 +196,6 @@ async function main() {
   const stagedBytes = [...staged.values()].reduce((sum, f) => sum + f.size, 0);
 
   /* Zip with the Windows-native .NET writer. */
-  rmSync(zipPath, { force: true });
   const psExe = join(process.env.SystemRoot || "C:\\Windows", "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
   execFileSync(psExe, [
     "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File",
