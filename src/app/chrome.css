@@ -347,29 +347,94 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
 
 @media (max-width: 780px) {
   .site-header__row {
+    gap: 0.55rem;
     justify-content: space-between;
+  }
+
+  .wordmark {
+    min-width: 0;
+    gap: 0.55rem;
+  }
+
+  .wordmark__copy {
+    min-width: 0;
+  }
+
+  .wordmark__copy strong {
+    font-size: clamp(0.78rem, 2.8vw, 0.92rem);
+    white-space: nowrap;
+  }
+
+  .wordmark__copy small {
+    font-size: clamp(0.43rem, 1.55vw, 0.54rem);
+    letter-spacing: 0.035em;
+    white-space: nowrap;
+  }
+
+  .site-nav {
+    flex: 0 0 auto;
   }
 
   html[data-js] .menu-btn {
     display: inline-flex;
+    flex: 0 0 auto;
+    min-height: 44px;
+    gap: 0.48rem;
+    padding: 0.4rem 0.58rem;
   }
 
   html[data-js] .site-nav__list {
-    position: fixed;
+    position: absolute;
     z-index: 90;
-    inset: var(--header-h) 0 0;
+    top: 100%;
+    right: 0;
+    bottom: auto;
+    left: 0;
     display: none;
+    height: calc(100vh - var(--header-h));
+    height: calc(100dvh - var(--header-h));
+    max-height: calc(100dvh - var(--header-h));
     flex-direction: column;
     align-items: stretch;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 0;
-    padding: 1.5rem var(--gutter) 3rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: clamp(1rem, 4vh, 2.5rem) var(--gutter) max(2rem, env(safe-area-inset-bottom));
     border-top: 1px solid var(--line);
     background: rgba(9, 13, 12, 0.985);
   }
 
   html[data-js] nav[data-open] .site-nav__list {
     display: flex;
+    animation: mobile-menu-enter 440ms var(--ease-out) both;
+  }
+
+  html[data-js] nav[data-open] .site-nav__list li {
+    opacity: 0;
+    animation: mobile-menu-item-enter 560ms var(--ease-out) forwards;
+  }
+
+  html[data-js] nav[data-open] .site-nav__list li:nth-child(2) { animation-delay: 60ms; }
+  html[data-js] nav[data-open] .site-nav__list li:nth-child(3) { animation-delay: 120ms; }
+  html[data-js] nav[data-open] .site-nav__list li:nth-child(4) { animation-delay: 180ms; }
+  html[data-js] nav[data-open] .site-nav__list li:nth-child(5) { animation-delay: 240ms; }
+  html[data-js] nav[data-open] .site-nav__list li:nth-child(6) { animation-delay: 300ms; }
+
+  @keyframes mobile-menu-enter {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes mobile-menu-item-enter {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 14px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
   }
 
   html:not([data-js]) .site-header__row {
@@ -389,10 +454,10 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
 
   .site-nav__link {
     width: 100%;
-    min-height: 70px;
+    min-height: clamp(58px, 10vh, 74px);
     border-bottom: 1px solid var(--line);
     font-family: var(--font-sans);
-    font-size: clamp(1.7rem, 6vw, 2.6rem);
+    font-size: clamp(1.6rem, 6vw, 2.5rem);
     letter-spacing: -0.025em;
   }
 
@@ -410,6 +475,14 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
     letter-spacing: 0.05em;
   }
 
+  .header-cta {
+    flex: 0 0 auto;
+    min-height: 44px;
+    gap: 0.42rem;
+    padding: 0.4rem 0.62rem;
+    white-space: nowrap;
+  }
+
   .site-footer__top {
     align-items: flex-start;
     flex-direction: column;
@@ -417,8 +490,20 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
 }
 
 @media (max-width: 480px) {
+  .site-header__row {
+    gap: 0.38rem;
+  }
+
+  .wordmark {
+    gap: 0.48rem;
+  }
+
   .wordmark__copy small {
-    font-size: 0.5rem;
+    display: none;
+  }
+
+  .wordmark__copy strong {
+    font-size: 0.78rem;
   }
 
   .wordmark__mark {
@@ -426,18 +511,49 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
     height: 38px;
   }
 
+  .menu-btn {
+    gap: 0.38rem;
+    padding-inline: 0.48rem;
+  }
+
+  .menu-btn__label {
+    font-size: 0.58rem;
+  }
+
+  .menu-btn__icon,
+  .menu-btn__icon::before,
+  .menu-btn__icon::after {
+    width: 14px;
+  }
+
   .header-cta {
-    gap: 0.4rem;
-    font-size: var(--step-xs);
+    gap: 0.32rem;
+    padding-inline: 0.52rem;
+    font-size: 0.66rem;
   }
 
   .header-cta svg {
-    width: 11px;
-    height: 11px;
+    width: 10px;
+    height: 10px;
   }
 
   .site-footer__links {
     gap: 1rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .menu-btn__label,
+  .header-cta svg {
+    display: none;
+  }
+
+  .menu-btn {
+    padding-inline: 0.58rem;
+  }
+
+  .header-cta {
+    padding-inline: 0.62rem;
   }
 }
 
