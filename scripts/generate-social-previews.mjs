@@ -1,5 +1,6 @@
 import sharp from "sharp";
-import { mkdir, readFile } from "node:fs/promises";
+import { Resvg } from "@resvg/resvg-js";
+import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
 const root = process.cwd();
@@ -7,24 +8,22 @@ const outputRoot = join(root, "out");
 const width = 1200;
 const height = 630;
 
-const read = (path) => readFile(join(root, path));
-const [estedadRegular, estedadSemiBold] = await Promise.all([
-  read("assets-src/Estedad-Regular.ttf"),
-  read("assets-src/Estedad-SemiBold.ttf"),
-]);
+// Load Estedad as real font files. SVG @font-face data URIs are ignored by
+// librsvg (the SVG renderer bundled with sharp), so use resvg's explicit font
+// database to keep Persian text from silently falling back to a system font.
+const estedadFontFiles = [
+  join(root, "assets-src/Estedad-Regular.ttf"),
+  join(root, "assets-src/Estedad-SemiBold.ttf"),
+];
 
-const estedadFaces = `
-  @font-face {
-    font-family: "Estedad";
-    src: url(data:font/ttf;base64,${estedadRegular.toString("base64")}) format("truetype");
-    font-weight: 400;
-  }
-  @font-face {
-    font-family: "Estedad";
-    src: url(data:font/ttf;base64,${estedadSemiBold.toString("base64")}) format("truetype");
-    font-weight: 600 900;
-  }
-`;
+const renderSvg = (svg) =>
+  new Resvg(svg, {
+    font: {
+      fontFiles: estedadFontFiles,
+      loadSystemFonts: true,
+    },
+    textRendering: 1,
+  }).render().asPng();
 
 const homepageSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 1200 630">
   <defs>
@@ -104,7 +103,6 @@ const bookSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height
       <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <style>
-      ${estedadFaces}
       .fa { font-family: "Estedad", "Noto Sans Arabic", sans-serif; }
     </style>
   </defs>
@@ -131,11 +129,11 @@ const bookSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height
 await mkdir(join(outputRoot, "og"), { recursive: true });
 await mkdir(join(outputRoot, "Mian-e-Ma/assets"), { recursive: true });
 
-await sharp(Buffer.from(homepageSvg))
+await sharp(renderSvg(homepageSvg))
   .jpeg({ quality: 91, mozjpeg: true, chromaSubsampling: "4:4:4" })
   .toFile(join(outputRoot, "og/og.jpg"));
 
-await sharp(Buffer.from(bookSvg))
+await sharp(renderSvg(bookSvg))
   .jpeg({ quality: 93, mozjpeg: true, chromaSubsampling: "4:4:4" })
   .toFile(join(outputRoot, "Mian-e-Ma/assets/mian-e-ma-social-preview.jpg"));
 
@@ -149,4 +147,4 @@ for (const file of [
   }
 }
 
-console.log("Social previews generated: homepage and book page (1200x630 JPEG).");
+console.log("Social previews generated with bundled Estedad fonts: homepage and book page (1200x630 JPEG).");

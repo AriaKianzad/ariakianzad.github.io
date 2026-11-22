@@ -1,7 +1,30 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { Resvg } from "@resvg/resvg-js";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
+
+const estedadProbe = new Resvg(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="110">
+    <text x="400" y="78" text-anchor="end" direction="rtl" font-family="Estedad" font-size="64" fill="#000">میانِ ما</text>
+  </svg>`,
+  {
+    font: {
+      fontFiles: [
+        fileURLToPath(new URL("../assets-src/Estedad-Regular.ttf", import.meta.url)),
+        fileURLToPath(new URL("../assets-src/Estedad-SemiBold.ttf", import.meta.url)),
+      ],
+      loadSystemFonts: false,
+    },
+  },
+).render();
+const estedadProbePixels = estedadProbe.pixels;
+let estedadInkPixels = 0;
+for (let i = 3; i < estedadProbePixels.length; i += 4) {
+  if (estedadProbePixels[i] > 0) estedadInkPixels++;
+}
+assert.ok(estedadInkPixels > 100, "bundled Estedad font files must render Persian glyphs without system-font fallback");
 
 const [
   page,
@@ -66,7 +89,7 @@ assert.ok(metadata.includes('card: "summary_large_image"'),
   "homepage must expose a large Twitter/X card");
 const bookOgImage = bookPage.match(/<meta property="og:image" content="([^"]+)"/)?.[1] ?? "";
 const bookTwitterImage = bookPage.match(/<meta name="twitter:image" content="([^"]+)"/)?.[1] ?? "";
-assert.equal(bookOgImage, "https://ariakianzad.github.io/Mian-e-Ma/assets/mian-e-ma-social-preview.jpg?v=20261122-3",
+assert.equal(bookOgImage, "https://ariakianzad.github.io/Mian-e-Ma/assets/mian-e-ma-social-preview.jpg?v=20261122-4",
   "book page must use its own dedicated social image");
 assert.equal(bookTwitterImage, bookOgImage, "Open Graph and Twitter/X must use the same book preview image");
 assert.ok(bookPage.includes('<meta property="og:image:width" content="1200">') &&
@@ -97,6 +120,15 @@ assert.ok(socialGenerator.includes('toFile(join(outputRoot, "og/og.jpg"))') &&
 assert.ok(socialGenerator.includes("width = 1200") && socialGenerator.includes("height = 630") &&
   socialGenerator.includes('format !== "jpeg"'),
   "social preview generator must validate the 1200x630 JPEG output format");
+assert.ok(socialGenerator.includes('import { Resvg } from "@resvg/resvg-js"') &&
+  socialGenerator.includes("fontFiles: estedadFontFiles") &&
+  socialGenerator.includes("loadSystemFonts: true") &&
+  socialGenerator.includes("new Resvg(svg, {"),
+  "social previews must register Estedad font files with a renderer that supports explicit font loading");
+assert.ok(socialGenerator.includes('join(root, "assets-src/Estedad-Regular.ttf")') &&
+  socialGenerator.includes('join(root, "assets-src/Estedad-SemiBold.ttf")') &&
+  !socialGenerator.includes("data:font/ttf;base64"),
+  "social previews must load the bundled Estedad faces directly instead of relying on unsupported embedded @font-face data");
 assert.ok(!socialGenerator.includes("برای دریافت نسخۀ رایگان کلیک کنید") && socialGenerator.includes('<path d="M82 520H1118"'),
   "book social preview must not include a decorative, non-functional download button");
 assert.ok(socialGenerator.includes("mian-e-ma-cover-v2.webp") &&
