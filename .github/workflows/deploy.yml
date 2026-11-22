@@ -50,6 +50,12 @@ jobs:
       - name: Scan repository for leaked credentials
         run: npm run check:security
 
+      - name: Test credential scanner against synthetic tokens
+        run: npm run test:security-scan
+
+      - name: Test hosting build safety
+        run: npm run test:build-safety
+
       - name: Test analytics consent states
         run: npm run test:consent
 
@@ -79,6 +85,8 @@ jobs:
           node --check scripts/extract-social-paths.mjs
           node --check scripts/verify-export.mjs
           node --check scripts/verify-secrets.mjs
+          node --check scripts/test-security-scan.mjs
+          node --check scripts/test-build-safety.mjs
           node --check scripts/test-homepage-contract.mjs
           node --check scripts/test-supabase-contract.mjs
           node --check scripts/test-google-analytics-contract.mjs

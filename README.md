@@ -22,7 +22,7 @@ The personal website, book page and dashboard are static frontends. The personal
 | Site analytics | Google Analytics 4 and Google Search Console, queried server-side |
 | Consent | First-party consent panel; the Google tag loads only after consent |
 
-The Next.js application is exported as static files. The deployed website does not run a Next.js server, has no Next.js API routes and performs no request-time server rendering. The build removes the unused Next.js hydration payload, then esbuild produces a same-origin /_hero/hero-visual.js entrypoint and a hashed Three.js scene chunk. The entrypoint is loaded from the same origin and imports the scene only when the hero approaches the viewport. No 3D code, shader, texture or font is fetched from a third-party CDN. If WebGL is unavailable or the visitor prefers reduced motion, a CSS-built static visual remains. The homepage copy and structured data stay in static HTML, while public/boot.js and public/ui.js provide progressive enhancement. The dashboard is not a hidden or private deployment: its HTML and JavaScript are public. Access to its data is enforced by Supabase, not by the dashboard URL or its noindex metadata.
+The Next.js application is exported as static files. The deployed website does not run a Next.js server, has no Next.js API routes and performs no request-time server rendering. The build removes the unused Next.js hydration payload, then esbuild produces a same-origin /_hero/hero-visual.js entrypoint and a hashed Three.js scene chunk. The postbuild step also generates independent 1200×630 JPEG social previews for the homepage and book page. The book preview uses the book cover and line-art; Open Graph and Twitter/X metadata point to that dedicated image. The entrypoint is loaded from the same origin and imports the scene only when the hero approaches the viewport. No 3D code, shader, texture or font is fetched from a third-party CDN. If WebGL is unavailable or the visitor prefers reduced motion, a CSS-built static visual remains. The homepage copy and structured data stay in static HTML, while public/boot.js and public/ui.js provide progressive enhancement. The dashboard is not a hidden or private deployment: its HTML and JavaScript are public. Access to its data is enforced by Supabase, not by the dashboard URL or its noindex metadata.
 
 ### Main routes
 
@@ -92,9 +92,12 @@ Useful checks and production commands:
     npm run lint
     npm run audit
     npm run check:security
+    npm run test:security-scan
+    npm run test:build-safety
     npm run test:consent
     npm run test:homepage
     npm run test:supabase
+    npm run test:analytics
     npm run build
     npm run preview
 
@@ -108,15 +111,15 @@ Additional asset and packaging tasks:
 
 - assets regenerates the social card and app icons from local source assets.
 - social-icons rebuilds the checked-in icon path map from assets-src/icons/.
-- hosting creates and verifies an optional cPanel ZIP bundle. It requires Windows PowerShell and .NET's ZIP writer.
+- hosting creates and verifies an optional cPanel ZIP bundle. It requires Windows PowerShell and .NET's ZIP writer. The builder uses a unique temporary workspace, rejects symlinks and unsafe archive paths, and refuses to overwrite an existing hosting-bundle.zip.
 
 ## Build and deployment
 
 GitHub Actions builds and deploys the main branch to GitHub Pages. Pull requests targeting main run the checks and build but do not deploy. The workflow:
 
 - installs the locked dependency tree with npm ci;
-- scans the working tree for high-confidence credential patterns, including legacy Supabase service-role JWTs;
-- runs the analytics-consent, homepage and Supabase security-contract tests;
+- scans the working tree for high-confidence credential patterns, including legacy Supabase service-role JWTs; the regression test exercises a synthetic JWT and confirms that token values are never printed;
+- runs synthetic-token and hosting-build safety regressions, plus the analytics-consent, homepage, Supabase and Google Analytics/Search Console contract tests;
 - runs npm audit, TypeScript and ESLint checks;
 - verifies generated social icon paths and build scripts;
 - creates and validates the static export;
@@ -124,6 +127,8 @@ GitHub Actions builds and deploys the main branch to GitHub Pages. Pull requests
 - deploys only from the non-PR workflow path.
 
 Third-party GitHub Actions are pinned to immutable commit SHAs. The build job has read-only repository permissions, and only the deploy job receives Pages write and OIDC permissions.
+
+The credential scanner checks the current working tree; it is an accidental-commit guard, not a scan of every historical Git object. A clean working-tree scan does not establish that credentials were never committed in the past. If a credential was exposed historically, revoke/rotate it and review the relevant Git history and provider audit logs.
 
 For GitHub Pages, the canonical site URL defaults to https://ariakianzad.github.io. For the optional custom domain, set the public build-time URL before building:
 
@@ -178,7 +183,7 @@ Both Edge Functions use the exact Supabase JS version declared in their respecti
       config.toml           Function runtime configuration
       README.md             Backend setup and operational notes
 
-    scripts/                Asset generation, credential scan, consent/Supabase tests, build and packaging
+    scripts/                Asset generation, credential scan, regression tests, build verification and packaging
     assets-src/             Original fonts and SVG icon sources
     LICENSES/               Font licence files
     hosting/                 Optional cPanel hosting instructions

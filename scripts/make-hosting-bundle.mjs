@@ -49,16 +49,19 @@
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, statSync } from "node:fs";
+import { constants, copyFileSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import http from "node:http";
 
 const repoRoot = process.cwd();
 const outDir = join(repoRoot, "out");
-const zipPath = join(repoRoot, "hosting-bundle.zip");
-const staging = process.env.ARIA_HOSTING_STAGING || join(tmpdir(), "aria-hosting-bundle-staging");
-const extract = process.env.ARIA_HOSTING_EXTRACT || join(tmpdir(), "aria-hosting-bundle-extract");
+const finalZipPath = join(repoRoot, "hosting-bundle.zip");
+// Initialized only after required inputs and the non-overwrite guard pass.
+let workspaceRoot;
+let zipPath;
+let staging;
+let extract;
 
 const REQUIRED = [
   "index.html",
@@ -104,14 +107,20 @@ const collect = (dir) => {
   const walk = (current, prefix) => {
     for (const name of readdirSync(current)) {
       const path = join(current, name);
-      if (statSync(path).isDirectory()) {
+      const info = lstatSync(path);
+      if (info.isSymbolicLink()) {
+        throw new Error("symbolic links are not allowed in the hosting bundle: " + path);
+      }
+      if (info.isDirectory()) {
         walk(path, `${prefix}${name}/`);
-      } else {
+      } else if (info.isFile()) {
         const bytes = readFileSync(path);
         map.set(`${prefix}${name}`, {
           size: bytes.length,
           sha256: createHash("sha256").update(bytes).digest("hex"),
         });
+      } else {
+        throw new Error("unsupported filesystem entry in hosting bundle: " + path);
       }
     }
   };
@@ -141,11 +150,13 @@ const parseCentralDirectory = (buffer) => {
     }
     entries.push({
       name: buffer.toString("utf8", p + 46, p + 46 + buffer.readUInt16LE(p + 28)),
+      madeBy: buffer.readUInt16LE(p + 4) >>> 8,
       flags: buffer.readUInt16LE(p + 8),
       compressed: buffer.readUInt32LE(p + 20),
       uncompressed: buffer.readUInt32LE(p + 24),
       extraLen: buffer.readUInt16LE(p + 30),
       commentLen: buffer.readUInt16LE(p + 32),
+      externalAttributes: buffer.readUInt32LE(p + 38),
     });
     p += 46 + entries[n].name.length + entries[n].extraLen + entries[n].commentLen;
   }
@@ -165,9 +176,21 @@ async function main() {
   if (!existsSync(join(outDir, "404.html"))) {
     fail("out/404.html not found - run `npm run build` first");
   }
+  if (lstatSync(finalZipPath, { throwIfNoEntry: false })) {
+    fail("Refusing to overwrite an existing hosting-bundle.zip. Move or rename the existing archive, then run this command again.");
+  }
 
-  /* Stage. */
-  rmSync(staging, { recursive: true, force: true });
+  // Create isolated temporary paths only after inputs and output are checked.
+  // Environment variables cannot redirect cleanup to user-selected directories.
+  workspaceRoot = mkdtempSync(join(tmpdir(), "aria-hosting-bundle-"));
+  zipPath = join(workspaceRoot, "hosting-bundle.zip");
+  staging = join(workspaceRoot, "staging");
+  extract = join(workspaceRoot, "extract");
+
+  // Inspect the export before copying it: symlinks are never followed into staging.
+  collect(outDir);
+
+  /* Stage inside the unique workspace created for this invocation. */
   mkdirSync(staging, { recursive: true });
   for (const name of readdirSync(outDir)) {
     if (name === "_not-found.html") continue; // internal Next.js payload, not deployable
@@ -179,7 +202,6 @@ async function main() {
   const stagedBytes = [...staged.values()].reduce((sum, f) => sum + f.size, 0);
 
   /* Zip with the Windows-native .NET writer. */
-  rmSync(zipPath, { force: true });
   const psExe = join(process.env.SystemRoot || "C:\\Windows", "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
   execFileSync(psExe, [
     "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File",
@@ -202,6 +224,24 @@ async function main() {
   for (const entry of entries) {
     if (entry.name.includes("\\")) problems.push(`entry uses backslash separators: ${entry.name}`);
     if (entry.flags & 0x1) problems.push(`entry is encrypted: ${entry.name}`);
+  }
+  for (const entry of entries) {
+    const archivePath = entry.name.endsWith("/") ? entry.name.slice(0, -1) : entry.name;
+    const segments = archivePath.split("/");
+    if (
+      !archivePath ||
+      entry.name.startsWith("/") ||
+      /^[A-Za-z]:/.test(archivePath) ||
+      entry.name.includes("\\") ||
+      entry.name.includes("\0") ||
+      segments.some((segment) => segment === "" || segment === "." || segment === "..")
+    ) {
+      problems.push("unsafe archive path: " + entry.name);
+    }
+    const unixFileType = (entry.externalAttributes >>> 16) & 0xf000;
+    if (entry.madeBy === 3 && unixFileType === 0xa000) {
+      problems.push("symbolic-link archive entry is not allowed: " + entry.name);
+    }
   }
   const names = new Set(fileEntries.map((e) => e.name));
   if (fileEntries.length !== staged.size) {
@@ -253,8 +293,7 @@ async function main() {
     problems.push(".NET read did not confirm root-level index.html/.htaccess");
   }
 
-  /* 4. Extraction into a clean directory, byte-for-byte compare. */
-  rmSync(extract, { recursive: true, force: true });
+  /* 4. Extraction into a new directory inside the unique workspace. */
   mkdirSync(extract, { recursive: true });
   execFileSync("tar.exe", ["-xf", zipPath, "-C", extract], { stdio: "pipe" });
   const extracted = collect(extract);
@@ -454,7 +493,10 @@ async function main() {
     fail("extracted-site smoke test FAILED");
   }
 
-  console.log(`hosting bundle OK: ${zipPath}`);
+  // Publish the verified archive without replacing an existing file.
+  copyFileSync(zipPath, finalZipPath, constants.COPYFILE_EXCL);
+  rmSync(workspaceRoot, { recursive: true, force: true });
+  console.log(`hosting bundle OK: ${finalZipPath}`);
   console.log(`  zip size: ${buffer.length} bytes`);
   console.log(`  entries: ${fileEntries.length} files, ${dirEntries.length} directory records`);
   console.log(`  uncompressed: ${uncompressedTotal} bytes (compressed: ${compressedTotal} bytes)`);
