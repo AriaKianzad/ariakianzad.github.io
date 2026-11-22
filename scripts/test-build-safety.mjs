@@ -28,7 +28,7 @@ assert.ok(zipWriter.includes("Test-Path -LiteralPath $ZipPath") &&
   zipWriter.includes("Refusing to overwrite an existing archive"),
   "the PowerShell ZIP writer must independently refuse overwrites");
 
-const expectedApacheRule = String.raw`  <FilesMatch "\\.(css|woff2)$">`;
+const expectedApacheRule = String.raw`  <FilesMatch "\.(css|woff2)$">`;
 assert.ok(apache.includes(expectedApacheRule),
   "Apache CSS/font cache matcher must use a single regex escape before the dot");
 
