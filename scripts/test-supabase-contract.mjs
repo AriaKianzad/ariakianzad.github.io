@@ -90,7 +90,7 @@ assert.ok(adminApp.includes('endpoint.origin === "https://bkohdqwecnvbmeaiuyyx.s
 assert.ok(adminApp.includes('config.supabaseAnonKey.startsWith("sb_publishable_")'),
   "dashboard must reject non-publishable API keys");
 const restoreStart = adminApp.indexOf("async function restoreRememberedSession()");
-const restoreEnd = adminApp.indexOf("\\n  async function requestSiteAnalytics", restoreStart);
+const restoreEnd = adminApp.indexOf("async function requestSiteAnalytics", restoreStart);
 const restoreSource = adminApp.slice(restoreStart, restoreEnd);
 const savedTokenRead = restoreSource.indexOf('window.localStorage.getItem(SESSION_STORAGE_KEY)');
 const noSavedTokenCheck = restoreSource.indexOf("if (!savedRefreshToken) return;");
