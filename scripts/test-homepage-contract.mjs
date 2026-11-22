@@ -1,7 +1,30 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { Resvg } from "@resvg/resvg-js";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
+
+const estedadProbe = new Resvg(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="110">
+    <text x="400" y="78" text-anchor="end" direction="rtl" font-family="Estedad" font-size="64" fill="#000">میانِ ما</text>
+  </svg>`,
+  {
+    font: {
+      fontFiles: [
+        fileURLToPath(new URL("../assets-src/Estedad-Regular.ttf", import.meta.url)),
+        fileURLToPath(new URL("../assets-src/Estedad-SemiBold.ttf", import.meta.url)),
+      ],
+      loadSystemFonts: false,
+    },
+  },
+).render();
+const estedadProbePixels = estedadProbe.pixels;
+let estedadInkPixels = 0;
+for (let i = 3; i < estedadProbePixels.length; i += 4) {
+  if (estedadProbePixels[i] > 0) estedadInkPixels++;
+}
+assert.ok(estedadInkPixels > 100, "bundled Estedad font files must render Persian glyphs without system-font fallback");
 
 const [
   page,
