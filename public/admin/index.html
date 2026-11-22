@@ -8,9 +8,9 @@
   <meta name="theme-color" content="#0a0b0d">
   <title>تحلیل عملکرد سایت و دانلودها | میانِ ما</title>
   <meta name="description" content="داشبورد خصوصی آمار دانلود کتاب میانِ ما.">
-  <link rel="stylesheet" href="./admin.css?v=20261122-4">
+  <link rel="stylesheet" href="./admin.css?v=20261122-5">
   <script src="./config.js?v=20261121-2"></script>
-  <script src="./app.js?v=20261122-5" defer></script>
+  <script src="./app.js?v=20261122-6" defer></script>
 </head>
 <body>
   <main class="shell">
@@ -160,6 +160,47 @@
           <article class="metric"><div class="metric-top"><span>نشست‌ها</span><small>GA4 / 02</small></div><strong id="ga-sessions">—</strong><span class="metric-foot">Sessions</span></article>
           <article class="metric"><div class="metric-top"><span>بازدید صفحات</span><small>GA4 / 03</small></div><strong id="ga-views">—</strong><span class="metric-foot">Screen page views</span></article>
           <article class="metric"><div class="metric-top"><span>رویداد دانلود PDF</span><small>GA4 / 04</small></div><strong id="ga-download-events">—</strong><span class="metric-foot">file_download events</span></article>
+        </div>
+        <div class="book-analytics-grid">
+          <section class="panel" aria-labelledby="ga-download-attribution-title">
+            <div class="panel-heading">
+              <div><span class="eyebrow">DOWNLOAD ATTRIBUTION</span><h3 id="ga-download-attribution-title">سهم دکمه‌های دانلود</h3></div>
+              <span id="ga-download-attribution-total" class="panel-count">—</span>
+            </div>
+            <div id="ga-download-attribution" class="attribution-chart">
+              <p class="empty-cell">در انتظار دریافت داده…</p>
+            </div>
+            <p class="analytics-note">تفکیک بر اساس متن لینک ثبت‌شده انجام می‌شه. مقدار Link ID در بخشی از گزارش‌های پردازش‌شدۀ GA4 خالیه.</p>
+          </section>
+          <section class="panel" aria-labelledby="ga-book-funnel-title">
+            <div class="panel-heading">
+              <div><span class="eyebrow">BOOK DOWNLOAD FUNNEL</span><h3 id="ga-book-funnel-title">قیف بازدید تا دانلود</h3></div>
+              <span class="panel-count">GA4 / 30 DAYS</span>
+            </div>
+            <div class="funnel-grid">
+              <article class="funnel-stage">
+                <span class="funnel-stage-index">01 / SITE</span>
+                <strong id="ga-funnel-site-sessions">—</strong>
+                <span class="funnel-stage-label">نشست‌های کل سایت</span>
+                <small id="ga-funnel-site-detail">Sessions</small>
+              </article>
+              <article class="funnel-stage">
+                <span class="funnel-stage-index">02 / BOOK PAGE</span>
+                <strong id="ga-funnel-book-sessions">—</strong>
+                <span class="funnel-stage-label">نشست‌های صفحه کتاب</span>
+                <small id="ga-funnel-book-detail">—</small>
+                <span id="ga-funnel-book-rate" class="funnel-stage-rate">—</span>
+              </article>
+              <article class="funnel-stage">
+                <span class="funnel-stage-index">03 / DOWNLOAD</span>
+                <strong id="ga-funnel-download-sessions">—</strong>
+                <span class="funnel-stage-label">نشست‌های دارای دانلود</span>
+                <small id="ga-funnel-download-detail">—</small>
+                <span id="ga-funnel-download-rate" class="funnel-stage-rate">—</span>
+              </article>
+            </div>
+            <p class="analytics-note">نسبت هر مرحله از تقسیم نشست‌های همان مرحله بر مرحلۀ قبلی محاسبه می‌شه؛ این گزارش، قیف تجمیعی بازه‌ست.</p>
+          </section>
         </div>
         <div class="lower-grid google-tables">
           <section class="panel" aria-labelledby="ga-sources-title">
