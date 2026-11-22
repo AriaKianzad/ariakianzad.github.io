@@ -439,6 +439,109 @@
     return new Intl.NumberFormat("fa-IR", { style: "percent", maximumFractionDigits: 1 }).format(Number(value || 0));
   }
 
+  function renderDownloadAttribution(ga) {
+    const container = $("#ga-download-attribution");
+    const totalNode = $("#ga-download-attribution-total");
+    if (!container) return;
+
+    container.replaceChildren();
+    const rows = Array.isArray(ga.downloadAttribution) ? ga.downloadAttribution : [];
+    const total = rows.reduce((sum, row) => sum + Math.max(0, Number(row.downloads || 0)), 0);
+    if (totalNode) totalNode.textContent = formatNumber(total) + " دانلود";
+
+    if (!rows.length || total === 0) {
+      const empty = document.createElement("p");
+      empty.className = "empty-cell";
+      empty.textContent = "برای این بازه رویداد دانلودی ثبت نشده.";
+      container.appendChild(empty);
+      return;
+    }
+
+    rows.forEach((row) => {
+      const downloads = Math.max(0, Number(row.downloads || 0));
+      const share = total > 0 ? (downloads / total) * 100 : 0;
+      const linkText = String(row.linkText || "").trim();
+      const linkId = String(row.linkId || "").trim();
+      const label = linkText === "دانلود رایگان کتاب"
+        ? "دکمۀ Hero"
+        : linkText === "دانلود مستقیم PDF"
+        ? "سکشن دانلود"
+        : linkText || (linkId ? "لینک با شناسه " + linkId : "متن لینک ثبت نشده");
+
+      const item = document.createElement("div");
+      item.className = "attribution-row";
+      const meta = document.createElement("div");
+      meta.className = "attribution-meta";
+      const identity = document.createElement("div");
+      identity.className = "attribution-identity";
+      const name = document.createElement("span");
+      name.className = "attribution-name";
+      name.textContent = label;
+      identity.appendChild(name);
+
+      const detailText = linkText && label !== linkText ? linkText : (linkId ? "Link ID: " + linkId : "");
+      if (detailText) {
+        const detail = document.createElement("small");
+        detail.className = "attribution-detail";
+        detail.textContent = detailText;
+        identity.appendChild(detail);
+      }
+
+      const value = document.createElement("strong");
+      value.className = "attribution-value";
+      value.textContent = formatNumber(downloads) + " · " + formatPercent(share / 100);
+      meta.append(identity, value);
+
+      const track = document.createElement("div");
+      track.className = "attribution-track";
+      track.setAttribute("role", "img");
+      track.setAttribute("aria-label", label + ": " + formatNumber(downloads) + " دانلود");
+      const fill = document.createElement("span");
+      fill.className = "attribution-fill";
+      fill.style.width = share.toFixed(2) + "%";
+      track.appendChild(fill);
+
+      item.append(meta, track);
+      container.appendChild(item);
+    });
+  }
+
+  function renderBookFunnel(ga) {
+    const funnel = ga.funnel || {};
+    const hasSummary = ga.summaryAvailable !== false && ga.status !== "no_data";
+    const values = {
+      siteSessions: Number(funnel.siteSessions || 0),
+      bookPageSessions: Number(funnel.bookPageSessions || 0),
+      bookPageUsers: Number(funnel.bookPageUsers || 0),
+      bookPageViews: Number(funnel.bookPageViews || 0),
+      downloadSessions: Number(funnel.downloadSessions || 0),
+      downloadUsers: Number(funnel.downloadUsers || 0),
+      downloadEvents: Number(funnel.downloadEvents || 0),
+    };
+    const display = (value) => hasSummary ? formatNumber(value) : "—";
+    $("#ga-funnel-site-sessions").textContent = display(values.siteSessions);
+    $("#ga-funnel-book-sessions").textContent = display(values.bookPageSessions);
+    $("#ga-funnel-download-sessions").textContent = display(values.downloadSessions);
+    $("#ga-funnel-site-detail").textContent = hasSummary ? "مبنای مقایسه" : "—";
+    $("#ga-funnel-book-detail").textContent = hasSummary
+      ? formatNumber(values.bookPageUsers) + " کاربر · " + formatNumber(values.bookPageViews) + " بازدید صفحه"
+      : "—";
+    $("#ga-funnel-download-detail").textContent = hasSummary
+      ? formatNumber(values.downloadUsers) + " کاربر · " + formatNumber(values.downloadEvents) + " رویداد دانلود"
+      : "—";
+    $("#ga-funnel-book-rate").textContent = hasSummary && values.siteSessions > 0
+      ? formatPercent(values.bookPageSessions / values.siteSessions) + " از نشست‌های سایت"
+      : "—";
+    $("#ga-funnel-download-rate").textContent = hasSummary && values.bookPageSessions > 0
+      ? formatPercent(values.downloadSessions / values.bookPageSessions) + " از نشست‌های صفحه کتاب"
+      : "—";
+  }
+
+  function renderBookAnalytics(ga) {
+    renderDownloadAttribution(ga);
+    renderBookFunnel(ga);
+  }
+
   function renderGoogleAnalytics(payload) {
     if (!payload || payload.status === "not_configured") {
       const message = payload?.message || "برای اتصال، کلید Service Account گوگل باید در Secrets پروژه Supabase ثبت بشه.";
@@ -454,6 +557,7 @@
       setIntegrationStatus("ga4", "error", message);
       ["#ga-users", "#ga-sessions", "#ga-views", "#ga-download-events"]
         .forEach((selector) => { $(selector).textContent = "—"; });
+      renderBookAnalytics({});
       if (payload.requestMode !== "ga4") {
         setIntegrationStatus("gsc", "error", message);
         ["#gsc-clicks", "#gsc-impressions", "#gsc-ctr", "#gsc-position"]
@@ -490,9 +594,11 @@
       setTableRows("#ga-pages-body", (ga.pages || []).map((row) => ({
         cells: [row.path, formatNumber(row.views), formatNumber(row.users)]
       })), 3);
+      renderBookAnalytics(ga);
     } else {
       ["#ga-users", "#ga-sessions", "#ga-views", "#ga-download-events"]
         .forEach((selector) => { $(selector).textContent = "—"; });
+      renderBookAnalytics({});
     }
 
     if (payload.searchConsole) {

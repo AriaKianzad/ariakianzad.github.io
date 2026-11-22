@@ -64,6 +64,14 @@ assert.ok(functionSource.includes("site-analytics report diagnostics"),
   "Edge Function must emit safe report diagnostics");
 assert.ok(functionSource.includes("site-analytics GA4 report failed:"),
   "GA4 failures must be logged separately");
+assert.ok(functionSource.includes('dimensions: [{ name: "linkText" }, { name: "linkId" }]'),
+  "GA4 download attribution must group by link text and retain Link ID when available");
+assert.ok(functionSource.includes("downloadAttribution: downloadAttribution.map"),
+  "GA4 response must expose download attribution rows");
+assert.ok(functionSource.includes("bookPageSessions: Number(bookPage.sessions || 0)"),
+  "GA4 response must expose book-page sessions for the funnel");
+assert.ok(functionSource.includes("downloadSessions: Number(downloadFunnel.sessions || 0)"),
+  "GA4 response must expose sessions that included a PDF download");
 assert.ok(functionSource.includes("site-analytics Search Console report failed:"),
   "Search Console failures must be logged separately");
 const diagnosticsStart = functionSource.indexOf('console.info("site-analytics report diagnostics"');
@@ -94,6 +102,14 @@ assert.ok(dashboard.includes('"بازهٔ گزارش Search Console: " + gsc.sta
   "dashboard must show the exact Search Console report period");
 
 assert.ok(html.includes('id="ga4-period"'), "GA4 period label must exist in the page");
+assert.ok(html.includes('id="ga-download-attribution"') && html.includes('id="ga-book-funnel-title"'),
+  "private dashboard must include download attribution and book funnel panels");
+assert.ok(dashboard.includes("function renderDownloadAttribution(ga)") && dashboard.includes("function renderBookFunnel(ga)"),
+  "dashboard must render the GA4 download attribution and funnel");
+assert.ok(css.includes("overflow-x:clip") && css.includes(".table-scroll{display:block;width:100%;max-width:100%;min-width:0;"),
+  "responsive dashboard must contain page overflow and keep wide tables in their own scroll container");
+assert.ok(css.includes(".book-analytics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))"),
+  "download analytics panels must use minmax(0,1fr) responsive columns");
 assert.ok(html.includes('id="gsc-period"'), "Search Console period label must exist in the page");
 assert.ok(functionSource.includes(":runRealtimeReport"), "GA4 must use the dedicated Realtime Data API method");
 assert.ok(functionSource.includes('{ name: "activeUsers" }'), "Realtime reports must expose active users");
@@ -118,7 +134,7 @@ assert.ok(html.includes('id="ga4-realtime-users"') && html.includes('id="ga4-rea
   "Realtime metric elements must exist");
 assert.ok(html.includes('id="ga4-updated"') && html.includes('id="ga4-realtime-updated"'),
   "GA4 update timestamps must be visible");
-assert.ok(html.includes("admin.css?v=20261122-4"), "dashboard stylesheet cache key must be refreshed");
-assert.ok(html.includes("app.js?v=20261122-5"), "dashboard script cache key must be refreshed");
+assert.ok(html.includes("admin.css?v=20261122-5"), "dashboard stylesheet cache key must be refreshed");
+assert.ok(html.includes("app.js?v=20261122-6"), "dashboard script cache key must be refreshed");
 
 console.log("Google reporting contract passed: true zero values remain zero, empty/partial reports are explicit, errors are surfaced, and date windows are visible.");
