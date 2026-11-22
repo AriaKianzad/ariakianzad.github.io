@@ -2,10 +2,11 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
-const [functionSource, dashboard, html] = await Promise.all([
+const [functionSource, dashboard, html, css] = await Promise.all([
   read("supabase/functions/site-analytics/index.ts"),
   read("public/admin/app.js"),
   read("public/admin/index.html"),
+  read("public/admin/admin.css"),
 ]);
 
 // A successful Google API call with a real summary row may legitimately return
@@ -71,6 +72,30 @@ assert.ok(dashboard.includes('"بازهٔ گزارش Search Console: " + gsc.sta
 
 assert.ok(html.includes('id="ga4-period"'), "GA4 period label must exist in the page");
 assert.ok(html.includes('id="gsc-period"'), "Search Console period label must exist in the page");
-assert.ok(html.includes("app.js?v=20261122-3"), "dashboard script cache key must be refreshed");
+assert.ok(functionSource.includes(":runRealtimeReport"), "GA4 must use the dedicated Realtime Data API method");
+assert.ok(functionSource.includes('{ name: "activeUsers" }'), "Realtime reports must expose active users");
+assert.ok(functionSource.includes('{ name: "screenPageViews" }'), "Realtime reports must expose page views");
+assert.ok(functionSource.includes('{ name: "eventCount" }'), "Realtime reports must expose event count");
+assert.ok(functionSource.includes('requestMode === "realtime"'), "Realtime requests must avoid the full report path");
+assert.ok(functionSource.includes('requestMode === "ga4"'), "standard GA4 refreshes must avoid Search Console calls");
+assert.ok(dashboard.includes("REALTIME_REFRESH_MS = 60_000"), "Realtime metrics must refresh every 60 seconds");
+assert.ok(dashboard.includes("GA4_REPORT_REFRESH_MS = 15 * 60_000"), "standard GA4 reports must refresh every 15 minutes");
+assert.ok(dashboard.includes('requestSiteAnalytics(false, "realtime")'), "dashboard must request live GA4 data");
+assert.ok(dashboard.includes('document.addEventListener("visibilitychange"'), "dashboard must refresh when the page becomes visible");
+assert.ok(dashboard.includes("stopAutoRefresh();"), "dashboard timers must stop on logout");
+assert.ok(dashboard.includes("if (payload.searchConsole) {"), "GA4-only refreshes must not clear Search Console data");
+assert.ok(dashboard.includes("formatNumber(summary.activeUsers)"), "Realtime values must use the localized number formatter");
+assert.ok(css.includes('font:500 clamp(27px,3vw,36px)/1.35 Estedad,"Segoe UI",Tahoma,sans-serif'),
+  "dashboard metric values must render in Estedad");
+assert.ok(css.includes('td.number{direction:ltr;text-align:right;font:11px/1.7 Estedad'),
+  "table numbers must render in Estedad");
+assert.ok(css.includes('Estedad,"Segoe UI",Tahoma,sans-serif'),
+  "dynamic numeric styles must use the local Estedad font");
+assert.ok(html.includes('id="ga4-realtime-users"') && html.includes('id="ga4-realtime-views"') && html.includes('id="ga4-realtime-events"'),
+  "Realtime metric elements must exist");
+assert.ok(html.includes('id="ga4-updated"') && html.includes('id="ga4-realtime-updated"'),
+  "GA4 update timestamps must be visible");
+assert.ok(html.includes("admin.css?v=20261122-4"), "dashboard stylesheet cache key must be refreshed");
+assert.ok(html.includes("app.js?v=20261122-4"), "dashboard script cache key must be refreshed");
 
 console.log("Google reporting contract passed: true zero values remain zero, empty/partial reports are explicit, errors are surfaced, and date windows are visible.");
