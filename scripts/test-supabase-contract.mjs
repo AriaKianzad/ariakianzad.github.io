@@ -54,6 +54,10 @@ for (const functionName of ["download-stats", "site-analytics"]) {
 }
 assert.ok(download.includes("confirmed_at") || download.includes("email_confirmed_at"),
   "download-stats must require a confirmed email");
+assert.ok(download.includes("asset.created_at"), "download-stats must read GitHub's actual asset creation timestamp");
+assert.ok(download.includes("assetCreatedDate: string"), "download history must know the date GitHub began counting downloads");
+assert.ok(download.includes("(date === assetCreatedDate ? dayTotal : 0)"),
+  "the first snapshot on the asset creation date must include downloads since publication");
 assert.ok(analytics.includes("confirmed_at") || analytics.includes("email_confirmed_at"),
   "site-analytics must require a confirmed email");
 
