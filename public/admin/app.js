@@ -472,7 +472,7 @@
     if (gaUpdated && payload.generatedAt) {
       gaUpdated.textContent = "آخرین دریافت از API: " + new Intl.DateTimeFormat("fa-IR", {
         dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tehran"
-      }).format(new Date(payload.generatedAt));
+      }).format(new Date(payload.generatedAt)) + " · تازه‌سازی خودکار هر ۱۵ دقیقه";
     }
     if (["ok", "partial", "no_data"].includes(ga.status)) {
       const summary = ga.summary || {};
@@ -524,6 +524,7 @@
         .forEach((selector) => { $(selector).textContent = "—"; });
     }
     }
+  }
   }
 
   function renderGoogleRealtime(payload) {
