@@ -21,6 +21,7 @@ const [
   hostHeaders,
   apacheConfig,
   bookPage,
+  socialGenerator,
 ] = await Promise.all([
   read("src/app/page.tsx"),
   read("src/content/home.ts"),
@@ -39,6 +40,7 @@ const [
   read("public/_headers"),
   read("public/.htaccess"),
   read("public/Mian-e-Ma/index.html"),
+  read("scripts/generate-social-previews.mjs"),
 ]);
 
 // The homepage remains a semantic, server-rendered page with one primary heading.
@@ -75,7 +77,7 @@ assert.ok(bookPage.includes('<meta name="twitter:card" content="summary_large_im
   bookPage.includes('name="twitter:image:alt"'),
   "book page must expose a complete large-image Twitter/X card");
 const bookShareCopy = [
-  bookPage.match(/<title>([^<]+)<\\/title>/)?.[1] ?? "",
+  bookPage.match(/<title>([^<]+)</)?.[1] ?? "",
   bookPage.match(/<meta name="description" content="([^"]+)"/)?.[1] ?? "",
   bookPage.match(/<meta property="og:title" content="([^"]+)"/)?.[1] ?? "",
   bookPage.match(/<meta property="og:description" content="([^"]+)"/)?.[1] ?? "",
@@ -87,6 +89,18 @@ const bookShareCopy = [
 assert.ok(bookShareCopy.every(Boolean), "book title, description and social image alt text must be present");
 assert.ok(!bookShareCopy.join(" ").includes("آریا کیانزاد"),
   "author name must not appear in the book page title, descriptions or social preview copy");
+assert.ok(packageJson.includes("node scripts/generate-social-previews.mjs"),
+  "static build must generate the social preview images before export verification");
+assert.ok(socialGenerator.includes('toFile(join(outputRoot, "og/og.jpg"))') &&
+  socialGenerator.includes('toFile(join(outputRoot, "Mian-e-Ma/assets/mian-e-ma-social-preview.jpg"))'),
+  "social generator must write both page-specific public JPEGs to the static export");
+assert.ok(socialGenerator.includes("width = 1200") && socialGenerator.includes("height = 630") &&
+  socialGenerator.includes('format !== "jpeg"'),
+  "social preview generator must validate the 1200x630 JPEG output format");
+assert.ok(socialGenerator.includes("mian-e-ma-cover-v2.webp") &&
+  socialGenerator.includes("coverMetadata.height * 0.892"),
+  "book social preview must be composed from the supplied cover while cropping its author credit");
+
 
 
 // Accessibility and consent controls stay out of the normal page flow.
