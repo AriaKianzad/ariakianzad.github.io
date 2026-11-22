@@ -371,7 +371,7 @@ async function getAnalyticsData(accessToken: string) {
   // on that day, while ending at yesterday excluded all of it. Today may be partial.
   const dateRanges = [{ startDate: "29daysAgo", endDate: "today" }];
 
-  const [summaryReport, sourcesReport, pagesReport, referrersReport, downloadsReport] = await Promise.all([
+  const [summaryReport, sourcesReport, pagesReport, referrersReport, downloadsReport, downloadAttributionReport, bookPageReport, downloadFunnelReport] = await Promise.all([
     ga4Report(accessToken, {
       dateRanges,
       metrics: [
@@ -432,6 +432,46 @@ async function getAnalyticsData(accessToken: string) {
         },
       },
     }),
+    // Link text is the reliable attribution fallback when GA4 returns a blank linkId.
+    ga4Report(accessToken, {
+      dateRanges,
+      dimensions: [{ name: "linkText" }, { name: "linkId" }],
+      metrics: [{ name: "eventCount" }, { name: "totalUsers" }, { name: "sessions" }],
+      dimensionFilter: {
+        filter: {
+          fieldName: "eventName",
+          stringFilter: { matchType: "EXACT", value: "file_download" },
+        },
+      },
+      orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
+      limit: "10",
+    }),
+    ga4Report(accessToken, {
+      dateRanges,
+      dimensions: [{ name: "pagePath" }],
+      metrics: [{ name: "sessions" }, { name: "totalUsers" }, { name: "screenPageViews" }],
+      dimensionFilter: {
+        andGroup: {
+          expressions: [
+            { filter: { fieldName: "eventName", stringFilter: { matchType: "EXACT", value: "page_view" } } },
+            { filter: { fieldName: "pagePath", stringFilter: { matchType: "EXACT", value: "/Mian-e-Ma/" } } },
+          ],
+        },
+      },
+    }),
+    ga4Report(accessToken, {
+      dateRanges,
+      dimensions: [{ name: "pagePath" }],
+      metrics: [{ name: "sessions" }, { name: "totalUsers" }, { name: "eventCount" }],
+      dimensionFilter: {
+        andGroup: {
+          expressions: [
+            { filter: { fieldName: "eventName", stringFilter: { matchType: "EXACT", value: "file_download" } } },
+            { filter: { fieldName: "pagePath", stringFilter: { matchType: "CONTAINS", value: "/Mian-e-Ma/" } } },
+          ],
+        },
+      },
+    }),
   ]);
 
   const summaryRows = summaryReport.rows;
@@ -439,10 +479,16 @@ async function getAnalyticsData(accessToken: string) {
   const pages = pagesReport.rows;
   const referrers = referrersReport.rows;
   const downloads = downloadsReport.rows;
+  const downloadAttribution = downloadAttributionReport.rows;
+  const bookPageRows = bookPageReport.rows;
+  const downloadFunnelRows = downloadFunnelReport.rows;
   const summaryAvailable = summaryRows.length > 0;
-  const hasBreakdownRows = sources.length + pages.length + referrers.length + downloads.length > 0;
+  const hasBreakdownRows = sources.length + pages.length + referrers.length + downloads.length +
+    downloadAttribution.length + bookPageRows.length + downloadFunnelRows.length > 0;
   const status = summaryAvailable ? "ok" : hasBreakdownRows ? "partial" : "no_data";
   const summary = summaryRows[0] || {};
+  const bookPage = bookPageRows[0] || {};
+  const downloadFunnel = downloadFunnelRows[0] || {};
   const downloadEventCount = Number(downloads[0]?.eventCount || 0);
 
   return {
@@ -475,6 +521,22 @@ async function getAnalyticsData(accessToken: string) {
       views: Number(row.screenPageViews || 0),
       users: Number(row.totalUsers || 0),
     })),
+    downloadAttribution: downloadAttribution.map((row) => ({
+      linkText: String(row.linkText || ""),
+      linkId: String(row.linkId || ""),
+      downloads: Number(row.eventCount || 0),
+      users: Number(row.totalUsers || 0),
+      sessions: Number(row.sessions || 0),
+    })),
+    funnel: {
+      siteSessions: Number(summary.sessions || 0),
+      bookPageSessions: Number(bookPage.sessions || 0),
+      bookPageUsers: Number(bookPage.totalUsers || 0),
+      bookPageViews: Number(bookPage.screenPageViews || 0),
+      downloadSessions: Number(downloadFunnel.sessions || 0),
+      downloadUsers: Number(downloadFunnel.totalUsers || 0),
+      downloadEvents: downloadEventCount,
+    },
     diagnostics: {
       summaryRows: summaryRows.length,
       summaryRowCount: summaryReport.rowCount ?? summaryRows.length,
@@ -486,6 +548,9 @@ async function getAnalyticsData(accessToken: string) {
       pageRows: pages.length,
       referrerRows: referrers.length,
       downloadRows: downloads.length,
+      downloadAttributionRows: downloadAttribution.length,
+      bookPageRows: bookPageRows.length,
+      downloadFunnelRows: downloadFunnelRows.length,
     },
     quota: null,
   };
