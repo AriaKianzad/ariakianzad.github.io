@@ -66,7 +66,7 @@ assert.ok(metadata.includes('card: "summary_large_image"'),
   "homepage must expose a large Twitter/X card");
 const bookOgImage = bookPage.match(/<meta property="og:image" content="([^"]+)"/)?.[1] ?? "";
 const bookTwitterImage = bookPage.match(/<meta name="twitter:image" content="([^"]+)"/)?.[1] ?? "";
-assert.equal(bookOgImage, "https://ariakianzad.github.io/Mian-e-Ma/assets/mian-e-ma-social-preview.jpg",
+assert.equal(bookOgImage, "https://ariakianzad.github.io/Mian-e-Ma/assets/mian-e-ma-social-preview.jpg?v=20261122-3",
   "book page must use its own dedicated social image");
 assert.equal(bookTwitterImage, bookOgImage, "Open Graph and Twitter/X must use the same book preview image");
 assert.ok(bookPage.includes('<meta property="og:image:width" content="1200">') &&
@@ -97,6 +97,8 @@ assert.ok(socialGenerator.includes('toFile(join(outputRoot, "og/og.jpg"))') &&
 assert.ok(socialGenerator.includes("width = 1200") && socialGenerator.includes("height = 630") &&
   socialGenerator.includes('format !== "jpeg"'),
   "social preview generator must validate the 1200x630 JPEG output format");
+assert.ok(!socialGenerator.includes("برای دریافت نسخۀ رایگان کلیک کنید") && socialGenerator.includes('<path d="M82 520H1118"'),
+  "book social preview must not include a decorative, non-functional download button");
 assert.ok(socialGenerator.includes("mian-e-ma-cover-v2.webp") &&
   socialGenerator.includes("coverMetadata.height * 0.892"),
   "book social preview must be composed from the supplied cover while cropping its author credit");
