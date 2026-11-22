@@ -20,6 +20,7 @@ const [
   packageJson,
   hostHeaders,
   apacheConfig,
+  bookPage,
 ] = await Promise.all([
   read("src/app/page.tsx"),
   read("src/content/home.ts"),
@@ -37,6 +38,7 @@ const [
   read("package.json"),
   read("public/_headers"),
   read("public/.htaccess"),
+  read("public/Mian-e-Ma/index.html"),
 ]);
 
 // The homepage remains a semantic, server-rendered page with one primary heading.
@@ -55,6 +57,37 @@ for (const heading of [
 assert.ok(page.includes("<HeroVisual />"), "the 3D hero must be mounted in the homepage");
 assert.ok(page.includes('data-reveal="up"'), "scroll-reveal hooks must exist in homepage sections");
 assert.ok(layout.includes('href="/Mian-e-Ma/"'), "the Persian book remains discoverable from the footer");
+assert.ok(metadata.includes('url: "/og/og.jpg"') && metadata.includes('width: 1200') &&
+  metadata.includes('height: 630') && metadata.includes('type: "image/jpeg"'),
+  "homepage must use its own 1200x630 JPEG social image");
+assert.ok(metadata.includes('card: "summary_large_image"'),
+  "homepage must expose a large Twitter/X card");
+const bookOgImage = bookPage.match(/<meta property="og:image" content="([^"]+)"/)?.[1] ?? "";
+const bookTwitterImage = bookPage.match(/<meta name="twitter:image" content="([^"]+)"/)?.[1] ?? "";
+assert.equal(bookOgImage, "https://ariakianzad.github.io/Mian-e-Ma/assets/mian-e-ma-social-preview.jpg",
+  "book page must use its own dedicated social image");
+assert.equal(bookTwitterImage, bookOgImage, "Open Graph and Twitter/X must use the same book preview image");
+assert.ok(bookPage.includes('<meta property="og:image:width" content="1200">') &&
+  bookPage.includes('<meta property="og:image:height" content="630">') &&
+  bookPage.includes('<meta property="og:image:type" content="image/jpeg">'),
+  "book social image must declare its 1200x630 JPEG dimensions and MIME type");
+assert.ok(bookPage.includes('<meta name="twitter:card" content="summary_large_image">') &&
+  bookPage.includes('name="twitter:image:alt"'),
+  "book page must expose a complete large-image Twitter/X card");
+const bookShareCopy = [
+  bookPage.match(/<title>([^<]+)<\\/title>/)?.[1] ?? "",
+  bookPage.match(/<meta name="description" content="([^"]+)"/)?.[1] ?? "",
+  bookPage.match(/<meta property="og:title" content="([^"]+)"/)?.[1] ?? "",
+  bookPage.match(/<meta property="og:description" content="([^"]+)"/)?.[1] ?? "",
+  bookPage.match(/<meta property="og:image:alt" content="([^"]+)"/)?.[1] ?? "",
+  bookPage.match(/<meta name="twitter:title" content="([^"]+)"/)?.[1] ?? "",
+  bookPage.match(/<meta name="twitter:description" content="([^"]+)"/)?.[1] ?? "",
+  bookPage.match(/<meta name="twitter:image:alt" content="([^"]+)"/)?.[1] ?? "",
+];
+assert.ok(bookShareCopy.every(Boolean), "book title, description and social image alt text must be present");
+assert.ok(!bookShareCopy.join(" ").includes("آریا کیانزاد"),
+  "author name must not appear in the book page title, descriptions or social preview copy");
+
 
 // Accessibility and consent controls stay out of the normal page flow.
 assert.ok(layout.includes('className="skip-link" href="#main"'), "keyboard skip navigation must remain available");
