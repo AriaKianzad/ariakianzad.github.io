@@ -142,6 +142,14 @@ assert.ok(!bookHeader.includes("header-download"),
   "the book header must not contain a redundant download CTA");
 assert.equal((bookPage.match(/class="button-primary"/g) ?? []).length, 2,
   "the hero and download sections must retain their two primary download CTAs");
+const bookDownloadLinks = [...bookPage.matchAll(/<a\\b[^>]*class="button-primary"[^>]*>/g)].map(([tag]) => tag);
+const bookDownloadUrl = "https://github.com/AriaKianzad/ariakianzad.github.io/releases/download/mian-e-ma-v1/Mian-e-Ma.pdf";
+assert.ok(bookDownloadLinks.some((tag) => tag.includes('id="book-download-hero"')),
+  "the hero download CTA must expose a stable GA4 link_id");
+assert.ok(bookDownloadLinks.some((tag) => tag.includes('id="book-download-section"')),
+  "the download-section CTA must expose a distinct stable GA4 link_id");
+assert.ok(bookDownloadLinks.every((tag) => tag.includes(`href="${bookDownloadUrl}"`)),
+  "both download CTAs must continue pointing to the same published PDF");
 assert.ok(!bookStyles.includes("header-download"),
   "removed header CTA must not leave orphaned CSS rules");
 assert.ok(bookStyles.includes("grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)") &&
