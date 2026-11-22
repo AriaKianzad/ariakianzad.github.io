@@ -18,7 +18,8 @@
     "test:consent": "node scripts/test-analytics-consent.mjs",
     "test:homepage": "node scripts/test-homepage-contract.mjs",
     "test:supabase": "node scripts/test-supabase-contract.mjs",
-    "test:analytics": "node scripts/test-google-analytics-contract.mjs"
+    "test:analytics": "node scripts/test-google-analytics-contract.mjs",
+    "test:security-scan": "node scripts/test-security-scan.mjs"
   },
   "dependencies": {
     "next": "16.4.6",
