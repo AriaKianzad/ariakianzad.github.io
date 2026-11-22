@@ -1,6 +1,6 @@
 import sharp from "sharp";
 import { Resvg } from "@resvg/resvg-js";
-import { mkdir, readFile } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
 const root = process.cwd();
@@ -8,7 +8,6 @@ const outputRoot = join(root, "out");
 const width = 1200;
 const height = 630;
 
-const read = (path) => readFile(join(root, path));
 // Load Estedad as real font files. SVG @font-face data URIs are ignored by
 // librsvg (the SVG renderer bundled with sharp), so use resvg's explicit font
 // database to keep Persian text from silently falling back to a system font.
