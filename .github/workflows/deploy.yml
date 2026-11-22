@@ -162,7 +162,7 @@ jobs:
           ! grep -R -Fq 'rexo-mag-logo.png' out/Mian-e-Ma/
           ! grep -Fq 'مجله رکسو (RexoMag)' out/Mian-e-Ma/index.html
           ! grep -Fq 'class="publisher-mark"' out/Mian-e-Ma/index.html
-          grep -Fq '<title>میانِ ما؛ شناخت رابطه، صمیمیت و مسئولیت‌پذیری عاطفی</title>' out/Mian-e-Ma/index.html
+          grep -Fq '<title>کتاب میانِ ما؛ شناخت رابطه، صمیمیت و مسئولیت‌پذیری عاطفی</title>' out/Mian-e-Ma/index.html
           grep -Fq '<h3>از شناخت خود و دیگری تا ساختن یک رابطۀ سالم و ماندگار</h3>' out/Mian-e-Ma/index.html
           grep -Fq 'width="699" height="992"' out/Mian-e-Ma/index.html
           grep -Fq "<loc>${NEXT_PUBLIC_SITE_URL%/}/Mian-e-Ma/</loc>" out/sitemap.xml
