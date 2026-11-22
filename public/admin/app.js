@@ -496,35 +496,34 @@
     }
 
     if (payload.searchConsole) {
-    const gsc = payload.searchConsole;
-    setIntegrationStatus("gsc", gsc.status, gsc.message);
-    const gscPeriod = $("#gsc-period");
-    if (gscPeriod && gsc.startDate && gsc.endDate) {
-      gscPeriod.textContent = "بازهٔ گزارش Search Console: " + gsc.startDate + " تا " + gsc.endDate;
+      const gsc = payload.searchConsole;
+      setIntegrationStatus("gsc", gsc.status, gsc.message);
+      const gscPeriod = $("#gsc-period");
+      if (gscPeriod && gsc.startDate && gsc.endDate) {
+        gscPeriod.textContent = "بازهٔ گزارش Search Console: " + gsc.startDate + " تا " + gsc.endDate;
+      }
+      if (["ok", "partial", "no_data"].includes(gsc.status)) {
+        const summary = gsc.summary || {};
+        const summaryAvailable = gsc.summaryAvailable !== false && gsc.status !== "no_data";
+        $("#gsc-clicks").textContent = summaryAvailable ? formatNumber(summary.clicks) : "—";
+        $("#gsc-impressions").textContent = summaryAvailable ? formatNumber(summary.impressions) : "—";
+        $("#gsc-ctr").textContent = summaryAvailable ? formatPercent(summary.ctr) : "—";
+        $("#gsc-position").textContent = summaryAvailable
+          ? new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(Number(summary.position || 0))
+          : "—";
+        const reportRows = (rows) => (rows || []).map((row) => ({
+          cells: [row.name, formatNumber(row.clicks), formatNumber(row.impressions), formatPercent(row.ctr)]
+        }));
+        setTableRows("#gsc-queries-body", reportRows(gsc.queries), 4);
+        setTableRows("#gsc-pages-body", reportRows(gsc.pages), 4);
+        setTableRows("#gsc-devices-body", (gsc.devices || []).map((row) => ({
+          cells: [row.name, formatNumber(row.clicks), formatNumber(row.impressions), new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(row.position)]
+        })), 4);
+      } else {
+        ["#gsc-clicks", "#gsc-impressions", "#gsc-ctr", "#gsc-position"]
+          .forEach((selector) => { $(selector).textContent = "—"; });
+      }
     }
-    if (["ok", "partial", "no_data"].includes(gsc.status)) {
-      const summary = gsc.summary || {};
-      const summaryAvailable = gsc.summaryAvailable !== false && gsc.status !== "no_data";
-      $("#gsc-clicks").textContent = summaryAvailable ? formatNumber(summary.clicks) : "—";
-      $("#gsc-impressions").textContent = summaryAvailable ? formatNumber(summary.impressions) : "—";
-      $("#gsc-ctr").textContent = summaryAvailable ? formatPercent(summary.ctr) : "—";
-      $("#gsc-position").textContent = summaryAvailable
-        ? new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(Number(summary.position || 0))
-        : "—";
-      const reportRows = (rows) => (rows || []).map((row) => ({
-        cells: [row.name, formatNumber(row.clicks), formatNumber(row.impressions), formatPercent(row.ctr)]
-      }));
-      setTableRows("#gsc-queries-body", reportRows(gsc.queries), 4);
-      setTableRows("#gsc-pages-body", reportRows(gsc.pages), 4);
-      setTableRows("#gsc-devices-body", (gsc.devices || []).map((row) => ({
-        cells: [row.name, formatNumber(row.clicks), formatNumber(row.impressions), new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(row.position)]
-      })), 4);
-    } else {
-      ["#gsc-clicks", "#gsc-impressions", "#gsc-ctr", "#gsc-position"]
-        .forEach((selector) => { $(selector).textContent = "—"; });
-    }
-    }
-  }
   }
 
   function renderGoogleRealtime(payload) {
