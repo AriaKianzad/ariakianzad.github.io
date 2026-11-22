@@ -71,6 +71,6 @@ assert.ok(dashboard.includes('"بازهٔ گزارش Search Console: " + gsc.sta
 
 assert.ok(html.includes('id="ga4-period"'), "GA4 period label must exist in the page");
 assert.ok(html.includes('id="gsc-period"'), "Search Console period label must exist in the page");
-assert.ok(html.includes("app.js?v=20261122-2"), "dashboard script cache key must be refreshed");
+assert.ok(html.includes("app.js?v=20261122-3"), "dashboard script cache key must be refreshed");
 
 console.log("Google reporting contract passed: true zero values remain zero, empty/partial reports are explicit, errors are surfaced, and date windows are visible.");
