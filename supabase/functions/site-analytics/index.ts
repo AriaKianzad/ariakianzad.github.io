@@ -273,6 +273,31 @@ async function ga4Report(accessToken: string, body: unknown) {
   };
 }
 
+async function getRealtimeAnalyticsData(accessToken: string) {
+  const url = "https://analyticsdata.googleapis.com/v1beta/properties/" +
+    GA4_PROPERTY_ID + ":runRealtimeReport";
+  const report = await googlePost<GoogleAnalyticsReport>(url, accessToken, {
+    metrics: [
+      { name: "activeUsers" },
+      { name: "screenPageViews" },
+      { name: "eventCount" },
+    ],
+  });
+  const rows = reportRows(report);
+  const summary = rows[0] || {};
+
+  return {
+    status: "ok",
+    period: "۳۰ دقیقۀ اخیر",
+    summary: {
+      activeUsers: Number(summary.activeUsers || 0),
+      pageViews: Number(summary.screenPageViews || 0),
+      events: Number(summary.eventCount || 0),
+    },
+    diagnostics: { rows: rows.length, rowCount: report.rowCount ?? rows.length },
+  };
+}
+
 function isoDateDaysAgo(daysAgo: number): string {
   const date = new Date();
   date.setUTCHours(0, 0, 0, 0);
@@ -483,6 +508,11 @@ Deno.serve(async (request: Request) => {
     const origin = request.headers.get("origin");
     if (origin && origin !== SITE_ORIGIN) return json({ error: "Origin not allowed." }, 403);
 
+    const requestBody = await request.json().catch(() => ({}));
+    const requestMode = requestBody?.mode === "realtime" || requestBody?.mode === "ga4"
+      ? requestBody.mode
+      : "dashboard";
+
     const supabaseKeys = getSupabaseKeys();
     const allowed = await isAllowedAdmin(
       request.headers.get("authorization") || "",
@@ -494,12 +524,50 @@ Deno.serve(async (request: Request) => {
 
     const google = await getGoogleAccessToken();
     if (!google.configured) {
+      const message = "برای فعال‌شدن گزارش‌های گوگل، کلید Service Account باید در Secrets پروژه Supabase ذخیره بشه.";
+      if (requestMode === "realtime") {
+        return json({
+          status: "not_configured",
+          message,
+          ga4Realtime: { status: "not_configured", message },
+        }, 424);
+      }
+      if (requestMode === "ga4") {
+        return json({
+          status: "not_configured",
+          message,
+          ga4: { status: "not_configured", message },
+        }, 424);
+      }
       return json({
         status: "not_configured",
-        message: "برای فعال‌شدن گزارش‌های گوگل، کلید Service Account باید در Secrets پروژه Supabase ذخیره بشه.",
-        ga4: { status: "not_configured" },
-        searchConsole: { status: "not_configured" },
+        message,
+        ga4: { status: "not_configured", message },
+        searchConsole: { status: "not_configured", message },
       }, 424);
+    }
+
+    if (requestMode === "realtime") {
+      const ga4Realtime = await getRealtimeAnalyticsData(google.accessToken);
+      console.info("site-analytics realtime diagnostics", ga4Realtime.diagnostics);
+      return json({
+        generatedAt: new Date().toISOString(),
+        propertyId: GA4_PROPERTY_ID,
+        ga4Realtime,
+      });
+    }
+
+    if (requestMode === "ga4") {
+      const ga4 = await getAnalyticsData(google.accessToken);
+      console.info("site-analytics GA4 refresh diagnostics", {
+        status: ga4.status,
+        ...ga4.diagnostics,
+      });
+      return json({
+        generatedAt: new Date().toISOString(),
+        propertyId: GA4_PROPERTY_ID,
+        ga4,
+      });
     }
 
     const [ga4Result, gscResult] = await Promise.allSettled([
