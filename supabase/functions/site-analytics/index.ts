@@ -45,6 +45,15 @@ interface SearchConsoleReport {
   rows?: SearchConsoleRow[];
 }
 
+interface SearchConsoleSite {
+  siteUrl?: string;
+  permissionLevel?: string;
+}
+
+interface SearchConsoleSitesResponse {
+  siteEntry?: SearchConsoleSite[];
+}
+
 interface GoogleApiErrorPayload {
   error?: string | { message?: string };
   error_description?: string;
@@ -312,19 +321,48 @@ async function getRealtimeAnalyticsData(accessToken: string) {
   };
 }
 
-function isoDateDaysAgo(daysAgo: number): string {
-  const date = new Date();
-  date.setUTCHours(0, 0, 0, 0);
+function searchConsoleDateDaysAgo(daysAgo: number): string {
+  // Search Console's Search Analytics API uses Pacific Time calendar dates.
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Los_Angeles",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const values: Record<string, string> = {};
+  for (const part of parts) values[part.type] = part.value;
+  const date = new Date(values.year + "-" + values.month + "-" + values.day + "T12:00:00Z");
   date.setUTCDate(date.getUTCDate() - daysAgo);
   return date.toISOString().slice(0, 10);
 }
 
+async function googleGet<T extends object>(url: string, accessToken: string): Promise<T> {
+  const response = await fetch(url, {
+    method: "GET",
+    headers: { Authorization: "Bearer " + accessToken },
+  });
+  const payload: unknown = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const details = payload && typeof payload === "object"
+      ? payload as GoogleApiErrorPayload
+      : {};
+    const errorField = details.error;
+    const apiMessage = errorField && typeof errorField === "object"
+      ? errorField.message
+      : errorField;
+    const message = apiMessage || details.error_description || response.status;
+    throw new Error("Google API HTTP " + response.status + ": " + String(message).slice(0, 260));
+  }
+  return payload as T;
+}
+
 async function searchConsoleReport(
   accessToken: string,
+  siteUrl: string,
   body: Record<string, unknown>,
 ) {
   const url = "https://www.googleapis.com/webmasters/v3/sites/" +
-    encodeURIComponent(GSC_SITE_URL) + "/searchAnalytics/query";
+    encodeURIComponent(siteUrl) + "/searchAnalytics/query";
   return googlePost<SearchConsoleReport>(url, accessToken, body);
 }
 
@@ -454,23 +492,91 @@ async function getAnalyticsData(accessToken: string) {
 }
 
 async function getSearchConsoleData(accessToken: string) {
-  // Search Console data is delayed; ending three days ago avoids relying on
-  // potentially incomplete recent dates.
-  const endDate = isoDateDaysAgo(3);
-  const startDate = isoDateDaysAgo(32);
+  // Search Console data is delayed; the API's date values are Pacific Time.
+  // Ending three days ago avoids depending on dates that may still be processing.
+  const endDate = searchConsoleDateDaysAgo(3);
+  const startDate = searchConsoleDateDaysAgo(32);
   const date = { startDate, endDate };
 
-  const [summary, queries, pages, devices] = await Promise.all([
-    searchConsoleReport(accessToken, date),
-    searchConsoleReport(accessToken, { ...date, dimensions: ["query"], rowLimit: 10 }),
-    searchConsoleReport(accessToken, { ...date, dimensions: ["page"], rowLimit: 10 }),
-    searchConsoleReport(accessToken, { ...date, dimensions: ["device"], rowLimit: 5 }),
+  const sitesResponse = await googleGet<SearchConsoleSitesResponse>(
+    "https://www.googleapis.com/webmasters/v3/sites",
+    accessToken,
+  );
+  const availableSites = (sitesResponse.siteEntry || []).filter((site) =>
+    typeof site.siteUrl === "string" && site.siteUrl.length > 0
+  );
+  const normalizeSiteUrl = (value: string) => value.toLowerCase().replace(/\/+$/, "");
+  const expectedSite = normalizeSiteUrl(GSC_SITE_URL);
+  const expectedHost = new URL(GSC_SITE_URL).hostname.toLowerCase();
+  const exactProperty = availableSites.find((site) =>
+    normalizeSiteUrl(site.siteUrl || "") === expectedSite
+  );
+  const domainProperty = availableSites.find((site) =>
+    (site.siteUrl || "").toLowerCase() === "sc-domain:" + expectedHost
+  );
+  const selectedProperty = exactProperty || domainProperty;
+
+  const matchingProperties = availableSites
+    .filter((site) => {
+      const value = (site.siteUrl || "").toLowerCase();
+      if (value === "sc-domain:" + expectedHost) return true;
+      if (!value.startsWith("http://") && !value.startsWith("https://")) return false;
+      try { return new URL(value).hostname.toLowerCase() === expectedHost; }
+      catch { return false; }
+    })
+    .map((site) => ({
+      siteUrl: site.siteUrl,
+      permissionLevel: site.permissionLevel || "unknown",
+    }));
+
+  if (!selectedProperty?.siteUrl) {
+    return {
+      status: "error",
+      summaryAvailable: false,
+      propertyAccess: false,
+      propertyUrl: GSC_SITE_URL,
+      message: matchingProperties.length
+        ? "Service Account به Property دقیق " + GSC_SITE_URL +
+          " دسترسی نداره. Propertyهای در دسترس برای همین دامنه: " +
+          matchingProperties.map((site) => site.siteUrl + " (" + site.permissionLevel + ")").join("، ") +
+          ". آدرس Property رو با مورد مدنظر یکسان کن یا به Service Account دسترسی بده."
+        : "Property با آدرس " + GSC_SITE_URL +
+          " در فهرست دسترسی‌های Search Console مربوط به Service Account وجود نداره. ایمیل Service Account رو به‌عنوان کاربر Property در Search Console اضافه کن و دسترسی Read را فعال کن.",
+      startDate,
+      endDate,
+      summary: { clicks: 0, impressions: 0, ctr: 0, position: 0 },
+      queries: [],
+      pages: [],
+      devices: [],
+      diagnostics: {
+        expectedProperty: GSC_SITE_URL,
+        propertyAccess: false,
+        matchingProperties,
+        accessiblePropertyCount: availableSites.length,
+      },
+    };
+  }
+
+  const selectedSiteUrl = selectedProperty.siteUrl;
+  const permissionLevel = selectedProperty.permissionLevel || "unknown";
+  const propertyNote = exactProperty
+    ? ""
+    : " گزارش از Property دامنه‌ای " + selectedSiteUrl + " دریافت می‌شه، چون Property پیشوندیِ " +
+      GSC_SITE_URL + " در فهرست دسترسی‌های Service Account نبود.";
+
+  const [summary, queries, pages, devices, dates] = await Promise.all([
+    searchConsoleReport(accessToken, selectedSiteUrl, date),
+    searchConsoleReport(accessToken, selectedSiteUrl, { ...date, dimensions: ["query"], rowLimit: 10 }),
+    searchConsoleReport(accessToken, selectedSiteUrl, { ...date, dimensions: ["page"], rowLimit: 10 }),
+    searchConsoleReport(accessToken, selectedSiteUrl, { ...date, dimensions: ["device"], rowLimit: 5 }),
+    searchConsoleReport(accessToken, selectedSiteUrl, { ...date, dimensions: ["date"], rowLimit: 35 }),
   ]);
 
   const summaryRows = summary.rows || [];
   const queryRows = queries.rows || [];
   const pageRows = pages.rows || [];
   const deviceRows = devices.rows || [];
+  const dateRows = dates.rows || [];
   const summaryAvailable = summaryRows.length > 0;
   const hasBreakdownRows = queryRows.length + pageRows.length + deviceRows.length > 0;
   const status = summaryAvailable ? "ok" : hasBreakdownRows ? "partial" : "no_data";
@@ -483,15 +589,30 @@ async function getSearchConsoleData(accessToken: string) {
     position: Number(row.position || 0),
     key,
   }));
+  const sortedDataDates = dateRows
+    .map((row) => row.keys?.[0])
+    .filter((value): value is string => typeof value === "string" &&
+      value.length === 10 && value[4] === "-" && value[7] === "-")
+    .sort();
+  const firstDataDate = sortedDataDates[0] || null;
+  const lastDataDate = sortedDataDates[sortedDataDates.length - 1] || null;
 
   return {
     status,
     summaryAvailable,
+    propertyAccess: true,
+    propertyUrl: selectedSiteUrl,
+    permissionLevel,
+    propertyNote,
     message: status === "no_data"
-      ? "در بازۀ " + startDate + " تا " + endDate + " هیچ ردیفی از Search Console برای " + GSC_SITE_URL + " برنگشت. Property و بازۀ زمانی را در Search Console بررسی کن."
+      ? "دسترسی Service Account به Property تأیید شد، اما API در بازۀ " +
+        startDate + " تا " + endDate +
+        " هیچ دادهٔ عملکردی برنگردوند. این وضعیت خطای اتصال نیست؛ ممکنه هنوز impression یا click ثبت نشده باشه یا داده‌ها در حال پردازش باشن." +
+        propertyNote
       : status === "partial"
-      ? "گزارش خلاصۀ Search Console خالی برگشته، اما بعضی گزارش‌های جزئی داده دارند. اعداد خلاصه نمایش داده نمی‌شوند تا به‌اشتباه صفر تلقی نشوند."
-      : "",
+      ? "گزارش خلاصۀ Search Console خالی برگشته، اما بعضی گزارش‌های جزئی داده دارن. اعداد خلاصه نمایش داده نمی‌شن تا به‌اشتباه صفر تلقی نشن." +
+        propertyNote
+      : propertyNote,
     startDate,
     endDate,
     summary: {
@@ -504,10 +625,19 @@ async function getSearchConsoleData(accessToken: string) {
     pages: mapRows(pageRows, "page"),
     devices: mapRows(deviceRows, "device"),
     diagnostics: {
+      expectedProperty: GSC_SITE_URL,
+      requestedProperty: selectedSiteUrl,
+      permissionLevel,
+      propertyAccess: true,
+      exactPropertyMatch: Boolean(exactProperty),
+      accessiblePropertyCount: availableSites.length,
       summaryRows: summaryRows.length,
       queryRows: queryRows.length,
       pageRows: pageRows.length,
       deviceRows: deviceRows.length,
+      dateRows: dateRows.length,
+      firstDataDate,
+      lastDataDate,
     },
   };
 }

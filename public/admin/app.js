@@ -421,7 +421,7 @@
       ok: "متصل",
       error: "خطا در اتصال",
       not_configured: "نیازمند راه‌اندازی",
-      no_data: "بدون داده در این بازه",
+      no_data: "اتصال برقرار، بدون داده",
       partial: "گزارش ناقص",
     };
     if (badge) {
@@ -500,7 +500,8 @@
       setIntegrationStatus("gsc", gsc.status, gsc.message);
       const gscPeriod = $("#gsc-period");
       if (gscPeriod && gsc.startDate && gsc.endDate) {
-        gscPeriod.textContent = "بازهٔ گزارش Search Console: " + gsc.startDate + " تا " + gsc.endDate;
+        gscPeriod.textContent = "بازهٔ گزارش Search Console: " + gsc.startDate + " تا " + gsc.endDate +
+        (gsc.propertyUrl ? " · Property: " + gsc.propertyUrl : "");
       }
       if (["ok", "partial", "no_data"].includes(gsc.status)) {
         const summary = gsc.summary || {};
