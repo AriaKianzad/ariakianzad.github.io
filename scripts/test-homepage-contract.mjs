@@ -135,7 +135,7 @@ const bookShareCopy = [
 assert.ok(bookShareCopy.every(Boolean), "book title, description and social image alt text must be present");
 assert.ok(!bookShareCopy.join(" ").includes("آریا کیانزاد"),
   "author name must not appear in the book page title, descriptions or social preview copy");
-const bookHeader = bookPage.match(/<header class="site-header">([\\s\\S]*?)<\\/header>/)?.[1] ?? "";
+const bookHeader = bookPage.match(/<header class="site-header">([\s\S]*?)<\/header>/)?.[1] ?? "";
 assert.ok(bookHeader.includes('class="brand"') && bookHeader.includes('class="main-nav"'),
   "book header must retain the brand and primary navigation");
 assert.ok(!bookHeader.includes("header-download"),
