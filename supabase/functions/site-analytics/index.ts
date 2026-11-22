@@ -589,8 +589,12 @@ async function getSearchConsoleData(accessToken: string) {
     position: Number(row.position || 0),
     key,
   }));
-  const firstDataDate = dateRows[0]?.keys?.[0] || null;
-  const lastDataDate = dateRows[dateRows.length - 1]?.keys?.[0] || null;
+  const sortedDataDates = dateRows
+    .map((row) => row.keys?.[0])
+    .filter((value): value is string => typeof value === "string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(value))
+    .sort();
+  const firstDataDate = sortedDataDates[0] || null;
+  const lastDataDate = sortedDataDates[sortedDataDates.length - 1] || null;
 
   return {
     status,
