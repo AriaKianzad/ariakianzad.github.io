@@ -209,7 +209,8 @@
     if (!response.ok) {
       return {
         status: payload.status || "error",
-        message: payload.message || payload.error || "دریافت آمار گوگل ناموفق بود."
+        message: payload.message || payload.error || "دریافت آمار گوگل ناموفق بود.",
+        requestMode: mode
       };
     }
     return payload;
@@ -451,10 +452,13 @@
     if (payload.status === "error" && !payload.ga4 && !payload.searchConsole) {
       const message = payload.message || payload.error || "دریافت گزارش‌های گوگل ناموفق بود.";
       setIntegrationStatus("ga4", "error", message);
-      setIntegrationStatus("gsc", "error", message);
-      ["#ga-users", "#ga-sessions", "#ga-views", "#ga-download-events",
-        "#gsc-clicks", "#gsc-impressions", "#gsc-ctr", "#gsc-position"]
+      ["#ga-users", "#ga-sessions", "#ga-views", "#ga-download-events"]
         .forEach((selector) => { $(selector).textContent = "—"; });
+      if (payload.requestMode !== "ga4") {
+        setIntegrationStatus("gsc", "error", message);
+        ["#gsc-clicks", "#gsc-impressions", "#gsc-ctr", "#gsc-position"]
+          .forEach((selector) => { $(selector).textContent = "—"; });
+      }
       return;
     }
 
