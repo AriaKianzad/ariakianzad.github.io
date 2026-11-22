@@ -28,3 +28,9 @@
 # The split Three.js chunk is content-hashed and safe to cache immutably.
 /_hero/chunks/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Dedicated Open Graph and Twitter/X images (fixed URLs).
+/og/*.jpg
+  Cache-Control: public, max-age=604800
+/Mian-e-Ma/assets/*.jpg
+  Cache-Control: public, max-age=604800
