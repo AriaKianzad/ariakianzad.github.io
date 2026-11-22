@@ -505,7 +505,7 @@ async function getSearchConsoleData(accessToken: string) {
   const availableSites = (sitesResponse.siteEntry || []).filter((site) =>
     typeof site.siteUrl === "string" && site.siteUrl.length > 0
   );
-  const normalizeSiteUrl = (value: string) => value.toLowerCase().replace(/\\/+$/, "");
+  const normalizeSiteUrl = (value: string) => value.toLowerCase().replace(/\/+$/, "");
   const expectedSite = normalizeSiteUrl(GSC_SITE_URL);
   const expectedHost = new URL(GSC_SITE_URL).hostname.toLowerCase();
   const exactProperty = availableSites.find((site) =>
@@ -519,13 +519,10 @@ async function getSearchConsoleData(accessToken: string) {
   const matchingProperties = availableSites
     .filter((site) => {
       const value = (site.siteUrl || "").toLowerCase();
-      return value === "sc-domain:" + expectedHost ||
-        (value.startsWith("http://") || value.startsWith("https://"))
-          ? (() => {
-              try { return new URL(value).hostname.toLowerCase() === expectedHost; }
-              catch { return false; }
-            })()
-          : false;
+      if (value === "sc-domain:" + expectedHost) return true;
+      if (!value.startsWith("http://") && !value.startsWith("https://")) return false;
+      try { return new URL(value).hostname.toLowerCase() === expectedHost; }
+      catch { return false; }
     })
     .map((site) => ({
       siteUrl: site.siteUrl,
