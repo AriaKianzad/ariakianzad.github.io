@@ -16,6 +16,7 @@ Add-Type -AssemblyName System.IO.Compression
 $staging = $staging.TrimEnd('\')
 if (-not (Test-Path -LiteralPath $staging)) { throw "staging not found: $staging" }
 $stagingLen = $staging.Length
+if (Test-Path -LiteralPath $ZipPath) { throw "Refusing to overwrite an existing archive: $ZipPath" }
 $fs = [System.IO.File]::Create($ZipPath)
 try {
   $zip = New-Object System.IO.Compression.ZipArchive($fs, [System.IO.Compression.ZipArchiveMode]::Create)
