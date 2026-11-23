@@ -38,6 +38,7 @@
 <button class="side-link active" type="button" data-view="overview"><span>▦</span> نمای کلی</button>
 <button class="side-link" type="button" data-view="posts"><span>▤</span> مقاله‌ها <small id="nav-post-count">۰</small></button>
 <button class="side-link" type="button" data-view="settings"><span>⚙</span> تنظیمات بلاگ</button>
+<button class="side-link" type="button" data-view="analytics"><span>▥</span> آمار بازدید</button>
 </nav>
 <div class="sidebar-bottom"><a href="/blog/" target="_blank" rel="noopener noreferrer">مشاهدۀ وبلاگ ↗</a><button id="logout-button" type="button">خروج از حساب</button><small>پنل خصوصی مدیریت</small></div>
 </aside>
@@ -222,6 +223,17 @@
 </section>
 <div class="settings-save-row"><span id="settings-message" role="status"></span><button id="save-settings" class="button button-dark" type="submit">ذخیرۀ تنظیمات و انتشار ↗</button></div>
 </form>
+</section>
+
+<section id="view-analytics" class="view" hidden>
+<div class="page-heading"><div><span class="kicker">تحلیل محتوا</span><h1>آمار بازدید مقاله‌ها</h1><p>آمار هر نوشته از Google Analytics و Search Console، همراه با منابع ورودی.</p></div><button id="refresh-article-analytics" class="button button-dark" type="button">به‌روزرسانی آمار ↻</button></div>
+<div class="article-analytics-toolbar">
+<label class="search-input"><span>⌕</span><input id="article-analytics-search" type="search" placeholder="جست‌وجوی عنوان یا نامک مقاله" autocomplete="off"></label>
+<p id="article-analytics-status" role="status" aria-live="polite">برای دریافت گزارش، روی «به‌روزرسانی آمار» بزن.</p>
+</div>
+<div id="article-analytics-summary" class="article-analytics-summary"></div>
+<div id="article-analytics-results" class="article-analytics-list"></div>
+<div id="article-analytics-empty" class="empty-state" hidden>برای این جست‌وجو مقاله‌ای پیدا نشد.</div>
 </section>
 
 <footer class="workspace-footer"><span>آریا کیانزاد / پنل مدیریت نوشته‌ها</span><span>قالب روشن / استعداد</span></footer>
