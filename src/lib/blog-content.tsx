@@ -138,7 +138,7 @@ function safeLink(value: string): string | null {
 
 function safeImage(value: string): string | null {
   const src = value.trim();
-  return src.startsWith("/") || src.startsWith(mediaPrefix) ? src : null;
+  return (src.startsWith("/") && !src.startsWith("//")) || src.startsWith(mediaPrefix) ? src : null;
 }
 
 function inlineNodes(source: string, prefix: string): ReactNode[] {
