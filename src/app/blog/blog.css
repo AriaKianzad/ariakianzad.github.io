@@ -1221,3 +1221,7 @@ body:has(.blog-theme) > main#main { display:contents; }
   }
   .blog-theme .blog-intro-lede { display:none; }
 }
+
+.blog-theme .blog-load-more[hidden],
+.blog-theme .blog-empty[hidden],
+.blog-theme .blog-results-line [hidden] { display:none !important; }
