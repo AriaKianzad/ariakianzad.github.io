@@ -80,6 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <script src="/boot.js" />
         <script src="/ui.js" defer />
+        <script src="/blog-contact.js" defer />
         <script type="module" src="/_hero/hero-visual.js" />
         <SiteChrome>{children}</SiteChrome>
         <section
