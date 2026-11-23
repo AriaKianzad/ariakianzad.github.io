@@ -67,6 +67,7 @@ assert.ok(categoryPage.includes("settings.category_seo") && categoryPage.include
 assert.ok(categoryPage.includes('{ category: "__empty__" }') && categoryPage.includes("robots: { index: false, follow: false }"), "empty category fallback must remain noindex");
 assert.ok(rssRoute.includes("application/rss+xml"), "the blog must publish an RSS feed");
 assert.ok(sitemap.includes("getBlogPosts()") && sitemap.includes("/blog/"), "sitemap must include published articles and blog archive");
+assert.ok(sitemap.includes("/blog/contact/"), "sitemap must include the public contact page");
 assert.ok(robots.includes('disallow: ["/admin/", "/admin/blog/"]'), "robots.txt must disallow both admin areas");
 assert.ok(!publicHeader.includes("/author/"), "no separate author archive should be generated");
 
