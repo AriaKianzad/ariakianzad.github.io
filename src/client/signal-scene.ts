@@ -40,48 +40,71 @@ export function initSignalScene(host: HTMLElement) {
   if (isBlog) world.rotation.set(-0.12, 0.08, 0.035);
   scene.add(world);
 
-  const innerGlow = new THREE.PointLight(accentColor, isBlog ? 30 : 22, 6.2, 2);
-  innerGlow.position.set(0.72, 0.58, 1.52);
+  const innerGlow = new THREE.PointLight(accentColor, isBlog ? 32 : 22, isBlog ? 6.5 : 5.5, 2);
+  innerGlow.position.set(isBlog ? 0.68 : 0.1, isBlog ? 0.55 : 0.05, isBlog ? 1.55 : 1.2);
   world.add(innerGlow);
 
-  const keyLight = new THREE.DirectionalLight(isBlog ? 0xf7e8d8 : 0xe0e8c9, isBlog ? 4.4 : 3.1);
+  const keyLight = new THREE.DirectionalLight(isBlog ? 0xf7e8d8 : 0xe0e8c9, isBlog ? 4.6 : 3.1);
   keyLight.position.set(3.5, 4, 4);
   scene.add(keyLight);
 
-  const fillLight = new THREE.DirectionalLight(isBlog ? 0xb58a72 : 0x9cb984, isBlog ? 2.7 : 1.15);
-  fillLight.position.set(-3.5, 1.2, 3.8);
-  scene.add(fillLight);
+  if (isBlog) {
+    const fillLight = new THREE.DirectionalLight(0xb58a72, 2.8);
+    fillLight.position.set(-3.5, 1.2, 3.8);
+    scene.add(fillLight);
+    scene.add(new THREE.HemisphereLight(0xfaf0e5, 0x213d37, 1.55));
+    scene.add(new THREE.AmbientLight(0x8b7567, 0.38));
+  } else {
+    scene.add(new THREE.AmbientLight(0x82917f, 0.72));
+  }
 
-  const rimLight = new THREE.DirectionalLight(secondaryColor, isBlog ? 3.1 : 2.2);
+  const rimLight = new THREE.DirectionalLight(secondaryColor, isBlog ? 3.3 : 2.2);
   rimLight.position.set(-4, -2, -3);
   scene.add(rimLight);
-  scene.add(new THREE.HemisphereLight(isBlog ? 0xfaf0e5 : 0xdfe8c9, isBlog ? 0x213d37 : 0x0c140f, isBlog ? 1.6 : 0.72));
-  scene.add(new THREE.AmbientLight(isBlog ? 0x8b7567 : 0x82917f, isBlog ? 0.45 : 0.2));
 
-  const coreGeometry = new THREE.SphereGeometry(0.92, 88, 72);
+  const coreGeometry = isBlog
+    ? new THREE.SphereGeometry(0.92, 96, 80)
+    : new THREE.IcosahedronGeometry(0.92, 5);
   const coreMaterial = new THREE.MeshPhysicalMaterial({
-    color: isBlog ? new THREE.Color("#a47a61") : 0x899a6f,
-    metalness: isBlog ? 0.26 : 0.58,
-    roughness: isBlog ? 0.3 : 0.2,
-    clearcoat: 1,
-    clearcoatRoughness: 0.12,
-    emissive: isBlog ? accentColor.clone().multiplyScalar(0.12) : 0x1b2914,
-    emissiveIntensity: isBlog ? 0.22 : 0.28,
+    color: isBlog ? new THREE.Color("#28483e") : 0x899a6f,
+    metalness: isBlog ? 0.34 : 0.72,
+    roughness: isBlog ? 0.28 : 0.2,
+    clearcoat: isBlog ? 1 : 0.82,
+    clearcoatRoughness: isBlog ? 0.14 : 0.18,
+    emissive: isBlog ? accentColor.clone().multiplyScalar(0.1) : 0x1b2914,
+    emissiveIntensity: isBlog ? 0.18 : 0.28,
   });
   const core = new THREE.Mesh(coreGeometry, coreMaterial);
   world.add(core);
 
-  // A spherical triangular wireframe sits directly on the illuminated surface.
-  const innerGeometry = new THREE.IcosahedronGeometry(0.932, 1);
-  const wireGeometry = new THREE.WireframeGeometry(innerGeometry);
-  const innerMaterial = new THREE.LineBasicMaterial({
-    color: isBlog ? accentSoftColor : 0xd5e7ac,
-    transparent: true,
-    opacity: isBlog ? 0.78 : 0.56,
-    depthWrite: false,
-  });
-  const innerCore = new THREE.LineSegments(wireGeometry, innerMaterial);
-  innerCore.renderOrder = 3;
+  const innerGeometry = isBlog
+    ? new THREE.IcosahedronGeometry(0.932, 1)
+    : new THREE.IcosahedronGeometry(0.51, 2);
+  let wireGeometry: THREE.WireframeGeometry | null = null;
+  let innerMaterial: THREE.Material;
+  let innerCore: THREE.Object3D;
+
+  if (isBlog) {
+    // Raised surface edges stay visible above the shaded sphere.
+    wireGeometry = new THREE.WireframeGeometry(innerGeometry);
+    innerMaterial = new THREE.LineBasicMaterial({
+      color: new THREE.Color("#e5c6b1"),
+      transparent: true,
+      opacity: 0.92,
+      depthWrite: false,
+    });
+    innerCore = new THREE.LineSegments(wireGeometry, innerMaterial);
+    innerCore.renderOrder = 3;
+  } else {
+    innerMaterial = new THREE.MeshStandardMaterial({
+      color: 0x111915,
+      metalness: 0.74,
+      roughness: 0.22,
+      wireframe: true,
+    });
+    innerCore = new THREE.Mesh(innerGeometry, innerMaterial);
+  }
+
   innerCore.rotation.set(0.2, 0.34, 0.12);
   world.add(innerCore);
 
@@ -113,7 +136,7 @@ export function initSignalScene(host: HTMLElement) {
   rings.forEach((ring) => world.add(ring));
 
   const nodeGeometry = new THREE.SphereGeometry(0.035, 12, 12);
-  const nodeMaterial = new THREE.MeshBasicMaterial({ color: accentSoftColor });
+  const nodeMaterial = new THREE.MeshBasicMaterial({ color: isBlog ? new THREE.Color("#e5c6b1") : accentSoftColor });
   const nodePositions: THREE.Vector3[] = [];
   const nodeCount = 9;
   for (let index = 0; index < nodeCount; index += 1) {
@@ -284,7 +307,7 @@ export function initSignalScene(host: HTMLElement) {
     coreGeometry.dispose();
     coreMaterial.dispose();
     innerGeometry.dispose();
-    wireGeometry.dispose();
+    wireGeometry?.dispose();
     innerMaterial.dispose();
     shellGeometry.dispose();
     shellMaterial.dispose();
