@@ -954,7 +954,15 @@
       show_toc:check("setting-toc"),show_related_posts:check("setting-related"),show_share:check("setting-share"),
       enable_rss:check("setting-rss"),default_meta_title:get("setting-meta-title"),default_meta_description:get("setting-meta-description"),
       footer_note:get("setting-footer"),default_og_image:settings?.default_og_image||"",
+      categories:collectCategories(settings?.categories||[]),
       category_seo:collectCategorySeo(settings?.category_seo||{}),
+      default_og_title:get("setting-default-og-title"),default_og_description:get("setting-default-og-description"),
+      default_robots_index:check("setting-default-index"),default_robots_follow:check("setting-default-follow"),
+      noindex_empty_categories:check("setting-noindex-empty"),
+      sitemap_include_categories:check("setting-sitemap-categories"),sitemap_include_articles:check("setting-sitemap-articles"),
+      schema_type:get("setting-schema-type"),breadcrumbs_enabled:check("setting-breadcrumbs"),
+      breadcrumb_home_label:get("setting-breadcrumb-label"),open_graph_enabled:check("setting-open-graph"),
+      twitter_card_type:get("setting-twitter-card"),
     };
   }
   function fillSettings(settings) {
@@ -967,6 +975,14 @@
     set("setting-width",settings.content_width);set("setting-language",settings.default_language);set("setting-per-page",settings.posts_per_page);
     set("setting-heading-scale",settings.heading_scale);set("setting-line-height",settings.body_line_height);
     set("setting-meta-title",settings.default_meta_title);set("setting-meta-description",settings.default_meta_description);
+    set("setting-default-og-title",settings.default_og_title);set("setting-default-og-description",settings.default_og_description);
+    set("setting-schema-type",settings.schema_type||"Article");set("setting-breadcrumb-label",settings.breadcrumb_home_label||"خانه");
+    set("setting-twitter-card",settings.twitter_card_type||"summary_large_image");
+    check("setting-default-index",settings.default_robots_index);check("setting-default-follow",settings.default_robots_follow);
+    check("setting-noindex-empty",settings.noindex_empty_categories);check("setting-sitemap-categories",settings.sitemap_include_categories);
+    check("setting-sitemap-articles",settings.sitemap_include_articles);check("setting-breadcrumbs",settings.breadcrumbs_enabled);
+    check("setting-open-graph",settings.open_graph_enabled);
+    renderCategoryManager(settings);
     const theme=document.querySelector('input[name="setting-theme"][value="'+(settings.background_theme||"paper")+'"]');if(theme)theme.checked=true;
     check("setting-search",settings.show_search);check("setting-categories",settings.show_categories);
     check("setting-featured",settings.show_featured);check("setting-readtime",settings.show_reading_time);
