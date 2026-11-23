@@ -53,7 +53,7 @@ assert.ok(articlePage.includes("openGraph:") && articlePage.includes("twitter:")
 assert.ok(articlePage.includes("extractToc"), "articles must support a table of contents");
 assert.ok(categoryPage.includes("generateStaticParams"), "category archives must be static pages");
 assert.ok(categoryPage.includes("settings.category_seo") && categoryPage.includes("meta_description"), "category archives must support separate metadata per category");
-assert.ok(categoryPage.includes('{ category: "__empty__" }') && categoryPage.includes("robots:{index:false,follow:false}"), "empty category fallback must remain noindex");
+assert.ok(categoryPage.includes('{ category: "__empty__" }') && categoryPage.includes("robots: { index: false, follow: false }"), "empty category fallback must remain noindex");
 assert.ok(rssRoute.includes("application/rss+xml"), "the blog must publish an RSS feed");
 assert.ok(sitemap.includes("getBlogPosts()") && sitemap.includes("/blog/"), "sitemap must include published articles and blog archive");
 assert.ok(robots.includes('disallow: ["/admin/", "/admin/blog/"]'), "robots.txt must disallow both admin areas");
