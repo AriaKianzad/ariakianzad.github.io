@@ -377,7 +377,7 @@
       if(!image)return "";
       const src=safeHref(image.getAttribute("src"));
       if(src==="#")return "";
-      const escapeAttribute=(value)=>String(value||"").replace(/\\/g,"\\\\").replace(/"/g,'\\"').replace(/[\\r\\n]+/g," ");
+      const escapeAttribute=(value)=>String(value||"").replace(/\\/g,"\\\\").replace(/"/g,'\\"').replace(/[\r\n]+/g," ");
       const alt=String(image.getAttribute("alt")||"").replace(/\\/g,"\\\\").replace(/]/g,"\\]");
       const title=escapeAttribute(image.getAttribute("title")||"");
       const caption=escapeAttribute(element.querySelector("figcaption")?.textContent||"");
