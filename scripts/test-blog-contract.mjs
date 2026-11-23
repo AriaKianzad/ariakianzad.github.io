@@ -5,7 +5,7 @@ import { Script } from "node:vm";
 const read = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
 const [
   packageJson, fetchScript, imageScript, dataSource, markdownSource,
-  listingPage, articlePage, categoryPage, rssRoute, blogCss, adminHtml,
+  listingPage, articlePage, categoryPage, rssRoute, blogCss, adminHtml, adminCss,
   adminApp, adminEdge, publicRpcMigration, browserDenyMigration, snapshotMigration,
   publicHeader, workflow, sitemap, robots, heroVisualComponent, signalScene, heroBootstrap,
   blogLayout, contactPage, contactForm, contactEdge, contactMigration, rootLayout, configToml, googleContactScript, contactBrowserScript,
@@ -21,6 +21,7 @@ const [
   read("src/app/blog/feed.xml/route.ts"),
   read("src/app/blog/blog.css"),
   read("public/admin/blog/index.html"),
+  read("public/admin/blog/blog.css"),
   read("public/admin/blog/app.js"),
   read("supabase/functions/blog-admin/index.ts"),
   read("supabase/migrations/20261123110500_harden_public_blog_rpc.sql"),
@@ -100,7 +101,8 @@ assert.ok(adminApp.includes("/functions/v1/blog-admin"), "privileged CMS actions
 assert.ok(adminApp.includes("createImageBitmap(file)") && adminApp.includes('canvasBlob(canvas,"image/webp"'), "CMS must compress images to WebP");
 assert.ok(adminApp.includes("3*1024*1024"), "CMS must cap compressed image uploads");
 const lastMediaPreviewRule = [...adminCss.matchAll(/\.media-preview img\s*\{([^}]*)\}/g)].at(-1)?.[1] || "";
-assert.ok(adminApp.includes("drawImage(bitmap,0,0,canvas.width,canvas.height)") && lastMediaPreviewRule.includes("object-fit:contain"), "CMS image compression and previews must preserve the original aspect ratio");
+assert.ok(adminApp.includes("canvas.width=bitmap.width") && adminApp.includes("canvas.height=bitmap.height") && adminApp.includes("drawImage(bitmap,0,0,canvas.width,canvas.height)") && !adminApp.includes("const maxEdge=1800"), "CMS image optimization must compress without resizing or cropping the source");
+assert.ok(lastMediaPreviewRule.includes("object-fit:contain"), "CMS image previews must preserve the original aspect ratio");
 assert.ok(adminHtml.includes('name="username"') && adminHtml.includes('name="password"') && adminHtml.includes('autocomplete="on"'), "login form must expose recognizable username/password autocomplete semantics");
 assert.ok(adminHtml.includes('id="insert-image"') && adminHtml.includes('id="inline-image-dialog"') && adminHtml.includes('id="inline-image-alt"') && adminHtml.includes('id="inline-image-title"') && adminHtml.includes('id="inline-image-caption"'), "CMS must provide inline image insertion with alt, title and caption fields");
 assert.ok(adminApp.includes("function saveInlineImage") && adminApp.includes("placeInlineImageFigure") && adminApp.includes("image.alt=alt") && adminApp.includes("image.title=title"), "inline image editor must upload, place and update accessible image metadata");
