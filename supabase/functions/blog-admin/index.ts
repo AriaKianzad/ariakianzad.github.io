@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const SITE_ORIGIN = "https://ariakianzad.github.io";
 const BLOG_REPO = "AriaKianzad/ariakianzad.github.io";
@@ -71,6 +71,12 @@ async function authorizeAdmin(authorization: string, config: ReturnType<typeof k
   return { user: data.user, client: adminClient };
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
 function textValue(value: unknown, max: number, label: string, required = false): string {
   const valueText = typeof value === "string" ? value.trim() : "";
   if (required && !valueText) throw new Error(label + " الزامی است.");
@@ -102,13 +108,16 @@ function tagsValue(value: unknown): string[] {
 function faqsValue(value: unknown) {
   if (!Array.isArray(value)) return [];
   if (value.length > 30) throw new Error("حداکثر ۳۰ پرسش متداول مجاز است.");
-  return value.map((entry: any) => ({
-    question: textValue(entry?.question, 240, "پرسش", true),
-    answer: textValue(entry?.answer, 2400, "پاسخ", true),
-  }));
+  return value.map((entry: unknown) => {
+    const item = asRecord(entry);
+    return {
+      question: textValue(item.question, 240, "پرسش", true),
+      answer: textValue(item.answer, 2400, "پاسخ", true),
+    };
+  });
 }
 
-function normalizePost(input: any) {
+function normalizePost(input: Record<string, unknown>) {
   const slug = textValue(input?.slug, 120, "نامک", true).toLowerCase();
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
     throw new Error("نامک باید با حروف کوچک انگلیسی، عدد و خط تیره نوشته بشه.");
@@ -183,7 +192,6 @@ async function dispatchBuild() {
     },
   );
   if (!response.ok) {
-    const errorText = await response.text().catch(() => "");
     console.error("blog-admin workflow dispatch failed", { status: response.status });
     throw new Error("GitHub انتشار را شروع نکرد. وضعیت دسترسی Token را بررسی کن.");
   }
@@ -205,7 +213,7 @@ function hasMagicBytes(bytes: Uint8Array, mime: string): boolean {
   return false;
 }
 
-async function uploadImage(request: Request, client: any) {
+async function uploadImage(request: Request, client: SupabaseClient) {
   const form = await request.formData();
   const file = form.get("file");
   if (!(file instanceof File)) throw new Error("فایلی برای بارگذاری انتخاب نشده.");
@@ -237,7 +245,7 @@ async function dispatchAfterWrite(message: string) {
   }
 }
 
-async function perform(action: string, body: any, client: any) {
+async function perform(action: string, body: Record<string, unknown>, client: SupabaseClient) {
   if (action === "list_posts") {
     const { data, error } = await client.from("blog_posts")
       .select("id,slug,title,excerpt,language,category,status,featured,published_at,updated_at,has_unpublished_changes,hero_image_url")
@@ -415,8 +423,8 @@ Deno.serve(async (request: Request) => {
       const result = await uploadImage(request, session.client);
       return json(result);
     }
-    const body = await request.json().catch(() => ({}));
-    const action = textValue(body?.action, 40, "نوع درخواست", true);
+    const body = asRecord(await request.json().catch(() => ({})));
+    const action = textValue(body.action, 40, "نوع درخواست", true);
     const result = await perform(action, body, session.client);
     console.info("blog-admin completed", { action });
     return json(result);
