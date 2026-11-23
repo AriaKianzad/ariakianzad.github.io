@@ -1052,7 +1052,7 @@
       show_search:check("setting-search"),show_categories:check("setting-categories"),
       show_featured:check("setting-featured"),show_reading_time:check("setting-readtime"),
       show_toc:check("setting-toc"),show_related_posts:check("setting-related"),show_share:check("setting-share"),
-      enable_rss:check("setting-rss"),default_meta_title:get("setting-meta-title"),default_meta_description:get("setting-meta-description"),
+      enable_rss:check("setting-rss"),default_meta_title:get("setting-meta-title"),default_meta_description:get("setting-meta-description"),canonical_url:get("setting-canonical-url"),
       footer_note:get("setting-footer"),default_og_image:settings?.default_og_image||"",
       categories:collectCategories(settings?.categories||[]),
       category_seo:collectCategorySeo(settings?.category_seo||{}),
@@ -1074,7 +1074,7 @@
     set("setting-accent",settings.accent_color||"#a86f54");set("setting-card-style",settings.card_style);set("setting-layout",settings.layout_style);
     set("setting-width",settings.content_width);set("setting-language",settings.default_language);set("setting-per-page",settings.posts_per_page);
     set("setting-heading-scale",settings.heading_scale);set("setting-line-height",settings.body_line_height);
-    set("setting-meta-title",settings.default_meta_title);set("setting-meta-description",settings.default_meta_description);
+    set("setting-meta-title",settings.default_meta_title);set("setting-meta-description",settings.default_meta_description);set("setting-canonical-url",settings.canonical_url);
     set("setting-default-og-title",settings.default_og_title);set("setting-default-og-description",settings.default_og_description);
     set("setting-schema-type",settings.schema_type||"Article");set("setting-breadcrumb-label",settings.breadcrumb_home_label||"خانه");
     set("setting-twitter-card",settings.twitter_card_type||"summary_large_image");
