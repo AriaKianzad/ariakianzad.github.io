@@ -794,6 +794,87 @@
       setButton(button,false);
     }
   }
+  function getConfiguredCategories(settings) {
+    const source=Array.isArray(settings?.categories)?settings.categories:[];
+    const result=source.map((item)=>({slug:String(item?.slug||""),name:String(item?.name||"")})).filter((item)=>item.slug&&item.name);
+    const known=new Set(result.map((item)=>item.slug));
+    state.posts.forEach((post)=>{
+      const slug=String(post.category||"").trim();
+      if(slug&&!known.has(slug)){result.push({slug,name:slug.replace(/-/g," ")});known.add(slug);}
+    });
+    return result;
+  }
+  function syncPostCategorySelect(selected) {
+    const select=$("#post-category");
+    if(!select)return;
+    const value=selected??select.value??"";
+    const options=[new Option("بدون دسته‌بندی","")];
+    getConfiguredCategories(state.settings).forEach((item)=>options.push(new Option(item.name,item.slug)));
+    select.replaceChildren(...options);
+    select.value=options.some((item)=>item.value===value)?value:"";
+  }
+  function collectCategories(previous) {
+    const list=$("#category-manager-list");
+    if(!list)return Array.isArray(previous)?previous:[];
+    return Array.from(list.querySelectorAll(".category-manager-item[data-category-slug]")).map((card)=>({
+      slug:card.dataset.categorySlug,
+      name:card.querySelector("[data-category-name]")?.value.trim()||"",
+    })).filter((item)=>item.slug&&item.name);
+  }
+  function renderCategoryManager(settings) {
+    const list=$("#category-manager-list");
+    if(!list)return;
+    list.replaceChildren();
+    const categories=getConfiguredCategories(settings);
+    if(!categories.length){
+      const empty=document.createElement("p");empty.className="empty-state";
+      empty.textContent="هنوز دسته‌بندی‌ای تعریف نشده. از فرم پایین یک نام فارسی و نامک انگلیسی اضافه کن.";
+      list.appendChild(empty);
+    }
+    categories.forEach((item)=>{
+      const used=state.posts.filter((post)=>post.category===item.slug).length;
+      const row=document.createElement("div");row.className="category-manager-item";row.dataset.categorySlug=item.slug;
+      const nameLabel=document.createElement("label");nameLabel.className="field-label";nameLabel.textContent="نام نمایشی";
+      const name=document.createElement("input");name.type="text";name.maxLength=80;name.value=item.name;name.dataset.categoryName="true";
+      nameLabel.appendChild(name);
+      const slugBox=document.createElement("div");slugBox.className="category-manager-slug";
+      const slugLabel=document.createElement("small");slugLabel.textContent="نامک انگلیسی";
+      const slugValue=document.createElement("code");slugValue.textContent=item.slug;slugValue.dir="ltr";
+      slugBox.append(slugLabel,slugValue);
+      const count=document.createElement("small");count.className="category-manager-count";count.textContent=used.toLocaleString("fa-IR")+" مقاله";
+      const remove=document.createElement("button");remove.type="button";remove.className="text-button danger-text";remove.textContent="حذف";
+      remove.disabled=used>0;
+      remove.title=used>0?"ابتدا مقاله‌های این دسته‌بندی رو به دسته‌بندی دیگه منتقل کن.":"حذف دسته‌بندی";
+      remove.addEventListener("click",()=>{
+        const next=(state.settings?.categories||[]).filter((entry)=>entry.slug!==item.slug);
+        state.settings={...(state.settings||{}),categories:next};
+        const seo={...(state.settings.category_seo||{})};delete seo[item.slug];
+        state.settings.category_seo=seo;
+        renderCategoryManager(state.settings);syncPostCategorySelect();
+        renderCategorySeoEditor(state.settings);
+        $("#category-manager-message").textContent="دسته‌بندی حذف شد؛ برای ثبت نهایی تنظیمات رو ذخیره کن.";
+      });
+      row.append(nameLabel,slugBox,count,remove);
+      list.appendChild(row);
+    });
+    syncPostCategorySelect($("#post-category")?.value);
+  }
+  function addManagedCategory() {
+    const name=$("#new-category-name").value.trim();
+    const slug=$("#new-category-slug").value.trim().toLowerCase();
+    const message=$("#category-manager-message");
+    if(!name||!slug){message.textContent="نام فارسی و نامک انگلیسی رو وارد کن.";return;}
+    if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)){message.textContent="نامک باید انگلیسی، با حروف کوچک و خط تیره باشه.";return;}
+    const categories=getConfiguredCategories(state.settings);
+    if(categories.some((item)=>item.slug===slug)){message.textContent="این نامک قبلاً ثبت شده.";return;}
+    if(categories.some((item)=>item.name.toLocaleLowerCase()===name.toLocaleLowerCase())){message.textContent="این نام فارسی قبلاً ثبت شده.";return;}
+    state.settings={...(state.settings||{}),categories:[...categories,{slug,name}]};
+    renderCategoryManager(state.settings);syncPostCategorySelect();
+    renderCategorySeoEditor(state.settings);
+    $("#new-category-name").value="";$("#new-category-slug").value="";
+    message.textContent="دسته‌بندی اضافه شد؛ برای انتشار در وبلاگ تنظیمات رو ذخیره کن.";
+  }
+
   function categorySeoEntries() {
     const categories=new Map();
     state.posts.forEach((post)=>{
