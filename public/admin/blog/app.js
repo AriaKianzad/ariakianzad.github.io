@@ -300,6 +300,14 @@
     const lines=String(markdown||"").replace(/\r\n/g,"\n").split("\n");
     for(let index=0;index<lines.length;index++){
       const line=lines[index];
+      if(/^\x60{3}/.test(line)){
+        close();closeList();
+        const code=[];
+        while(index+1<lines.length&&!/^\x60{3}/.test(lines[index+1])){code.push(lines[++index]);}
+        if(index+1<lines.length)index++;
+        output.push("<pre><code>"+escapeHtml(code.join("\n"))+"</code></pre>");
+        continue;
+      }
       if(/^\s*\|?.+\|.+\|?\s*$/.test(line)&&index+1<lines.length&&/^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(lines[index+1])){
         close();closeList();
         const cells=(value)=>value.trim().replace(/^\||\|$/g,"").split("|").map((cell)=>cell.trim());
@@ -602,6 +610,7 @@
       {label:"کلمۀ کلیدی در ابتدای متن",pass:!!keyword&&firstParagraph.toLocaleLowerCase().includes(keyword)},
       {label:"ساختار تیترهای مقاله",pass:(content.match(/^#{2,4}\s/gm)||[]).length>=2},
       {label:"متن جایگزین تصویر",pass:!$("#post-hero-url").value||!!$("#post-hero-alt").value.trim()},
+      {label:"متن جایگزین برای همۀ تصاویر درون‌متنی",pass:Array.from($("#post-content").querySelectorAll("img")).every((image)=>!!image.alt.trim())},
       {label:"تصویر اجتماعی اختصاصی",pass:!!$("#post-og-url").value||!!$("#post-hero-url").value},
       {label:"Canonical URL معتبر یا خودکار",pass:!$("#post-canonical").value.trim()||$("#post-canonical").value.startsWith("https://ariakianzad.github.io/blog/")},
     ];
