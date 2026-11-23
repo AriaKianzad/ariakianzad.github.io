@@ -464,10 +464,14 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
       .map((item: Record<string, unknown>) => typeof item.slug === "string" ? item.slug : "")
       .filter((slug: string) => slug && !nextSlugs.has(slug));
     if (removedSlugs.length) {
-      const { data: usedPosts, error: usedPostsError } = await client.from("blog_posts")
-        .select("category").in("category", removedSlugs).limit(1);
-      if (usedPostsError) throw new Error("بررسی وابستگی مقاله‌ها به دسته‌بندی‌ها ناموفق بود.");
-      if (usedPosts?.length) throw new Error("این دسته‌بندی هنوز به یک یا چند مقاله وصله. ابتدا مقاله‌ها رو به دسته‌بندی دیگه منتقل کن.");
+      const [primaryUsage, secondaryUsage] = await Promise.all([
+        client.from("blog_posts").select("id").in("category", removedSlugs).limit(1),
+        client.from("blog_posts").select("id").overlaps("categories", removedSlugs).limit(1),
+      ]);
+      if (primaryUsage.error || secondaryUsage.error) throw new Error("بررسی وابستگی مقاله‌ها به دسته‌بندی‌ها ناموفق بود.");
+      if (primaryUsage.data?.length || secondaryUsage.data?.length) {
+        throw new Error("این دسته‌بندی هنوز در دست‌کم یک مقاله به‌عنوان اصلی یا فرعی استفاده می‌شه. ابتدا مقاله‌ها رو منتقل کن.");
+      }
     }
     const settings = {
       id: 1,
