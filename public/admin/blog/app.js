@@ -38,10 +38,11 @@
     state.accessToken=payload.access_token;
     state.refreshToken=payload.refresh_token;
   }
-  async function saveBrowserCredential(email,password) {
+  async function saveBrowserCredential() {
     if(!window.PasswordCredential||!navigator.credentials?.store)return false;
     try{
-      const credential=new window.PasswordCredential({id:email,password,name:"آریا کیانزاد"});
+      const form=$("#login-form");
+      const credential=new window.PasswordCredential(form);
       await navigator.credentials.store(credential);
       return true;
     }catch{return false;}
@@ -51,15 +52,13 @@
     const user=await fetch(supabaseUrl+"/auth/v1/user",{headers:{apikey:anonKey,Authorization:"Bearer "+state.accessToken}});
     const userData=await parseResponse(user);window.blogAdminEmail=userData.email||"مدیر";
     await loadWorkspace();
-    if(remember){
-      if(!quiet){
-        const saved=await saveBrowserCredential(email,password);
-        if(!saved)toast("ورود انجام شد؛ این مرورگر ذخیرۀ امن ورود خودکار رو پشتیبانی نکرد. از مدیر گذرواژۀ مرورگر استفاده کن.",true);
-      }
-    }else if(navigator.credentials?.preventSilentAccess){
-      await navigator.credentials.preventSilentAccess().catch(()=>{});
-    }
+    let credentialSaved=false;
+    if(remember&&!quiet)credentialSaved=await saveBrowserCredential();
+    else if(!remember&&navigator.credentials?.preventSilentAccess)await navigator.credentials.preventSilentAccess().catch(()=>{});
     showApp();showView("overview");
+    if(remember&&!quiet&&!credentialSaved&&window.PasswordCredential){
+      toast("ورود انجام شد. برای ذخیرۀ رمز، پیشنهاد مرورگر رو تأیید کن یا رمز رو در مدیر گذرواژه ذخیره کن.",false);
+    }
   }
   async function restoreRememberedCredential() {
     if(!window.PasswordCredential||!navigator.credentials?.get)return;
@@ -69,11 +68,8 @@
       $("#login-email").value=credential.id||"";
       $("#login-password").value=credential.password;
       $("#remember-me").checked=true;
-      await finishSignIn(credential.id,credential.password,true,true);
-    }catch(error){
-      state.accessToken="";state.refreshToken="";
-      $("#login-password").value="";
-      $("#login-message").textContent="ورود خودکار انجام نشد؛ رمز عبورت رو وارد کن.";
+    }catch{
+      // Native browser password-manager autofill remains available as a fallback.
     }
   }
   async function refreshSession() {
@@ -261,9 +257,29 @@
     const value=String(raw||"").trim();
     return /^(https?:\/\/|mailto:|\/|#)/i.test(value)&&!/^\/\//.test(value)?value:"#";
   }
+  function unescapeMarkdownAttribute(value) {
+    return String(value||"").replace(/\\([\\\]"])/g,"$1");
+  }
+  function parsePreviewImageLine(line) {
+    const match=String(line||"").trim().match(/^!\[((?:\\.|[^\]])*)\]\(([^)\s]+)(?:\s+"((?:\\.|[^"])*)")?\)(?:\s+\{caption="((?:\\.|[^"])*)"\})?$/);
+    if(!match)return null;
+    const src=safeHref(unescapeMarkdownAttribute(match[2]).replace(/&amp;/g,"&"));
+    if(src==="#")return null;
+    return {
+      src,
+      alt:unescapeMarkdownAttribute(match[1]),
+      title:unescapeMarkdownAttribute(match[3]||""),
+      caption:unescapeMarkdownAttribute(match[4]||"")
+    };
+  }
+  function renderPreviewFigure(line) {
+    const image=parsePreviewImageLine(line);
+    if(!image)return "";
+    return '<figure class="blog-inline-image"><img src="'+escapeHtml(image.src)+'" alt="'+escapeHtml(image.alt)+'"'+(image.title?' title="'+escapeHtml(image.title)+'"':"")+' loading="lazy" decoding="async">'+(image.caption?'<figcaption>'+escapeHtml(image.caption)+'</figcaption>':"")+"</figure>";
+  }
   function previewInline(text) {
     let value=escapeHtml(text);
-    value=value.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g,(_m,alt,url)=>'<img src="'+escapeHtml(safeHref(url))+'" alt="'+alt+'">');
+    value=value.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>'<img src="'+escapeHtml(safeHref(url.replace(/&amp;/g,"&")))+'" alt="'+alt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">');
     value=value.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
       const href=safeHref(url.replace(/&amp;/g,"&")),external=/^https?:\/\//i.test(href);
       const relation=(String(options||"").match(/rel=(follow|nofollow|sponsored|ugc)/i)||[])[1]||"follow";
@@ -277,11 +293,10 @@
     return value;
   }
   function renderPreviewMarkdown(markdown) {
-    const output=[];let paragraph=[];
+    const output=[];let paragraph=[];let list=null;
     const close=()=>{if(paragraph.length){output.push("<p>"+previewInline(paragraph.join(" "))+"</p>");paragraph=[];}};
-    let list=null;
     const closeList=()=>{if(list){output.push("</"+list+">");list=null;}};
-    const lines=markdown.split(/\r?\n/);
+    const lines=String(markdown||"").replace(/\r\n/g,"\n").split("\n");
     for(let index=0;index<lines.length;index++){
       const line=lines[index];
       if(/^\s*\|?.+\|.+\|?\s*$/.test(line)&&index+1<lines.length&&/^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(lines[index+1])){
@@ -294,13 +309,15 @@
         output.push("<table><thead><tr>"+headers.map((cell)=>"<th>"+previewInline(cell)+"</th>").join("")+"</tr></thead><tbody>"+rows.map((row)=>"<tr>"+row.map((cell)=>"<td>"+previewInline(cell)+"</td>").join("")+"</tr>").join("")+"</tbody></table>");
         continue;
       }
-      if(!line.trim()){close();closeList();return;}
+      if(!line.trim()){close();closeList();continue;}
+      const image=renderPreviewFigure(line);
+      if(image){close();closeList();output.push(image);continue;}
       const heading=line.match(/^(#{1,4})\s+(.+)$/);
-      if(heading){close();closeList();const level=Math.max(2,heading[1].length);output.push("<h"+level+">"+previewInline(heading[2])+"</h"+level+">");return;}
+      if(heading){close();closeList();const level=Math.max(2,heading[1].length);output.push("<h"+level+">"+previewInline(heading[2])+"</h"+level+">");continue;}
       const quote=line.match(/^>\s?(.*)$/);
-      if(quote){close();closeList();output.push("<blockquote><p>"+previewInline(quote[1])+"</p></blockquote>");return;}
-      const item=line.match(/^\s*([-*+]|\d+[.)])\s+(.+)$/);
-      if(item){close();const next=/^\d/.test(item[1])?"ol":"ul";if(list!==next){closeList();list=next;output.push("<"+list+">");}output.push("<li>"+previewInline(item[2])+"</li>");return;}
+      if(quote){close();closeList();output.push("<blockquote><p>"+previewInline(quote[1])+"</p></blockquote>");continue;}
+      const item=line.match(/^\s*([-*+ ]|\d+[.)])\s+(.+)$/);
+      if(item){close();const next=/^\d/.test(item[1])?"ol":"ul";if(list!==next){closeList();list=next;output.push("<"+list+">");}output.push("<li>"+previewInline(item[2])+"</li>");continue;}
       if(/^\s*(---+|___+|\*\*\*+)\s*$/.test(line)){close();closeList();output.push("<hr>");continue;}
       closeList();paragraph.push(line.trim());
     }
@@ -313,7 +330,10 @@
     if(tag==="br")return "\n";
     if(tag==="img") {
       const src=safeHref(element.getAttribute("src"));
-      return src==="#"?"":"!["+((element.getAttribute("alt")||"").replace(/]/g,"\\]"))+"]("+src+")";
+      if(src==="#")return "";
+      const alt=String(element.getAttribute("alt")||"").replace(/\\/g,"\\\\").replace(/]/g,"\\]");
+      const title=String(element.getAttribute("title")||"").trim().replace(/\\/g,"\\\\").replace(/"/g,'\\"').replace(/[\\r\\n]+/g," ");
+      return "!["+alt+"]("+src+(title?' "'+title+'"':"")+")";
     }
     const inner=Array.from(element.childNodes).map(inlineToMarkdown).join("");
     if(tag==="strong"||tag==="b")return "**"+inner+"**";
@@ -352,6 +372,17 @@
     if(node.nodeType===Node.TEXT_NODE)return node.nodeValue?.trim()?node.nodeValue.trim()+"\n\n":"";
     if(node.nodeType!==Node.ELEMENT_NODE)return "";
     const element=node,tag=element.tagName.toLowerCase();
+    if(tag==="figure"){
+      const image=element.querySelector("img");
+      if(!image)return "";
+      const src=safeHref(image.getAttribute("src"));
+      if(src==="#")return "";
+      const escapeAttribute=(value)=>String(value||"").replace(/\\/g,"\\\\").replace(/"/g,'\\"').replace(/[\\r\\n]+/g," ");
+      const alt=String(image.getAttribute("alt")||"").replace(/\\/g,"\\\\").replace(/]/g,"\\]");
+      const title=escapeAttribute(image.getAttribute("title")||"");
+      const caption=escapeAttribute(element.querySelector("figcaption")?.textContent||"");
+      return "!["+alt+"]("+src+(title?' "'+title+'"':"")+")"+(caption?' {caption="'+caption+'"}':"")+"\\n\\n";
+    }
     if(tag==="h2"||tag==="h3"||tag==="h4")return "#".repeat(Number(tag.slice(1)))+" "+Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
     if(tag==="p")return Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
     if(tag==="ul"||tag==="ol")return listToMarkdown(element,0)+"\n\n";
@@ -393,8 +424,20 @@
       return fragment;
     }
     const tags={b:"strong",strong:"strong",i:"em",em:"em",u:"u",s:"del",strike:"del",del:"del",h1:"h2",h2:"h2",h3:"h3",h4:"h4",h5:"h4",h6:"h4"};
-    const allowed=new Set(["p","div","h2","h3","h4","ul","ol","li","blockquote","br","hr","pre","code","table","thead","tbody","tfoot","tr","th","td","strong","em","u","del","a"]);
+    const allowed=new Set(["p","div","figure","figcaption","img","h2","h3","h4","ul","ol","li","blockquote","br","hr","pre","code","table","thead","tbody","tfoot","tr","th","td","strong","em","u","del","a"]);
     const outputTag=tags[tag]||tag;
+    if(tag==="img"){
+      const src=safeHref(source.getAttribute("src"));
+      if(src==="#")return null;
+      const cleanImage=document.createElement("img");
+      cleanImage.setAttribute("src",src);
+      cleanImage.setAttribute("alt",source.getAttribute("alt")||"");
+      const title=source.getAttribute("title");
+      if(title)cleanImage.setAttribute("title",title.slice(0,160));
+      cleanImage.setAttribute("loading","lazy");
+      cleanImage.setAttribute("decoding","async");
+      return cleanImage;
+    }
     if(!allowed.has(outputTag)){
       const fragment=document.createDocumentFragment();children().forEach((child)=>fragment.appendChild(child));return fragment;
     }
@@ -628,6 +671,115 @@
     } catch(error) {toast(error.message,true);}
     finally {input.disabled=false;input.value="";}
   }
+  let pendingInlineImageFile=null;
+  let pendingInlineImageObjectUrl="";
+  let pendingInlineImageRange=null;
+  let editingInlineImageFigure=null;
+
+  function beginInlineImageInsert() {
+    const editor=$("#post-content"),selection=window.getSelection();
+    pendingInlineImageRange=selection?.rangeCount&&editor.contains(selection.anchorNode)?selection.getRangeAt(0).cloneRange():null;
+    $("#inline-image-file").click();
+  }
+  function openInlineImageDialog(file,figure) {
+    const dialog=$("#inline-image-dialog");
+    pendingInlineImageFile=file||null;
+    editingInlineImageFigure=figure||null;
+    if(pendingInlineImageObjectUrl){URL.revokeObjectURL(pendingInlineImageObjectUrl);pendingInlineImageObjectUrl="";}
+    const image=figure?.querySelector("img")||null;
+    const preview=$("#inline-image-dialog-preview");
+    if(file){
+      pendingInlineImageObjectUrl=URL.createObjectURL(file);
+      preview.src=pendingInlineImageObjectUrl;
+      $("#inline-image-alt").value="";
+      $("#inline-image-title").value="";
+      $("#inline-image-caption").value="";
+    }else if(image){
+      preview.src=image.src;
+      $("#inline-image-alt").value=image.alt||"";
+      $("#inline-image-title").value=image.title||"";
+      $("#inline-image-caption").value=figure.querySelector("figcaption")?.textContent||"";
+    }
+    dialog.showModal();
+    $("#inline-image-alt").focus();
+  }
+  function closeInlineImageDialog() {
+    const dialog=$("#inline-image-dialog");
+    if(dialog.open)dialog.close();
+    if(pendingInlineImageObjectUrl){URL.revokeObjectURL(pendingInlineImageObjectUrl);pendingInlineImageObjectUrl="";}
+    pendingInlineImageFile=null;
+    editingInlineImageFigure=null;
+    $("#inline-image-form").reset();
+    $("#inline-image-dialog-preview").removeAttribute("src");
+  }
+  function createInlineImageFigure(url,alt,title,caption) {
+    const figure=document.createElement("figure");
+    figure.className="blog-inline-image";
+    figure.dataset.inlineImage="true";
+    const image=document.createElement("img");
+    image.src=url;image.alt=alt;image.loading="lazy";image.decoding="async";
+    if(title)image.title=title;
+    figure.appendChild(image);
+    if(caption){const figcaption=document.createElement("figcaption");figcaption.textContent=caption;figure.appendChild(figcaption);}
+    return figure;
+  }
+  function placeInlineImageFigure(figure) {
+    const editor=$("#post-content");
+    let block=null;
+    if(pendingInlineImageRange&&editor.contains(pendingInlineImageRange.commonAncestorContainer)){
+      let node=pendingInlineImageRange.startContainer;
+      if(node.nodeType===Node.TEXT_NODE)node=node.parentElement;
+      block=node instanceof Element?node.closest("p,h2,h3,h4,blockquote,ul,ol,li"):null;
+    }
+    if(block?.tagName==="LI")block=block.closest("ul,ol")||block;
+    if(block&&block!==editor)block.after(figure);
+    else editor.appendChild(figure);
+    const spacer=document.createElement("p");
+    spacer.appendChild(document.createElement("br"));
+    figure.after(spacer);
+    const range=document.createRange();
+    range.selectNodeContents(spacer);
+    range.collapse(true);
+    const selection=window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    editor.focus();
+    pendingInlineImageRange=null;
+    updatePreview();updateSeo();refreshLinkManager();
+  }
+  async function saveInlineImage(event) {
+    event.preventDefault();
+    const alt=$("#inline-image-alt").value.trim();
+    if(!alt){$("#inline-image-alt").focus();toast("برای تصویر، متن جایگزین توصیفی وارد کن.",true);return;}
+    const title=$("#inline-image-title").value.trim();
+    const caption=$("#inline-image-caption").value.trim();
+    const button=$("#inline-image-submit");
+    setButton(button,true,"در حال درج…");
+    try{
+      if(editingInlineImageFigure){
+        const image=editingInlineImageFigure.querySelector("img");
+        image.alt=alt;
+        if(title)image.title=title;else image.removeAttribute("title");
+        const previous=editingInlineImageFigure.querySelector("figcaption");
+        if(caption){
+          const figcaption=previous||document.createElement("figcaption");
+          figcaption.textContent=caption;
+          if(!previous)editingInlineImageFigure.appendChild(figcaption);
+        }else if(previous)previous.remove();
+      }else{
+        if(!pendingInlineImageFile)throw new Error("تصویری برای درج انتخاب نشده.");
+        const url=await uploadImage(pendingInlineImageFile);
+        placeInlineImageFigure(createInlineImageFigure(url,alt,title,caption));
+        toast("تصویر فشرده و به متن مقاله اضافه شد.");
+      }
+      closeInlineImageDialog();
+      updatePreview();updateSeo();
+    }catch(error){
+      toast(error instanceof Error?error.message:"درج تصویر ناموفق بود.",true);
+    }finally{
+      setButton(button,false);
+    }
+  }
   function categorySeoEntries() {
     const categories=new Map();
     state.posts.forEach((post)=>{
@@ -787,6 +939,21 @@
       });
     });
     $("#insert-link").addEventListener("click",insertLink);
+    $("#insert-image").addEventListener("mousedown",(event)=>event.preventDefault());
+    $("#insert-image").addEventListener("click",beginInlineImageInsert);
+    $("#inline-image-file").addEventListener("change",(event)=>{
+      const file=event.target.files?.[0];
+      event.target.value="";
+      if(file)openInlineImageDialog(file,null);
+    });
+    $("#inline-image-form").addEventListener("submit",(event)=>void saveInlineImage(event));
+    $("#inline-image-cancel").addEventListener("click",closeInlineImageDialog);
+    $("#inline-image-dialog").addEventListener("cancel",()=>closeInlineImageDialog());
+    $("#post-content").addEventListener("dblclick",(event)=>{
+      const image=event.target instanceof Element?event.target.closest("figure img"):null;
+      const figure=image?.closest("figure");
+      if(figure&&$("#post-content").contains(figure))openInlineImageDialog(null,figure);
+    });
     ["#post-title","#post-slug","#post-excerpt","#post-seo-title","#post-meta-description","#post-focus-keyword","#post-hero-alt","#post-canonical"]
       .forEach((selector)=>$(selector).addEventListener("input",updateSeo));
     $("#post-title").addEventListener("input",()=>{if(!$("#post-slug").value)$("#post-slug").value=slugSuggestion($("#post-title").value);});
