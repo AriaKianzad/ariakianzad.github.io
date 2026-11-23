@@ -139,7 +139,7 @@
     const title=document.createElement("a");title.className="post-row-title";title.href="#";title.textContent=post.title||"بدون عنوان";
     title.addEventListener("click",(event)=>{event.preventDefault();void editPost(post.id);});
     const sub=document.createElement("div");sub.className="post-row-sub";
-    [post.category||"بدون دسته‌بندی",dateLabel(post.updated_at)," / "+(post.slug||"بدون نامک")].forEach((value)=>{const span=document.createElement("span");span.textContent=value;sub.appendChild(span);});
+    [postCategorySlugs(post).map((slug)=>getConfiguredCategories(state.settings).find((item)=>item.slug===slug)?.name||slug).join("، ")||"بدون دسته‌بندی",dateLabel(post.updated_at)," / "+(post.slug||"بدون نامک")].forEach((value)=>{const span=document.createElement("span");span.textContent=value;sub.appendChild(span);});
     main.append(title,sub);
     const actions=document.createElement("div");actions.className="post-row-actions";
     actions.appendChild(statusBadge(post));
@@ -168,7 +168,7 @@
     const needle=($("#posts-search").value||"").trim().toLocaleLowerCase();
     const filter=$("#posts-filter").value;
     const posts=state.posts.filter((post)=>(filter==="all"||post.status===filter)&&
-      (!needle||[post.title,post.slug,post.category].join(" ").toLocaleLowerCase().includes(needle)));
+      (!needle||[post.title,post.slug,...postCategorySlugs(post)].join(" ").toLocaleLowerCase().includes(needle)));
     const grid=$("#posts-grid");grid.replaceChildren();
     posts.forEach((post)=>grid.appendChild(createPostRow(post)));
     $("#posts-empty").hidden=posts.length>0;
