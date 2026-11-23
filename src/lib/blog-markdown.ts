@@ -29,9 +29,12 @@ function parseImageLine(line:string):MarkdownImage|null{
 }
 export function extractMarkdownImageUrls(markdown:string):string[]{
   const urls:string[]=[];
+  const add=(url:string)=>{const safe=allowedUrl(url.replace(/&amp;/g,"&"));if(safe!="#"&&!urls.includes(safe))urls.push(safe);};
   for(const line of markdown.replace(/\r\n/g,"\n").split("\n")){
     const image=parseImageLine(line);
-    if(image&&!urls.includes(image.url))urls.push(image.url);
+    if(image)add(image.url);
+    const inlineImages=line.matchAll(/!\[[^\]]*\]\((https?:\/\/[^)\s]+|\/[^)\s]+)(?:\s+"[^"]*")?\)/g);
+    for(const match of inlineImages)add(match[1]);
   }
   return urls;
 }
