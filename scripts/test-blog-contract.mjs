@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { Script } from "node:vm";
+import { Script, runInNewContext } from "node:vm";
 
 const read = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
 const [
@@ -48,6 +48,50 @@ const [
 const categorySeoMigration = await read("supabase/migrations/20261123130000_add_category_level_seo.sql");
 const categoryTaxonomyMigration = await read("supabase/migrations/20261123200000_add_blog_category_taxonomy_and_advanced_seo.sql");
 const copyLinkButton = await read("src/app/blog/CopyLinkButton.tsx");
+const blogCopyScript = await read("public/blog-copy.js");
+new Script(blogCopyScript, { filename: "public/blog-copy.js" });
+
+const copyHandlers = {};
+let copiedUrl = "";
+const copyFeedback = { hidden: true, textContent: "", classList: { toggle() {} } };
+const manualPanel = { hidden: true };
+const copyWrapper = {
+  querySelector(selector) {
+    if (selector === "[data-copy-feedback]") return copyFeedback;
+    if (selector === "[data-copy-manual-wrap]") return manualPanel;
+    return null;
+  },
+};
+const copyButton = {
+  disabled: false,
+  dataset: {},
+  closest(selector) {
+    return selector === ".blog-share-copy-wrap" ? copyWrapper : null;
+  },
+  getAttribute(name) {
+    return name === "data-copy-url" ? "https://ariakianzad.github.io/blog/copy-test/" : null;
+  },
+  setAttribute() {},
+  removeAttribute() {},
+};
+const copyDocument = {
+  addEventListener(type, handler) {
+    copyHandlers[type] = handler;
+  },
+};
+runInNewContext(blogCopyScript, {
+  document: copyDocument,
+  navigator: { clipboard: { writeText: async (value) => { copiedUrl = value; } } },
+  window: { isSecureContext: true, setTimeout: () => 1, clearTimeout() {} },
+});
+assert.equal(typeof copyHandlers.click, "function", "static copy script must register a document-level click handler");
+await copyHandlers.click({
+  target: { closest: (selector) => selector === "[data-copy-link]" ? copyButton : null },
+  preventDefault() {},
+});
+assert.equal(copiedUrl, "https://ariakianzad.github.io/blog/copy-test/", "copy click must send the canonical article URL to the clipboard");
+assert.equal(copyFeedback.textContent, "لینک کپی شد", "successful copy must show the Persian success toast");
+assert.equal(copyFeedback.hidden, false, "successful copy toast must become visible");
 const analyticsConsent = await read("public/analytics-consent.js");
 const notFoundContent = await read("src/app/NotFoundContent.tsx");
 const notFoundCss = await read("src/app/not-found.css");
@@ -118,7 +162,7 @@ const previewEnd=adminApp.indexOf("function inlineToMarkdown",previewStart);
 const previewRenderer=adminApp.slice(previewStart,previewEnd);
 assert.ok(previewRenderer.includes("for(let index=0;") && !previewRenderer.includes("return;") && previewRenderer.includes("continue;"), "full article preview must continue rendering after headings, blank lines, quotes and lists");
 assert.ok(markdownSource.includes("parseImageLine") && markdownSource.includes("extractMarkdownImageUrls") && markdownSource.includes('class="blog-inline-image"') && markdownSource.includes("<figcaption>"), "public Markdown renderer must support semantic inline figures and expose them to article metadata");
-assert.ok(copyLinkButton.includes("navigator.clipboard") && copyLinkButton.includes("blog-share-copy"), "article copy-link control must copy the canonical URL with a visible state");
+assert.ok(copyLinkButton.includes("data-copy-link") && copyLinkButton.includes("data-copy-url") && blogCopyScript.includes("navigator.clipboard.writeText") && blogCopyScript.includes("لینک کپی شد"), "article copy-link button must delegate clipboard behavior and visible feedback to the standalone static script");
 assert.ok(articlePage.includes("CopyLinkButton") && articlePage.includes("<CopyLinkButton url={canonical} />"), "article share section must render the copy-link control");
 assert.ok(articlePage.includes("blog-article-header-grid") && articlePage.includes("blog-article-copy" ) && articlePage.includes("extractMarkdownImageUrls"), "article page must use a two-column editorial hero and include body images in article metadata");
 const lastFeaturedImageRule = [...blogCss.matchAll(/\.blog-hero-image img\s*\{([^}]*)\}/g)].at(-1)?.[1] || "";
@@ -209,7 +253,9 @@ assert.ok(categoryPage.includes("settings.noindex_empty_categories") && category
 assert.ok(sitemap.includes("settings.sitemap_include_categories") && sitemap.includes("settings.sitemap_include_articles") && sitemap.includes("category.count === 0"), "sitemap must respect global inclusion rules and empty-category noindex");
 assert.ok(articlePage.includes("settings.schema_type") && articlePage.includes("settings.open_graph_enabled") && articlePage.includes("settings.twitter_card_type") && articlePage.includes("settings.breadcrumbs_enabled") && articlePage.includes("robotsIndex"), "article pages must apply global schema, social, breadcrumb and robots defaults");
 assert.ok(!articlePage.includes("mailto:") && !articlePage.includes(">ایمیل"), "article share row must not expose an email action");
-assert.ok(copyLinkButton.includes("navigator.clipboard?.writeText") && copyLinkButton.includes("document.execCommand(\"copy\")") && copyLinkButton.includes("setManualCopy(true)") && copyLinkButton.includes("onCopy={() => showFeedback(\"copied\")}") && copyLinkButton.includes("blog-copy-toast") && copyLinkButton.includes("role=\"status\""), "copy-link control must confirm success and keep a usable manual-copy fallback");
+assert.ok(!copyLinkButton.includes("\"use client\"") && copyLinkButton.includes("data-copy-link") && copyLinkButton.includes("data-copy-url") && copyLinkButton.includes("data-copy-feedback"), "copy-link markup must be a static server-rendered control, not a React hydration component");
+assert.ok(blogCopyScript.includes('document.addEventListener("click"') && blogCopyScript.includes("navigator.clipboard.writeText") && blogCopyScript.includes('document.execCommand("copy")') && blogCopyScript.includes("showManualCopy") && blogCopyScript.includes("لینک کپی شد"), "standalone copy script must handle click, clipboard, fallback and success feedback");
+assert.ok(rootLayout.includes('<script src="/blog-copy.js" defer />') && blogCss.includes(".blog-share-copy-wrap [hidden]"), "static copy script must load under the same-origin CSP and keep inactive feedback hidden");
 assert.ok(adminApp.includes("function clipboardHeadingLevel") && adminApp.includes("font-size") && adminApp.includes("largest>=30") && adminApp.includes('tag==="h1"?2'), "Google Docs styled headings must be preserved and heading levels serialized without shifting");
 assert.ok(markdownSource.includes("setext=lines[index+1].trim().match") && markdownSource.includes('class="blog-inline-image"'), "public Markdown renderer must preserve Setext headings and semantic images");
 assert.ok(adminApp.includes("const setext=lines[index+1].trim().match") && adminApp.includes("renderPreviewMarkdown"), "CMS preview must render Setext and ATX heading structures");

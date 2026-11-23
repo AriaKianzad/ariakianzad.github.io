@@ -1013,6 +1013,7 @@ body:has(.blog-theme) > main#main { display:contents; }
 .blog-prose h2:first-child,.blog-prose h3:first-child,.blog-prose h4:first-child { margin-top:0; }
 .blog-prose h2,.blog-prose h3,.blog-prose h4 { scroll-margin-top:40px; text-wrap:pretty; }
 .blog-share-copy-wrap { position:relative; display:inline-flex; flex-direction:column; align-items:flex-start; gap:7px; }
+.blog-share-copy-wrap [hidden] { display:none !important; }
 .blog-copy-toast {
   position:absolute;
   z-index:4;
