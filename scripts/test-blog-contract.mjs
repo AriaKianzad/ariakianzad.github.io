@@ -111,7 +111,7 @@ assert.ok(previewRenderer.includes("for(let index=0;") && !previewRenderer.inclu
 assert.ok(markdownSource.includes("parseImageLine") && markdownSource.includes("extractMarkdownImageUrls") && markdownSource.includes('class="blog-inline-image"') && markdownSource.includes("<figcaption>"), "public Markdown renderer must support semantic inline figures and expose them to article metadata");
 assert.ok(copyLinkButton.includes("navigator.clipboard") && copyLinkButton.includes("blog-share-copy"), "article copy-link control must copy the canonical URL with a visible state");
 assert.ok(articlePage.includes("CopyLinkButton") && articlePage.includes("<CopyLinkButton url={canonical} />"), "article share section must render the copy-link control");
-assert.ok(articlePage.includes("blog-article-header-grid") && articlePage.includes("blog-article-copy") && articlePage.includes("extractMarkdownImageUrls"), "article page must use a two-column editorial hero and include body images in article metadata");
+assert.ok(articlePage.includes("blog-article-header-grid") && articlePage.includes("blog-article-copy" ) && articlePage.includes("extractMarkdownImageUrls"), "article page must use a two-column editorial hero and include body images in article metadata");
 assert.ok(blogCss.includes("object-fit:contain") && blogCss.includes(".blog-inline-image>img") && blogCss.includes(".blog-article-header-grid"), "public article images must remain uncropped and use the editorial hero layout");
 
 assert.ok(adminApp.includes("previewInline"), "Markdown preview must use an escaped renderer");
