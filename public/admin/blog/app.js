@@ -66,7 +66,7 @@
       $("#login-email").value=credential.id||"";
       $("#login-password").value=credential.password;
       $("#remember-me").checked=true;
-      await finishSignIn(credential.id,credential.password,false,true);
+      await finishSignIn(credential.id,credential.password,true,true);
     }catch(error){
       state.accessToken="";state.refreshToken="";
       $("#login-password").value="";
