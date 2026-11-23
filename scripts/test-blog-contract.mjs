@@ -30,6 +30,7 @@ const [
   read("src/app/robots.ts"),
 ]);
 
+const categorySeoMigration = await read("supabase/migrations/20261123130000_add_category_level_seo.sql");
 const scripts = JSON.parse(packageJson).scripts;
 assert.ok(scripts.prebuild.includes("fetch-blog-content.mjs"), "prebuild must fetch the public blog payload");
 assert.ok(scripts.prebuild.includes("generate-blog-og.mjs"), "prebuild must generate social images");
@@ -51,6 +52,7 @@ assert.ok(articlePage.includes("canonical") && articlePage.includes("robots_inde
 assert.ok(articlePage.includes("openGraph:") && articlePage.includes("twitter:"), "article metadata must include OG and X cards");
 assert.ok(articlePage.includes("extractToc"), "articles must support a table of contents");
 assert.ok(categoryPage.includes("generateStaticParams"), "category archives must be static pages");
+assert.ok(categoryPage.includes("settings.category_seo") && categoryPage.includes("meta_description"), "category archives must support separate metadata per category");
 assert.ok(categoryPage.includes('{ category: "__empty__" }') && categoryPage.includes("robots:{index:false,follow:false}"), "empty category fallback must remain noindex");
 assert.ok(rssRoute.includes("application/rss+xml"), "the blog must publish an RSS feed");
 assert.ok(sitemap.includes("getBlogPosts()") && sitemap.includes("/blog/"), "sitemap must include published articles and blog archive");
@@ -68,10 +70,12 @@ assert.ok(adminHtml.includes('id="login-email"') && adminHtml.includes('id="logi
 assert.ok(adminHtml.includes('id="login-form"') && !/sign.?up|register|create account/i.test(adminHtml), "CMS must not expose public registration");
 assert.ok(adminHtml.includes('name="robots" content="noindex, nofollow, noarchive"'), "CMS admin must be noindex");
 assert.ok(adminHtml.includes("Content-Security-Policy"), "CMS admin must have a restrictive CSP");
-for (const id of ["post-seo-title","post-meta-description","post-focus-keyword","post-canonical","post-robots-index","post-robots-follow","seo-checks","post-faqs","hero-image-file","og-image-file","setting-og-file"]) {
+for (const id of ["post-seo-title","post-meta-description","post-focus-keyword","post-canonical","post-robots-index","seo-checks","post-faqs","hero-image-file","og-image-file","setting-og-file","remember-me","category-seo-list"]) {
   assert.ok(adminHtml.includes('id="' + id + '"'), "CMS editor is missing control #" + id);
 }
 assert.ok(adminHtml.includes("setting-heading-scale") && adminHtml.includes("setting-line-height"), "CMS settings must expose typography controls");
+assert.ok(adminHtml.includes('data-value="H4"'), "CMS formatting toolbar must support H4");
+assert.ok(!adminHtml.includes('id="post-robots-follow"'), "article editor must not expose a global link-follow checkbox");
 
 assert.ok(adminApp.includes("/auth/v1/token?grant_type=password"), "CMS must use Supabase email/password authentication");
 assert.ok(adminApp.includes("/functions/v1/blog-admin"), "privileged CMS actions must use the Edge Function");
@@ -79,6 +83,9 @@ assert.ok(adminApp.includes("createImageBitmap(file)") && adminApp.includes('can
 assert.ok(adminApp.includes("3*1024*1024"), "CMS must cap compressed image uploads");
 assert.ok(adminApp.includes("previewInline"), "Markdown preview must use an escaped renderer");
 assert.ok(!/localStorage|sessionStorage/.test(adminApp), "CMS session tokens must not be persisted in Web Storage");
+assert.ok(adminApp.includes("PasswordCredential") && adminApp.includes("navigator.credentials.get") && adminApp.includes("preventSilentAccess"), "remember-me must rely on browser-managed credentials, not client-side token storage");
+assert.ok(adminApp.includes("updateFormatToolbar") && adminApp.includes("getSelectedBlockquote") && adminApp.includes("unwrapBlockquote"), "format toolbar must reflect selection state and allow unwrapping blockquotes");
+assert.ok(adminApp.includes("category_seo:collectCategorySeo") && adminApp.includes("renderCategorySeoEditor"), "CMS must edit and persist per-category SEO settings");
 assert.ok(!/sb_secret_|service_role|GITHUB_WORKFLOW_TOKEN|ghp_/.test(adminApp), "privileged credentials must never enter the browser bundle");
 assert.equal((adminApp.match(/function showView\(name\)/g) || []).length, 1, "CMS script must have one view switcher");
 
@@ -94,6 +101,7 @@ for (const invariant of [
 assert.ok(publicRpcMigration.includes("security invoker"), "public RPC wrapper must use SECURITY INVOKER");
 assert.ok(browserDenyMigration.includes("revoke all on table public.blog_posts from anon, authenticated"), "browser roles must not read draft tables");
 assert.ok(snapshotMigration.includes("p.published_snapshot") && snapshotMigration.includes("p.status = 'published'"), "the public RPC must only expose published snapshots");
+assert.ok(categorySeoMigration.includes("category_seo jsonb") && categorySeoMigration.includes("security invoker"), "category SEO must be exposed through a restricted public payload");
 assert.ok(workflow.includes("npm run test:blog"), "CI must run the blog CMS contract");
 
 const siteChrome = await read("src/components/SiteChrome.tsx");
@@ -106,5 +114,10 @@ assert.ok(markdownSource.includes("<table>") && markdownSource.includes("<u>"), 
 assert.ok(siteChrome.includes("usePathname") && siteChrome.includes("isBlog"), "blog routes must not inherit the portfolio chrome");
 assert.ok(listingPage.includes('settings.tagline || "یادداشت‌هایی درباره برند، معنا و ارتباط"'), "blog archive H1 must use the descriptive tagline");
 assert.ok(blogCss.includes("body:has(.blog-theme)") && blogCss.includes("font-family:var(--font-estedad)"), "blog pages must keep their own shell and Estedad typography");
+assert.ok(blogCss.includes(".blog-toc{display:none}") && blogCss.includes("height:clamp(112px,31vw,160px)"), "mobile article reading must hide secondary TOC and compact the featured image");
+assert.ok(blogCss.includes("direction:rtl; text-align:right") && blogCss.includes(".blog-socials"), "blog footer must use RTL alignment and social icon links");
+assert.ok(articlePage.indexOf("<h1>{post.title}</h1>") < articlePage.indexOf("<figure className=\"blog-hero-image\">"), "featured image must follow the article title");
+assert.ok(publicHeader.includes("SocialIcon") && !publicHeader.includes("mailto:") && !publicHeader.includes("/#about"), "blog footer must remove email/about links and include social icons");
 
-console.log("Personal blog contract passed: secure CMS, rich paste, per-link SEO, isolated blog shell and SEO-ready static publishing.");
+assert.ok(adminHtml.includes("مرا به خاطر بسپار") && !/EDITORIAL OVERVIEW|RECENT WORK|CONTENT LIBRARY|PRIVATE WORKSPACE|MAIN WEBSITE/.test(adminHtml), "CMS visible labels must be Persian and offer a remember-me option");
+console.log("Personal blog contract passed: secure CMS, rich paste, category SEO, accessible formatting, responsive reading and isolated Persian editorial chrome.");
