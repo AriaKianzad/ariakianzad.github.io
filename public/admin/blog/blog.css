@@ -98,3 +98,37 @@ body, body * { font-family: Estedad, Tahoma, sans-serif !important; }
   .link-manager-row { grid-template-columns:minmax(0,1fr); }
   .link-manager-controls { grid-template-columns:auto minmax(0,1fr); }
 }
+
+
+/* Remember-me control and browser credential guidance. */
+.remember-option { display:flex; align-items:center; gap:9px; margin:13px 0 3px; color:var(--ink); font-size:11px; cursor:pointer; }
+.remember-option input { width:17px; height:17px; min-height:17px; margin:0; accent-color:var(--accent); }
+.remember-note { margin:0 0 14px; color:var(--muted); font-size:9px; line-height:1.9; }
+
+/* Formatting controls expose selection state, not only hover state. */
+.format-tools button { min-height:36px; min-width:42px; padding-inline:10px; }
+.format-tools button.is-active,
+.format-tools button[aria-pressed="true"] { border-color:var(--accent); background:var(--ink); color:#fff; box-shadow:0 0 0 2px rgba(168,111,84,.14); }
+.format-tools button:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+
+/* Category-level SEO is grouped by category, with fields kept together. */
+.settings-category-seo { grid-column:1/-1; }
+.category-seo-list { display:grid; gap:14px; }
+.category-seo-card { padding:16px; border:1px solid var(--line); background:#fffefa; }
+.category-seo-heading { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding-bottom:11px; border-bottom:1px solid var(--line); }
+.category-seo-heading strong { font-size:13px; }
+.category-seo-heading small { color:var(--muted); font:10px ui-monospace,monospace; }
+.category-seo-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 14px; padding-top:10px; }
+.category-seo-fields .field-label { margin:0; }
+.category-seo-fields textarea { width:100%; min-height:62px; padding:8px 10px; border:1px solid var(--line); background:#fff; font:inherit; resize:vertical; }
+.category-seo-fields input { width:100%; min-height:40px; padding:8px 10px; border:1px solid var(--line); background:#fff; font:inherit; }
+.category-seo-card .check-row { margin-top:8px; }
+.kicker { direction:rtl; letter-spacing:0; text-transform:none; font-family:Estedad,Tahoma,sans-serif; font-size:10px; }
+.login-footer { direction:rtl; }
+.login-footer span { font-family:Estedad,Tahoma,sans-serif; letter-spacing:0; }
+.workspace-footer { direction:rtl; font:10px/1.8 Estedad,Tahoma,sans-serif; letter-spacing:0; }
+@media(max-width:700px) {
+  .category-seo-fields { grid-template-columns:minmax(0,1fr); }
+  .category-seo-card { padding:12px; }
+  .remember-note { max-width:34ch; }
+}
