@@ -9,7 +9,7 @@ export type BlogCategorySeo={
 export type BlogFaq={question:string;answer:string};
 export type BlogPost={
   id:string;slug:string;title:string;excerpt:string;content:string;language:"fa"|"en";
-  category:string;tags:string[];hero_image_url?:string|null;hero_image_alt:string;hero_image_caption:string;
+  category:string;categories?:string[];primary_category?:string;tags:string[];hero_image_url?:string|null;hero_image_alt:string;hero_image_caption:string;
   og_image_url?:string|null;seo_title:string;meta_description:string;focus_keyword:string;
   canonical_url:string;og_title:string;og_description:string;robots_index:boolean;robots_follow:boolean;
   featured:boolean;toc_enabled:boolean;drop_cap:boolean;content_width:"reading"|"wide";accent_color:string;
@@ -68,9 +68,22 @@ export function getBlogCategoryName(slug:string){
   if(category)return category.name;
   return slug.replace(/-/g," ");
 }
+export function getPostCategorySlugs(post:BlogPost){
+  const values=Array.isArray(post.categories)&&post.categories.length
+    ? post.categories
+    : [post.primary_category||post.category||""];
+  return [...new Set(values.map((value)=>String(value||"").trim()).filter(Boolean))].slice(0,3);
+}
+export function getPrimaryCategorySlug(post:BlogPost){
+  const selected=getPostCategorySlugs(post);
+  const preferred=post.primary_category||post.category||"";
+  return selected.includes(preferred)?preferred:(selected[0]||"");
+}
 export function getBlogCategories(){
   const posts=getBlogPosts(),settings=getBlogSettings(),counts=new Map<string,number>();
-  for(const post of posts){const slug=(post.category||"").trim();if(slug)counts.set(slug,(counts.get(slug)||0)+1);}
+  for(const post of posts){
+    for(const slug of getPostCategorySlugs(post))counts.set(slug,(counts.get(slug)||0)+1);
+  }
   const configured=settings.categories||[];
   const seen=new Set<string>();
   const result: {slug:string;name:string;count:number}[]=[];
@@ -85,7 +98,7 @@ export function getBlogCategories(){
   }
   return result.sort((a,b)=>a.name.localeCompare(b.name,"fa"));
 }
-export const getPostsByCategory=(slug:string)=>getBlogPosts().filter((post)=>post.category===slug);
+export const getPostsByCategory=(slug:string)=>getBlogPosts().filter((post)=>getPostCategorySlugs(post).includes(slug));
 export function readingTime(content:string,language:"fa"|"en"="fa"){
   const words=content.trim().split(/\s+/).filter(Boolean).length;
   return Math.max(1,Math.ceil(words/(language==="fa"?180:220)));
