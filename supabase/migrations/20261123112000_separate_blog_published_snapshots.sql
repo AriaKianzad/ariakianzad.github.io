@@ -23,7 +23,7 @@ as $function$
           'default_language', s.default_language, 'heading_scale', s.heading_scale,
           'body_line_height', s.body_line_height, 'intro_title', s.intro_title, 'intro_body', s.intro_body,
           'default_meta_title', s.default_meta_title, 'default_meta_description', s.default_meta_description,
-          'default_og_image', s.default_og_image, 'footer_note', s.footer_note
+          'default_og_image', s.default_og_image, 'footer_note', s.footer_note, 'category_seo', s.category_seo
         ) from public.blog_settings s where s.id = 1
       ), '{}'::jsonb
     ),
