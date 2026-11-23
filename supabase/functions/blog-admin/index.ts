@@ -422,6 +422,21 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
     const widths = ["reading", "wide"];
     const languages = ["fa", "en"];
     const defaultOg = mediaUrl(input.default_og_image);
+    const categories = categoriesValue(input.categories);
+    const { data: currentSettings, error: currentSettingsError } = await client.from("blog_settings")
+      .select("categories").eq("id", 1).maybeSingle();
+    if (currentSettingsError) throw new Error("دریافت دسته‌بندی‌های فعلی ناموفق بود.");
+    const nextSlugs = new Set(categories.map((item) => item.slug));
+    const previousCategories = Array.isArray(currentSettings?.categories) ? currentSettings.categories : [];
+    const removedSlugs = previousCategories
+      .map((item: Record<string, unknown>) => typeof item.slug === "string" ? item.slug : "")
+      .filter((slug: string) => slug && !nextSlugs.has(slug));
+    if (removedSlugs.length) {
+      const { data: usedPosts, error: usedPostsError } = await client.from("blog_posts")
+        .select("category").in("category", removedSlugs).limit(1);
+      if (usedPostsError) throw new Error("بررسی وابستگی مقاله‌ها به دسته‌بندی‌ها ناموفق بود.");
+      if (usedPosts?.length) throw new Error("این دسته‌بندی هنوز به یک یا چند مقاله وصله. ابتدا مقاله‌ها رو به دسته‌بندی دیگه منتقل کن.");
+    }
     const settings = {
       id: 1,
       title: textValue(input.title, 100, "عنوان بلاگ", true),
@@ -450,7 +465,20 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
       default_meta_description: textValue(input.default_meta_description, 320, "توضیحات متای پیش‌فرض"),
       default_og_image: defaultOg || "",
       footer_note: textValue(input.footer_note, 200, "متن پابرگ"),
+      categories,
       category_seo: categorySeoValue(input.category_seo),
+      default_og_title: textValue(input.default_og_title, 100, "عنوان پیش‌فرض شبکه‌های اجتماعی"),
+      default_og_description: textValue(input.default_og_description, 300, "توضیحات پیش‌فرض شبکه‌های اجتماعی"),
+      default_robots_index: input.default_robots_index !== false,
+      default_robots_follow: input.default_robots_follow !== false,
+      noindex_empty_categories: input.noindex_empty_categories !== false,
+      sitemap_include_categories: input.sitemap_include_categories !== false,
+      sitemap_include_articles: input.sitemap_include_articles !== false,
+      schema_type: input.schema_type === "BlogPosting" ? "BlogPosting" : "Article",
+      breadcrumbs_enabled: input.breadcrumbs_enabled !== false,
+      breadcrumb_home_label: textValue(input.breadcrumb_home_label, 40, "عنوان خانه در مسیر راهنما") || "خانه",
+      open_graph_enabled: input.open_graph_enabled !== false,
+      twitter_card_type: input.twitter_card_type === "summary" ? "summary" : "summary_large_image",
       updated_at: new Date().toISOString(),
     };
     const { data, error } = await client.from("blog_settings")
