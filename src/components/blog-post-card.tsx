@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { BlogPost } from "@/lib/blog-content";
 import { formatBlogDate, readingTime } from "@/lib/blog-content";
 
-export function BlogPostCard({ post, featured = false }: { post: BlogPost; featured?: boolean }) {
+export function BlogPostCard({ post, featured = false, showReadingTime = true }: { post: BlogPost; featured?: boolean; showReadingTime?: boolean }) {
   return (
     <article className={"blog-post-card" + (featured ? " blog-post-card-featured" : "")}>
       <Link className="blog-card-image" href={"/blog/" + post.slug + "/"} aria-label={post.title}>
@@ -18,7 +18,7 @@ export function BlogPostCard({ post, featured = false }: { post: BlogPost; featu
         <h2><Link href={"/blog/" + post.slug + "/"}>{post.title}</Link></h2>
         {post.excerpt && <p>{post.excerpt}</p>}
         <div className="blog-card-bottom">
-          <span>{readingTime(post.content, post.language)} دقیقه مطالعه</span>
+          {showReadingTime && <span>{readingTime(post.content, post.language)} دقیقه مطالعه</span>}
           <Link href={"/blog/" + post.slug + "/"} aria-label={"خواندن " + post.title}>مطالعۀ مقاله <span aria-hidden="true">↗</span></Link>
         </div>
       </div>
