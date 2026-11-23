@@ -56,8 +56,9 @@
     if(remember&&!quiet)credentialSaved=await saveBrowserCredential();
     else if(!remember&&navigator.credentials?.preventSilentAccess)await navigator.credentials.preventSilentAccess().catch(()=>{});
     showApp();showView("overview");
-    if(remember&&!quiet&&!credentialSaved&&window.PasswordCredential){
-      toast("ورود انجام شد. برای ذخیرۀ رمز، پیشنهاد مرورگر رو تأیید کن یا رمز رو در مدیر گذرواژه ذخیره کن.",false);
+    if(remember&&!quiet){
+      if(credentialSaved)toast("اطلاعات ورود به مدیر گذرواژۀ مرورگر سپرده شد.",false);
+      else toast("ذخیرۀ مستقیم در این مرورگر در دسترس نبود. اگر مرورگر پیشنهاد ذخیرۀ رمز داد، تأییدش کن؛ در غیر این صورت از تکمیل خودکار رمز مرورگر استفاده کن.",false);
     }
   }
   async function restoreRememberedCredential() {
