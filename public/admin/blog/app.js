@@ -393,7 +393,7 @@
       const caption=escapeAttribute(element.querySelector("figcaption")?.textContent||"");
       return "!["+alt+"]("+src+(title?' "'+title+'"':"")+")"+(caption?' {caption="'+caption+'"}':"")+"\n\n";
     }
-    if(tag==="h2"||tag==="h3"||tag==="h4")return "#".repeat(Number(tag.slice(1)))+" "+Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
+    if(/^h[1-6]$/.test(tag))return "#".repeat(Math.min(4,Math.max(2,Number(tag.slice(1))+(tag==="h1"?1:0))))+" "+Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
     if(tag==="p")return Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
     if(tag==="ul"||tag==="ol")return listToMarkdown(element,0)+"\n\n";
     if(tag==="blockquote"){
