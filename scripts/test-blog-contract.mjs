@@ -7,6 +7,7 @@ const [
   listingPage, articlePage, categoryPage, rssRoute, blogCss, adminHtml,
   adminApp, adminEdge, publicRpcMigration, browserDenyMigration, snapshotMigration,
   publicHeader, workflow, sitemap, robots, heroVisualComponent, signalScene, heroBootstrap,
+  blogLayout, contactPage, contactForm, contactEdge, contactMigration, rootLayout, configToml,
 ] = await Promise.all([
   read("package.json"),
   read("scripts/fetch-blog-content.mjs"),
@@ -31,6 +32,13 @@ const [
   read("src/components/hero-visual.tsx"),
   read("src/client/signal-scene.ts"),
   read("src/client/hero-visual.ts"),
+  read("src/app/blog/layout.tsx"),
+  read("src/app/blog/contact/page.tsx"),
+  read("src/app/blog/contact/ContactForm.tsx"),
+  read("supabase/functions/blog-contact/index.ts"),
+  read("supabase/migrations/20261123170000_add_blog_contact_rate_limit.sql"),
+  read("src/app/layout.tsx"),
+  read("supabase/config.toml"),
 ]);
 
 const categorySeoMigration = await read("supabase/migrations/20261123130000_add_category_level_seo.sql");
@@ -124,6 +132,16 @@ assert.ok(heroVisualComponent.includes("data-hero-visual") && signalScene.includ
 assert.ok(heroBootstrap.includes("MutationObserver") && heroBootstrap.includes("syncRoots"), "hero scene must initialize after client-side route changes");
 assert.ok(publicHeader.includes("<span>آریا کیانزاد</span>"), "blog header brand must show the author's name");
 assert.ok(blogCss.includes(".blog-theme .blog-header-blog-link {") && blogCss.includes('grid-template-areas:"visual copy"') && blogCss.includes("position:absolute;"), "blog header and hero must retain their desktop/mobile layout contracts");
+assert.ok(!listingPage.includes("blog-intro-description") && !listingPage.includes("با تمرکز بر رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن"), "blog hero must not repeat the long positioning description");
+assert.ok(blogLayout.includes("/blog-favicon.svg") && blogLayout.includes('themeColor: "#f4f1e9"'), "blog must use its own favicon and browser theme colour");
+assert.ok(contactPage.includes("BlogHeader") && contactPage.includes("BlogFooter") && contactPage.includes("ContactForm"), "contact page must use the blog editorial shell");
+assert.ok(contactForm.includes("advertorial") && contactForm.includes("sponsorship") && contactForm.includes("BLOG_CONTACT_ENDPOINT") && contactForm.includes("sb_publishable_"), "contact form must support advertorial and sponsorship inquiries through the public Edge endpoint");
+assert.ok(contactEdge.includes("RESEND_API_KEY") && contactEdge.includes("BLOG_CONTACT_FROM_EMAIL") && contactEdge.includes("BLOG_CONTACT_TO_EMAIL"), "contact Edge Function must use server-side mail secrets");
+assert.ok(contactEdge.includes("consume_blog_contact_rate_limit") && contactEdge.includes("companyFax") && contactEdge.includes("SITE_ORIGIN"), "contact endpoint must enforce origin, honeypot and rate limits");
+assert.ok(contactMigration.includes("private.blog_contact_rate_limits") && contactMigration.includes("SECURITY DEFINER") && contactMigration.includes("GRANT EXECUTE ON FUNCTION public.consume_blog_contact_rate_limit"), "contact rate limiting must use a private database function");
+assert.ok(signalScene.includes("new THREE.SphereGeometry(0.92, 88, 72)") && signalScene.includes("new THREE.WireframeGeometry(innerGeometry)") && signalScene.includes("new THREE.HemisphereLight"), "signal scene must render a lit sphere with a visible surface wireframe and depth lighting");
+assert.ok(rootLayout.includes("https://bkohdqwecnvbmeaiuyyx.supabase.co;"), "site CSP must allow contact form requests to Supabase");
+assert.ok(configToml.includes("[functions.blog-contact]") && configToml.includes("verify_jwt = false"), "contact Edge Function must have public JWT configuration");
 assert.ok(!articlePage.includes("ARTICLE / ARCHIVE") && !categoryPage.includes("CATEGORY / ARCHIVE"), "public blog screens must not expose English archive labels");
 assert.ok(!adminHtml.includes("Google Docs") && !adminHtml.includes("Open Graph") && !adminHtml.includes(">English<"), "CMS visible interface copy must be Persian");
 assert.ok(blogCss.includes("body:has(.blog-theme)") && blogCss.includes("font-family:var(--font-estedad)"), "blog pages must keep their own shell and Estedad typography");
