@@ -108,7 +108,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
 
         <header className="blog-article-header">
           <div className="blog-container blog-article-header-grid">
-            <div className="blog-article-copy">
+            <div className="blog-article-copy" dir={direction}>
               <div className="blog-eyebrow"><span /> {post.category || "یادداشت"}</div>
               <h1>{post.title}</h1>
               {post.excerpt ? <p className="blog-article-excerpt">{post.excerpt}</p> : null}
