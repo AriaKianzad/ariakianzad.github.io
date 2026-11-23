@@ -139,7 +139,7 @@ jobs:
           grep -Fq 'noindex, nofollow, noarchive' out/blog-admin/index.html
           grep -Fq '/blog-admin/' out/robots.txt
           grep -Fq '/blog/' out/sitemap.xml
-          grep -Fq 'BK' out/blog/index.html
+          grep -Fq 'AK' out/blog/index.html
           node --check public/blog-admin/app.js
           node --check public/blog-ui.js
           node --check public/blog-admin/config.js
