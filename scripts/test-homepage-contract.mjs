@@ -199,7 +199,7 @@ assert.ok(socialGenerator.includes("mian-e-ma-cover-v2.webp") &&
 
 
 // Accessibility and consent controls stay out of the normal page flow.
-assert.ok(layout.includes('className="skip-link" href="#main"'), "keyboard skip navigation must remain available");
+assert.ok(siteChrome.includes('className="skip-link" href="#main"'), "keyboard skip navigation must remain available on portfolio routes");
 assert.ok(chrome.includes(".skip-link:focus-visible"), "skip navigation must appear when keyboard-focused");
 assert.ok(chrome.includes(".analytics-consent {\n  position: fixed;"), "analytics dialog must be viewport-fixed");
 assert.ok(chrome.includes(".analytics-preferences {\n  position: fixed;"), "analytics shortcut must be viewport-fixed");
