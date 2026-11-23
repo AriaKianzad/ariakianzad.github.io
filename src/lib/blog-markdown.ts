@@ -4,7 +4,7 @@ function esc(value:string){return value.replace(/[&<>"']/g,(c)=>({"&":"&amp;","<
 function allowedUrl(value:string){const v=value.trim();return /^(https?:\/\/|mailto:|\/|#)/i.test(v)&&!/^\/\//.test(v)?v:"#";}
 function inline(value:string){
   let s=esc(value);
-  s=s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>'<img src="'+esc(allowedUrl(url))+'" alt="'+alt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">');
+  s=s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>'<img src="'+esc(allowedUrl(url.replace(/&amp;/g,"&"))+'" alt="'+alt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">');
   s=s.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
     const href=allowedUrl(url),external=/^https?:\/\//i.test(href);
     const relation=(String(options||"").match(/rel=(follow|nofollow|sponsored|ugc)/i)||[])[1]||"follow";
@@ -48,8 +48,7 @@ export function renderMarkdown(markdown:string):string{
     if(!line.trim()){closeP();closeL();continue;}
     if(/^\s*\|?.+\|.+\|?\s*$/.test(line)&&index+1<lines.length&&/^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(lines[index+1])){
       closeP();closeL();
-      const headers=tableCells(line),rows:string[][];
-      rows=[];
+      const headers=tableCells(line);const rows:string[][]=[];
       index+=2;
       while(index<lines.length&&/^\s*\|?.+\|.+\|?\s*$/.test(lines[index])){rows.push(tableCells(lines[index]));index++;}
       index--;
