@@ -881,8 +881,13 @@ async function getArticleAnalyticsData(accessToken: string) {
     };
   });
 
+  const hasReportData = ga4Status === "ok" || gscStatus === "ok";
+  const hasReportError = ga4Status === "error" || gscStatus === "error" || gscStatus === "no_access";
+  const overallStatus = hasReportData
+    ? (ga4Status !== "ok" || gscStatus !== "ok" ? "partial" : "ok")
+    : hasReportError ? "error" : "no_data";
   return {
-    status: ga4Status === "ok" || gscStatus === "ok" ? "ok" : "error",
+    status: overallStatus,
     generatedAt: new Date().toISOString(),
     periods: {
       ga4: "۳۰ روز اخیر تا امروز؛ روز جاری ممکن است ناقص باشد",
