@@ -816,9 +816,11 @@ async function getArticleAnalyticsData(accessToken: string) {
           rowLimit: 25000,
         });
         const articlePageRows = report.rows || [];
+        let mappedArticlePageRows = 0;
         for (const row of articlePageRows) {
           const slug = blogSlugFromPath(String(row.keys?.[0] || ""));
           if (!slug) continue;
+          mappedArticlePageRows += 1;
           const clicks = Number(row.clicks || 0);
           const impressions = Number(row.impressions || 0);
           const position = Number(row.position || 0);
@@ -828,8 +830,8 @@ async function getArticleAnalyticsData(accessToken: string) {
           current.weightedPosition += position * impressions;
           gscMetrics.set(slug, current);
         }
-        gscStatus = articlePageRows.length ? "ok" : "no_data";
-        if (!articlePageRows.length) gscMessage = "در بازۀ گزارش‌شده، Search Console دادهٔ صفحه‌ای برای مقاله‌ها برنگردونده.";
+        gscStatus = mappedArticlePageRows ? "ok" : "no_data";
+        if (!mappedArticlePageRows) gscMessage = "در بازۀ گزارش‌شده، Search Console دادهٔ صفحه‌ای برای مقاله‌ها برنگردونده.";
       } catch (error) {
         gscStatus = "error";
         gscMessage = String(error instanceof Error ? error.message : error).slice(0, 240);
@@ -840,8 +842,7 @@ async function getArticleAnalyticsData(accessToken: string) {
     gscMessage = String(gscOverviewResult.reason?.message || gscOverviewResult.reason).slice(0, 240);
   }
 
-  const ga4HasRows = pageReportResult.status === "fulfilled" &&
-    (pageReportResult.value.rowCount ?? pageRows.length) > 0;
+  const ga4HasRows = pageReportResult.status === "fulfilled" && pageMetrics.size > 0;
   const ga4Status = pageReportResult.status === "rejected"
     ? "error"
     : ga4HasRows ? "ok" : "no_data";
@@ -850,7 +851,10 @@ async function getArticleAnalyticsData(accessToken: string) {
     : ga4HasRows ? "" : "در بازۀ گزارش‌شده، GA4 برای صفحه‌های مقاله ردیفی برنگردونده.";
   const sourcesStatus = sourceReportResult.status === "rejected"
     ? "error"
-    : sourceRows.length ? "ok" : "no_data";
+    : sourceMetrics.size ? "ok" : "no_data";
+  const articleLandingSessions = Array.from(sourceMetrics.values())
+    .flat()
+    .reduce((sum, source) => sum + source.sessions, 0);
   const articles = (publishedPosts || []).map((post) => {
     const page = pageMetrics.get(post.slug) || { pageViews: 0, users: 0, sessions: 0, engagedSessions: 0 };
     const search = gscMetrics.get(post.slug) || { clicks: 0, impressions: 0, weightedPosition: 0 };
@@ -903,7 +907,7 @@ async function getArticleAnalyticsData(accessToken: string) {
     ga4: { status: ga4Status, message: ga4Message },
     sources: {
       status: sourcesStatus,
-      articleLandingSessions: sourceRows.reduce((sum, row) => sum + Number(row.sessions || 0), 0),
+      articleLandingSessions,
     },
     searchConsole: { status: gscStatus, message: gscMessage },
     articleCount: articles.length,
