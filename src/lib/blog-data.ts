@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { getPostCategorySlugs, getPrimaryCategorySlug } from "./blog-category-utils";
+export { getPostCategorySlugs, getPrimaryCategorySlug } from "./blog-category-utils";
 
 export type BlogCategory={slug:string;name:string};
 export type BlogCategorySeo={
@@ -67,17 +69,6 @@ export function getBlogCategoryName(slug:string){
   const category=getBlogSettings().categories.find((item)=>item.slug===slug);
   if(category)return category.name;
   return slug.replace(/-/g," ");
-}
-export function getPostCategorySlugs(post:BlogPost){
-  const values=Array.isArray(post.categories)&&post.categories.length
-    ? post.categories
-    : [post.primary_category||post.category||""];
-  return [...new Set(values.map((value)=>String(value||"").trim()).filter(Boolean))].slice(0,3);
-}
-export function getPrimaryCategorySlug(post:BlogPost){
-  const selected=getPostCategorySlugs(post);
-  const preferred=post.primary_category||post.category||"";
-  return selected.includes(preferred)?preferred:(selected[0]||"");
 }
 export function getBlogCategories(){
   const posts=getBlogPosts(),settings=getBlogSettings(),counts=new Map<string,number>();
