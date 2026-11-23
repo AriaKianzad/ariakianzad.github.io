@@ -8,7 +8,10 @@ import { BlogPostCard } from "../../BlogListingClient";
 
 export const dynamicParams = false;
 export function generateStaticParams() {
-  return getBlogCategories().map((category) => ({ category: category.slug }));
+  const categories = getBlogCategories();
+  return categories.length
+    ? categories.map((category) => ({ category: category.slug }))
+    : [{ category: "__empty__" }];
 }
 export async function generateMetadata({params}:{params:Promise<{category:string}>}):Promise<Metadata>{
   const {category}=await params;

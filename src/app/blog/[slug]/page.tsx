@@ -11,7 +11,10 @@ import { BlogPostCard } from "../BlogListingClient";
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return getBlogPosts().map((post) => ({ slug: post.slug }));
+  const posts = getBlogPosts();
+  return posts.length
+    ? posts.map((post) => ({ slug: post.slug }))
+    : [{ slug: "__empty__" }];
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
