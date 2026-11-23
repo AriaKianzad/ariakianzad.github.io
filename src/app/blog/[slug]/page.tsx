@@ -136,8 +136,8 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
             ) : <div className="blog-article-visual-empty" aria-hidden="true" />}
             <div className="blog-article-meta">
               <span>آریا کیانزاد</span>
-              <time dateTime={post.published_at}>{new Intl.DateTimeFormat(language === "fa" ? "fa-IR" : "en-US", {year:"numeric",month:"long",day:"numeric",timeZone:language==="fa"?"Asia/Tehran":"UTC"}).format(new Date(post.published_at))}</time>
-              {settings.show_reading_time ? <span>{readingTime(post.content, post.language)} دقیقه مطالعه</span> : null}
+              <time dateTime={post.published_at} dir={direction}>{new Intl.DateTimeFormat(language === "fa" ? "fa-IR" : "en-US", {year:"numeric",month:"long",day:"numeric",timeZone:language==="fa"?"Asia/Tehran":"UTC"}).format(new Date(post.published_at))}</time>
+              {settings.show_reading_time ? <span className="blog-reading-time" dir={direction}><bdi>{readingTime(post.content, post.language).toLocaleString(language === "fa" ? "fa-IR" : "en-US")}</bdi> {language === "fa" ? "دقیقه مطالعه" : "min read"}</span> : null}
             </div>
           </div>
         </header>
