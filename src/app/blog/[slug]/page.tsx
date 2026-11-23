@@ -18,11 +18,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const post = getBlogPost(slug);
   if (!post) return {};
+  const settings = getBlogSettings();
   const canonical = post.canonical_url || site.url + "/blog/" + post.slug + "/";
   const image = site.url + "/og/blog/" + post.slug + ".jpg";
+  const description = post.meta_description || post.excerpt || settings.default_meta_description;
   return {
     title: post.seo_title || post.title,
-    description: post.meta_description || post.excerpt,
+    description,
     alternates: { canonical },
     robots: {
       index: post.robots_index, follow: post.robots_follow,
@@ -31,14 +33,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     openGraph: {
       type: "article", siteName: "Aria Kianzad", url: canonical,
       title: post.og_title || post.seo_title || post.title,
-      description: post.og_description || post.meta_description || post.excerpt,
+      description: post.og_description || description,
       publishedTime: post.published_at, modifiedTime: post.updated_at,
       locale: post.language === "fa" ? "fa_IR" : "en_US",
       images: [{ url: image, width: 1200, height: 630, alt: post.hero_image_alt || post.title }],
     },
     twitter: {
       card: "summary_large_image", title: post.og_title || post.title,
-      description: post.og_description || post.excerpt, images: [image],
+      description: post.og_description || description, images: [image],
     },
   };
 }

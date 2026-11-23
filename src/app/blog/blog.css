@@ -182,3 +182,11 @@
 }
 
 .cards-minimal .blog-card{background:transparent;border-color:transparent;box-shadow:none}.cards-minimal .blog-card-copy{padding-inline:8px}.cards-image-led .blog-card-image{aspect-ratio:5/4}.layout-minimal .blog-intro{padding-block:72px 48px}.layout-magazine .blog-card-grid{gap:24px}
+
+/* Theme and typography variants controlled by the editorial settings panel. */
+.blog-theme.theme-white{--blog-paper:#ffffff;--blog-surface:#ffffff;--blog-deep:#f2f3ef;--blog-line:#e2e5de}
+.blog-theme.theme-warm{--blog-paper:#eee5d6;--blog-surface:#f7f0e4;--blog-deep:#e3d8c5;--blog-line:#d7cbb8}
+.blog-theme.theme-paper{--blog-paper:#f4f1e9;--blog-surface:#fbf9f4;--blog-deep:#e9e5da}
+.blog-prose h2,.blog-section-heading h2,.blog-faq h2{font-size:calc(1.65em * var(--blog-heading-scale,1))}
+.blog-prose h3{font-size:calc(1.3em * var(--blog-heading-scale,1))}
+.blog-article-header h1,.blog-category-heading h1{font-size:calc(clamp(34px,5.5vw,64px) * var(--blog-heading-scale,1))}
