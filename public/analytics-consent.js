@@ -122,6 +122,15 @@
     if (!preferences.hidden) preferences.focus?.();
   }
 
+  // Blog pages intentionally keep their reading surface free of consent overlays.
+  // A previously granted choice still governs whether analytics may load.
+  if (/^\\/blog(?:\\/|$)/.test(window.location.pathname)) {
+    panel.hidden = true;
+    preferences.hidden = true;
+    if (getSavedChoice() === "granted") loadGoogleAnalytics();
+    return;
+  }
+
   accept.addEventListener("click", () => saveChoice("granted"));
   reject.addEventListener("click", () => saveChoice("denied"));
   preferences.addEventListener("click", () => {
