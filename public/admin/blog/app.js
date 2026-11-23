@@ -87,12 +87,6 @@
     }
     showLogin("از حساب خارج شدی.");
   }
-  function showView(name) {
-    document.querySelectorAll(".view").forEach((view)=>{view.hidden=view.id!=="view-"+name;view.classList.toggle("active",view.id==="view-"+name);});
-    document.querySelectorAll(".side-link").forEach((button)=>button.classList.toggle("active",button.dataset.view===name));
-    $("#workspace-title").textContent=viewTitles[name]||"مدیریت";
-    if(name==="posts")renderPosts();
-  }
   function dateLabel(value) {
     if(!value)return "—";
     return new Intl.DateTimeFormat("fa-IR",{year:"numeric",month:"short",day:"numeric"}).format(new Date(value));

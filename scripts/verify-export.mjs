@@ -174,9 +174,9 @@ for (const file of files) {
   } else if (/unsafe-inline|unsafe-eval/.test(cspContent)) {
     problems.push(rel + ": CSP meta must not allow unsafe-inline or unsafe-eval");
   }
-  if (rel === "admin/index.html" &&
+  if ((rel === "admin/index.html" || rel === "admin/blog/index.html") &&
       !/connect-src\s+[^;]*https:\/\/bkohdqwecnvbmeaiuyyx\.supabase\.co/i.test(cspContent || "")) {
-    problems.push("admin/index.html: CSP meta must allow the Supabase project endpoint");
+    problems.push(rel + ": CSP meta must allow the Supabase project endpoint");
   }
 
   for (const match of html.matchAll(/<script\b[^>]*>/g)) {
