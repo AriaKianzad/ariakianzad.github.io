@@ -99,7 +99,8 @@ assert.ok(adminApp.includes("/auth/v1/token?grant_type=password"), "CMS must use
 assert.ok(adminApp.includes("/functions/v1/blog-admin"), "privileged CMS actions must use the Edge Function");
 assert.ok(adminApp.includes("createImageBitmap(file)") && adminApp.includes('canvasBlob(canvas,"image/webp"'), "CMS must compress images to WebP");
 assert.ok(adminApp.includes("3*1024*1024"), "CMS must cap compressed image uploads");
-assert.ok(adminApp.includes("drawImage(bitmap,0,0,canvas.width,canvas.height)") && !/\.media-preview img[^}]*object-fit:\\s*cover/.test(adminCss), "CMS image compression and previews must preserve the original aspect ratio");
+const lastMediaPreviewRule = [...adminCss.matchAll(/\\.media-preview img\\s*\\{([^}]*)\\}/g)].at(-1)?.[1] || "";
+assert.ok(adminApp.includes("drawImage(bitmap,0,0,canvas.width,canvas.height)") && lastMediaPreviewRule.includes("object-fit:contain"), "CMS image compression and previews must preserve the original aspect ratio");
 assert.ok(adminHtml.includes('name="username"') && adminHtml.includes('name="password"') && adminHtml.includes('autocomplete="on"'), "login form must expose recognizable username/password autocomplete semantics");
 assert.ok(adminHtml.includes('id="insert-image"') && adminHtml.includes('id="inline-image-dialog"') && adminHtml.includes('id="inline-image-alt"') && adminHtml.includes('id="inline-image-title"') && adminHtml.includes('id="inline-image-caption"'), "CMS must provide inline image insertion with alt, title and caption fields");
 assert.ok(adminApp.includes("function saveInlineImage") && adminApp.includes("placeInlineImageFigure") && adminApp.includes("image.alt=alt") && adminApp.includes("image.title=title"), "inline image editor must upload, place and update accessible image metadata");
