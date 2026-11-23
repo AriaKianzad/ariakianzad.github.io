@@ -322,7 +322,11 @@
       if(!line.trim()){close();closeList();continue;}
       const image=renderPreviewFigure(line);
       if(image){close();closeList();output.push(image);continue;}
-      const heading=line.match(/^(#{1,4})\s+(.+)$/);
+      if(line.trim()&&index+1<lines.length){
+        const setext=lines[index+1].trim().match(/^(={3,}|-{3,})$/);
+        if(setext){close();closeList();const level=setext[1][0]==="="?2:3;output.push("<h"+level+">"+previewInline(line.trim())+"</h"+level+">");index++;continue;}
+      }
+      const heading=line.match(/^\s{0,3}(#{1,4})\s+(.+)$/);
       if(heading){close();closeList();const level=Math.max(2,heading[1].length);output.push("<h"+level+">"+previewInline(heading[2])+"</h"+level+">");continue;}
       const quote=line.match(/^>\s?(.*)$/);
       if(quote){close();closeList();output.push("<blockquote><p>"+previewInline(quote[1])+"</p></blockquote>");continue;}
