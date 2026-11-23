@@ -5,9 +5,9 @@
     .normalize("NFKC")
     .replace(/[يى]/g, "ی")
     .replace(/ك/g, "ک")
-    .replace(/[\\u064B-\\u065F\\u0670\\u0640]/g, "")
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
     .toLocaleLowerCase("fa")
-    .replace(/\\s+/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
 
   document.querySelectorAll("[data-blog-listing]").forEach((widget) => {
@@ -19,7 +19,7 @@
     const empty = widget.querySelector("[data-blog-empty]");
     const moreWrap = widget.querySelector("[data-blog-load-more]");
     const more = widget.querySelector("[data-load-more]");
-    if (!cards.length) return;
+    if (!cards.length) { if (empty) empty.hidden = false; if (results) results.textContent = "۰ نوشته"; return; }
 
     const pageSize = Math.max(1, Number(widget.dataset.pageSize) || 9);
     let activeCategory = "";
@@ -30,7 +30,7 @@
     const render = () => {
       const needle = normalize(search?.value);
       matches = cards.filter((card) => {
-        const categorySlugs = (card.dataset.categorySlugs || "").split(/\\s+/).filter(Boolean);
+        const categorySlugs = (card.dataset.categorySlugs || "").split(/\s+/).filter(Boolean);
         const matchesCategory = !activeCategory || categorySlugs.includes(activeCategory);
         const matchesText = !needle || normalize(card.dataset.searchText).includes(needle);
         return matchesCategory && matchesText;
