@@ -88,9 +88,9 @@ export function initSignalScene(host: HTMLElement) {
     // Raised surface edges stay visible above the shaded sphere.
     wireGeometry = new THREE.WireframeGeometry(innerGeometry);
     innerMaterial = new THREE.LineBasicMaterial({
-      color: new THREE.Color("#e5c6b1"),
+      color: new THREE.Color("#d9b39b"),
       transparent: true,
-      opacity: 0.92,
+      opacity: 0.98,
       depthWrite: false,
     });
     innerCore = new THREE.LineSegments(wireGeometry, innerMaterial);
@@ -224,7 +224,8 @@ export function initSignalScene(host: HTMLElement) {
     const height = Math.max(1, Math.round(bounds.height));
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    camera.position.z = width < 620 ? (isBlog ? 7.65 : 8.1) : 7.2;
+    camera.position.z = width < 620 ? (isBlog ? 6.0 : 8.1) : 7.2;
+    world.scale.setScalar(isBlog && width < 620 ? 1.08 : 1);
     camera.updateProjectionMatrix();
     renderer.render(scene, camera);
   };

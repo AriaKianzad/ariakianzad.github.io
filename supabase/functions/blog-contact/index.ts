@@ -63,18 +63,6 @@ function field(body: Record<string, unknown>, key: string, max: number, required
   return value;
 }
 
-function optionalUrl(value: string, label: string): string {
-  if (!value) return "";
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error("invalid protocol");
-    if (!url.hostname || url.username || url.password) throw new Error("invalid host");
-    return url.toString();
-  } catch {
-    throw new Error("آدرس «" + label + "» معتبر نیست. آدرس کامل با https:// وارد کنید.");
-  }
-}
-
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => {
     const replacements: Record<string, string> = {
@@ -154,9 +142,7 @@ Deno.serve(async (request: Request) => {
     const email = field(body, "email", 254, true).toLowerCase();
     const organization = field(body, "organization", 140);
     const requestType = field(body, "requestType", 24, true);
-    const websiteUrl = optionalUrl(field(body, "websiteUrl", 2048), "وب‌سایت");
-    const targetUrl = optionalUrl(field(body, "targetUrl", 2048), "صفحۀ مقصد");
-    const anchorText = field(body, "anchorText", 160);
+    const websiteUrl = field(body, "websiteUrl", 2048);
     const sponsorshipDuration = field(body, "sponsorshipDuration", 32);
     const message = field(body, "message", 3000, true);
     const submissionId = field(body, "submissionId", 80, true);
@@ -179,17 +165,25 @@ Deno.serve(async (request: Request) => {
 
     const supabaseUrl = readSecret("SUPABASE_URL").replace(/\/+$/, "");
     const serviceKey = supabaseSecretKey();
-    const resendKey = readSecret("RESEND_API_KEY");
-    const fromEmail = readSecret("BLOG_CONTACT_FROM_EMAIL");
-    const toEmail = readSecret("BLOG_CONTACT_TO_EMAIL") || "kianzadaria@gmail.com";
+    const appsScriptUrl = readSecret("GOOGLE_APPS_SCRIPT_URL");
+    const appsScriptToken = readSecret("GOOGLE_APPS_SCRIPT_TOKEN");
 
     if (!supabaseUrl || !serviceKey) {
       console.error("blog-contact missing Supabase server credentials");
       return json({ error: "سرویس دریافت پیام هنوز کامل پیکربندی نشده." }, 503);
     }
-    if (!resendKey || !fromEmail || !toEmail) {
-      console.error("blog-contact mail provider secrets are not configured");
-      return json({ error: "اتصال ایمیل هنوز کامل پیکربندی نشده. لطفاً کمی بعد دوباره تلاش کنید." }, 503);
+    if (!appsScriptUrl || !appsScriptToken) {
+      console.error("blog-contact Google Apps Script secrets are not configured");
+      return json({ error: "اتصال ایمیل Gmail هنوز کامل پیکربندی نشده. لطفاً کمی بعد دوباره تلاش کنید." }, 503);
+    }
+    let scriptUrl: URL;
+    try {
+      scriptUrl = new URL(appsScriptUrl);
+    } catch {
+      return json({ error: "نشانی سرویس ایمیل معتبر نیست." }, 503);
+    }
+    if (scriptUrl.protocol !== "https:" || scriptUrl.hostname !== "script.google.com" || !scriptUrl.pathname.includes("/macros/s/")) {
+      return json({ error: "نشانی Google Apps Script معتبر نیست." }, 503);
     }
 
     const permitted = await consumeRateLimit(request, supabaseUrl, serviceKey);
@@ -204,8 +198,6 @@ Deno.serve(async (request: Request) => {
       ["برند یا مجموعه", organization || "—"],
       ["نوع درخواست", requestLabel],
       ["وب‌سایت", websiteUrl || "—"],
-      ["صفحۀ مقصد", targetUrl || "—"],
-      ["انکرتکست", anchorText || "—"],
       ["مدت اسپانسری", durationLabel],
     ];
     const htmlRows = rows.map(([label, value]) =>
@@ -219,36 +211,36 @@ Deno.serve(async (request: Request) => {
       "<h3>توضیحات</h3><p style=\"white-space:pre-wrap\">" + escapeHtml(message) + "</p>" +
       "<hr><p style=\"font-size:12px;color:#777f77\">برای پاسخ مستقیم، به همین ایمیل Reply کنید.</p></div>";
     const textBody = rows.map(([label, value]) => label + ": " + value).join("\n") +
-      "\n\nتوضیحات:\n" + message +
-      "\n\nیادآوری: لینک‌های درج‌شده در محتوای تبلیغاتی پولی با ویژگی sponsored یا nofollow مشخص می‌شوند. درخواست Follow فقط برای ارجاع تحریریه‌ای مستقل و بدون پرداخت بابت لینک قابل بررسی است و تضمینی برای درج وجود ندارد.";
+      "\n\nتوضیحات:\n" + message;
 
-    const mailResponse = await fetch("https://api.resend.com/emails", {
+    const mailResponse = await fetch(scriptUrl.toString(), {
       method: "POST",
-      headers: {
-        Authorization: "Bearer " + resendKey,
-        "Content-Type": "application/json",
-        "Idempotency-Key": submissionId,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: fromEmail,
-        to: [toEmail],
-        reply_to: [email],
+        token: appsScriptToken,
+        submissionId,
         subject,
         html,
         text: textBody,
+        replyTo: email,
       }),
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(20000),
+      redirect: "follow",
     });
-    const mailPayload = await mailResponse.json().catch(() => ({}));
-    if (!mailResponse.ok) {
-      console.error("blog-contact mail provider rejected request", { status: mailResponse.status });
-      return json({ error: "ارسال ایمیل با خطا روبه‌رو شد. لطفاً کمی بعد دوباره تلاش کنید." }, 502);
+    const scriptPayload = await mailResponse.json().catch(() => ({}));
+    if (!mailResponse.ok || scriptPayload.ok !== true) {
+      console.error("blog-contact Gmail delivery rejected", {
+        status: mailResponse.status,
+        reason: typeof scriptPayload.error === "string" ? scriptPayload.error.slice(0, 120) : "unknown",
+      });
+      return json({
+        error: typeof scriptPayload.error === "string"
+          ? scriptPayload.error
+          : "ارسال ایمیل از طریق Gmail با خطا روبه‌رو شد. لطفاً دوباره تلاش کنید.",
+      }, 502);
     }
 
-    console.info("blog-contact email accepted", {
-      emailId: typeof mailPayload.id === "string" ? mailPayload.id : "unknown",
-      requestType,
-    });
+    console.info("blog-contact email accepted through Gmail", { requestType });
     return json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "درخواست ناموفق بود.";

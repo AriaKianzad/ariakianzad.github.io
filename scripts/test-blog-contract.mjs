@@ -7,7 +7,7 @@ const [
   listingPage, articlePage, categoryPage, rssRoute, blogCss, adminHtml,
   adminApp, adminEdge, publicRpcMigration, browserDenyMigration, snapshotMigration,
   publicHeader, workflow, sitemap, robots, heroVisualComponent, signalScene, heroBootstrap,
-  blogLayout, contactPage, contactForm, contactEdge, contactMigration, rootLayout, configToml,
+  blogLayout, contactPage, contactForm, contactEdge, contactMigration, rootLayout, configToml, googleContactScript,
 ] = await Promise.all([
   read("package.json"),
   read("scripts/fetch-blog-content.mjs"),
@@ -39,6 +39,7 @@ const [
   read("supabase/migrations/20261123170000_add_blog_contact_rate_limit.sql"),
   read("src/app/layout.tsx"),
   read("supabase/config.toml"),
+  read("integrations/google-apps-script/blog-contact.gs"),
 ]);
 
 const categorySeoMigration = await read("supabase/migrations/20261123130000_add_category_level_seo.sql");
@@ -136,18 +137,23 @@ assert.ok(blogCss.includes(".blog-theme .blog-header-blog-link {") && blogCss.in
 assert.ok(!listingPage.includes("blog-intro-description") && !listingPage.includes("با تمرکز بر رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن"), "blog hero must not repeat the long positioning description");
 assert.ok(blogLayout.includes("/blog-favicon.svg") && blogLayout.includes('themeColor: "#f4f1e9"'), "blog must use its own favicon and browser theme colour");
 assert.ok(contactPage.includes("BlogHeader") && contactPage.includes("BlogFooter") && contactPage.includes("ContactForm"), "contact page must use the blog editorial shell");
+assert.ok(contactPage.includes('title: "تماس با من | درخواست همکاری و اسپانسری"') && contactPage.includes("<h3>رپورتاژ و محتوای تبلیغاتی</h3>") && contactPage.includes("<h3>اسپانسری دوره‌ای</h3>") && contactPage.includes("<h3>همکاری و پیشنهادهای دیگر</h3>"), "contact page must use the revised title and H3 hierarchy");
 assert.ok(contactForm.includes("advertorial") && contactForm.includes("editorial_link") && contactForm.includes("sponsorship") && contactForm.includes("BLOG_CONTACT_ENDPOINT") && contactForm.includes("sb_publishable_"), "contact form must support advertorial, editorial link and sponsorship inquiries through the public Edge endpoint");
+assert.ok(!contactForm.includes("targetUrl") && !contactForm.includes("anchorText") && !contactForm.includes("contact-target") && !contactForm.includes("contact-anchor"), "contact form must not ask for destination URLs or anchor text");
+assert.ok(!contactForm.includes("developers.google.com/search/docs/essentials/spam-policies") && !contactForm.includes("لینک Follow در ازای پرداخت ارائه نمی‌شه"), "contact form must not show the paid-link policy paragraph");
 assert.ok(contactEdge.includes('editorial_link: "بررسی ارجاع تحریریه‌ای Follow بدون پرداخت بابت لینک"'), "contact endpoint must distinguish unpaid editorial link requests from paid advertorials");
-assert.ok(contactEdge.includes("RESEND_API_KEY") && contactEdge.includes("BLOG_CONTACT_FROM_EMAIL") && contactEdge.includes("BLOG_CONTACT_TO_EMAIL"), "contact Edge Function must use server-side mail secrets");
+assert.ok(contactEdge.includes("GOOGLE_APPS_SCRIPT_URL") && contactEdge.includes("GOOGLE_APPS_SCRIPT_TOKEN") && !contactEdge.includes("RESEND_API_KEY"), "contact Edge Function must route email delivery through the private Google Apps Script endpoint");
+assert.ok(googleContactScript.includes("MailApp.sendEmail") && googleContactScript.includes("BLOG_CONTACT_TOKEN") && googleContactScript.includes("BLOG_CONTACT_TO_EMAIL") && googleContactScript.includes("CacheService"), "Google Apps Script mail sender must protect its endpoint, use the owner's Gmail and deduplicate submissions");
 assert.ok(contactEdge.includes("consume_blog_contact_rate_limit") && contactEdge.includes("companyFax") && contactEdge.includes("SITE_ORIGIN"), "contact endpoint must enforce origin, honeypot and rate limits");
 assert.ok(contactMigration.includes("private.blog_contact_rate_limits") && contactMigration.includes("SECURITY DEFINER") && contactMigration.includes("GRANT EXECUTE ON FUNCTION public.consume_blog_contact_rate_limit"), "contact rate limiting must use a private database function");
-assert.ok(signalScene.includes("new THREE.SphereGeometry(0.92, 96, 80)") && signalScene.includes("new THREE.WireframeGeometry(innerGeometry)") && signalScene.includes("new THREE.HemisphereLight"), "blog signal scene must render a lit sphere with a visible surface wireframe and depth lighting");
+assert.ok(signalScene.includes("new THREE.SphereGeometry(0.92, 96, 80)") && signalScene.includes("new THREE.WireframeGeometry(innerGeometry)") && signalScene.includes("new THREE.HemisphereLight") && signalScene.includes("isBlog ? 6.0 : 8.1"), "blog signal scene must render a larger mobile sphere with a visible surface wireframe and depth lighting");
 assert.ok(signalScene.includes("new THREE.IcosahedronGeometry(0.92, 5)") && signalScene.includes("new THREE.MeshStandardMaterial({") && signalScene.includes("wireGeometry?.dispose()"), "homepage hero must keep its original mesh and clean up the optional blog wireframe safely");
 assert.ok(rootLayout.includes("https://bkohdqwecnvbmeaiuyyx.supabase.co;"), "site CSP must allow contact form requests to Supabase");
 assert.ok(configToml.includes("[functions.blog-contact]") && configToml.includes("verify_jwt = false"), "contact Edge Function must have public JWT configuration");
 assert.ok(!articlePage.includes("ARTICLE / ARCHIVE") && !categoryPage.includes("CATEGORY / ARCHIVE"), "public blog screens must not expose English archive labels");
 assert.ok(!adminHtml.includes("Google Docs") && !adminHtml.includes("Open Graph") && !adminHtml.includes(">English<"), "CMS visible interface copy must be Persian");
 assert.ok(blogCss.includes("body:has(.blog-theme)") && blogCss.includes("font-family:var(--font-estedad)"), "blog pages must keep their own shell and Estedad typography");
+assert.ok(blogCss.includes("inset:-26px -74px -18px -62px") && blogCss.includes("opacity:.72") && blogCss.includes("text-shadow:0 1px 10px"), "mobile blog hero must enlarge and strengthen the animation while preserving heading legibility");
 assert.ok(blogCss.includes(".blog-toc{display:none}") && blogCss.includes("height:clamp(112px,31vw,160px)"), "mobile article reading must hide secondary TOC and compact the featured image");
 assert.ok(blogCss.includes("direction:rtl; text-align:right") && blogCss.includes(".blog-socials"), "blog footer must use RTL alignment and social icon links");
 assert.ok(articlePage.indexOf("<h1>{post.title}</h1>") < articlePage.indexOf("<figure className=\"blog-hero-image\">"), "featured image must follow the article title");
