@@ -32,47 +32,56 @@ export function initSignalScene(host: HTMLElement) {
   renderer.toneMappingExposure = 1.05;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 40);
+  const camera = new THREE.PerspectiveCamera(isBlog ? 31 : 34, 1, 0.1, 40);
   camera.position.set(0, 0, 7.2);
 
   const world = new THREE.Group();
   world.position.set(0.08, 0.02, 0);
+  if (isBlog) world.rotation.set(-0.12, 0.08, 0.035);
   scene.add(world);
 
-  const innerGlow = new THREE.PointLight(accentColor, isBlog ? 14 : 22, 5.5, 2);
-  innerGlow.position.set(0.1, 0.05, 1.2);
+  const innerGlow = new THREE.PointLight(accentColor, isBlog ? 30 : 22, 6.2, 2);
+  innerGlow.position.set(0.72, 0.58, 1.52);
   world.add(innerGlow);
 
-  const keyLight = new THREE.DirectionalLight(isBlog ? 0xf0e4d8 : 0xe0e8c9, 3.1);
+  const keyLight = new THREE.DirectionalLight(isBlog ? 0xf7e8d8 : 0xe0e8c9, isBlog ? 4.4 : 3.1);
   keyLight.position.set(3.5, 4, 4);
   scene.add(keyLight);
 
-  const rimLight = new THREE.DirectionalLight(secondaryColor, 2.2);
+  const fillLight = new THREE.DirectionalLight(isBlog ? 0xb58a72 : 0x9cb984, isBlog ? 2.7 : 1.15);
+  fillLight.position.set(-3.5, 1.2, 3.8);
+  scene.add(fillLight);
+
+  const rimLight = new THREE.DirectionalLight(secondaryColor, isBlog ? 3.1 : 2.2);
   rimLight.position.set(-4, -2, -3);
   scene.add(rimLight);
-  scene.add(new THREE.AmbientLight(0x82917f, 0.72));
+  scene.add(new THREE.HemisphereLight(isBlog ? 0xfaf0e5 : 0xdfe8c9, isBlog ? 0x213d37 : 0x0c140f, isBlog ? 1.6 : 0.72));
+  scene.add(new THREE.AmbientLight(isBlog ? 0x8b7567 : 0x82917f, isBlog ? 0.45 : 0.2));
 
-  const coreGeometry = new THREE.IcosahedronGeometry(0.92, 5);
+  const coreGeometry = new THREE.SphereGeometry(0.92, 88, 72);
   const coreMaterial = new THREE.MeshPhysicalMaterial({
-    color: isBlog ? new THREE.Color("#9b7563") : 0x899a6f,
-    metalness: 0.72,
-    roughness: 0.2,
-    clearcoat: 0.82,
-    clearcoatRoughness: 0.18,
-    emissive: isBlog ? accentColor.clone().multiplyScalar(0.18) : 0x1b2914,
-    emissiveIntensity: 0.28,
+    color: isBlog ? new THREE.Color("#a47a61") : 0x899a6f,
+    metalness: isBlog ? 0.26 : 0.58,
+    roughness: isBlog ? 0.3 : 0.2,
+    clearcoat: 1,
+    clearcoatRoughness: 0.12,
+    emissive: isBlog ? accentColor.clone().multiplyScalar(0.12) : 0x1b2914,
+    emissiveIntensity: isBlog ? 0.22 : 0.28,
   });
   const core = new THREE.Mesh(coreGeometry, coreMaterial);
   world.add(core);
 
-  const innerGeometry = new THREE.IcosahedronGeometry(0.51, 2);
-  const innerMaterial = new THREE.MeshStandardMaterial({
-    color: isBlog ? 0x1d3432 : 0x111915,
-    metalness: 0.74,
-    roughness: 0.22,
-    wireframe: true,
+  // A spherical triangular wireframe sits directly on the illuminated surface.
+  const innerGeometry = new THREE.IcosahedronGeometry(0.932, 1);
+  const wireGeometry = new THREE.WireframeGeometry(innerGeometry);
+  const innerMaterial = new THREE.LineBasicMaterial({
+    color: isBlog ? accentSoftColor : 0xd5e7ac,
+    transparent: true,
+    opacity: isBlog ? 0.78 : 0.56,
+    depthWrite: false,
   });
-  const innerCore = new THREE.Mesh(innerGeometry, innerMaterial);
+  const innerCore = new THREE.LineSegments(wireGeometry, innerMaterial);
+  innerCore.renderOrder = 3;
   innerCore.rotation.set(0.2, 0.34, 0.12);
   world.add(innerCore);
 
@@ -81,7 +90,7 @@ export function initSignalScene(host: HTMLElement) {
     color: accentSoftColor,
     wireframe: true,
     transparent: true,
-    opacity: 0.16,
+    opacity: isBlog ? 0.22 : 0.16,
     depthWrite: false,
   });
   const shell = new THREE.Mesh(shellGeometry, shellMaterial);
@@ -135,7 +144,7 @@ export function initSignalScene(host: HTMLElement) {
   const connectorMaterial = new THREE.LineBasicMaterial({
     color: accentColor,
     transparent: true,
-    opacity: 0.22,
+    opacity: isBlog ? 0.52 : 0.22,
   });
   world.add(new THREE.LineSegments(connectorGeometry, connectorMaterial));
 
@@ -159,9 +168,9 @@ export function initSignalScene(host: HTMLElement) {
   );
   const particleMaterial = new THREE.PointsMaterial({
     color: isBlog ? 0x718b86 : 0xc5d0b6,
-    size: 0.012,
+    size: isBlog ? 0.016 : 0.012,
     transparent: true,
-    opacity: 0.55,
+    opacity: isBlog ? 0.66 : 0.55,
     sizeAttenuation: true,
     depthWrite: false,
   });
@@ -187,7 +196,7 @@ export function initSignalScene(host: HTMLElement) {
     const height = Math.max(1, Math.round(bounds.height));
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    camera.position.z = width < 620 ? 8.1 : 7.2;
+    camera.position.z = width < 620 ? (isBlog ? 7.65 : 8.1) : 7.2;
     camera.updateProjectionMatrix();
     renderer.render(scene, camera);
   };
@@ -200,8 +209,8 @@ export function initSignalScene(host: HTMLElement) {
     lastTime = time;
 
     if (!reduced) {
-      world.rotation.y += delta * 0.095;
-      world.rotation.x += delta * 0.026;
+      world.rotation.y += delta * (isBlog ? 0.14 : 0.095);
+      world.rotation.x += delta * (isBlog ? 0.052 : 0.026);
       world.rotation.z = THREE.MathUtils.lerp(world.rotation.z, pointerX * 0.08, 0.025);
       world.position.x = THREE.MathUtils.lerp(world.position.x, 0.08 + pointerX * 0.16, 0.025);
       world.position.y = THREE.MathUtils.lerp(
@@ -210,7 +219,8 @@ export function initSignalScene(host: HTMLElement) {
         0.025,
       );
       shell.rotation.y -= delta * 0.045;
-      innerCore.rotation.y += delta * 0.12;
+      innerCore.rotation.y += delta * (isBlog ? 0.16 : 0.12);
+      innerCore.rotation.x += delta * (isBlog ? 0.034 : 0.018);
       rings[0].rotation.z += delta * 0.035;
       rings[1].rotation.x -= delta * 0.022;
       rings[2].rotation.y += delta * 0.028;
@@ -274,6 +284,7 @@ export function initSignalScene(host: HTMLElement) {
     coreGeometry.dispose();
     coreMaterial.dispose();
     innerGeometry.dispose();
+    wireGeometry.dispose();
     innerMaterial.dispose();
     shellGeometry.dispose();
     shellMaterial.dispose();
