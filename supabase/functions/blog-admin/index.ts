@@ -324,6 +324,15 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
   if (action === "save_post") {
     const postInput = asRecord(body.post);
     const post = normalizePost(postInput);
+    if (post.category) {
+      const { data: blogSettings, error: settingsError } = await client.from("blog_settings")
+        .select("categories").eq("id", 1).maybeSingle();
+      if (settingsError) throw new Error("بررسی دسته‌بندی مقاله ناموفق بود.");
+      const available = Array.isArray(blogSettings?.categories) ? blogSettings.categories : [];
+      if (!available.some((item: Record<string, unknown>) => item.slug === post.category)) {
+        throw new Error("دسته‌بندی انتخاب‌شده در فهرست دسته‌بندی‌های بلاگ وجود نداره.");
+      }
+    }
     const id = typeof postInput.id === "string" ? postInput.id : "";
     const now = new Date().toISOString();
     if (id) {
