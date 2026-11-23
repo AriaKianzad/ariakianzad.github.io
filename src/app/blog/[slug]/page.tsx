@@ -79,7 +79,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
     headline: post.title, description: post.meta_description || post.excerpt,
     datePublished: post.published_at, dateModified: post.updated_at,
     mainEntityOfPage: canonical,
-    image: [...new Set([site.url + "/og/blog/" + post.slug + ".jpg", ...(post.hero_image_url ? [post.hero_image_url] : []), ...extractMarkdownImageUrls(post.content)])],
+    image: [...new Set([site.url + "/og/blog/" + post.slug + ".jpg", ...(post.hero_image_url ? [post.hero_image_url] : []), ...extractMarkdownImageUrls(post.content).map((url) => url.startsWith("/") ? site.url + url : url)])],
     author: { "@type": "Person", name: "Aria Kianzad", url: site.url },
     publisher: { "@type": "Person", name: "Aria Kianzad", url: site.url },
     inLanguage: post.language === "fa" ? "fa-IR" : "en",
