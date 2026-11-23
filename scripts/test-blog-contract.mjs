@@ -48,6 +48,7 @@ const [
 const categorySeoMigration = await read("supabase/migrations/20261123130000_add_category_level_seo.sql");
 const categoryTaxonomyMigration = await read("supabase/migrations/20261123200000_add_blog_category_taxonomy_and_advanced_seo.sql");
 const multipleCategoryMigration = await read("supabase/migrations/20261124210000_add_multiple_post_categories.sql");
+const snapshotCategorySyncMigration = await read("supabase/migrations/20261124220000_sync_multi_category_published_snapshots.sql");
 const categoryUtils = await read("src/lib/blog-category-utils.ts");
 const listingClient = await read("src/app/blog/BlogListingClient.tsx");
 const copyLinkButton = await read("src/app/blog/CopyLinkButton.tsx");
@@ -272,6 +273,7 @@ assert.ok(adminHtml.includes("سایت‌مپ هم خودکار بازسازی �
 
 
 assert.ok(multipleCategoryMigration.includes("add column if not exists categories text[]") && multipleCategoryMigration.includes("add column if not exists primary_category text") && multipleCategoryMigration.includes("cardinality(categories) <= 3") && multipleCategoryMigration.includes("black-friday-history") && multipleCategoryMigration.includes("array['culture']"), "multi-category migration must add primary/secondary categories, cap at three and move Black Friday to Culture");
+assert.ok(snapshotCategorySyncMigration.includes("published_snapshot = published_snapshot || jsonb_build_object") && snapshotCategorySyncMigration.includes("'categories'") && snapshotCategorySyncMigration.includes("'primary_category'"), "published article snapshots must receive multi-category metadata for public rendering");
 assert.ok(categoryUtils.includes("export function getPostCategorySlugs") && categoryUtils.includes("export function getPrimaryCategorySlug"), "category helpers must be pure and client-safe");
 assert.ok(listingClient.includes('from "@/lib/blog-category-utils"') && listingClient.includes("categorySlugs.includes(category)") && listingClient.includes("getPrimaryCategorySlug(post)") && !listingClient.includes('import { getBlogCategoryName } from "@/lib/blog-data"'), "client listing must filter all categories and use primary category without bundling Node-only blog data");
 assert.ok(adminHtml.includes('id="post-category-options"') && adminHtml.includes('id="post-primary-category"'), "article editor must expose multi-select categories and an explicit primary category");
