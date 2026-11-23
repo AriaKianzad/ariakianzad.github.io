@@ -1,6 +1,18 @@
 import type { CSSProperties, ReactNode } from "react";
+import type { Metadata, Viewport } from "next";
 import { getBlogSettings } from "@/lib/blog-data";
 import "./blog.css";
+
+export const metadata: Metadata = {
+  icons: {
+    icon: [{ url: "/blog-favicon.svg", type: "image/svg+xml" }],
+    shortcut: ["/blog-favicon.svg"],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#f4f1e9",
+};
 
 export default function BlogLayout({ children }: { children: ReactNode }) {
   const settings = getBlogSettings();
