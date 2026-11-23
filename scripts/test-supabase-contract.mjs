@@ -53,7 +53,7 @@ for (const [name, source, deno] of [
   assert.equal(imports["@supabase/supabase-js"], sdkVersion, name + " must use the pinned Supabase SDK");
   assert.ok(source.includes('from "@supabase/supabase-js"'), name + " must use the Deno import map");
   assert.ok(!source.includes("npm:@supabase/supabase-js@2\""), name + " must not use a floating SDK version");
-  assert.ok(source.includes("auth.getUser(token)"), name + " must verify the access token with Supabase Auth");
+  assert.ok(/auth\\.getUser\\((token|accessToken)\\)/.test(source), name + " must verify the access token with Supabase Auth");
   assert.ok(source.includes('from("dashboard_admins")'), name + " must use the server-side admin allowlist");
   assert.ok(source.includes('.eq("active", true)'), name + " must require an active administrator");
   assert.ok(source.includes('"Access-Control-Allow-Origin": SITE_ORIGIN'), name + " must use the explicit site origin for CORS");
