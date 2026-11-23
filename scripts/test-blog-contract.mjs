@@ -114,7 +114,9 @@ assert.ok(markdownSource.includes("parseImageLine") && markdownSource.includes("
 assert.ok(copyLinkButton.includes("navigator.clipboard") && copyLinkButton.includes("blog-share-copy"), "article copy-link control must copy the canonical URL with a visible state");
 assert.ok(articlePage.includes("CopyLinkButton") && articlePage.includes("<CopyLinkButton url={canonical} />"), "article share section must render the copy-link control");
 assert.ok(articlePage.includes("blog-article-header-grid") && articlePage.includes("blog-article-copy" ) && articlePage.includes("extractMarkdownImageUrls"), "article page must use a two-column editorial hero and include body images in article metadata");
-assert.ok(blogCss.includes("object-fit:contain") && blogCss.includes(".blog-inline-image>img") && blogCss.includes(".blog-article-header-grid"), "public article images must remain uncropped and use the editorial hero layout");
+const lastFeaturedImageRule = [...blogCss.matchAll(/\.blog-hero-image img\s*\{([^}]*)\}/g)].at(-1)?.[1] || "";
+assert.ok(lastFeaturedImageRule.includes("object-fit:contain") && lastFeaturedImageRule.includes("height:auto") && lastFeaturedImageRule.includes("max-height:none"), "featured article images must preserve their full source dimensions on desktop and mobile");
+assert.ok(blogCss.includes(".blog-inline-image>img") && blogCss.includes(".blog-article-header-grid"), "public inline images and the editorial hero must have dedicated layouts");
 
 assert.ok(adminApp.includes("previewInline"), "Markdown preview must use an escaped renderer");
 assert.ok(!/localStorage|sessionStorage/.test(adminApp), "CMS session tokens must not be persisted in Web Storage");
