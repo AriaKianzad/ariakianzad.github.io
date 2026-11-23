@@ -4,7 +4,7 @@
   const supabaseUrl = typeof config.supabaseUrl === "string" ? config.supabaseUrl.replace(/\/+$/,"") : "";
   const anonKey = typeof config.supabaseAnonKey === "string" ? config.supabaseAnonKey : "";
   const $ = (selector) => document.querySelector(selector);
-  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false };
+  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0 };
   const statusLabels = { draft:"پیش‌نویس", published:"منتشرشده", archived:"بایگانی" };
   const validConfig = supabaseUrl === "https://bkohdqwecnvbmeaiuyyx.supabase.co" && anonKey.startsWith("sb_publishable_");
 
@@ -48,6 +48,7 @@
     }catch{return false;}
   }
   async function finishSignIn(email,password,remember,quiet) {
+    state.analyticsEpoch+=1;state.articleAnalytics=null;state.analyticsBusy=false;
     await signIn(email,password);
     const user=await fetch(supabaseUrl+"/auth/v1/user",{headers:{apikey:anonKey,Authorization:"Bearer "+state.accessToken}});
     const userData=await parseResponse(user);window.blogAdminEmail=userData.email||"مدیر";
@@ -127,6 +128,7 @@
   async function logout(revoke) {
     const token=state.accessToken;
     if(navigator.credentials?.preventSilentAccess)navigator.credentials.preventSilentAccess().catch(()=>{});
+    state.analyticsEpoch+=1;state.articleAnalytics=null;state.analyticsBusy=false;
     state.accessToken="";state.refreshToken="";state.posts=[];state.currentPost=null;state.settings=null;
     if(revoke!==false&&token&&validConfig){
       fetch(supabaseUrl+"/auth/v1/logout?scope=local",{method:"POST",headers:{apikey:anonKey,Authorization:"Bearer "+token}}).catch(()=>{});
@@ -288,19 +290,25 @@
     if(state.analyticsBusy)return;
     if(state.articleAnalytics&&!force){renderArticleAnalytics();return;}
     state.analyticsBusy=true;
+    const requestEpoch=state.analyticsEpoch;
     const button=$("#refresh-article-analytics");
     setButton(button,true,"در حال دریافت…");
     $("#article-analytics-status").textContent="در حال دریافت و تطبیق گزارش‌های GA4 و Search Console…";
     try{
-      state.articleAnalytics=await siteAnalytics("articles");
+      const report=await siteAnalytics("articles");
+      if(requestEpoch!==state.analyticsEpoch)return;
+      state.articleAnalytics=report;
       renderArticleAnalytics();
       if(state.articleAnalytics.status==="error")toast("بخشی از گزارش‌های آمار مقاله‌ها در دسترس نیست.",true);
     }catch(error){
+      if(requestEpoch!==state.analyticsEpoch)return;
       $("#article-analytics-status").textContent=error.message;
       toast(error.message,true);
     }finally{
-      state.analyticsBusy=false;
-      setButton(button,false);
+      if(requestEpoch===state.analyticsEpoch){
+        state.analyticsBusy=false;
+        setButton(button,false);
+      }
     }
   }
   const newPost=()=>({
