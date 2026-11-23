@@ -5,8 +5,8 @@
 <meta name="robots" content="noindex, nofollow, noarchive"><meta name="theme-color" content="#f4f1e9">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://bkohdqwecnvbmeaiuyyx.supabase.co; font-src 'self'; connect-src 'self' https://bkohdqwecnvbmeaiuyyx.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <title>مدیریت بلاگ | آریا کیانزاد</title>
-<link rel="stylesheet" href="./blog.css?v=20261123-5">
-<script src="../config.js?v=20261121-2"></script><script src="./app.js?v=20261123-5" defer></script>
+<link rel="stylesheet" href="./blog.css?v=20261124-1">
+<script src="../config.js?v=20261121-2"></script><script src="./app.js?v=20261124-1" defer></script>
 </head>
 <body>
 <main class="admin-root">
@@ -71,7 +71,12 @@
 <div class="content-panel editor-title-panel">
 <div class="editor-fields-row">
 <label class="field-label">زبان مقاله<select id="post-language" data-field="language"><option value="fa">فارسی</option><option value="en">انگلیسی</option></select></label>
-<label class="field-label">دسته‌بندی<select id="post-category" data-field="category"><option value="">بدون دسته‌بندی</option></select></label>
+<div class="field-label category-assignment">
+<span>دسته‌بندی‌های مقاله</span>
+<small>حداکثر ۳ دسته رو انتخاب کن.</small>
+<div id="post-category-options" class="post-category-options" role="group" aria-label="دسته‌بندی‌های مقاله"></div>
+<label class="primary-category-field">دسته‌بندی اصلی<select id="post-primary-category" aria-label="دسته‌بندی اصلی مقاله" disabled><option value="">ابتدا دسته‌بندی رو انتخاب کن</option></select></label>
+</div>
 <label class="field-label">برچسب‌ها<input id="post-tags" placeholder="با ویرگول جدا کن"></label>
 </div>
 <label class="sr-only" for="post-title">عنوان مقاله</label><input id="post-title" class="title-input" data-field="title" maxlength="180" placeholder="عنوان مقاله رو بنویس…" required>

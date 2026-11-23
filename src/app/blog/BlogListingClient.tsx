@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { getPostCategorySlugs, getPrimaryCategorySlug } from "@/lib/blog-category-utils";
 import type { BlogPost } from "@/lib/blog-data";
 
 type Category = { name: string; count: number; slug: string };
@@ -28,7 +29,7 @@ export function BlogPostCard({ post, featured = false, showReadingTime = true, c
       </Link>
       <div className="blog-card-copy">
         <div className="blog-card-meta">
-          {post.category ? <span>{categoryName || post.category}</span> : null}
+          {getPrimaryCategorySlug(post) ? <span>{categoryName || getPrimaryCategorySlug(post).replace(/-/g," ")}</span> : null}
           <time dateTime={post.published_at}>{formatDate(post.published_at, post.language)}</time>
         </div>
         <h2><Link href={"/blog/" + post.slug + "/"}>{post.title}</Link></h2>
@@ -53,8 +54,10 @@ export function BlogListingClient({
   const filtered = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
     return posts.filter((post) => {
-      const matchesCategory = !category || post.category === category;
-      const content = [post.title, post.excerpt, post.category, categories.find((item)=>item.slug===post.category)?.name||"", post.focus_keyword, ...(post.tags || [])].join(" ").toLocaleLowerCase();
+      const categorySlugs=getPostCategorySlugs(post);
+      const matchesCategory = !category || categorySlugs.includes(category);
+      const categoryNames=categorySlugs.map((slug)=>categories.find((item)=>item.slug===slug)?.name||slug.replace(/-/g," "));
+      const content = [post.title, post.excerpt, ...categorySlugs, ...categoryNames, post.focus_keyword, ...(post.tags || [])].join(" ").toLocaleLowerCase();
       return matchesCategory && (!needle || content.includes(needle));
     });
   }, [posts, query, category, categories]);
@@ -80,8 +83,8 @@ export function BlogListingClient({
           <div className="blog-category-filters" aria-label="دسته‌بندی‌ها">
             <button className={!category ? "active" : ""} onClick={() => changeCategory("")} type="button">همه</button>
             {categories.map((item) => (
-              <button key={item.slug} className={category === item.name ? "active" : ""}
-                onClick={() => changeCategory(item.name)} type="button">
+              <button key={item.slug} className={category === item.slug ? "active" : ""}
+                onClick={() => changeCategory(item.slug)} type="button">
                 {item.name} <small>{item.count}</small>
               </button>
             ))}
@@ -94,7 +97,7 @@ export function BlogListingClient({
       </div>
       {visible.length ? (
         <div className="blog-card-grid">
-          {visible.map((post) => <BlogPostCard key={post.id || post.slug} post={post} categoryName={categories.find((item)=>item.slug===post.category)?.name} showReadingTime={showReadingTime} />)}
+          {visible.map((post) => <BlogPostCard key={post.id || post.slug} post={post} categoryName={categories.find((item)=>item.slug===getPrimaryCategorySlug(post))?.name} showReadingTime={showReadingTime} />)}
         </div>
       ) : (
         <div className="blog-empty">

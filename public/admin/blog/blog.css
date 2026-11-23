@@ -213,3 +213,75 @@ body, body * { font-family: Estedad, Tahoma, sans-serif !important; }
   .category-manager-item .field-label { grid-column:1/-1; }
   .category-create-grid,.advanced-seo-grid,.advanced-seo-options { grid-template-columns:minmax(0,1fr); }
 }
+
+
+/* Article category multi-select with an explicit primary category. */
+.editor-fields-row .category-assignment {
+  display:grid;
+  align-content:start;
+  gap:7px;
+  min-width:0;
+}
+.category-assignment>span { color:var(--soft); font-size:11px; font-weight:650; }
+.category-assignment>small { color:var(--muted); font-size:9px; line-height:1.7; }
+.post-category-options {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+  padding-block:2px;
+}
+.post-category-option {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  min-height:30px;
+  padding:5px 8px;
+  border:1px solid var(--line);
+  background:var(--surface);
+  color:var(--soft);
+  font-size:10px;
+  cursor:pointer;
+  user-select:none;
+}
+.post-category-option:has(input:checked) {
+  border-color:var(--accent);
+  background:var(--accent-soft);
+  color:var(--ink);
+}
+.post-category-option input {
+  width:13px;
+  height:13px;
+  margin:0;
+  accent-color:var(--accent);
+}
+.primary-category-field {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:2px;
+  color:var(--muted);
+  font-size:10px;
+}
+.primary-category-field select {
+  flex:1;
+  min-width:0;
+  min-height:32px;
+  padding:4px 7px;
+  border:1px solid var(--line);
+  background:var(--surface);
+  color:var(--ink);
+  font:inherit;
+  font-size:10px;
+}
+.primary-category-field select:disabled { opacity:.6; }
+@media(max-width:900px) {
+  .editor-fields-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .category-assignment { grid-column:1/-1; }
+}
+@media(max-width:560px) {
+  .editor-fields-row { grid-template-columns:1fr; }
+  .category-assignment { grid-column:auto; }
+  .post-category-option { min-height:36px; }
+}

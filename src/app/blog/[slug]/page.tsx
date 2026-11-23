@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { site } from "@/lib/site";
-import { getBlogPost, getBlogPosts, getBlogSettings, readingTime, getBlogCategoryName } from "@/lib/blog-data";
+import { getBlogPost, getBlogPosts, getBlogSettings, readingTime, getBlogCategoryName, getPostCategorySlugs, getPrimaryCategorySlug } from "@/lib/blog-data";
 import { extractToc, extractMarkdownImageUrls, renderMarkdown } from "@/lib/blog-markdown";
 import { BlogHeader, BlogFooter } from "../BlogHeader";
 import { CopyLinkButton } from "../CopyLinkButton";
@@ -72,11 +72,16 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
   }
   const toc = post.toc_enabled && settings.show_toc ? extractToc(post.content) : [];
   const html = renderMarkdown(post.content);
+  const postCategories = getPostCategorySlugs(post);
+  const primaryCategory = getPrimaryCategorySlug(post);
   const related = settings.show_related_posts
-    ? getBlogPosts().filter((item) => item.slug !== post.slug && (item.category === post.category || post.tags.some((tag) => item.tags.includes(tag)))).slice(0, 3)
+    ? getBlogPosts().filter((item) => item.slug !== post.slug && (
+        getPostCategorySlugs(item).some((slug) => postCategories.includes(slug))
+        || post.tags.some((tag) => item.tags.includes(tag))
+      )).slice(0, 3)
     : [];
   const canonical = post.canonical_url || site.url + "/blog/" + post.slug + "/";
-  const categoryName = post.category ? getBlogCategoryName(post.category) : "";
+  const categoryName = primaryCategory ? getBlogCategoryName(primaryCategory) : "";
   const schema = {
     "@context": "https://schema.org", "@type": settings.schema_type,
     headline: post.title, description: post.meta_description || post.excerpt,
@@ -114,20 +119,14 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
           <nav className="blog-container blog-breadcrumbs" aria-label="مسیر راهنما">
             <Link href="/blog/">{settings.breadcrumb_home_label || "خانه"}</Link>
             <span aria-hidden="true">/</span>
-            {post.category ? <Link href={"/blog/category/" + encodeURIComponent(post.category) + "/"}>{categoryName}</Link> : <span>مقاله</span>}
+            {primaryCategory ? <Link href={"/blog/category/" + encodeURIComponent(primaryCategory) + "/"}>{categoryName}</Link> : <span>مقاله</span>}
           </nav>
         ) : null}
         <header className="blog-article-header">
           <div className="blog-container blog-article-header-grid">
             <div className="blog-article-copy" dir={direction}>
-              <div className="blog-eyebrow"><span /> {categoryName || "یادداشت"}</div>
               <h1>{post.title}</h1>
               {post.excerpt ? <p className="blog-article-excerpt">{post.excerpt}</p> : null}
-              <div className="blog-article-meta">
-                <span>آریا کیانزاد</span>
-                <time dateTime={post.published_at}>{new Intl.DateTimeFormat(language === "fa" ? "fa-IR" : "en-US", {year:"numeric",month:"long",day:"numeric",timeZone:language==="fa"?"Asia/Tehran":"UTC"}).format(new Date(post.published_at))}</time>
-                {settings.show_reading_time ? <span>{readingTime(post.content, post.language)} دقیقه مطالعه</span> : null}
-              </div>
             </div>
             {post.hero_image_url ? (
               <figure className="blog-hero-image">
@@ -135,6 +134,11 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
                 {post.hero_image_caption ? <figcaption>{post.hero_image_caption}</figcaption> : null}
               </figure>
             ) : <div className="blog-article-visual-empty" aria-hidden="true" />}
+            <div className="blog-article-meta">
+              <span>آریا کیانزاد</span>
+              <time dateTime={post.published_at}>{new Intl.DateTimeFormat(language === "fa" ? "fa-IR" : "en-US", {year:"numeric",month:"long",day:"numeric",timeZone:language==="fa"?"Asia/Tehran":"UTC"}).format(new Date(post.published_at))}</time>
+              {settings.show_reading_time ? <span>{readingTime(post.content, post.language)} دقیقه مطالعه</span> : null}
+            </div>
           </div>
         </header>
         <div className={"blog-article-grid blog-container" + (toc.length ? " has-toc" : " no-toc") + (post.content_width === "wide" || settings.content_width === "wide" ? " content-wide" : "")}>

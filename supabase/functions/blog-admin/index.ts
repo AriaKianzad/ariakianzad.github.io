@@ -184,13 +184,33 @@ function normalizePost(input: Record<string, unknown>) {
       throw new Error("Canonical URL باید از همین دامنه و مسیر بلاگ باشه.");
     }
   }
+  const legacyCategory = textValue(input?.category, 120, "دسته‌بندی");
+  const rawCategories = Array.isArray(input?.categories) ? input.categories : [];
+  if (rawCategories.length > 3) throw new Error("هر مقاله حداکثر می‌تونه سه دسته‌بندی داشته باشه.");
+  const categories = [...new Set(
+    (rawCategories.length ? rawCategories : (legacyCategory ? [legacyCategory] : []))
+      .map((value) => textValue(value, 120, "دسته‌بندی", true).toLowerCase())
+  )];
+  if (categories.length > 3) throw new Error("هر مقاله حداکثر می‌تونه سه دسته‌بندی داشته باشه.");
+  if (categories.some((value) => !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value))) {
+    throw new Error("نامک یکی از دسته‌بندی‌های مقاله معتبر نیست.");
+  }
+  const primaryCategory = textValue(input?.primary_category ?? (legacyCategory || categories[0] || ""), 120, "دسته‌بندی اصلی").toLowerCase();
+  if (categories.length && !categories.includes(primaryCategory)) {
+    throw new Error("دسته‌بندی اصلی باید یکی از دسته‌بندی‌های انتخاب‌شده باشه.");
+  }
+  if (!categories.length && primaryCategory) {
+    throw new Error("برای تعیین دسته‌بندی اصلی، ابتدا یک دسته‌بندی انتخاب کن.");
+  }
   return {
     slug,
     title: textValue(input?.title, 180, "عنوان مقاله", true),
     excerpt: textValue(input?.excerpt, 700, "خلاصه"),
     content: textValue(input?.content, 180000, "محتوای مقاله"),
     language,
-    category: textValue(input?.category, 80, "دسته‌بندی"),
+    category: primaryCategory,
+    categories,
+    primary_category: primaryCategory,
     tags: tagsValue(input?.tags),
     hero_image_url: mediaUrl(input?.hero_image_url),
     hero_image_alt: textValue(input?.hero_image_alt, 240, "متن جایگزین تصویر"),
@@ -301,7 +321,7 @@ async function dispatchAfterWrite(message: string) {
 async function perform(action: string, body: Record<string, unknown>, client: SupabaseClient) {
   if (action === "list_posts") {
     const { data, error } = await client.from("blog_posts")
-      .select("id,slug,title,excerpt,language,category,status,featured,published_at,updated_at,has_unpublished_changes,hero_image_url")
+      .select("id,slug,title,excerpt,language,category,categories,primary_category,status,featured,published_at,updated_at,has_unpublished_changes,hero_image_url")
       .order("updated_at", { ascending: false })
       .limit(200);
     if (error) throw new Error("دریافت مقاله‌ها ناموفق بود.");
@@ -324,14 +344,14 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
   if (action === "save_post") {
     const postInput = asRecord(body.post);
     const post = normalizePost(postInput);
-    if (post.category) {
+    if (post.categories.length) {
       const { data: blogSettings, error: settingsError } = await client.from("blog_settings")
         .select("categories").eq("id", 1).maybeSingle();
-      if (settingsError) throw new Error("بررسی دسته‌بندی مقاله ناموفق بود.");
+      if (settingsError) throw new Error("بررسی دسته‌بندی‌های مقاله ناموفق بود.");
       const available = Array.isArray(blogSettings?.categories) ? blogSettings.categories : [];
-      if (!available.some((item: Record<string, unknown>) => item.slug === post.category)) {
-        throw new Error("دسته‌بندی انتخاب‌شده در فهرست دسته‌بندی‌های بلاگ وجود نداره.");
-      }
+      const unknown = post.categories.filter((slug) => !available.some((item: Record<string, unknown>) => item.slug === slug));
+      if (unknown.length) throw new Error("یکی از دسته‌بندی‌های انتخاب‌شده در فهرست دسته‌بندی‌های بلاگ وجود نداره.");
+      if (!post.categories.includes(post.primary_category)) throw new Error("دسته‌بندی اصلی باید یکی از دسته‌بندی‌های انتخاب‌شده باشه.");
     }
     const id = typeof postInput.id === "string" ? postInput.id : "";
     const now = new Date().toISOString();
@@ -379,7 +399,7 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
     const publishedAt = current.published_at || new Date().toISOString();
     const publicSnapshot = snapshot({
       slug: current.slug, title: current.title, excerpt: current.excerpt, content: current.content,
-      language: current.language, category: current.category, tags: current.tags,
+      language: current.language, category: current.primary_category || current.category, categories: current.categories || (current.category ? [current.category] : []), primary_category: current.primary_category || current.category, tags: current.tags,
       hero_image_url: current.hero_image_url, hero_image_alt: current.hero_image_alt,
       hero_image_caption: current.hero_image_caption, og_image_url: current.og_image_url,
       seo_title: current.seo_title, meta_description: current.meta_description,
@@ -444,10 +464,14 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
       .map((item: Record<string, unknown>) => typeof item.slug === "string" ? item.slug : "")
       .filter((slug: string) => slug && !nextSlugs.has(slug));
     if (removedSlugs.length) {
-      const { data: usedPosts, error: usedPostsError } = await client.from("blog_posts")
-        .select("category").in("category", removedSlugs).limit(1);
-      if (usedPostsError) throw new Error("بررسی وابستگی مقاله‌ها به دسته‌بندی‌ها ناموفق بود.");
-      if (usedPosts?.length) throw new Error("این دسته‌بندی هنوز به یک یا چند مقاله وصله. ابتدا مقاله‌ها رو به دسته‌بندی دیگه منتقل کن.");
+      const [primaryUsage, secondaryUsage] = await Promise.all([
+        client.from("blog_posts").select("id").in("category", removedSlugs).limit(1),
+        client.from("blog_posts").select("id").overlaps("categories", removedSlugs).limit(1),
+      ]);
+      if (primaryUsage.error || secondaryUsage.error) throw new Error("بررسی وابستگی مقاله‌ها به دسته‌بندی‌ها ناموفق بود.");
+      if (primaryUsage.data?.length || secondaryUsage.data?.length) {
+        throw new Error("این دسته‌بندی هنوز در دست‌کم یک مقاله به‌عنوان اصلی یا فرعی استفاده می‌شه. ابتدا مقاله‌ها رو منتقل کن.");
+      }
     }
     const settings = {
       id: 1,
