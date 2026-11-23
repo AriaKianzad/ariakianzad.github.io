@@ -972,7 +972,7 @@
     if(categories.some((item)=>item.slug===slug)){message.textContent="این نامک قبلاً ثبت شده.";return;}
     if(categories.some((item)=>item.name.toLocaleLowerCase()===name.toLocaleLowerCase())){message.textContent="این نام فارسی قبلاً ثبت شده.";return;}
     state.settings={...(state.settings||{}),categories:[...categories,{slug,name}]};
-    renderCategoryManager(state.settings);syncPostCategorySelect();
+    renderCategoryManager(state.settings);renderPostCategoryControls(state.currentPost?.categories,state.currentPost?.primary_category||state.currentPost?.category);
     renderCategorySeoEditor(state.settings);
     $("#new-category-name").value="";$("#new-category-slug").value="";
     message.textContent="دسته‌بندی اضافه شد؛ برای انتشار در وبلاگ تنظیمات رو ذخیره کن.";
