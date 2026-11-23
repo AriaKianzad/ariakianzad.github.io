@@ -1198,3 +1198,26 @@ body:has(.blog-theme) > main#main { display:contents; }
     line-height:1.9;
   }
 }
+
+
+/* Homepage description is a separate row so it remains readable on narrow screens. */
+.blog-theme .blog-intro > .blog-intro-description {
+  grid-column:1 / -1;
+  max-width:760px;
+  margin:0;
+  color:var(--blog-muted);
+  font-size:13px;
+  line-height:2;
+}
+@media(max-width:700px) {
+  .blog-theme .blog-intro > .blog-intro-description {
+    display:block;
+    max-width:none;
+    margin-top:7px;
+    font-size:11px;
+    line-height:1.95;
+    overflow-wrap:anywhere;
+    text-wrap:pretty;
+  }
+  .blog-theme .blog-intro-lede { display:none; }
+}
