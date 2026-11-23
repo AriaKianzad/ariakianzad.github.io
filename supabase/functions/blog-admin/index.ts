@@ -124,9 +124,31 @@ function categorySeoValue(value: unknown): Record<string, Record<string, unknown
       og_description: textValue(item.og_description, 300, "توضیحات اشتراک‌گذاری دسته‌بندی"),
       canonical_url: canonical,
       robots_index: item.robots_index !== false,
+      robots_follow: item.robots_follow !== false,
     };
   }
   return output;
+}
+
+function categoriesValue(value: unknown): { slug: string; name: string }[] {
+  if (!Array.isArray(value)) return [];
+  if (value.length > 100) throw new Error("حداکثر ۱۰۰ دسته‌بندی مجاز است.");
+  const slugs = new Set<string>();
+  const names = new Set<string>();
+  return value.map((entry: unknown) => {
+    const item = asRecord(entry);
+    const slug = textValue(item.slug, 120, "نامک دسته‌بندی", true).toLowerCase();
+    const name = textValue(item.name, 80, "نام نمایشی دسته‌بندی", true);
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      throw new Error("نامک دسته‌بندی باید فقط با حروف انگلیسی کوچک، عدد و خط تیره نوشته بشه.");
+    }
+    const normalizedName = name.toLocaleLowerCase();
+    if (slugs.has(slug)) throw new Error("نامک تکراری برای دسته‌بندی ثبت شده.");
+    if (names.has(normalizedName)) throw new Error("نام نمایشی تکراری برای دسته‌بندی ثبت شده.");
+    slugs.add(slug);
+    names.add(normalizedName);
+    return { slug, name };
+  });
 }
 
 function tagsValue(value: unknown): string[] {
