@@ -69,7 +69,7 @@ assert.ok(listingPage.includes("getBlogPosts()") && listingPage.includes("BlogLi
 assert.ok(listingPage.includes('"@type": "Blog"'), "the archive must include Blog structured data");
 assert.ok(articlePage.includes("generateStaticParams"), "published articles must be statically generated");
 assert.ok(articlePage.includes('{ slug: "__empty__" }') && articlePage.includes("robots: { index: false, follow: false }"), "empty article fallback must remain noindex");
-assert.ok(articlePage.includes('"@type": "Article"'), "articles must include Article structured data");
+assert.ok(articlePage.includes('"@context": "https://schema.org"') && articlePage.includes("@type: settings.schema_type"), "articles must use the configured structured data type");
 assert.ok(articlePage.includes('"@type": "FAQPage"'), "FAQ schema must be available");
 assert.ok(articlePage.includes("canonical") && articlePage.includes("robots_index"), "article SEO must support canonical and robots directives");
 assert.ok(articlePage.includes("openGraph:") && articlePage.includes("twitter:"), "article metadata must include OG and X cards");
