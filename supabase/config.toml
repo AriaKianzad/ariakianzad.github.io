@@ -9,3 +9,6 @@ verify_jwt = false
 
 [functions.site-analytics]
 verify_jwt = false
+
+[functions.blog-admin]
+verify_jwt = false
