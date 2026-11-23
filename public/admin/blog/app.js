@@ -433,14 +433,14 @@
     let largest=0,bold=false;
     styleNodes.forEach((element)=>{
       const style=(element.getAttribute("style")||"").toLowerCase();
-      const size=(style.match(/font-size\s*:\\s*([0-9.]+)(px|pt|em|rem)?/)||[]);
+      const size=(style.match(/font-size\s*:\s*([0-9.]+)(px|pt|em|rem)?/)||[]);
       if(size[1]){
         let value=Number(size[1]),unit=size[2]||"px";
         if(unit==="pt")value*=4/3;
         if(unit==="em"||unit==="rem")value*=16;
         largest=Math.max(largest,value);
       }
-      if(/font-weight\s*:\\s*(bold|[6-9]00)/.test(style))bold=true;
+      if(/font-weight\s*:\s*(bold|[6-9]00)/.test(style))bold=true;
       if(["b","strong"].includes(element.tagName?.toLowerCase()))bold=true;
     });
     if(!bold)return 0;
