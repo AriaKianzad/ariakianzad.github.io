@@ -1,4 +1,4 @@
-import { getBlogPosts, getBlogSettings } from "@/lib/blog-data";
+import { getBlogPosts, getBlogSettings, getBlogCategoryName } from "@/lib/blog-data";
 import { site } from "@/lib/site";
 
 export const dynamic = "force-static";
@@ -19,7 +19,7 @@ export function GET() {
     "<guid isPermaLink=\"true\">" + xml(site.url + "/blog/" + post.slug + "/") + "</guid>",
     "<description>" + xml(post.excerpt || post.meta_description || "") + "</description>",
     "<pubDate>" + new Date(post.published_at).toUTCString() + "</pubDate>",
-    "<category>" + xml(post.category || "مقاله") + "</category>",
+    "<category>" + xml(post.category ? getBlogCategoryName(post.category) : "مقاله") + "</category>",
     "</item>",
   ].join("")).join("");
   const body = '<?xml version="1.0" encoding="UTF-8"?>' +

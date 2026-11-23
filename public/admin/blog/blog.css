@@ -154,3 +154,62 @@ body, body * { font-family: Estedad, Tahoma, sans-serif !important; }
 .image-insert-dialog-preview img { display:block; width:auto; max-width:100%; height:auto; max-height:210px; object-fit:contain; }
 .image-insert-dialog-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:9px; padding-top:8px; }
 @media(max-width:600px) { .image-insert-dialog-form { padding:18px; } }
+
+
+/* Managed taxonomy and global SEO controls. */
+.category-manager-list { display:grid; gap:9px; }
+.category-manager-item {
+  display:grid;
+  grid-template-columns:minmax(0,1.1fr) minmax(150px,.9fr) auto auto;
+  align-items:center;
+  gap:10px;
+  padding:12px;
+  border:1px solid var(--line);
+  background:var(--surface);
+}
+.category-manager-item .field-label { margin:0; }
+.category-manager-item input {
+  width:100%;
+  min-height:38px;
+  padding:7px 9px;
+  border:1px solid var(--line);
+  background:#fff;
+  font:inherit;
+}
+.category-manager-slug { display:grid; gap:4px; min-width:0; }
+.category-manager-slug small,.category-manager-count { color:var(--muted); font-size:9px; }
+.category-manager-slug code {
+  overflow-wrap:anywhere;
+  color:var(--soft);
+  font:11px/1.7 ui-monospace,monospace;
+}
+.category-manager-actions { display:flex; align-items:center; flex-wrap:wrap; gap:10px; }
+#category-manager-message { color:var(--muted); font-size:10px; }
+.category-create-grid,.advanced-seo-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.advanced-seo-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+.editor-richtext h2,.markdown-preview h2 {
+  margin:2.1em 0 .6em;
+  font-size:1.65em;
+  font-weight:800;
+  line-height:1.55;
+}
+.editor-richtext h3,.markdown-preview h3 {
+  margin:1.8em 0 .55em;
+  font-size:1.32em;
+  font-weight:800;
+  line-height:1.6;
+}
+.editor-richtext h4,.markdown-preview h4 {
+  margin:1.55em 0 .45em;
+  font-size:1.12em;
+  font-weight:800;
+  line-height:1.65;
+}
+.editor-richtext h2:first-child,.editor-richtext h3:first-child,.editor-richtext h4:first-child,
+.markdown-preview h2:first-child,.markdown-preview h3:first-child,.markdown-preview h4:first-child { margin-top:0; }
+.editor-richtext p,.markdown-preview p { margin:0 0 1.2em; line-height:2; }
+@media(max-width:760px) {
+  .category-manager-item { grid-template-columns:minmax(0,1fr) auto; }
+  .category-manager-item .field-label { grid-column:1/-1; }
+  .category-create-grid,.advanced-seo-grid,.advanced-seo-options { grid-template-columns:minmax(0,1fr); }
+}

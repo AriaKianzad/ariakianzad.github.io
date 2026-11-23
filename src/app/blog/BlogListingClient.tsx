@@ -17,7 +17,7 @@ function formatDate(value: string, language: "fa" | "en") {
   }).format(new Date(value));
 }
 
-export function BlogPostCard({ post, featured = false, showReadingTime = true }: { post: BlogPost; featured?: boolean; showReadingTime?: boolean }) {
+export function BlogPostCard({ post, featured = false, showReadingTime = true, categoryName }: { post: BlogPost; featured?: boolean; showReadingTime?: boolean; categoryName?: string }) {
   const dir = post.language === "fa" ? "rtl" : "ltr";
   const image = post.hero_image_url || "/og/blog/" + post.slug + ".jpg";
   return (
@@ -28,7 +28,7 @@ export function BlogPostCard({ post, featured = false, showReadingTime = true }:
       </Link>
       <div className="blog-card-copy">
         <div className="blog-card-meta">
-          {post.category ? <span>{post.category}</span> : null}
+          {post.category ? <span>{categoryName || post.category}</span> : null}
           <time dateTime={post.published_at}>{formatDate(post.published_at, post.language)}</time>
         </div>
         <h2><Link href={"/blog/" + post.slug + "/"}>{post.title}</Link></h2>
@@ -54,10 +54,10 @@ export function BlogListingClient({
     const needle = query.trim().toLocaleLowerCase();
     return posts.filter((post) => {
       const matchesCategory = !category || post.category === category;
-      const content = [post.title, post.excerpt, post.category, post.focus_keyword, ...(post.tags || [])].join(" ").toLocaleLowerCase();
+      const content = [post.title, post.excerpt, post.category, categories.find((item)=>item.slug===post.category)?.name||"", post.focus_keyword, ...(post.tags || [])].join(" ").toLocaleLowerCase();
       return matchesCategory && (!needle || content.includes(needle));
     });
-  }, [posts, query, category]);
+  }, [posts, query, category, categories]);
   const visible = filtered.slice(0, visibleCount);
 
   function changeCategory(value: string) {
@@ -94,7 +94,7 @@ export function BlogListingClient({
       </div>
       {visible.length ? (
         <div className="blog-card-grid">
-          {visible.map((post) => <BlogPostCard key={post.id || post.slug} post={post} showReadingTime={showReadingTime} />)}
+          {visible.map((post) => <BlogPostCard key={post.id || post.slug} post={post} categoryName={categories.find((item)=>item.slug===post.category)?.name} showReadingTime={showReadingTime} />)}
         </div>
       ) : (
         <div className="blog-empty">

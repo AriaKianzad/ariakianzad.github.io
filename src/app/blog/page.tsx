@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { site } from "@/lib/site";
-import { getBlogCategories, getBlogPosts, getBlogSettings } from "@/lib/blog-data";
+import { getBlogCategories, getBlogPosts, getBlogSettings, getBlogCategoryName } from "@/lib/blog-data";
 import { BlogHeader, BlogFooter } from "./BlogHeader";
 import { BlogListingClient, BlogPostCard } from "./BlogListingClient";
 import HeroVisual from "@/components/hero-visual";
@@ -10,14 +10,15 @@ const blogSettings = getBlogSettings();
 export const metadata: Metadata = {
   title: blogSettings.default_meta_title || "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد",
   description: blogSettings.default_meta_description || blogSettings.description || "اینجا درباره استراتژی برند، جایگاه‌یابی، ارتباطات و پرسونال برندینگ می‌نویسم؛ با تمرکز بر معنا، رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن.",
+  robots: { index: blogSettings.default_robots_index, follow: blogSettings.default_robots_follow },
   alternates: { canonical: site.url + "/blog/", types: { "application/rss+xml": site.url + "/blog/feed.xml" } },
-  openGraph: {
+  openGraph: blogSettings.open_graph_enabled ? {
     type: "website", url: site.url + "/blog/", siteName: "Aria Kianzad",
-    title: "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد",
-    description: "از استراتژی برند و جایگاه‌یابی تا ارتباطات و پرسونال برندینگ؛ اینجا از نگاه و تجربهٔ خودم می‌نویسم.",
+    title: blogSettings.default_og_title || "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد",
+    description: blogSettings.default_og_description || blogSettings.description,
     images: [{ url: blogSettings.default_og_image || site.url + "/og/og.jpg", width: 1200, height: 630 }],
-  },
-  twitter: { card: "summary_large_image", title: "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد", images: [site.url + "/og/og.jpg"] },
+  } : undefined,
+  twitter: { card: blogSettings.twitter_card_type, title: blogSettings.default_og_title || blogSettings.default_meta_title, description: blogSettings.default_og_description || blogSettings.default_meta_description, images: [blogSettings.default_og_image || site.url + "/og/og.jpg"] },
 };
 
 export default function BlogIndexPage() {
@@ -49,7 +50,7 @@ export default function BlogIndexPage() {
         {featured ? (
           <section className="blog-featured-section blog-container" aria-label="نوشتۀ منتخب">
             <div className="blog-section-label"><span>01</span> نوشتۀ منتخب</div>
-            <BlogPostCard post={featured} featured />
+            <BlogPostCard post={featured} categoryName={getBlogCategoryName(featured.category)} featured showReadingTime={settings.show_reading_time} />
           </section>
         ) : null}
         <section className="blog-listing-section blog-container" aria-labelledby="blog-list-title">

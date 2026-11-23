@@ -124,9 +124,31 @@ function categorySeoValue(value: unknown): Record<string, Record<string, unknown
       og_description: textValue(item.og_description, 300, "توضیحات اشتراک‌گذاری دسته‌بندی"),
       canonical_url: canonical,
       robots_index: item.robots_index !== false,
+      robots_follow: item.robots_follow !== false,
     };
   }
   return output;
+}
+
+function categoriesValue(value: unknown): { slug: string; name: string }[] {
+  if (!Array.isArray(value)) return [];
+  if (value.length > 100) throw new Error("حداکثر ۱۰۰ دسته‌بندی مجاز است.");
+  const slugs = new Set<string>();
+  const names = new Set<string>();
+  return value.map((entry: unknown) => {
+    const item = asRecord(entry);
+    const slug = textValue(item.slug, 120, "نامک دسته‌بندی", true).toLowerCase();
+    const name = textValue(item.name, 80, "نام نمایشی دسته‌بندی", true);
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      throw new Error("نامک دسته‌بندی باید فقط با حروف انگلیسی کوچک، عدد و خط تیره نوشته بشه.");
+    }
+    const normalizedName = name.toLocaleLowerCase();
+    if (slugs.has(slug)) throw new Error("نامک تکراری برای دسته‌بندی ثبت شده.");
+    if (names.has(normalizedName)) throw new Error("نام نمایشی تکراری برای دسته‌بندی ثبت شده.");
+    slugs.add(slug);
+    names.add(normalizedName);
+    return { slug, name };
+  });
 }
 
 function tagsValue(value: unknown): string[] {
@@ -302,6 +324,15 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
   if (action === "save_post") {
     const postInput = asRecord(body.post);
     const post = normalizePost(postInput);
+    if (post.category) {
+      const { data: blogSettings, error: settingsError } = await client.from("blog_settings")
+        .select("categories").eq("id", 1).maybeSingle();
+      if (settingsError) throw new Error("بررسی دسته‌بندی مقاله ناموفق بود.");
+      const available = Array.isArray(blogSettings?.categories) ? blogSettings.categories : [];
+      if (!available.some((item: Record<string, unknown>) => item.slug === post.category)) {
+        throw new Error("دسته‌بندی انتخاب‌شده در فهرست دسته‌بندی‌های بلاگ وجود نداره.");
+      }
+    }
     const id = typeof postInput.id === "string" ? postInput.id : "";
     const now = new Date().toISOString();
     if (id) {
@@ -400,6 +431,24 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
     const widths = ["reading", "wide"];
     const languages = ["fa", "en"];
     const defaultOg = mediaUrl(input.default_og_image);
+    const { data: currentSettings, error: currentSettingsError } = await client.from("blog_settings")
+      .select("categories,category_seo,default_og_title,default_og_description,default_robots_index,default_robots_follow,noindex_empty_categories,sitemap_include_categories,sitemap_include_articles,schema_type,breadcrumbs_enabled,breadcrumb_home_label,open_graph_enabled,twitter_card_type")
+      .eq("id", 1).maybeSingle();
+    if (currentSettingsError) throw new Error("دریافت تنظیمات فعلی ناموفق بود.");
+    const categories = input.categories === undefined
+      ? (Array.isArray(currentSettings?.categories) ? currentSettings.categories : [])
+      : categoriesValue(input.categories);
+    const nextSlugs = new Set(categories.map((item) => item.slug));
+    const previousCategories = Array.isArray(currentSettings?.categories) ? currentSettings.categories : [];
+    const removedSlugs = previousCategories
+      .map((item: Record<string, unknown>) => typeof item.slug === "string" ? item.slug : "")
+      .filter((slug: string) => slug && !nextSlugs.has(slug));
+    if (removedSlugs.length) {
+      const { data: usedPosts, error: usedPostsError } = await client.from("blog_posts")
+        .select("category").in("category", removedSlugs).limit(1);
+      if (usedPostsError) throw new Error("بررسی وابستگی مقاله‌ها به دسته‌بندی‌ها ناموفق بود.");
+      if (usedPosts?.length) throw new Error("این دسته‌بندی هنوز به یک یا چند مقاله وصله. ابتدا مقاله‌ها رو به دسته‌بندی دیگه منتقل کن.");
+    }
     const settings = {
       id: 1,
       title: textValue(input.title, 100, "عنوان بلاگ", true),
@@ -428,7 +477,20 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
       default_meta_description: textValue(input.default_meta_description, 320, "توضیحات متای پیش‌فرض"),
       default_og_image: defaultOg || "",
       footer_note: textValue(input.footer_note, 200, "متن پابرگ"),
-      category_seo: categorySeoValue(input.category_seo),
+      categories,
+      category_seo: input.category_seo === undefined ? (currentSettings?.category_seo || {}) : categorySeoValue(input.category_seo),
+      default_og_title: input.default_og_title === undefined ? (currentSettings?.default_og_title || "") : textValue(input.default_og_title, 100, "عنوان پیش‌فرض شبکه‌های اجتماعی"),
+      default_og_description: input.default_og_description === undefined ? (currentSettings?.default_og_description || "") : textValue(input.default_og_description, 300, "توضیحات پیش‌فرض شبکه‌های اجتماعی"),
+      default_robots_index: input.default_robots_index === undefined ? currentSettings?.default_robots_index !== false : input.default_robots_index !== false,
+      default_robots_follow: input.default_robots_follow === undefined ? currentSettings?.default_robots_follow !== false : input.default_robots_follow !== false,
+      noindex_empty_categories: input.noindex_empty_categories === undefined ? currentSettings?.noindex_empty_categories !== false : input.noindex_empty_categories !== false,
+      sitemap_include_categories: input.sitemap_include_categories === undefined ? currentSettings?.sitemap_include_categories !== false : input.sitemap_include_categories !== false,
+      sitemap_include_articles: input.sitemap_include_articles === undefined ? currentSettings?.sitemap_include_articles !== false : input.sitemap_include_articles !== false,
+      schema_type: input.schema_type === undefined ? (currentSettings?.schema_type === "BlogPosting" ? "BlogPosting" : "Article") : (input.schema_type === "BlogPosting" ? "BlogPosting" : "Article"),
+      breadcrumbs_enabled: input.breadcrumbs_enabled === undefined ? currentSettings?.breadcrumbs_enabled !== false : input.breadcrumbs_enabled !== false,
+      breadcrumb_home_label: input.breadcrumb_home_label === undefined ? (currentSettings?.breadcrumb_home_label || "خانه") : (textValue(input.breadcrumb_home_label, 40, "عنوان خانه در مسیر راهنما") || "خانه"),
+      open_graph_enabled: input.open_graph_enabled === undefined ? currentSettings?.open_graph_enabled !== false : input.open_graph_enabled !== false,
+      twitter_card_type: input.twitter_card_type === undefined ? (currentSettings?.twitter_card_type === "summary" ? "summary" : "summary_large_image") : (input.twitter_card_type === "summary" ? "summary" : "summary_large_image"),
       updated_at: new Date().toISOString(),
     };
     const { data, error } = await client.from("blog_settings")

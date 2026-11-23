@@ -39,11 +39,21 @@ export function extractMarkdownImageUrls(markdown:string):string[]{
   return urls;
 }
 export function extractToc(markdown:string):TocItem[]{
+  const lines=markdown.replace(/\r\n/g,"\n").split("\n");
   const seen=new Map<string,number>(),items:TocItem[]=[];
-  for(const line of markdown.split(/\r?\n/)){
-    const m=line.match(/^(#{2,3})\s+(.+?)\s*#*$/);if(!m)continue;
-    const title=m[2].trim(),base=slugHeading(title),count=seen.get(base)||0;seen.set(base,count+1);
-    items.push({id:count?base+"-"+(count+1):base,title,level:m[1].length});
+  const add=(level:number,title:string)=>{
+    if(level<2||level>3)return;
+    const base=slugHeading(title),count=seen.get(base)||0;seen.set(base,count+1);
+    items.push({id:count?base+"-"+(count+1):base,title,level});
+  };
+  for(let index=0;index<lines.length;index++){
+    const line=lines[index].replace(/^\s{0,3}/,"");
+    const heading=line.match(/^(#{2,3})\s+(.+?)\s*#*$/);
+    if(heading){add(heading[1].length,heading[2].trim());continue;}
+    if(line.trim()&&index+1<lines.length){
+      const setext=lines[index+1].trim().match(/^(={3,}|-{3,})$/);
+      if(setext)add(setext[1][0]==="="?2:3,line.trim());
+    }
   }
   return items;
 }
@@ -81,7 +91,11 @@ export function renderMarkdown(markdown:string):string{
       out.push('<figure class="blog-inline-image"><img src="'+esc(image.url)+'" alt="'+esc(image.alt)+'"'+(image.title?' title="'+esc(image.title)+'"':"")+' loading="lazy" decoding="async">'+(image.caption?'<figcaption>'+esc(image.caption)+'</figcaption>':"")+"</figure>");
       continue;
     }
-    const h=line.match(/^(#{1,4})\s+(.+?)\s*#*$/);if(h){closeP();closeL();heading(h[1].length,h[2].trim());continue;}
+    if(line.trim()&&index+1<lines.length){
+      const setext=lines[index+1].trim().match(/^(={3,}|-{3,})$/);
+      if(setext){closeP();closeL();heading(setext[1][0]==="="?2:3,line.trim());index++;continue;}
+    }
+    const h=line.match(/^\s{0,3}(#{1,4})\s+(.+?)\s*#*$/);if(h){closeP();closeL();heading(h[1].length,h[2].trim());continue;}
     if(/^\s*(---+|___+|\*\*\*+)\s*$/.test(line)){closeP();closeL();out.push("<hr>");continue;}
     const quote=line.match(/^\s*>\s?(.*)$/);if(quote){closeP();closeL();out.push("<blockquote><p>"+inline(quote[1])+"</p></blockquote>");continue;}
     const un=line.match(/^\s*[-*+]\s+(.+)$/),ord=line.match(/^\s*\d+[.)]\s+(.+)$/);

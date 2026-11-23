@@ -46,7 +46,12 @@ const [
 ]);
 
 const categorySeoMigration = await read("supabase/migrations/20261123130000_add_category_level_seo.sql");
+const categoryTaxonomyMigration = await read("supabase/migrations/20261123200000_add_blog_category_taxonomy_and_advanced_seo.sql");
 const copyLinkButton = await read("src/app/blog/CopyLinkButton.tsx");
+const analyticsConsent = await read("public/analytics-consent.js");
+const notFoundContent = await read("src/app/NotFoundContent.tsx");
+const notFoundCss = await read("src/app/not-found.css");
+const blogNotFound = await read("src/app/blog/not-found.tsx");
 new Script(contactBrowserScript, { filename: "public/blog-contact.js" });
 new Script(googleContactScript, { filename: "integrations/google-apps-script/blog-contact.gs" });
 const scripts = JSON.parse(packageJson).scripts;
@@ -64,7 +69,7 @@ assert.ok(listingPage.includes("getBlogPosts()") && listingPage.includes("BlogLi
 assert.ok(listingPage.includes('"@type": "Blog"'), "the archive must include Blog structured data");
 assert.ok(articlePage.includes("generateStaticParams"), "published articles must be statically generated");
 assert.ok(articlePage.includes('{ slug: "__empty__" }') && articlePage.includes("robots: { index: false, follow: false }"), "empty article fallback must remain noindex");
-assert.ok(articlePage.includes('"@type": "Article"'), "articles must include Article structured data");
+assert.ok(articlePage.includes('"@context": "https://schema.org"') && articlePage.includes('"@type": settings.schema_type'), "articles must use the configured structured data type");
 assert.ok(articlePage.includes('"@type": "FAQPage"'), "FAQ schema must be available");
 assert.ok(articlePage.includes("canonical") && articlePage.includes("robots_index"), "article SEO must support canonical and robots directives");
 assert.ok(articlePage.includes("openGraph:") && articlePage.includes("twitter:"), "article metadata must include OG and X cards");
@@ -123,7 +128,7 @@ assert.ok(!/localStorage|sessionStorage/.test(adminApp), "CMS session tokens mus
 assert.ok(adminApp.includes("PasswordCredential") && adminApp.includes("navigator.credentials.get") && adminApp.includes("preventSilentAccess"), "remember-me must rely on browser-managed credentials, not client-side token storage");
 assert.ok(adminApp.includes("updateFormatToolbar") && adminApp.includes("getSelectedBlockquote") && adminApp.includes("unwrapBlockquote"), "format toolbar must reflect selection state and allow unwrapping blockquotes");
 assert.ok(adminApp.includes("category_seo:collectCategorySeo") && adminApp.includes("renderCategorySeoEditor"), "CMS must edit and persist per-category SEO settings");
-assert.ok(sitemap.includes("categorySeo[category.slug]?.robots_index !== false"), "noindex categories must be excluded from the sitemap");
+assert.ok(sitemap.includes("settings.sitemap_include_categories") && sitemap.includes("settings.category_seo?.[category.slug]") && sitemap.includes("settings.noindex_empty_categories"), "sitemap must respect global category inclusion and category robots settings");
 assert.ok(!/sb_secret_|service_role|GITHUB_WORKFLOW_TOKEN|ghp_/.test(adminApp), "privileged credentials must never enter the browser bundle");
 assert.equal((adminApp.match(/function showView\(name\)/g) || []).length, 1, "CMS script must have one view switcher");
 
@@ -191,4 +196,21 @@ assert.ok(articlePage.indexOf("<h1>{post.title}</h1>") < articlePage.indexOf("<f
 assert.ok(publicHeader.includes("SocialIcon") && !publicHeader.includes("mailto:") && !publicHeader.includes("/#about"), "blog footer must remove email/about links and include social icons");
 
 assert.ok(adminHtml.includes("مرا به خاطر بسپار") && !/EDITORIAL OVERVIEW|RECENT WORK|CONTENT LIBRARY|PRIVATE WORKSPACE|MAIN WEBSITE/.test(adminHtml), "CMS visible labels must be Persian and offer a remember-me option");
+assert.ok(categoryTaxonomyMigration.includes("add column if not exists categories jsonb") && categoryTaxonomyMigration.includes("'brand-and-business'") && categoryTaxonomyMigration.includes("blog_get_public_blog_settings_extras"), "taxonomy migration must seed a stable English category slug and expose only curated public settings");
+assert.ok(adminHtml.includes('id="post-category" data-field="category"><option') && adminHtml.includes('id="category-manager-list"') && adminHtml.includes('id="new-category-name"') && adminHtml.includes('id="new-category-slug"'), "CMS must expose managed categories with Persian labels and independent English slugs");
+assert.ok(adminApp.includes("function getConfiguredCategories") && adminApp.includes("function addManagedCategory") && adminApp.includes("collectCategories(settings?.categories||[])") && adminApp.includes("renderCategoryManager(settings)"), "CMS must add, list, preserve and select managed categories");
+assert.ok(adminEdge.includes("function categoriesValue") && adminEdge.includes("^[a-z0-9]+(?:-[a-z0-9]+)*$") && adminEdge.includes("available.some((item: Record<string, unknown>) => item.slug === post.category)"), "Edge Function must validate English category slugs and reject unknown article categories");
+assert.ok(adminEdge.includes("input.categories === undefined") && adminEdge.includes("currentSettings?.categories") && adminEdge.includes("currentSettings?.default_robots_index"), "Edge Function must preserve taxonomy and global SEO values when a legacy admin omits new fields");
+assert.ok(dataSource.includes("categories:BlogCategory[]") && dataSource.includes("getBlogCategoryName") && dataSource.includes("getPostsByCategory=(slug:string)=>getBlogPosts().filter((post)=>post.category===slug)"), "public blog data must resolve Persian labels from stable English category slugs");
+assert.ok(fetchScript.includes("categories:Array.isArray(s.categories)?s.categories:[]") && fetchScript.includes("default_robots_index"), "static build payload must include taxonomy and advanced SEO settings");
+assert.ok(categoryPage.includes("settings.noindex_empty_categories") && categoryPage.includes("settings.default_robots_follow") && categoryPage.includes("item.name"), "category pages must use display labels and global/category robots rules");
+assert.ok(sitemap.includes("settings.sitemap_include_categories") && sitemap.includes("settings.sitemap_include_articles") && sitemap.includes("category.count === 0"), "sitemap must respect global inclusion rules and empty-category noindex");
+assert.ok(articlePage.includes("settings.schema_type") && articlePage.includes("settings.open_graph_enabled") && articlePage.includes("settings.twitter_card_type") && articlePage.includes("settings.breadcrumbs_enabled") && articlePage.includes("robotsIndex"), "article pages must apply global schema, social, breadcrumb and robots defaults");
+assert.ok(!articlePage.includes("mailto:") && !articlePage.includes(">ایمیل"), "article share row must not expose an email action");
+assert.ok(copyLinkButton.includes("navigator.clipboard?.writeText") && copyLinkButton.includes("document.execCommand(\"copy\")") && copyLinkButton.includes("setManualCopy(true)") && copyLinkButton.includes("Ctrl+C"), "copy-link control must have clipboard and visible manual-selection fallbacks");
+assert.ok(adminApp.includes("function clipboardHeadingLevel") && adminApp.includes("font-size") && adminApp.includes("largest>=30") && adminApp.includes('tag==="h1"?2'), "Google Docs styled headings must be preserved and heading levels serialized without shifting");
+assert.ok(markdownSource.includes("setext=lines[index+1].trim().match") && markdownSource.includes('class="blog-inline-image"'), "public Markdown renderer must preserve Setext headings and semantic images");
+assert.ok(adminApp.includes("const setext=lines[index+1].trim().match") && adminApp.includes("renderPreviewMarkdown"), "CMS preview must render Setext and ATX heading structures");
+assert.ok(analyticsConsent.includes('window.location.pathname === "/blog"') && analyticsConsent.includes('window.location.pathname.startsWith("/blog/")') && analyticsConsent.includes('getSavedChoice() === "granted"'), "blog paths must hide consent UI while continuing to respect saved analytics choices");
+assert.ok(notFoundContent.includes("usePathname") && notFoundContent.includes("not-found-blog") && notFoundCss.includes(".not-found-blog") && blogNotFound.includes("این آدرس به نوشته‌ای نمی‌رسه"), "blog must have a dedicated branded 404 page");
 console.log("Personal blog contract passed: secure CMS, rich paste, category SEO, accessible formatting, responsive reading and isolated Persian editorial chrome.");

@@ -202,6 +202,7 @@
       "#post-toc":"toc_enabled","#post-dropcap":"drop_cap","#post-width":"content_width","#post-accent":"accent_color",
     };
     Object.entries(fields).forEach(([selector,key])=>setField(selector,post[key]));
+    syncPostCategorySelect(post.category||"");
     $("#post-content").innerHTML=renderPreviewMarkdown(String(post.content||""));
     $("#post-tags").value=(post.tags||[]).join("، ");
     $("#post-faqs").value=(post.faqs||[]).map((faq)=>"پرسش: "+faq.question+"\nپاسخ: "+faq.answer).join("\n\n");
@@ -321,7 +322,11 @@
       if(!line.trim()){close();closeList();continue;}
       const image=renderPreviewFigure(line);
       if(image){close();closeList();output.push(image);continue;}
-      const heading=line.match(/^(#{1,4})\s+(.+)$/);
+      if(line.trim()&&index+1<lines.length){
+        const setext=lines[index+1].trim().match(/^(={3,}|-{3,})$/);
+        if(setext){close();closeList();const level=setext[1][0]==="="?2:3;output.push("<h"+level+">"+previewInline(line.trim())+"</h"+level+">");index++;continue;}
+      }
+      const heading=line.match(/^\s{0,3}(#{1,4})\s+(.+)$/);
       if(heading){close();closeList();const level=Math.max(2,heading[1].length);output.push("<h"+level+">"+previewInline(heading[2])+"</h"+level+">");continue;}
       const quote=line.match(/^>\s?(.*)$/);
       if(quote){close();closeList();output.push("<blockquote><p>"+previewInline(quote[1])+"</p></blockquote>");continue;}
@@ -392,7 +397,7 @@
       const caption=escapeAttribute(element.querySelector("figcaption")?.textContent||"");
       return "!["+alt+"]("+src+(title?' "'+title+'"':"")+")"+(caption?' {caption="'+caption+'"}':"")+"\n\n";
     }
-    if(tag==="h2"||tag==="h3"||tag==="h4")return "#".repeat(Number(tag.slice(1)))+" "+Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
+    if(/^h[1-6]$/.test(tag))return "#".repeat(tag==="h1"?2:Math.min(4,Math.max(2,Number(tag.slice(1)))))+" "+Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
     if(tag==="p")return Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
     if(tag==="ul"||tag==="ol")return listToMarkdown(element,0)+"\n\n";
     if(tag==="blockquote"){
@@ -418,12 +423,50 @@
   function editorToMarkdown(editor) {
     return Array.from(editor.childNodes).map(blockToMarkdown).join("").replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
   }
+  function clipboardHeadingLevel(source) {
+    const tag=source.tagName?.toLowerCase()||"";
+    if(/^h[1-6]$/.test(tag))return Math.min(4,Math.max(2,Number(tag.slice(1))+1));
+    const role=source.getAttribute("role")==="heading";
+    const ariaLevel=Number(source.getAttribute("aria-level")||source.getAttribute("data-heading-level")||0);
+    if(role&&ariaLevel>=1&&ariaLevel<=6)return Math.min(4,Math.max(2,ariaLevel+1));
+    const classes=String(source.getAttribute("class")||"").toLowerCase();
+    if(/mso(title|heading1)|heading[_ -]?1|title[_ -]?1/.test(classes))return 2;
+    if(/mso(subtitle|heading2)|heading[_ -]?2|subtitle/.test(classes))return 3;
+    if(/heading[_ -]?3/.test(classes))return 4;
+    const styleNodes=[source,...Array.from(source.querySelectorAll?.("[style]")||[])];
+    let largest=0,bold=false;
+    styleNodes.forEach((element)=>{
+      const style=(element.getAttribute("style")||"").toLowerCase();
+      const size=(style.match(/font-size\s*:\s*([0-9.]+)(px|pt|em|rem)?/)||[]);
+      if(size[1]){
+        let value=Number(size[1]),unit=size[2]||"px";
+        if(unit==="pt")value*=4/3;
+        if(unit==="em"||unit==="rem")value*=16;
+        largest=Math.max(largest,value);
+      }
+      if(/font-weight\s*:\s*(bold|[6-9]00)/.test(style))bold=true;
+      if(["b","strong"].includes(element.tagName?.toLowerCase()))bold=true;
+    });
+    if(!bold)return 0;
+    if(largest>=30)return 2;
+    if(largest>=25)return 3;
+    if(largest>=20)return 4;
+    return 0;
+  }
   function cleanClipboardNode(node) {
     if(node.nodeType===Node.TEXT_NODE)return document.createTextNode(node.nodeValue||"");
     if(node.nodeType!==Node.ELEMENT_NODE)return null;
     const source=node,tag=source.tagName.toLowerCase();
     if(["script","style","iframe","object","embed","svg","meta","link"].includes(tag))return null;
     const children=()=>Array.from(source.childNodes).map(cleanClipboardNode).filter(Boolean);
+    if(["p","div"].includes(tag)){
+      const level=clipboardHeadingLevel(source);
+      if(level){
+        const heading=document.createElement("h"+level);
+        children().forEach((child)=>heading.appendChild(child));
+        return heading;
+      }
+    }
     if(tag==="span"||tag==="font"){
       let fragment=document.createDocumentFragment();children().forEach((child)=>fragment.appendChild(child));
       const style=(source.getAttribute("style")||"").toLowerCase();
@@ -794,14 +837,90 @@
       setButton(button,false);
     }
   }
+  function getConfiguredCategories(settings) {
+    const source=Array.isArray(settings?.categories)?settings.categories:[];
+    const result=source.map((item)=>({slug:String(item?.slug||""),name:String(item?.name||"")})).filter((item)=>item.slug&&item.name);
+    const known=new Set(result.map((item)=>item.slug));
+    state.posts.forEach((post)=>{
+      const slug=String(post.category||"").trim();
+      if(slug&&!known.has(slug)){result.push({slug,name:slug.replace(/-/g," ")});known.add(slug);}
+    });
+    return result;
+  }
+  function syncPostCategorySelect(selected) {
+    const select=$("#post-category");
+    if(!select)return;
+    const value=selected??select.value??"";
+    const options=[new Option("بدون دسته‌بندی","")];
+    getConfiguredCategories(state.settings).forEach((item)=>options.push(new Option(item.name,item.slug)));
+    select.replaceChildren(...options);
+    select.value=options.some((item)=>item.value===value)?value:"";
+  }
+  function collectCategories(previous) {
+    const list=$("#category-manager-list");
+    if(!list)return Array.isArray(previous)?previous:[];
+    return Array.from(list.querySelectorAll(".category-manager-item[data-category-slug]")).map((card)=>({
+      slug:card.dataset.categorySlug,
+      name:card.querySelector("[data-category-name]")?.value.trim()||"",
+    })).filter((item)=>item.slug&&item.name);
+  }
+  function renderCategoryManager(settings) {
+    const list=$("#category-manager-list");
+    if(!list)return;
+    list.replaceChildren();
+    const categories=getConfiguredCategories(settings);
+    if(!categories.length){
+      const empty=document.createElement("p");empty.className="empty-state";
+      empty.textContent="هنوز دسته‌بندی‌ای تعریف نشده. از فرم پایین یک نام فارسی و نامک انگلیسی اضافه کن.";
+      list.appendChild(empty);
+    }
+    categories.forEach((item)=>{
+      const used=state.posts.filter((post)=>post.category===item.slug).length;
+      const row=document.createElement("div");row.className="category-manager-item";row.dataset.categorySlug=item.slug;
+      const nameLabel=document.createElement("label");nameLabel.className="field-label";nameLabel.textContent="نام نمایشی";
+      const name=document.createElement("input");name.type="text";name.maxLength=80;name.value=item.name;name.dataset.categoryName="true";
+      nameLabel.appendChild(name);
+      const slugBox=document.createElement("div");slugBox.className="category-manager-slug";
+      const slugLabel=document.createElement("small");slugLabel.textContent="نامک انگلیسی";
+      const slugValue=document.createElement("code");slugValue.textContent=item.slug;slugValue.dir="ltr";
+      slugBox.append(slugLabel,slugValue);
+      const count=document.createElement("small");count.className="category-manager-count";count.textContent=used.toLocaleString("fa-IR")+" مقاله";
+      const remove=document.createElement("button");remove.type="button";remove.className="text-button danger-text";remove.textContent="حذف";
+      remove.disabled=used>0;
+      remove.title=used>0?"ابتدا مقاله‌های این دسته‌بندی رو به دسته‌بندی دیگه منتقل کن.":"حذف دسته‌بندی";
+      remove.addEventListener("click",()=>{
+        const next=(state.settings?.categories||[]).filter((entry)=>entry.slug!==item.slug);
+        state.settings={...(state.settings||{}),categories:next};
+        const seo={...(state.settings.category_seo||{})};delete seo[item.slug];
+        state.settings.category_seo=seo;
+        renderCategoryManager(state.settings);syncPostCategorySelect();
+        renderCategorySeoEditor(state.settings);
+        $("#category-manager-message").textContent="دسته‌بندی حذف شد؛ برای ثبت نهایی تنظیمات رو ذخیره کن.";
+      });
+      row.append(nameLabel,slugBox,count,remove);
+      list.appendChild(row);
+    });
+    syncPostCategorySelect($("#post-category")?.value);
+  }
+  function addManagedCategory() {
+    const name=$("#new-category-name").value.trim();
+    const slug=$("#new-category-slug").value.trim().toLowerCase();
+    const message=$("#category-manager-message");
+    if(!name||!slug){message.textContent="نام فارسی و نامک انگلیسی رو وارد کن.";return;}
+    if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)){message.textContent="نامک باید انگلیسی، با حروف کوچک و خط تیره باشه.";return;}
+    const categories=getConfiguredCategories(state.settings);
+    if(categories.some((item)=>item.slug===slug)){message.textContent="این نامک قبلاً ثبت شده.";return;}
+    if(categories.some((item)=>item.name.toLocaleLowerCase()===name.toLocaleLowerCase())){message.textContent="این نام فارسی قبلاً ثبت شده.";return;}
+    state.settings={...(state.settings||{}),categories:[...categories,{slug,name}]};
+    renderCategoryManager(state.settings);syncPostCategorySelect();
+    renderCategorySeoEditor(state.settings);
+    $("#new-category-name").value="";$("#new-category-slug").value="";
+    message.textContent="دسته‌بندی اضافه شد؛ برای انتشار در وبلاگ تنظیمات رو ذخیره کن.";
+  }
+
   function categorySeoEntries() {
     const categories=new Map();
-    state.posts.forEach((post)=>{
-      const name=String(post.category||"").trim();
-      if(!name)return;
-      const slug=name.toLowerCase().replace(/\s+/g,"-");
-      if(!categories.has(slug))categories.set(slug,name);
-    });
+    collectCategories(state.settings?.categories||[]).forEach((item)=>categories.set(item.slug,item.name));
     Object.entries(state.settings?.category_seo||{}).forEach(([slug])=>{
       if(!categories.has(slug))categories.set(slug,slug.replace(/-/g," "));
     });
@@ -845,7 +964,10 @@
       const indexLabel=document.createElement("label");const index=document.createElement("input");
       index.type="checkbox";index.dataset.categoryField="robots_index";index.checked=values.robots_index!==false;
       indexLabel.append(index,document.createTextNode(" این دسته‌بندی در موتورهای جست‌وجو ایندکس بشه"));
-      options.appendChild(indexLabel);card.appendChild(options);
+      const followLabel=document.createElement("label");const follow=document.createElement("input");
+      follow.type="checkbox";follow.dataset.categoryField="robots_follow";follow.checked=values.robots_follow!==false;
+      followLabel.append(follow,document.createTextNode(" لینک‌های این دسته‌بندی دنبال بشن"));
+      options.append(indexLabel,followLabel);card.appendChild(options);
       list.appendChild(card);
     });
   }
@@ -875,7 +997,15 @@
       show_toc:check("setting-toc"),show_related_posts:check("setting-related"),show_share:check("setting-share"),
       enable_rss:check("setting-rss"),default_meta_title:get("setting-meta-title"),default_meta_description:get("setting-meta-description"),
       footer_note:get("setting-footer"),default_og_image:settings?.default_og_image||"",
+      categories:collectCategories(settings?.categories||[]),
       category_seo:collectCategorySeo(settings?.category_seo||{}),
+      default_og_title:get("setting-default-og-title"),default_og_description:get("setting-default-og-description"),
+      default_robots_index:check("setting-default-index"),default_robots_follow:check("setting-default-follow"),
+      noindex_empty_categories:check("setting-noindex-empty"),
+      sitemap_include_categories:check("setting-sitemap-categories"),sitemap_include_articles:check("setting-sitemap-articles"),
+      schema_type:get("setting-schema-type"),breadcrumbs_enabled:check("setting-breadcrumbs"),
+      breadcrumb_home_label:get("setting-breadcrumb-label"),open_graph_enabled:check("setting-open-graph"),
+      twitter_card_type:get("setting-twitter-card"),
     };
   }
   function fillSettings(settings) {
@@ -888,6 +1018,14 @@
     set("setting-width",settings.content_width);set("setting-language",settings.default_language);set("setting-per-page",settings.posts_per_page);
     set("setting-heading-scale",settings.heading_scale);set("setting-line-height",settings.body_line_height);
     set("setting-meta-title",settings.default_meta_title);set("setting-meta-description",settings.default_meta_description);
+    set("setting-default-og-title",settings.default_og_title);set("setting-default-og-description",settings.default_og_description);
+    set("setting-schema-type",settings.schema_type||"Article");set("setting-breadcrumb-label",settings.breadcrumb_home_label||"خانه");
+    set("setting-twitter-card",settings.twitter_card_type||"summary_large_image");
+    check("setting-default-index",settings.default_robots_index);check("setting-default-follow",settings.default_robots_follow);
+    check("setting-noindex-empty",settings.noindex_empty_categories);check("setting-sitemap-categories",settings.sitemap_include_categories);
+    check("setting-sitemap-articles",settings.sitemap_include_articles);check("setting-breadcrumbs",settings.breadcrumbs_enabled);
+    check("setting-open-graph",settings.open_graph_enabled);
+    renderCategoryManager(settings);
     const theme=document.querySelector('input[name="setting-theme"][value="'+(settings.background_theme||"paper")+'"]');if(theme)theme.checked=true;
     check("setting-search",settings.show_search);check("setting-categories",settings.show_categories);
     check("setting-featured",settings.show_featured);check("setting-readtime",settings.show_reading_time);
@@ -995,6 +1133,20 @@
         toast("تصویر پیش‌فرض فشرده و بارگذاری شد.");
       }catch(error){toast(error.message,true);}
       finally{event.target.value="";}
+    });
+    $("#add-category-button").addEventListener("click",addManagedCategory);
+    $("#new-category-name").addEventListener("keydown",(event)=>{if(event.key==="Enter"){event.preventDefault();$("#new-category-slug").focus();}});
+    $("#new-category-slug").addEventListener("keydown",(event)=>{if(event.key==="Enter"){event.preventDefault();addManagedCategory();}});
+    $("#category-manager-list").addEventListener("input",(event)=>{
+      if(event.target.matches("[data-category-name]")){
+        const card=event.target.closest(".category-manager-item");
+        const slug=card?.dataset.categorySlug;
+        const seoCard=slug?document.querySelector('.category-seo-card[data-category-slug="'+CSS.escape(slug)+'"]'):null;
+        const title=seoCard?.querySelector(".category-seo-heading strong");
+        if(title)title.textContent=event.target.value.trim()||slug;
+        const option=$("#post-category option[value='"+slug+"']");
+        if(option)option.textContent=event.target.value.trim()||slug;
+      }
     });
     $("#settings-form").addEventListener("submit",saveSettings);
     $("#logout-button").addEventListener("click",()=>void logout(true));
