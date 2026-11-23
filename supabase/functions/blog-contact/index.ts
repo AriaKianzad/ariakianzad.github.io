@@ -211,8 +211,7 @@ Deno.serve(async (request: Request) => {
       "<h3>توضیحات</h3><p style=\"white-space:pre-wrap\">" + escapeHtml(message) + "</p>" +
       "<hr><p style=\"font-size:12px;color:#777f77\">برای پاسخ مستقیم، به همین ایمیل Reply کنید.</p></div>";
     const textBody = rows.map(([label, value]) => label + ": " + value).join("\n") +
-      "\n\nتوضیحات:\n" + message +
-      "";
+      "\n\nتوضیحات:\n" + message;
 
     const mailResponse = await fetch(scriptUrl.toString(), {
       method: "POST",
