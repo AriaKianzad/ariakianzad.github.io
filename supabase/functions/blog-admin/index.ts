@@ -362,7 +362,6 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
   }
 
   if (action === "save_settings") {
-    await workflowToken();
     const input = asRecord(body.settings);
     const themes = ["paper", "white", "warm"];
     const cards = ["editorial", "minimal", "image-led"];
@@ -403,8 +402,13 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
     const { data, error } = await client.from("blog_settings")
       .upsert(settings, { onConflict: "id" }).select("*").single();
     if (error) throw new Error("ذخیرۀ تنظیمات بلاگ ناموفق بود.");
-    await dispatchAfterWrite("save_settings");
-    return { settings: data, buildDispatched: true };
+    const tokenConfigured = Boolean(Deno.env.get("GITHUB_WORKFLOW_TOKEN")?.trim());
+    if (tokenConfigured) await dispatchAfterWrite("save_settings");
+    return {
+      settings: data,
+      buildDispatched: tokenConfigured,
+      publicationPending: !tokenConfigured,
+    };
   }
 
   throw new Error("درخواست ناشناخته است.");

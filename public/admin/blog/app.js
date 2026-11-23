@@ -376,8 +376,14 @@
     const button=$("#save-settings");setButton(button,true,"در حال ذخیره…");
     try {
       const result=await api("save_settings",{settings:parseSettingsForm(state.settings)});
-      state.settings=result.settings;$("#settings-message").textContent="تنظیمات ذخیره شد و Build آغاز شد.";
-      toast("تنظیمات ذخیره شد. بعد از Build تغییرات روی سایت دیده می‌شن.");
+      state.settings=result.settings;
+      if(result.buildDispatched){
+        $("#settings-message").textContent="تنظیمات ذخیره شد و Build آغاز شد.";
+        toast("تنظیمات ذخیره شد. بعد از Build تغییرات روی سایت دیده می‌شن.");
+      }else{
+        $("#settings-message").textContent="تنظیمات در Supabase ذخیره شد؛ انتشار عمومی منتظر تنظیم GitHub Token است.";
+        toast("تنظیمات ذخیره شد. برای اعمال روی سایت، GitHub Token انتشار رو در Supabase ثبت کن.",true);
+      }
     }catch(error){toast(error.message,true);}
     finally{setButton(button,false);}
   }

@@ -85,6 +85,7 @@ assert.equal((adminApp.match(/function showView\(name\)/g) || []).length, 1, "CM
 for (const invariant of [
   "auth.getUser(accessToken)", 'from("dashboard_admins")', '.eq("active", true)',
   "email_confirmed_at", "Access-Control-Allow-Origin", "GITHUB_WORKFLOW_TOKEN",
+  "publicationPending",
   "published_snapshot", "has_unpublished_changes", "MAX_IMAGE_BYTES", "hasMagicBytes",
   "/actions/workflows/deploy.yml/dispatches",
 ]) {
