@@ -49,14 +49,13 @@ export function ContactForm() {
           <label htmlFor="contact-type">موضوع درخواست *</label>
           <select id="contact-type" name="requestType" defaultValue="advertorial" required>
             <option value="advertorial">رپورتاژ یا محتوای تبلیغاتی</option>
-            <option value="editorial_link">بررسی ارجاع تحریریه‌ای Follow بدون پرداخت بابت لینک</option>
             <option value="sponsorship">اسپانسری دوره‌ای</option>
             <option value="collaboration">همکاری محتوایی یا حرفه‌ای</option>
             <option value="general">پیام عمومی یا موضوع دیگر</option>
           </select>
         </div>
 
-        <div className="blog-contact-field full" data-show-for="advertorial editorial_link sponsorship">
+        <div className="blog-contact-field full" data-show-for="advertorial sponsorship">
           <label htmlFor="contact-website">آدرس وب‌سایت برند یا رسانه</label>
           <input
             id="contact-website"
@@ -67,10 +66,6 @@ export function ContactForm() {
             placeholder="https://example.com"
             dir="ltr"
           />
-        </div>
-
-        <div className="blog-contact-field full" data-show-for="editorial_link" hidden>
-          <small>این درخواست فقط برای ارجاع تحریریه‌ای مستقل و بدون پرداخت بابت لینک بررسی می‌شه؛ درج Follow تضمین نمی‌شه.</small>
         </div>
 
         <div className="blog-contact-field full" data-show-for="sponsorship" hidden>
