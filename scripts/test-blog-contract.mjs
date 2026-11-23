@@ -37,7 +37,7 @@ assert.ok(scripts.predev.includes("fetch-blog-content.mjs"), "local development 
 assert.ok(fetchScript.includes("/rest/v1/rpc/get_public_blog_payload"), "static content must use the restricted public RPC");
 assert.ok(fetchScript.includes(".cache/blog-content.json"), "build payload must remain in the ignored cache");
 assert.ok(!fetchScript.includes("blog_posts"), "the public build must not query private CMS tables directly");
-assert.ok(imageScript.includes("resize(1200, 630"), "social images must be 1200x630");
+assert.ok(/resize\(\s*1200\s*,\s*630\s*,/.test(imageScript), "social images must be 1200x630");
 assert.ok(imageScript.includes("sharp(") && imageScript.includes("jpeg({quality:88"), "social images must be optimized in the build");
 assert.ok(dataSource.includes("readFileSync"), "blog data must be loaded at build time, not per public request");
 
