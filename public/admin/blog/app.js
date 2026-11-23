@@ -202,6 +202,7 @@
       "#post-toc":"toc_enabled","#post-dropcap":"drop_cap","#post-width":"content_width","#post-accent":"accent_color",
     };
     Object.entries(fields).forEach(([selector,key])=>setField(selector,post[key]));
+    syncPostCategorySelect(post.category||"");
     $("#post-content").innerHTML=renderPreviewMarkdown(String(post.content||""));
     $("#post-tags").value=(post.tags||[]).join("، ");
     $("#post-faqs").value=(post.faqs||[]).map((faq)=>"پرسش: "+faq.question+"\nپاسخ: "+faq.answer).join("\n\n");
@@ -1090,6 +1091,20 @@
         toast("تصویر پیش‌فرض فشرده و بارگذاری شد.");
       }catch(error){toast(error.message,true);}
       finally{event.target.value="";}
+    });
+    $("#add-category-button").addEventListener("click",addManagedCategory);
+    $("#new-category-name").addEventListener("keydown",(event)=>{if(event.key==="Enter"){event.preventDefault();$("#new-category-slug").focus();}});
+    $("#new-category-slug").addEventListener("keydown",(event)=>{if(event.key==="Enter"){event.preventDefault();addManagedCategory();}});
+    $("#category-manager-list").addEventListener("input",(event)=>{
+      if(event.target.matches("[data-category-name]")){
+        const card=event.target.closest(".category-manager-item");
+        const slug=card?.dataset.categorySlug;
+        const seoCard=slug?document.querySelector('.category-seo-card[data-category-slug="'+CSS.escape(slug)+'"]'):null;
+        const title=seoCard?.querySelector(".category-seo-heading strong");
+        if(title)title.textContent=event.target.value.trim()||slug;
+        const option=$("#post-category option[value='"+slug+"']");
+        if(option)option.textContent=event.target.value.trim()||slug;
+      }
     });
     $("#settings-form").addEventListener("submit",saveSettings);
     $("#logout-button").addEventListener("click",()=>void logout(true));
