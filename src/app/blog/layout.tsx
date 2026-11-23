@@ -24,6 +24,8 @@ export default function BlogLayout({ children }: { children: ReactNode }) {
   return (
     <div
       className={"blog-theme theme-" + (settings.background_theme || "paper") + " layout-" + (settings.layout_style || "editorial") + " cards-" + (settings.card_style || "editorial")}
+      lang={settings.default_language || "fa"}
+      dir={settings.default_language === "en" ? "ltr" : "rtl"}
       style={style}
     >
       {children}
