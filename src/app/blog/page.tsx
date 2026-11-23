@@ -41,7 +41,6 @@ export default function BlogIndexPage() {
           <div className="blog-intro-copy">
             <h1 id="blog-intro-title">{settings.tagline || "یادداشت‌هایی درباره برند، معنا و ارتباط"}</h1>
             <p className="blog-intro-lede">{settings.intro_title || "از استراتژی برند تا ارتباطات روزمره"}</p>
-            <p className="blog-intro-description">{settings.intro_body || settings.description}</p>
           </div>
           <div className="blog-intro-visual" aria-hidden="true">
             <HeroVisual />
