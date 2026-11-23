@@ -3,6 +3,10 @@ import { getBlogSettings } from "@/lib/blog-data";
 import { socials } from "@/lib/site";
 import { SocialIcon } from "@/components/icons";
 
+const socialLabels: Record<string, string> = {
+  youtube: "یوتیوب", instagram: "اینستاگرام", linkedin: "لینکدین", x: "ایکس", unsplash: "آنسپلیش", medium: "مدیوم",
+};
+
 export function BlogHeader() {
   return (
     <header className="blog-header" dir="rtl">
@@ -31,19 +35,19 @@ export function BlogFooter() {
         <div className="blog-footer-side">
           <nav className="blog-footer-links" aria-label="پیوندهای وبلاگ">
             <Link href="/blog/">همۀ نوشته‌ها</Link>
-            {settings.enable_rss ? <a href="/blog/feed.xml">فید RSS</a> : null}
+            {settings.enable_rss ? <a href="/blog/feed.xml">فید وبلاگ</a> : null}
             <Link href="/">وب‌سایت اصلی</Link>
           </nav>
           <div className="blog-socials" aria-label="شبکه‌های اجتماعی">
             {socials.map((entry) => (
-              <a key={entry.id} href={entry.href} target="_blank" rel="noopener noreferrer" aria-label={entry.label} title={entry.label}>
+              <a key={entry.id} href={entry.href} target="_blank" rel="noopener noreferrer" aria-label={socialLabels[entry.id] || "شبکۀ اجتماعی"} title={socialLabels[entry.id] || "شبکۀ اجتماعی"}>
                 <SocialIcon id={entry.id} />
               </a>
             ))}
           </div>
         </div>
         <div className="blog-footer-bottom">
-          <small>© {new Date().getFullYear()} Aria Kianzad</small>
+          <small>© {new Date().toLocaleDateString("fa-IR", { year: "numeric" })} آریا کیانزاد</small>
           <span>این نوشته‌ها رو از نگاه و تجربهٔ خودم می‌نویسم.</span>
         </div>
       </div>
