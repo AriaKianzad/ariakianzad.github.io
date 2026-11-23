@@ -224,8 +224,15 @@ export function initSignalScene(host: HTMLElement) {
     const height = Math.max(1, Math.round(bounds.height));
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    camera.position.z = width < 620 ? (isBlog ? 6.0 : 8.1) : 7.2;
-    world.scale.setScalar(isBlog && width < 620 ? 1.08 : 1);
+    if (isBlog) {
+      const fitRadius = 2.35;
+      const visibleHalfHeight = fitRadius / Math.min(1, camera.aspect);
+      camera.position.z = visibleHalfHeight / Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5));
+      world.scale.setScalar(1);
+    } else {
+      camera.position.z = width < 620 ? 8.1 : 7.2;
+      world.scale.setScalar(1);
+    }
     camera.updateProjectionMatrix();
     renderer.render(scene, camera);
   };
