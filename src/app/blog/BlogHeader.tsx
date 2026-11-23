@@ -35,6 +35,7 @@ export function BlogFooter() {
         <div className="blog-footer-side">
           <nav className="blog-footer-links" aria-label="پیوندهای وبلاگ">
             <Link href="/blog/">همۀ نوشته‌ها</Link>
+            <Link href="/blog/contact/">تماس با من</Link>
             {settings.enable_rss ? <a href="/blog/feed.xml">فید وبلاگ</a> : null}
             <Link href="/">وب‌سایت اصلی</Link>
           </nav>

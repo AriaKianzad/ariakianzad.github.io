@@ -7,6 +7,7 @@ const [
   listingPage, articlePage, categoryPage, rssRoute, blogCss, adminHtml,
   adminApp, adminEdge, publicRpcMigration, browserDenyMigration, snapshotMigration,
   publicHeader, workflow, sitemap, robots, heroVisualComponent, signalScene, heroBootstrap,
+  blogLayout, contactPage, contactForm, contactEdge, contactMigration, rootLayout, configToml,
 ] = await Promise.all([
   read("package.json"),
   read("scripts/fetch-blog-content.mjs"),
@@ -31,6 +32,13 @@ const [
   read("src/components/hero-visual.tsx"),
   read("src/client/signal-scene.ts"),
   read("src/client/hero-visual.ts"),
+  read("src/app/blog/layout.tsx"),
+  read("src/app/blog/contact/page.tsx"),
+  read("src/app/blog/contact/ContactForm.tsx"),
+  read("supabase/functions/blog-contact/index.ts"),
+  read("supabase/migrations/20261123170000_add_blog_contact_rate_limit.sql"),
+  read("src/app/layout.tsx"),
+  read("supabase/config.toml"),
 ]);
 
 const categorySeoMigration = await read("supabase/migrations/20261123130000_add_category_level_seo.sql");
@@ -59,6 +67,7 @@ assert.ok(categoryPage.includes("settings.category_seo") && categoryPage.include
 assert.ok(categoryPage.includes('{ category: "__empty__" }') && categoryPage.includes("robots: { index: false, follow: false }"), "empty category fallback must remain noindex");
 assert.ok(rssRoute.includes("application/rss+xml"), "the blog must publish an RSS feed");
 assert.ok(sitemap.includes("getBlogPosts()") && sitemap.includes("/blog/"), "sitemap must include published articles and blog archive");
+assert.ok(sitemap.includes("/blog/contact/"), "sitemap must include the public contact page");
 assert.ok(robots.includes('disallow: ["/admin/", "/admin/blog/"]'), "robots.txt must disallow both admin areas");
 assert.ok(!publicHeader.includes("/author/"), "no separate author archive should be generated");
 
@@ -124,6 +133,18 @@ assert.ok(heroVisualComponent.includes("data-hero-visual") && signalScene.includ
 assert.ok(heroBootstrap.includes("MutationObserver") && heroBootstrap.includes("syncRoots"), "hero scene must initialize after client-side route changes");
 assert.ok(publicHeader.includes("<span>آریا کیانزاد</span>"), "blog header brand must show the author's name");
 assert.ok(blogCss.includes(".blog-theme .blog-header-blog-link {") && blogCss.includes('grid-template-areas:"visual copy"') && blogCss.includes("position:absolute;"), "blog header and hero must retain their desktop/mobile layout contracts");
+assert.ok(!listingPage.includes("blog-intro-description") && !listingPage.includes("با تمرکز بر رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن"), "blog hero must not repeat the long positioning description");
+assert.ok(blogLayout.includes("/blog-favicon.svg") && blogLayout.includes('themeColor: "#f4f1e9"'), "blog must use its own favicon and browser theme colour");
+assert.ok(contactPage.includes("BlogHeader") && contactPage.includes("BlogFooter") && contactPage.includes("ContactForm"), "contact page must use the blog editorial shell");
+assert.ok(contactForm.includes("advertorial") && contactForm.includes("editorial_link") && contactForm.includes("sponsorship") && contactForm.includes("BLOG_CONTACT_ENDPOINT") && contactForm.includes("sb_publishable_"), "contact form must support advertorial, editorial link and sponsorship inquiries through the public Edge endpoint");
+assert.ok(contactEdge.includes('editorial_link: "بررسی ارجاع تحریریه‌ای Follow بدون پرداخت بابت لینک"'), "contact endpoint must distinguish unpaid editorial link requests from paid advertorials");
+assert.ok(contactEdge.includes("RESEND_API_KEY") && contactEdge.includes("BLOG_CONTACT_FROM_EMAIL") && contactEdge.includes("BLOG_CONTACT_TO_EMAIL"), "contact Edge Function must use server-side mail secrets");
+assert.ok(contactEdge.includes("consume_blog_contact_rate_limit") && contactEdge.includes("companyFax") && contactEdge.includes("SITE_ORIGIN"), "contact endpoint must enforce origin, honeypot and rate limits");
+assert.ok(contactMigration.includes("private.blog_contact_rate_limits") && contactMigration.includes("SECURITY DEFINER") && contactMigration.includes("GRANT EXECUTE ON FUNCTION public.consume_blog_contact_rate_limit"), "contact rate limiting must use a private database function");
+assert.ok(signalScene.includes("new THREE.SphereGeometry(0.92, 96, 80)") && signalScene.includes("new THREE.WireframeGeometry(innerGeometry)") && signalScene.includes("new THREE.HemisphereLight"), "blog signal scene must render a lit sphere with a visible surface wireframe and depth lighting");
+assert.ok(signalScene.includes("new THREE.IcosahedronGeometry(0.92, 5)") && signalScene.includes("new THREE.MeshStandardMaterial({") && signalScene.includes("wireGeometry?.dispose()"), "homepage hero must keep its original mesh and clean up the optional blog wireframe safely");
+assert.ok(rootLayout.includes("https://bkohdqwecnvbmeaiuyyx.supabase.co;"), "site CSP must allow contact form requests to Supabase");
+assert.ok(configToml.includes("[functions.blog-contact]") && configToml.includes("verify_jwt = false"), "contact Edge Function must have public JWT configuration");
 assert.ok(!articlePage.includes("ARTICLE / ARCHIVE") && !categoryPage.includes("CATEGORY / ARCHIVE"), "public blog screens must not expose English archive labels");
 assert.ok(!adminHtml.includes("Google Docs") && !adminHtml.includes("Open Graph") && !adminHtml.includes(">English<"), "CMS visible interface copy must be Persian");
 assert.ok(blogCss.includes("body:has(.blog-theme)") && blogCss.includes("font-family:var(--font-estedad)"), "blog pages must keep their own shell and Estedad typography");
