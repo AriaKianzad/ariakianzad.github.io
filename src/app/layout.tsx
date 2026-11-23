@@ -1,9 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { estedad, geistMono } from "./fonts";
 import { rootMetadata } from "@/lib/metadata";
-import { site, socials, primaryNav, knowsAbout, rexo } from "@/lib/site";
-import { footer } from "@/content/home";
-import { ExtArrow, SocialIcon } from "@/components/icons";
+import { site, socials, knowsAbout, rexo } from "@/lib/site";
+import { SiteChrome } from "@/components/SiteChrome";
 import "./globals.css";
 import "./chrome.css";
 import "./sections.css";
@@ -15,10 +14,9 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-const personId = `${site.url}/#person`;
-const rexoId = `${rexo.url.replace(/\/$/, "")}/#organization`;
-const siteId = `${site.url}/#website`;
-const siteHost = new URL(site.url).host;
+const personId = site.url + "/#person";
+const rexoId = rexo.url.replace(/\/$/, "") + "/#organization";
+const siteId = site.url + "/#website";
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -33,7 +31,7 @@ const structuredData = {
     },
     {
       "@type": "ProfilePage",
-      "@id": `${site.url}/#profilepage`,
+      "@id": site.url + "/#profilepage",
       url: site.url,
       name: "Aria Kianzad | Brand Strategy & Personal Branding",
       description: site.description,
@@ -48,10 +46,10 @@ const structuredData = {
       name: site.displayName,
       givenName: site.givenName,
       url: site.url,
-      email: `mailto:${site.email}`,
+      email: "mailto:" + site.email,
       jobTitle: site.title,
       description: site.description,
-      image: `${site.url}/og/og.png`,
+      image: site.url + "/og/og.png",
       sameAs: socials.map((entry) => entry.href),
       knowsAbout: [...knowsAbout],
       worksFor: { "@id": rexoId },
@@ -72,7 +70,7 @@ const structuredDataJson = JSON.stringify(structuredData).replace(/</g, "\\u003c
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${estedad.variable} ${geistMono.variable}`}>
+    <html lang="en" className={estedad.variable + " " + geistMono.variable}>
       <head>
         <meta
           httpEquiv="Content-Security-Policy"
@@ -80,86 +78,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <a className="skip-link" href="#main">Skip to content</a>
         <script src="/boot.js" />
         <script src="/ui.js" defer />
         <script type="module" src="/_hero/hero-visual.js" />
-        <header className="site-header" data-header>
-          <div className="shell site-header__row">
-            <a className="wordmark" href="/#top" aria-label="Aria Kianzad, home">
-              <span className="wordmark__mark" aria-hidden="true">AK</span>
-              <span className="wordmark__copy">
-                <strong>Aria Kianzad</strong>
-                <small>Brand strategy / Personal branding</small>
-              </span>
-            </a>
-            <nav className="site-nav" aria-label="Primary" data-nav>
-              <button
-                className="menu-btn"
-                type="button"
-                aria-expanded="false"
-                aria-controls="menu-list"
-                data-menu-btn
-              >
-                <span className="menu-btn__label">Menu</span>
-                <span className="menu-btn__icon" aria-hidden="true" />
-              </button>
-              <ul className="site-nav__list" id="menu-list">
-                {primaryNav.map((item, index) => (
-                  <li key={item.href}>
-                    <a className="site-nav__link" href={item.href} data-nav-link>
-                      <span className="n" aria-hidden="true">{`0${index + 1}`}</span>
-                      {item.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-            <a className="header-cta" href={`mailto:${site.email}`}>
-              <span>Let&apos;s talk</span>
-              <ExtArrow />
-            </a>
-          </div>
-        </header>
-
-        <main id="main">{children}</main>
-
-        <footer className="site-footer">
-          <div className="shell">
-            <div className="site-footer__top">
-              <div className="site-footer__identity">
-                <a className="site-footer__wordmark" href="/#top">Aria Kianzad</a>
-                <p>{footer.note}</p>
-              </div>
-              <div className="site-footer__links" aria-label="Related projects">
-                <a href="https://rexo.agency/" target="_blank" rel="noopener noreferrer">Rexo <ExtArrow /></a>
-                <a href="/Mian-e-Ma/">میانِ ما</a>
-                <a href="mailto:kianzadaria@gmail.com">Email</a>
-              </div>
-            </div>
-            <ul className="social-list" aria-label="Social profiles">
-              {socials.map((entry) => (
-                <li key={entry.id}>
-                  <a
-                    className="social-link"
-                    href={entry.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={entry.label}
-                  >
-                    <SocialIcon id={entry.id} />
-                  </a>
-                </li>
-              ))}
-            </ul>
-            <div className="site-footer__base">
-              <p className="site-footer__legal">{footer.copyright}</p>
-              <p className="site-footer__legal">{siteHost}</p>
-              <a className="back-to-top" href="/#top">Back to top ↑</a>
-            </div>
-          </div>
-        </footer>
-
+        <SiteChrome>{children}</SiteChrome>
         <section
           id="analytics-consent"
           className="analytics-consent"
@@ -187,10 +109,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Privacy settings
         </button>
         <script src="/analytics-consent.js" defer />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: structuredDataJson }}
-        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredDataJson }} />
       </body>
     </html>
   );
