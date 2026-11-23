@@ -154,6 +154,28 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
   assert.equal(declined.scripts.length, 0);
 }
 
+// Blog routes never display the Analytics preferences dialog or its persistent control.
+{
+  const firstVisit = createPage("/blog/");
+  assert.equal(get(firstVisit, "analytics-consent").hidden, true);
+  assert.equal(get(firstVisit, "analytics-preferences").hidden, true);
+  assert.equal(firstVisit.scripts.length, 0, "analytics must remain unloaded without prior consent on blog pages");
+
+  const accepted = createPage("/blog/black-friday-history/", "granted");
+  assert.equal(get(accepted, "analytics-consent").hidden, true);
+  assert.equal(get(accepted, "analytics-preferences").hidden, true);
+  assert.equal(accepted.scripts.length, 1, "previously granted consent still permits analytics on blog pages");
+
+  const declined = createPage("/blog/category/brand-and-business/", "denied");
+  assert.equal(get(declined, "analytics-consent").hidden, true);
+  assert.equal(get(declined, "analytics-preferences").hidden, true);
+  assert.equal(declined.scripts.length, 0, "previously declined consent must remain denied on blog pages");
+
+  const nested = createPage("/blog/contact/", null);
+  assert.equal(get(nested, "analytics-consent").hidden, true);
+  assert.equal(get(nested, "analytics-preferences").hidden, true);
+}
+
 // Declining from the initial dialog exposes the Off control and does not load GA.
 {
   const page = createPage("/");
