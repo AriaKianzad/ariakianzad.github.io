@@ -132,3 +132,25 @@ body, body * { font-family: Estedad, Tahoma, sans-serif !important; }
   .category-seo-card { padding:12px; }
   .remember-note { max-width:34ch; }
 }
+
+
+/* Image previews preserve their source aspect ratio; uploads are compressed, never cropped. */
+.media-preview { padding:12px; }
+.media-preview img { display:block; width:auto; max-width:100%; height:auto; max-height:210px; object-fit:contain; }
+.media-preview-small img { max-height:120px; }
+.editor-richtext figure,
+.markdown-preview figure { max-width:100%; margin:1.8em auto; text-align:center; }
+.editor-richtext figure img,
+.markdown-preview figure img { display:block; width:auto; max-width:100%; height:auto; max-height:none; margin:0 auto; object-fit:contain; }
+.editor-richtext figure figcaption,
+.markdown-preview figure figcaption { margin-top:7px; color:var(--muted); font-size:10px; line-height:1.8; }
+
+.image-insert-dialog { width:min(560px,calc(100% - 28px)); max-width:560px; max-height:min(88vh,820px); padding:0; border:1px solid var(--line); background:var(--surface); color:var(--ink); box-shadow:0 24px 80px rgba(29,52,50,.24); }
+.image-insert-dialog::backdrop { background:rgba(18,26,22,.54); backdrop-filter:blur(3px); }
+.image-insert-dialog-form { display:grid; gap:13px; padding:24px; }
+.image-insert-dialog-heading h2 { margin:4px 0 6px; font-size:20px; }
+.image-insert-dialog-heading p { margin:0; color:var(--muted); font-size:11px; line-height:1.9; }
+.image-insert-dialog-preview { display:grid; min-height:100px; max-height:220px; place-items:center; overflow:hidden; background:#f2efe7; }
+.image-insert-dialog-preview img { display:block; width:auto; max-width:100%; height:auto; max-height:210px; object-fit:contain; }
+.image-insert-dialog-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:9px; padding-top:8px; }
+@media(max-width:600px) { .image-insert-dialog-form { padding:18px; } }
