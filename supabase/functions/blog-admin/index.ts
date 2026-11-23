@@ -431,10 +431,13 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
     const widths = ["reading", "wide"];
     const languages = ["fa", "en"];
     const defaultOg = mediaUrl(input.default_og_image);
-    const categories = categoriesValue(input.categories);
     const { data: currentSettings, error: currentSettingsError } = await client.from("blog_settings")
-      .select("categories").eq("id", 1).maybeSingle();
-    if (currentSettingsError) throw new Error("دریافت دسته‌بندی‌های فعلی ناموفق بود.");
+      .select("categories,category_seo,default_og_title,default_og_description,default_robots_index,default_robots_follow,noindex_empty_categories,sitemap_include_categories,sitemap_include_articles,schema_type,breadcrumbs_enabled,breadcrumb_home_label,open_graph_enabled,twitter_card_type")
+      .eq("id", 1).maybeSingle();
+    if (currentSettingsError) throw new Error("دریافت تنظیمات فعلی ناموفق بود.");
+    const categories = input.categories === undefined
+      ? (Array.isArray(currentSettings?.categories) ? currentSettings.categories : [])
+      : categoriesValue(input.categories);
     const nextSlugs = new Set(categories.map((item) => item.slug));
     const previousCategories = Array.isArray(currentSettings?.categories) ? currentSettings.categories : [];
     const removedSlugs = previousCategories
@@ -475,19 +478,19 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
       default_og_image: defaultOg || "",
       footer_note: textValue(input.footer_note, 200, "متن پابرگ"),
       categories,
-      category_seo: categorySeoValue(input.category_seo),
-      default_og_title: textValue(input.default_og_title, 100, "عنوان پیش‌فرض شبکه‌های اجتماعی"),
-      default_og_description: textValue(input.default_og_description, 300, "توضیحات پیش‌فرض شبکه‌های اجتماعی"),
-      default_robots_index: input.default_robots_index !== false,
-      default_robots_follow: input.default_robots_follow !== false,
-      noindex_empty_categories: input.noindex_empty_categories !== false,
-      sitemap_include_categories: input.sitemap_include_categories !== false,
-      sitemap_include_articles: input.sitemap_include_articles !== false,
-      schema_type: input.schema_type === "BlogPosting" ? "BlogPosting" : "Article",
-      breadcrumbs_enabled: input.breadcrumbs_enabled !== false,
-      breadcrumb_home_label: textValue(input.breadcrumb_home_label, 40, "عنوان خانه در مسیر راهنما") || "خانه",
-      open_graph_enabled: input.open_graph_enabled !== false,
-      twitter_card_type: input.twitter_card_type === "summary" ? "summary" : "summary_large_image",
+      category_seo: input.category_seo === undefined ? (currentSettings?.category_seo || {}) : categorySeoValue(input.category_seo),
+      default_og_title: input.default_og_title === undefined ? (currentSettings?.default_og_title || "") : textValue(input.default_og_title, 100, "عنوان پیش‌فرض شبکه‌های اجتماعی"),
+      default_og_description: input.default_og_description === undefined ? (currentSettings?.default_og_description || "") : textValue(input.default_og_description, 300, "توضیحات پیش‌فرض شبکه‌های اجتماعی"),
+      default_robots_index: input.default_robots_index === undefined ? currentSettings?.default_robots_index !== false : input.default_robots_index !== false,
+      default_robots_follow: input.default_robots_follow === undefined ? currentSettings?.default_robots_follow !== false : input.default_robots_follow !== false,
+      noindex_empty_categories: input.noindex_empty_categories === undefined ? currentSettings?.noindex_empty_categories !== false : input.noindex_empty_categories !== false,
+      sitemap_include_categories: input.sitemap_include_categories === undefined ? currentSettings?.sitemap_include_categories !== false : input.sitemap_include_categories !== false,
+      sitemap_include_articles: input.sitemap_include_articles === undefined ? currentSettings?.sitemap_include_articles !== false : input.sitemap_include_articles !== false,
+      schema_type: input.schema_type === undefined ? (currentSettings?.schema_type === "BlogPosting" ? "BlogPosting" : "Article") : (input.schema_type === "BlogPosting" ? "BlogPosting" : "Article"),
+      breadcrumbs_enabled: input.breadcrumbs_enabled === undefined ? currentSettings?.breadcrumbs_enabled !== false : input.breadcrumbs_enabled !== false,
+      breadcrumb_home_label: input.breadcrumb_home_label === undefined ? (currentSettings?.breadcrumb_home_label || "خانه") : (textValue(input.breadcrumb_home_label, 40, "عنوان خانه در مسیر راهنما") || "خانه"),
+      open_graph_enabled: input.open_graph_enabled === undefined ? currentSettings?.open_graph_enabled !== false : input.open_graph_enabled !== false,
+      twitter_card_type: input.twitter_card_type === undefined ? (currentSettings?.twitter_card_type === "summary" ? "summary" : "summary_large_image") : (input.twitter_card_type === "summary" ? "summary" : "summary_large_image"),
       updated_at: new Date().toISOString(),
     };
     const { data, error } = await client.from("blog_settings")
