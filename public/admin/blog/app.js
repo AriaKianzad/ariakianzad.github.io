@@ -207,10 +207,11 @@
     const articles=data.articles;
     const ga4Ok=data.ga4?.status==="ok";
     const gscOk=data.searchConsole?.status==="ok";
+    const landingOk=data.sources?.status==="ok";
     const total=(key,source)=>articles.reduce((sum,item)=>sum+Number(item[source]?.[key]||0),0);
     summary.append(
       analyticsMetric("بازدید صفحات",ga4Ok?formatMetric(total("pageViews","ga4")):"—"),
-      analyticsMetric("نشست‌های ورودی",ga4Ok?formatMetric(total("sessions","ga4")):"—"),
+      analyticsMetric("نشست‌های ورودی به مقاله‌ها",landingOk?formatMetric(data.sources.articleLandingSessions):"—"),
       analyticsMetric("کلیک از گوگل",gscOk?formatMetric(total("clicks","searchConsole")):"—"),
       analyticsMetric("نمایش در گوگل",gscOk?formatMetric(total("impressions","searchConsole")):"—")
     );
@@ -248,7 +249,8 @@
       gaMetrics.append(
         analyticsMetric("بازدید صفحه",ga.status==="ok"?formatMetric(ga.pageViews):"—"),
         analyticsMetric("کاربران",ga.status==="ok"?formatMetric(ga.users):"—"),
-        analyticsMetric("نشست‌ها",ga.status==="ok"?formatMetric(ga.sessions):"—")
+        analyticsMetric("نشست‌های صفحه",ga.status==="ok"?formatMetric(ga.sessions):"—"),
+        analyticsMetric("نشست‌های ورودی",ga.sourcesStatus==="ok"?formatMetric(ga.landingSessions):"—")
       );
       gaGroup.append(gaTitle,gaMetrics);
       const gscGroup=document.createElement("section");gscGroup.className="article-analytics-group";
