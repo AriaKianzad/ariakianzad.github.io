@@ -316,7 +316,7 @@
       if(heading){close();closeList();const level=Math.max(2,heading[1].length);output.push("<h"+level+">"+previewInline(heading[2])+"</h"+level+">");continue;}
       const quote=line.match(/^>\s?(.*)$/);
       if(quote){close();closeList();output.push("<blockquote><p>"+previewInline(quote[1])+"</p></blockquote>");continue;}
-      const item=line.match(/^\s*([-*+ ]|\d+[.)])\s+(.+)$/);
+      const item=line.match(/^\s*([-*+]|\d+[.)])\s+(.+)$/);
       if(item){close();const next=/^\d/.test(item[1])?"ol":"ul";if(list!==next){closeList();list=next;output.push("<"+list+">");}output.push("<li>"+previewInline(item[2])+"</li>");continue;}
       if(/^\s*(---+|___+|\*\*\*+)\s*$/.test(line)){close();closeList();output.push("<hr>");continue;}
       closeList();paragraph.push(line.trim());
@@ -948,7 +948,7 @@
     });
     $("#inline-image-form").addEventListener("submit",(event)=>void saveInlineImage(event));
     $("#inline-image-cancel").addEventListener("click",closeInlineImageDialog);
-    $("#inline-image-dialog").addEventListener("cancel",()=>closeInlineImageDialog());
+    $("#inline-image-dialog").addEventListener("cancel",(event)=>{event.preventDefault();closeInlineImageDialog();});
     $("#post-content").addEventListener("dblclick",(event)=>{
       const image=event.target instanceof Element?event.target.closest("figure img"):null;
       const figure=image?.closest("figure");
