@@ -4,19 +4,19 @@ import { BlogHeader, BlogFooter } from "../BlogHeader";
 import { ContactForm } from "./ContactForm";
 
 export const metadata: Metadata = {
-  title: "تماس با آریا کیانزاد | درخواست همکاری و اسپانسری",
+  title: "تماس با من | درخواست همکاری و اسپانسری",
   description: "برای رپورتاژ و محتوای تبلیغاتی، اسپانسری دوره‌ای، همکاری محتوایی یا ارتباط مستقیم با آریا کیانزاد پیام بفرستید.",
   alternates: { canonical: site.url + "/blog/contact/" },
   openGraph: {
     type: "website",
     url: site.url + "/blog/contact/",
     siteName: "Aria Kianzad",
-    title: "تماس با آریا کیانزاد",
+    title: "تماس با من",
     description: "درخواست همکاری، رپورتاژ و اسپانسری وبلاگ آریا کیانزاد.",
   },
   twitter: {
     card: "summary",
-    title: "تماس با آریا کیانزاد",
+    title: "تماس با من",
     description: "درخواست همکاری، رپورتاژ و اسپانسری وبلاگ آریا کیانزاد.",
   },
 };
@@ -45,15 +45,15 @@ export default function BlogContactPage() {
             <h2>چه نوع همکاری‌هایی؟</h2>
             <p>این فرم برای شروع ارتباطه؛ لازم نیست از همون ابتدا همۀ جزئیات نهایی شده باشن.</p>
             <div className="blog-contact-detail">
-              <strong>رپورتاژ و محتوای تبلیغاتی</strong>
+              <h3>رپورتاژ و محتوای تبلیغاتی</h3>
               <span>پیشنهاد انتشار مطلب، معرفی محصول یا خدمت و همکاری محتوایی با رسانه‌ها و برندها</span>
             </div>
             <div className="blog-contact-detail">
-              <strong>اسپانسری دوره‌ای</strong>
+              <h3>اسپانسری دوره‌ای</h3>
               <span>همکاری ماهانه یا چندماهه با جایگاه و قالبی متناسب با مخاطب وبلاگ</span>
             </div>
             <div className="blog-contact-detail">
-              <strong>همکاری و پیشنهادهای دیگر</strong>
+              <h3>همکاری و پیشنهادهای دیگر</h3>
               <span>پروژه‌های محتوایی، گفت‌وگو، مصاحبه و پیشنهادهای مرتبط</span>
             </div>
           </aside>
