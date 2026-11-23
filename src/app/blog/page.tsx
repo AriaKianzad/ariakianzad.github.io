@@ -11,11 +11,11 @@ export const metadata: Metadata = {
   title: blogSettings.default_meta_title || "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد",
   description: blogSettings.default_meta_description || blogSettings.description || "اینجا درباره استراتژی برند، جایگاه‌یابی، ارتباطات و پرسونال برندینگ می‌نویسم؛ با تمرکز بر معنا، رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن.",
   robots: { index: blogSettings.default_robots_index, follow: blogSettings.default_robots_follow },
-  alternates: { canonical: site.url + "/blog/", types: { "application/rss+xml": site.url + "/blog/feed.xml" } },
+  alternates: { canonical: blogSettings.blog_canonical_url || site.url + "/blog/", types: { "application/rss+xml": site.url + "/blog/feed.xml" } },
   openGraph: blogSettings.open_graph_enabled ? {
-    type: "website", url: site.url + "/blog/", siteName: "Aria Kianzad",
+    type: "website", url: blogSettings.blog_canonical_url || site.url + "/blog/", siteName: "Aria Kianzad",
     title: blogSettings.default_og_title || "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد",
-    description: blogSettings.default_og_description || blogSettings.description,
+    description: blogSettings.default_og_description || blogSettings.default_meta_description || blogSettings.description,
     images: [{ url: blogSettings.default_og_image || site.url + "/og/og.jpg", width: 1200, height: 630 }],
   } : undefined,
   twitter: { card: blogSettings.twitter_card_type, title: blogSettings.default_og_title || blogSettings.default_meta_title, description: blogSettings.default_og_description || blogSettings.default_meta_description, images: [blogSettings.default_og_image || site.url + "/og/og.jpg"] },
@@ -30,7 +30,7 @@ export default function BlogIndexPage() {
   const schema = {
     "@context": "https://schema.org", "@type": "Blog",
     name: settings.title, description: settings.description,
-    url: site.url + "/blog/", inLanguage: settings.default_language === "fa" ? "fa-IR" : "en",
+    url: blogSettings.blog_canonical_url || site.url + "/blog/", inLanguage: settings.default_language === "fa" ? "fa-IR" : "en",
     publisher: { "@type": "Person", name: "Aria Kianzad", url: site.url },
   };
   return (
@@ -42,6 +42,7 @@ export default function BlogIndexPage() {
           <div className="blog-intro-copy">
             <h1 id="blog-intro-title">{settings.tagline || "یادداشت‌هایی درباره برند، معنا و ارتباط"}</h1>
             <p className="blog-intro-lede">{settings.intro_title || "از استراتژی برند تا ارتباطات روزمره"}</p>
+            {settings.intro_body ? <p className="blog-intro-description">{settings.intro_body}</p> : null}
           </div>
           <div className="blog-intro-visual" aria-hidden="true">
             <HeroVisual />
