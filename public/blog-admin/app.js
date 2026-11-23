@@ -754,7 +754,8 @@
       "<article class=\"media-item\"><img src=\"" + escapeHtml(item.publicUrl) + "\" alt=\"\" loading=\"lazy\">" +
       "<div class=\"media-item-meta\"><span>" + escapeHtml(item.name) + "</span><span>" +
       (item.size ? formatNumber(Math.round(item.size / 1024)) + " KB" : "") + "</span></div>" +
-      "<div class=\"media-item-actions\"><button type=\"button\" data-use-media=\"" + escapeHtml(item.publicUrl) + "\">استفاده به‌عنوان تصویر شاخص</button>" +
+      "<div class=\"media-item-actions\"><button type=\"button\" data-use-media=\"" + escapeHtml(item.publicUrl) + "\">تصویر شاخص</button>" +
+      "<button type=\"button\" data-use-og-media=\"" + escapeHtml(item.publicUrl) + "\">تصویر اجتماعی</button>" +
       "<button type=\"button\" class=\"danger\" data-delete-media=\"" + escapeHtml(item.path) + "\">حذف</button></div></article>"
     ).join("");
   }
@@ -1100,6 +1101,7 @@
 
   $("#media-grid").addEventListener("click", async (event) => {
     const use = event.target.closest("[data-use-media]");
+    const useOg = event.target.closest("[data-use-og-media]");
     const remove = event.target.closest("[data-delete-media]");
     if (use) {
       const url = use.dataset.useMedia;
@@ -1109,7 +1111,13 @@
       updateSeo();
       switchView("editor");
       switchEditorTab("design");
-      showAppMessage("تصویر برای مقالۀ فعلی انتخاب شد.", "success");
+      showAppMessage("تصویر شاخص برای مقالۀ فعلی انتخاب شد.", "success");
+    } else if (useOg) {
+      $("#og-image").value = useOg.dataset.useOgMedia;
+      updateSeo();
+      switchView("editor");
+      switchEditorTab("seo");
+      showAppMessage("تصویر اجتماعی برای مقالۀ فعلی انتخاب شد.", "success");
     } else if (remove) {
       if (!window.confirm("این تصویر از کتابخانۀ عمومی حذف بشه؟ اگر در مقاله‌ای استفاده شده باشه، اون تصویر هم از دسترس خارج می‌شه.")) return;
       try {
