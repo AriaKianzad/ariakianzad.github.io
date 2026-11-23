@@ -97,7 +97,13 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
   } : null;
   const language = post.language === "fa" ? "fa" : "en";
   const direction = post.language === "fa" ? "rtl" : "ltr";
-  const articleStyle = { "--post-accent": post.accent_color || settings.accent_color } as CSSProperties;
+  const articleLineHeight = post.language === "fa" ? (settings.body_line_height || 1.95) : 1.7;
+  const articleParagraphGap = post.language === "fa" ? articleLineHeight * 1.05 : 1.45;
+  const articleStyle = {
+    "--post-accent": post.accent_color || settings.accent_color,
+    "--blog-line-height": articleLineHeight,
+    "--blog-paragraph-gap": articleParagraphGap + "em",
+  } as CSSProperties;
   return (
     <>
       <BlogHeader />
