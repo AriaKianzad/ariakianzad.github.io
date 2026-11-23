@@ -134,10 +134,17 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
                 {post.hero_image_caption ? <figcaption>{post.hero_image_caption}</figcaption> : null}
               </figure>
             ) : <div className="blog-article-visual-empty" aria-hidden="true" />}
-            <div className="blog-article-meta">
-              <span>آریا کیانزاد</span>
-              <time dateTime={post.published_at}>{new Intl.DateTimeFormat(language === "fa" ? "fa-IR" : "en-US", {year:"numeric",month:"long",day:"numeric",timeZone:language==="fa"?"Asia/Tehran":"UTC"}).format(new Date(post.published_at))}</time>
-              {settings.show_reading_time ? <span>{readingTime(post.content, post.language)} دقیقه مطالعه</span> : null}
+            <div className="blog-article-meta" lang={language} dir={direction}>
+              <span className="blog-article-author">آریا کیانزاد</span>
+              <time className="blog-article-date" dateTime={post.published_at}>
+                {new Intl.DateTimeFormat(language === "fa" ? "fa-IR" : "en-US", {
+                  year:"numeric",month:"long",day:"numeric",
+                  timeZone:language === "fa" ? "Asia/Tehran" : "UTC",
+                }).format(new Date(post.published_at))}
+              </time>
+              {settings.show_reading_time ? (
+                <span className="blog-article-reading-time">{readingTime(post.content, post.language)} دقیقه مطالعه</span>
+              ) : null}
             </div>
           </div>
         </header>
@@ -148,7 +155,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
               <ol>{toc.map((item) => <li key={item.id} className={item.level === 3 ? "toc-sub" : ""}><a href={"#" + item.id}>{item.title}</a></li>)}</ol>
             </aside>
           ) : null}
-          <article className={"blog-prose" + (post.drop_cap ? " has-drop-cap" : "")} dangerouslySetInnerHTML={{ __html: html }} />
+          <article className={"blog-prose" + (post.drop_cap ? " has-drop-cap" : "")} lang={language} dir={direction} dangerouslySetInnerHTML={{ __html: html }} />
         </div>
         {post.faqs?.length ? (
           <section className="blog-faq blog-container">
