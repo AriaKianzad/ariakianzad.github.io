@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { Script } from "node:vm";
 
 const read = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
 const [
@@ -44,6 +45,8 @@ const [
 ]);
 
 const categorySeoMigration = await read("supabase/migrations/20261123130000_add_category_level_seo.sql");
+new Script(contactBrowserScript, { filename: "public/blog-contact.js" });
+new Script(googleContactScript, { filename: "integrations/google-apps-script/blog-contact.gs" });
 const scripts = JSON.parse(packageJson).scripts;
 assert.ok(scripts.prebuild.includes("fetch-blog-content.mjs"), "prebuild must fetch the public blog payload");
 assert.ok(scripts.prebuild.includes("generate-blog-og.mjs"), "prebuild must generate social images");
