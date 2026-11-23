@@ -57,10 +57,10 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
         <BlogHeader />
         <main className="blog-article-main" dir="rtl">
           <section className="blog-container blog-category-heading">
-            <div className="blog-eyebrow"><span /> ARTICLE / ARCHIVE</div>
+            <div className="blog-eyebrow"><span /> آرشیو نوشته‌ها</div>
             <h1>هنوز مقاله‌ای برای نمایش وجود نداره.</h1>
             <p>بعد از انتشار اولین نوشته، صفحه‌های مقاله اینجا ساخته می‌شن.</p>
-            <Link href="/blog/">بازگشت به همۀ نوشته‌ها</Link>
+            <Link href="/blog/">بازگشت به همۀ یادداشت‌ها</Link>
           </section>
         </main>
         <BlogFooter />
