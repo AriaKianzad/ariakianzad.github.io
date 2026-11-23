@@ -18,7 +18,7 @@ export type BlogPost={
   faqs:BlogFaq[];published_at:string;updated_at:string;
 };
 export type BlogSettings={
-  title:string;tagline:string;description:string;background_theme:string;accent_color:string;card_style:string;
+  title:string;tagline:string;description:string;canonical_url:string;background_theme:string;accent_color:string;card_style:string;
   layout_style:string;content_width:string;posts_per_page:number;show_search:boolean;show_categories:boolean;
   show_featured:boolean;show_reading_time:boolean;show_toc:boolean;show_related_posts:boolean;show_share:boolean;
   enable_rss:boolean;default_language:"fa"|"en";heading_scale:number;body_line_height:number;
@@ -32,7 +32,7 @@ export type BlogSettings={
 };
 const defaults:BlogSettings={
   title:"نوشته‌ها",tagline:"یادداشت‌هایی درباره برند، معنا و ارتباط",
-  description:"اینجا درباره استراتژی برند، جایگاه‌یابی، ارتباطات و پرسونال برندینگ می‌نویسم؛ با تمرکز بر معنا، رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن.",
+  description:"اینجا درباره استراتژی برند، جایگاه‌یابی، ارتباطات و پرسونال برندینگ می‌نویسم؛ با تمرکز بر معنا، رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن.",canonical_url:"https://ariakianzad.github.io/blog/",
   background_theme:"paper",accent_color:"#a86f54",card_style:"editorial",layout_style:"editorial",
   content_width:"reading",posts_per_page:9,show_search:true,show_categories:true,show_featured:true,
   show_reading_time:true,show_toc:true,show_related_posts:true,show_share:true,enable_rss:true,
