@@ -13,8 +13,6 @@ type ContactValues = {
   organization: string;
   requestType: RequestType;
   websiteUrl: string;
-  targetUrl: string;
-  anchorText: string;
   sponsorshipDuration: string;
   message: string;
   companyFax: string;
@@ -26,8 +24,6 @@ const emptyValues: ContactValues = {
   organization: "",
   requestType: "advertorial",
   websiteUrl: "",
-  targetUrl: "",
-  anchorText: "",
   sponsorshipDuration: "three_months",
   message: "",
   companyFax: "",
@@ -180,43 +176,6 @@ export function ContactForm() {
           </div>
         ) : null}
 
-        {(isAdvertorial || isEditorialLink) ? (
-          <>
-            {isEditorialLink ? (
-              <div className="blog-contact-field full">
-                <small>این درخواست فقط برای ارجاع تحریریه‌ای مستقل و بدون پرداخت بابت لینک بررسی می‌شه؛ درج Follow تضمین نمی‌شه.</small>
-              </div>
-            ) : null}
-            <div className="blog-contact-field">
-              <label htmlFor="contact-target">آدرس صفحۀ مقصد لینک</label>
-              <input
-                id="contact-target"
-                name="targetUrl"
-                type="url"
-                inputMode="url"
-                maxLength={2048}
-                value={values.targetUrl}
-                onChange={(event) => update("targetUrl", event.currentTarget.value)}
-                placeholder="https://example.com/page"
-                dir="ltr"
-                disabled={submitting}
-              />
-            </div>
-            <div className="blog-contact-field">
-              <label htmlFor="contact-anchor">انکرتکست پیشنهادی</label>
-              <input
-                id="contact-anchor"
-                name="anchorText"
-                maxLength={160}
-                value={values.anchorText}
-                onChange={(event) => update("anchorText", event.currentTarget.value)}
-                placeholder="متن لینک، در صورت وجود"
-                disabled={submitting}
-              />
-            </div>
-          </>
-        ) : null}
-
         {isSponsorship ? (
           <div className="blog-contact-field full">
             <label htmlFor="contact-duration">مدت پیشنهادی اسپانسری</label>
@@ -266,11 +225,7 @@ export function ContactForm() {
       </div>
 
       <p className="blog-contact-policy">
-        اطلاعات فرم برای پاسخ‌گویی به درخواست شما به ایمیل من ارسال می‌شه. در همکاری‌های تبلیغاتی و پولی، لینک‌ها مطابق
-        {" "}
-        <a href="https://developers.google.com/search/docs/essentials/spam-policies" target="_blank" rel="noopener noreferrer">سیاست‌های Google</a>
-        {" "}
-        با ویژگی sponsored یا nofollow مشخص می‌شن؛ لینک Follow در ازای پرداخت ارائه نمی‌شه.
+        اطلاعات فرم فقط برای بررسی درخواست و پاسخ‌گویی به شما استفاده می‌شه.
       </p>
 
       <button className="blog-contact-submit" type="submit" disabled={submitting}>
