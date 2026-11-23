@@ -1,6 +1,14 @@
 import * as THREE from "three";
 
 export function initSignalScene(host: HTMLElement) {
+  const blogTheme = host.closest<HTMLElement>(".blog-theme");
+  const isBlog = Boolean(blogTheme);
+  const blogAccent = blogTheme
+    ? window.getComputedStyle(blogTheme).getPropertyValue("--blog-accent").trim() || "#a86f54"
+    : null;
+  const accentColor = new THREE.Color(blogAccent || 0xc8ed87);
+  const accentSoftColor = accentColor.clone().lerp(new THREE.Color(isBlog ? "#e7d8c9" : "#e0e8c9"), 0.42);
+  const secondaryColor = new THREE.Color(isBlog ? "#718b86" : "#8cae74");
   const canvas = host.querySelector<HTMLCanvasElement>("[data-signal-canvas]");
   if (!canvas) return;
 
@@ -18,7 +26,7 @@ export function initSignalScene(host: HTMLElement) {
   }
 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-  renderer.setClearColor(0x090d0c, 0);
+  renderer.setClearColor(isBlog ? 0xf4f1e9 : 0x090d0c, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -31,27 +39,27 @@ export function initSignalScene(host: HTMLElement) {
   world.position.set(0.08, 0.02, 0);
   scene.add(world);
 
-  const innerGlow = new THREE.PointLight(0xc8ed87, 22, 5.5, 2);
+  const innerGlow = new THREE.PointLight(accentColor, isBlog ? 14 : 22, 5.5, 2);
   innerGlow.position.set(0.1, 0.05, 1.2);
   world.add(innerGlow);
 
-  const keyLight = new THREE.DirectionalLight(0xe0e8c9, 3.1);
+  const keyLight = new THREE.DirectionalLight(isBlog ? 0xf0e4d8 : 0xe0e8c9, 3.1);
   keyLight.position.set(3.5, 4, 4);
   scene.add(keyLight);
 
-  const rimLight = new THREE.DirectionalLight(0x8cae74, 2.2);
+  const rimLight = new THREE.DirectionalLight(secondaryColor, 2.2);
   rimLight.position.set(-4, -2, -3);
   scene.add(rimLight);
   scene.add(new THREE.AmbientLight(0x82917f, 0.72));
 
   const coreGeometry = new THREE.IcosahedronGeometry(0.92, 5);
   const coreMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x899a6f,
+    color: isBlog ? new THREE.Color("#9b7563") : 0x899a6f,
     metalness: 0.72,
     roughness: 0.2,
     clearcoat: 0.82,
     clearcoatRoughness: 0.18,
-    emissive: 0x1b2914,
+    emissive: isBlog ? accentColor.clone().multiplyScalar(0.18) : 0x1b2914,
     emissiveIntensity: 0.28,
   });
   const core = new THREE.Mesh(coreGeometry, coreMaterial);
@@ -59,7 +67,7 @@ export function initSignalScene(host: HTMLElement) {
 
   const innerGeometry = new THREE.IcosahedronGeometry(0.51, 2);
   const innerMaterial = new THREE.MeshStandardMaterial({
-    color: 0x111915,
+    color: isBlog ? 0x1d3432 : 0x111915,
     metalness: 0.74,
     roughness: 0.22,
     wireframe: true,
@@ -70,7 +78,7 @@ export function initSignalScene(host: HTMLElement) {
 
   const shellGeometry = new THREE.IcosahedronGeometry(1.12, 2);
   const shellMaterial = new THREE.MeshBasicMaterial({
-    color: 0xd0e5a3,
+    color: accentSoftColor,
     wireframe: true,
     transparent: true,
     opacity: 0.16,
@@ -81,9 +89,9 @@ export function initSignalScene(host: HTMLElement) {
   world.add(shell);
 
   const ringMaterials = [
-    new THREE.MeshBasicMaterial({ color: 0xc6df9b, transparent: true, opacity: 0.65 }),
-    new THREE.MeshBasicMaterial({ color: 0xd9dfd0, transparent: true, opacity: 0.26 }),
-    new THREE.MeshBasicMaterial({ color: 0x9cb984, transparent: true, opacity: 0.42 }),
+    new THREE.MeshBasicMaterial({ color: accentColor, transparent: true, opacity: 0.65 }),
+    new THREE.MeshBasicMaterial({ color: accentSoftColor, transparent: true, opacity: 0.34 }),
+    new THREE.MeshBasicMaterial({ color: secondaryColor, transparent: true, opacity: 0.42 }),
   ];
   const rings = [
     new THREE.Mesh(new THREE.TorusGeometry(1.52, 0.005, 6, 220), ringMaterials[0]),
@@ -96,7 +104,7 @@ export function initSignalScene(host: HTMLElement) {
   rings.forEach((ring) => world.add(ring));
 
   const nodeGeometry = new THREE.SphereGeometry(0.035, 12, 12);
-  const nodeMaterial = new THREE.MeshBasicMaterial({ color: 0xd5e7ac });
+  const nodeMaterial = new THREE.MeshBasicMaterial({ color: accentSoftColor });
   const nodePositions: THREE.Vector3[] = [];
   const nodeCount = 9;
   for (let index = 0; index < nodeCount; index += 1) {
@@ -125,7 +133,7 @@ export function initSignalScene(host: HTMLElement) {
     new THREE.Float32BufferAttribute(connectorPositions, 3),
   );
   const connectorMaterial = new THREE.LineBasicMaterial({
-    color: 0xb6cb8d,
+    color: accentColor,
     transparent: true,
     opacity: 0.22,
   });
@@ -150,7 +158,7 @@ export function initSignalScene(host: HTMLElement) {
     new THREE.Float32BufferAttribute(particlePositions, 3),
   );
   const particleMaterial = new THREE.PointsMaterial({
-    color: 0xc5d0b6,
+    color: isBlog ? 0x718b86 : 0xc5d0b6,
     size: 0.012,
     transparent: true,
     opacity: 0.55,

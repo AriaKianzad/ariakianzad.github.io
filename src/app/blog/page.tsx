@@ -3,6 +3,7 @@ import { site } from "@/lib/site";
 import { getBlogCategories, getBlogPosts, getBlogSettings } from "@/lib/blog-data";
 import { BlogHeader, BlogFooter } from "./BlogHeader";
 import { BlogListingClient, BlogPostCard } from "./BlogListingClient";
+import HeroVisual from "@/components/hero-visual";
 
 const blogSettings = getBlogSettings();
 
@@ -36,12 +37,15 @@ export default function BlogIndexPage() {
       <BlogHeader />
       <main className="blog-main" dir={settings.default_language === "fa" ? "rtl" : "ltr"}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
-        <section className="blog-intro blog-container">
-          <div className="blog-eyebrow"><span /> یادداشت‌ها و مقاله‌ها</div>
-          <h1>{settings.tagline || "یادداشت‌هایی درباره برند، معنا و ارتباط"}</h1>
-          <p className="blog-intro-lede">{settings.intro_title || "از استراتژی برند تا ارتباطات روزمره"}</p>
-          <p className="blog-intro-description">{settings.intro_body || settings.description}</p>
-          <div className="blog-intro-rule"><span>01</span><span>ایده‌ها، تحقیق و نگاه شخصی</span></div>
+        <section className="blog-intro blog-container" aria-labelledby="blog-intro-title">
+          <div className="blog-intro-copy">
+            <h1 id="blog-intro-title">{settings.tagline || "یادداشت‌هایی درباره برند، معنا و ارتباط"}</h1>
+            <p className="blog-intro-lede">{settings.intro_title || "از استراتژی برند تا ارتباطات روزمره"}</p>
+            <p className="blog-intro-description">{settings.intro_body || settings.description}</p>
+          </div>
+          <div className="blog-intro-visual" aria-hidden="true">
+            <HeroVisual />
+          </div>
         </section>
         {featured ? (
           <section className="blog-featured-section blog-container" aria-label="نوشتۀ منتخب">
@@ -51,7 +55,7 @@ export default function BlogIndexPage() {
         ) : null}
         <section className="blog-listing-section blog-container" aria-labelledby="blog-list-title">
           <div className="blog-section-heading">
-            <div><span className="blog-section-label"><span>02</span> آرشیو نوشته‌ها</span><h2 id="blog-list-title">از میان نوشته‌ها</h2></div>
+            <div><h2 id="blog-list-title">از میان نوشته‌ها</h2></div>
             <p>موضوعات، دیدگاه‌ها و تصمیم‌هایی که شکل برندها رو می‌سازن.</p>
           </div>
           <BlogListingClient posts={listing} categories={categories}
