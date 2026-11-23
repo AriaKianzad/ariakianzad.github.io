@@ -21,15 +21,15 @@ function inline(value:string){
 
 type MarkdownImage = { url:string; alt:string; title:string; caption:string };
 function parseImageLine(line:string):MarkdownImage|null{
-  const match=String(line||"").trim().match(/^!\\[(.*?)\\]\\((https?:\\/\\/[^)\\s]+|\\/[^)\\s]+)(?:\\s+"(.*?)")?\\)(?:\\s+\\{caption="(.*?)"\\})?$/);
+  const match=String(line||"").trim().match(/^!\[(.*?)\]\((https?:\/\/[^)\s]+|\/[^)\s]+)(?:\s+"(.*?)")?\)(?:\s+\{caption="(.*?)"\})?$/);
   if(!match)return null;
   const url=allowedUrl(match[2].replace(/&amp;/g,"&"));
   if(url==="#")return null;
-  return {url,alt:match[1].replace(/\\\\([\\\\\\]])/g,"$1"),title:match[3]||"",caption:match[4]||""};
+  return {url,alt:match[1],title:match[3]||"",caption:match[4]||""};
 }
 export function extractMarkdownImageUrls(markdown:string):string[]{
   const urls:string[]=[];
-  for(const line of markdown.replace(/\\r\\n/g,"\\n").split("\\n")){
+  for(const line of markdown.replace(/\r\n/g,"\n").split("\n")){
     const image=parseImageLine(line);
     if(image&&!urls.includes(image.url))urls.push(image.url);
   }
