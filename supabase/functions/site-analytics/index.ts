@@ -794,14 +794,20 @@ async function getArticleAnalyticsData(accessToken: string) {
     sourceMetrics.set(slug, entries);
   }
 
-  let gscStatus: "ok" | "error" | "no_access" = "error";
+  let gscStatus: "ok" | "error" | "no_access" | "no_data" = "error";
   let gscMessage = "";
   let gscDates = { startDate: "", endDate: "" };
   const gscMetrics = new Map<string, { clicks: number; impressions: number; weightedPosition: number }>();
   if (gscOverviewResult.status === "fulfilled") {
     const overview = gscOverviewResult.value;
     gscDates = { startDate: overview.startDate || "", endDate: overview.endDate || "" };
-    if (overview.propertyAccess && overview.propertyUrl) {
+    if (!overview.propertyAccess || !overview.propertyUrl) {
+      gscStatus = "no_access";
+      gscMessage = overview.message || "به Property سرچ‌کنسول دسترسی تأییدشده‌ای وجود نداره.";
+    } else if (overview.status === "no_data") {
+      gscStatus = "no_data";
+      gscMessage = overview.message || "در بازۀ گزارش‌شده، Search Console داده‌ای برای سایت برنگردونده.";
+    } else {
       try {
         const report = await searchConsoleReport(accessToken, overview.propertyUrl, {
           startDate: overview.startDate,
@@ -809,7 +815,8 @@ async function getArticleAnalyticsData(accessToken: string) {
           dimensions: ["page"],
           rowLimit: 25000,
         });
-        for (const row of report.rows || []) {
+        const articlePageRows = report.rows || [];
+        for (const row of articlePageRows) {
           const slug = blogSlugFromPath(String(row.keys?.[0] || ""));
           if (!slug) continue;
           const clicks = Number(row.clicks || 0);
@@ -821,25 +828,29 @@ async function getArticleAnalyticsData(accessToken: string) {
           current.weightedPosition += position * impressions;
           gscMetrics.set(slug, current);
         }
-        gscStatus = "ok";
+        gscStatus = articlePageRows.length ? "ok" : "no_data";
+        if (!articlePageRows.length) gscMessage = "در بازۀ گزارش‌شده، Search Console دادهٔ صفحه‌ای برای مقاله‌ها برنگردونده.";
       } catch (error) {
         gscStatus = "error";
         gscMessage = String(error instanceof Error ? error.message : error).slice(0, 240);
       }
-    } else {
-      gscStatus = "no_access";
-      gscMessage = overview.message || "به Property سرچ‌کنسول دسترسی تأییدشده‌ای وجود نداره.";
     }
   } else {
     gscStatus = "error";
     gscMessage = String(gscOverviewResult.reason?.message || gscOverviewResult.reason).slice(0, 240);
   }
 
-  const ga4Status = pageReportResult.status === "fulfilled" ? "ok" : "error";
+  const ga4HasRows = pageReportResult.status === "fulfilled" &&
+    (pageReportResult.value.rowCount ?? pageRows.length) > 0;
+  const ga4Status = pageReportResult.status === "rejected"
+    ? "error"
+    : ga4HasRows ? "ok" : "no_data";
   const ga4Message = pageReportResult.status === "rejected"
     ? String(pageReportResult.reason?.message || pageReportResult.reason).slice(0, 240)
-    : "";
-  const sourcesStatus = sourceReportResult.status === "fulfilled" ? "ok" : "error";
+    : ga4HasRows ? "" : "در بازۀ گزارش‌شده، GA4 برای صفحه‌های مقاله ردیفی برنگردونده.";
+  const sourcesStatus = sourceReportResult.status === "rejected"
+    ? "error"
+    : sourceRows.length ? "ok" : "no_data";
   const articles = (publishedPosts || []).map((post) => {
     const page = pageMetrics.get(post.slug) || { pageViews: 0, users: 0, sessions: 0, engagedSessions: 0 };
     const search = gscMetrics.get(post.slug) || { clicks: 0, impressions: 0, weightedPosition: 0 };
