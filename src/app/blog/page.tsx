@@ -74,7 +74,7 @@ export default async function BlogArchivePage() {
         <section className="blog-archive" aria-labelledby="blog-archive-title">
           <div className="blog-section-heading"><h2 id="blog-archive-title">تازه‌ترین نوشته‌ها</h2><span>THE LATEST NOTES</span></div>
           {rest.length ? <div className="blog-post-grid" id="blog-post-grid">
-            {visiblePosts.map((post) => <BlogPostCard key={post.slug} post={post} />)}
+            {visiblePosts.map((post) => <BlogPostCard key={post.slug} post={post} showReadingTime={settings.showReadingTime} />)}
           </div> : <div className="blog-empty">هنوز مقاله‌ای منتشر نشده. اولین نوشته به‌زودی اینجا قرار می‌گیره.</div>}
           <BlogPagination currentPage={1} totalPages={totalPages} />
           {rest.length > 0 && <p className="blog-search-empty" id="blog-search-empty" hidden>مقاله‌ای با این عبارت پیدا نشد.</p>}
