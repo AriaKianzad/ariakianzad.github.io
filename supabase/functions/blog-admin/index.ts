@@ -269,8 +269,9 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
   }
 
   if (action === "save_post") {
-    const post = normalizePost(body?.post);
-    const id = typeof body?.post?.id === "string" ? body.post.id : "";
+    const postInput = asRecord(body.post);
+    const post = normalizePost(postInput);
+    const id = typeof postInput.id === "string" ? postInput.id : "";
     const now = new Date().toISOString();
     if (id) {
       const previous = await client.from("blog_posts")
@@ -362,7 +363,7 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
 
   if (action === "save_settings") {
     await workflowToken();
-    const input = body?.settings || {};
+    const input = asRecord(body.settings);
     const themes = ["paper", "white", "warm"];
     const cards = ["editorial", "minimal", "image-led"];
     const layouts = ["editorial", "minimal", "magazine"];
@@ -374,11 +375,11 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
       title: textValue(input.title, 100, "عنوان بلاگ", true),
       tagline: textValue(input.tagline, 180, "زیرعنوان"),
       description: textValue(input.description, 500, "توضیحات"),
-      background_theme: themes.includes(input.background_theme) ? input.background_theme : "paper",
+      background_theme: typeof input.background_theme === "string" && themes.includes(input.background_theme) ? input.background_theme : "paper",
       accent_color: hexColor(input.accent_color, "#a86f54"),
-      card_style: cards.includes(input.card_style) ? input.card_style : "editorial",
-      layout_style: layouts.includes(input.layout_style) ? input.layout_style : "editorial",
-      content_width: widths.includes(input.content_width) ? input.content_width : "reading",
+      card_style: typeof input.card_style === "string" && cards.includes(input.card_style) ? input.card_style : "editorial",
+      layout_style: typeof input.layout_style === "string" && layouts.includes(input.layout_style) ? input.layout_style : "editorial",
+      content_width: typeof input.content_width === "string" && widths.includes(input.content_width) ? input.content_width : "reading",
       posts_per_page: Math.min(24, Math.max(3, Number(input.posts_per_page) || 9)),
       show_search: input.show_search !== false,
       show_categories: input.show_categories !== false,
@@ -388,7 +389,7 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
       show_related_posts: input.show_related_posts !== false,
       show_share: input.show_share !== false,
       enable_rss: input.enable_rss !== false,
-      default_language: languages.includes(input.default_language) ? input.default_language : "fa",
+      default_language: typeof input.default_language === "string" && languages.includes(input.default_language) ? input.default_language : "fa",
       heading_scale: Math.min(1.2, Math.max(0.85, Number(input.heading_scale) || 1)),
       body_line_height: Math.min(2.4, Math.max(1.6, Number(input.body_line_height) || 1.95)),
       intro_title: textValue(input.intro_title, 180, "عنوان معرفی"),
