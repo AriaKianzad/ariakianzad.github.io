@@ -260,12 +260,12 @@
       {label:"عنوان SEO در بازۀ پیشنهادی ۳۰ تا ۶۵ نویسه",pass:seoTitle.length>=30&&seoTitle.length<=65},
       {label:"توضیحات متا بین ۱۲۰ تا ۱۶۰ نویسه",pass:description.length>=120&&description.length<=160},
       {label:"کلمۀ کلیدی در عنوان",pass:!!keyword&&title.toLocaleLowerCase().includes(keyword)},
-      {label:"کلمۀ کلیدی در نامک",pass:!!keyword&&slug.toLocaleLowerCase().includes(keyword.replace(/\s+/g,"-"))},
+      {label:"نامک کوتاه و خوانا",pass:/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)},
       {label:"کلمۀ کلیدی در ابتدای متن",pass:!!keyword&&firstParagraph.toLocaleLowerCase().includes(keyword)},
       {label:"ساختار تیترهای مقاله",pass:(content.match(/^#{2,4}\s/gm)||[]).length>=2},
       {label:"متن جایگزین تصویر",pass:!$("#post-hero-url").value||!!$("#post-hero-alt").value.trim()},
       {label:"تصویر اجتماعی اختصاصی",pass:!!$("#post-og-url").value||!!$("#post-hero-url").value},
-      {label:"Canonical URL مشخص",pass:!!$("#post-canonical").value.trim()},
+      {label:"Canonical URL معتبر یا خودکار",pass:!$("#post-canonical").value.trim()||$("#post-canonical").value.startsWith("https://ariakianzad.github.io/blog/")},
     ];
     const score=Math.round(checks.filter((c)=>c.pass).length/checks.length*100);
     $("#seo-score").textContent=score.toLocaleString("fa-IR")+" / ۱۰۰";

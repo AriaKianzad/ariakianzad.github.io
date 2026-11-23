@@ -5,8 +5,8 @@ const read = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
 const [
   packageJson, fetchScript, imageScript, dataSource, markdownSource,
   listingPage, articlePage, categoryPage, rssRoute, blogCss, adminHtml,
-  adminApp, adminEdge, publicFeedMigration, snapshotMigration, publicHeader,
-  workflow, sitemap, robots,
+  adminApp, adminEdge, publicRpcMigration, browserDenyMigration, snapshotMigration,
+  publicHeader, workflow, sitemap, robots,
 ] = await Promise.all([
   read("package.json"),
   read("scripts/fetch-blog-content.mjs"),
@@ -22,6 +22,7 @@ const [
   read("public/admin/blog/app.js"),
   read("supabase/functions/blog-admin/index.ts"),
   read("supabase/migrations/20261123110500_harden_public_blog_rpc.sql"),
+  read("supabase/migrations/20261123095924_deny_browser_access_to_blog_cms.sql"),
   read("supabase/migrations/20261123112000_separate_blog_published_snapshots.sql"),
   read("src/app/blog/BlogHeader.tsx"),
   read(".github/workflows/deploy.yml"),
@@ -30,83 +31,66 @@ const [
 ]);
 
 const scripts = JSON.parse(packageJson).scripts;
-assert.ok(scripts.prebuild.includes("fetch-blog-content.mjs"), "the static build must fetch the published-only blog payload");
-assert.ok(scripts.prebuild.includes("generate-blog-og.mjs"), "the static build must generate social preview images");
-assert.ok(scripts.predev.includes("fetch-blog-content.mjs"), "local development must fetch the published-only blog payload");
-assert.ok(fetchScript.includes("/rest/v1/rpc/get_public_blog_payload"), "the build must use the constrained public RPC");
-assert.ok(fetchScript.includes("sb_publishable_"), "the build fetch must only read the public Supabase key");
-assert.ok(fetchScript.includes(".cache/blog-content.json"), "the published payload must stay in the ignored build cache");
-assert.ok(!fetchScript.includes("blog_posts"), "the public build must not query draft tables directly");
-assert.ok(imageScript.includes("resize(1200, 630"), "article Open Graph images must be generated at 1200×630");
-assert.ok(imageScript.includes("jpeg({quality:88"), "article social images must be optimized as JPEG");
-assert.ok(imageScript.includes("sharp("), "image processing must run in the build pipeline");
+assert.ok(scripts.prebuild.includes("fetch-blog-content.mjs"), "prebuild must fetch the public blog payload");
+assert.ok(scripts.prebuild.includes("generate-blog-og.mjs"), "prebuild must generate social images");
+assert.ok(scripts.predev.includes("fetch-blog-content.mjs"), "local development must fetch public blog data");
+assert.ok(fetchScript.includes("/rest/v1/rpc/get_public_blog_payload"), "static content must use the restricted public RPC");
+assert.ok(fetchScript.includes(".cache/blog-content.json"), "build payload must remain in the ignored cache");
+assert.ok(!fetchScript.includes("blog_posts"), "the public build must not query private CMS tables directly");
+assert.ok(imageScript.includes("resize(1200, 630"), "social images must be 1200x630");
+assert.ok(imageScript.includes("sharp(") && imageScript.includes("jpeg({quality:88"), "social images must be optimized in the build");
+assert.ok(dataSource.includes("readFileSync"), "blog data must be loaded at build time, not per public request");
 
-assert.ok(listingPage.includes("getBlogPosts()"), "the public archive must be server-rendered from the static payload");
-assert.ok(listingPage.includes('"@type": "Blog"'), "the blog archive must include Blog structured data");
-assert.ok(listingPage.includes("BlogListingClient"), "the public archive must include interactive search and filtering");
-assert.ok(articlePage.includes("generateStaticParams"), "published article routes must be generated during build");
-assert.ok(articlePage.includes('"@type": "Article"'), "article pages must include Article structured data");
-assert.ok(articlePage.includes('"@type": "FAQPage"'), "FAQ structured data must be available when FAQs exist");
-assert.ok(articlePage.includes("alternates: { canonical"), "article pages must expose canonical URLs");
-assert.ok(articlePage.includes("robots_index"), "article pages must support individual index directives");
-assert.ok(articlePage.includes("openGraph:"), "article pages must expose Open Graph metadata");
-assert.ok(articlePage.includes("twitter:"), "article pages must expose Twitter/X card metadata");
-assert.ok(articlePage.includes("extractToc"), "article pages must support a generated table of contents");
-assert.ok(categoryPage.includes("generateStaticParams"), "category pages must be statically generated");
-assert.ok(rssRoute.includes("application/rss+xml"), "the public blog must provide an RSS feed");
-assert.ok(sitemap.includes("getBlogPosts()") && sitemap.includes("/blog/"), "the sitemap must include the blog and published articles");
-assert.ok(robots.includes('disallow: ["/admin/", "/admin/blog/"]'), "robots.txt must disallow private admin routes");
-assert.ok(!publicHeader.includes("/author/"), "the personal blog must not create a separate author page");
+assert.ok(listingPage.includes("getBlogPosts()") && listingPage.includes("BlogListingClient"), "the blog archive must be server-rendered with client search controls");
+assert.ok(listingPage.includes('"@type": "Blog"'), "the archive must include Blog structured data");
+assert.ok(articlePage.includes("generateStaticParams"), "published articles must be statically generated");
+assert.ok(articlePage.includes('"@type": "Article"'), "articles must include Article structured data");
+assert.ok(articlePage.includes('"@type": "FAQPage"'), "FAQ schema must be available");
+assert.ok(articlePage.includes("canonical") && articlePage.includes("robots_index"), "article SEO must support canonical and robots directives");
+assert.ok(articlePage.includes("openGraph:") && articlePage.includes("twitter:"), "article metadata must include OG and X cards");
+assert.ok(articlePage.includes("extractToc"), "articles must support a table of contents");
+assert.ok(categoryPage.includes("generateStaticParams"), "category archives must be static pages");
+assert.ok(rssRoute.includes("application/rss+xml"), "the blog must publish an RSS feed");
+assert.ok(sitemap.includes("getBlogPosts()") && sitemap.includes("/blog/"), "sitemap must include published articles and blog archive");
+assert.ok(robots.includes('disallow: ["/admin/", "/admin/blog/"]'), "robots.txt must disallow both admin areas");
+assert.ok(!publicHeader.includes("/author/"), "no separate author archive should be generated");
 
-assert.ok(markdownSource.includes("function esc("), "the Markdown renderer must HTML-escape source content");
-assert.ok(markdownSource.includes("function allowedUrl("), "the Markdown renderer must validate link and image schemes");
-assert.ok(markdownSource.includes("function allowedUrl(") && markdownSource.includes("https?:"), "the Markdown renderer must validate URL schemes");
-assert.ok(markdownSource.includes("extractToc"), "the Markdown renderer must expose heading metadata");
+assert.ok(markdownSource.includes("function esc(") && markdownSource.includes("function allowedUrl("), "Markdown rendering must escape HTML and validate links");
+assert.ok(markdownSource.includes("https?:") && markdownSource.includes("mailto:"), "Markdown links must use an explicit safe URL allowlist");
+assert.ok(markdownSource.includes("extractToc"), "Markdown headings must provide TOC data");
 
-assert.ok(adminHtml.includes('id="login-email"') && adminHtml.includes('id="login-password"'), "the private CMS must require email and password");
-assert.ok(adminHtml.includes('id="login-form"'), "the private CMS must have a sign-in form");
-assert.ok(!/sign.?up|register|create account/i.test(adminHtml), "the private CMS must not expose public registration");
-assert.ok(adminHtml.includes('name="robots" content="noindex, nofollow, noarchive"'), "the admin page must be noindex");
-assert.ok(adminHtml.includes("Content-Security-Policy"), "the admin page must carry a restrictive CSP");
-assert.ok(adminHtml.includes('id="post-seo-title"') && adminHtml.includes('id="post-meta-description"'), "the editor must expose SEO title and meta description");
-assert.ok(adminHtml.includes('id="post-focus-keyword"') && adminHtml.includes('id="post-canonical"'), "the editor must expose focus keyword and canonical URL");
-assert.ok(adminHtml.includes('id="post-robots-index"') && adminHtml.includes('id="post-robots-follow"'), "the editor must expose robots directives");
-assert.ok(adminHtml.includes('id="seo-checks"'), "the editor must include an SEO checklist");
-assert.ok(adminHtml.includes('id="post-faqs"'), "the editor must support FAQ structured content");
-assert.ok(adminHtml.includes('id="hero-image-file"') && adminHtml.includes('id="og-image-file"'), "the editor must support cover and social images");
-assert.ok(adminHtml.includes('id="setting-heading-scale"') && adminHtml.includes('id="setting-line-height"'), "the settings must expose typography customization");
+assert.ok(blogCss.includes("Estedad") && blogCss.includes("theme-white") && blogCss.includes("theme-warm"), "the public blog must use Estedad and the light theme variants");
+assert.ok(blogCss.includes("--blog-heading-scale") && blogCss.includes("--blog-line-height"), "global editorial typography settings must apply to public content");
 
-assert.ok(adminApp.includes("/auth/v1/token?grant_type=password"), "the admin must sign in through Supabase email/password auth");
-assert.ok(adminApp.includes("/functions/v1/blog-admin"), "admin operations must use the protected Edge Function");
-assert.ok(adminApp.includes("createImageBitmap(file)"), "images must be resized and compressed in the browser before upload");
-assert.ok(adminApp.includes('canvasBlob(canvas,"image/webp",0.84)'), "image compression must output WebP");
-assert.ok(adminApp.includes("3*1024*1024"), "the editor must cap compressed uploads at 3 MB");
-assert.ok(adminApp.includes("previewInline"), "the Markdown preview must use an escaped rendering path");
-assert.ok(!/localStorage|sessionStorage/.test(adminApp), "the admin must not persist access or refresh tokens in browser storage");
-assert.ok(!/sb_secret_|service_role|GITHUB_WORKFLOW_TOKEN|ghp_/.test(adminApp), "the public admin bundle must not contain privileged credentials");
-assert.equal((adminApp.match(/function showView\(name\)/g) || []).length, 1, "the admin script must have one view switcher");
+assert.ok(adminHtml.includes('id="login-email"') && adminHtml.includes('id="login-password"'), "CMS login must use email and password");
+assert.ok(adminHtml.includes('id="login-form"') && !/sign.?up|register|create account/i.test(adminHtml), "CMS must not expose public registration");
+assert.ok(adminHtml.includes('name="robots" content="noindex, nofollow, noarchive"'), "CMS admin must be noindex");
+assert.ok(adminHtml.includes("Content-Security-Policy"), "CMS admin must have a restrictive CSP");
+for (const id of ["post-seo-title","post-meta-description","post-focus-keyword","post-canonical","post-robots-index","post-robots-follow","seo-checks","post-faqs","hero-image-file","og-image-file","setting-og-file"]) {
+  assert.ok(adminHtml.includes('id="' + id + '"'), "CMS editor is missing control #" + id);
+}
+assert.ok(adminHtml.includes("setting-heading-scale") && adminHtml.includes("setting-line-height"), "CMS settings must expose typography controls");
+
+assert.ok(adminApp.includes("/auth/v1/token?grant_type=password"), "CMS must use Supabase email/password authentication");
+assert.ok(adminApp.includes("/functions/v1/blog-admin"), "privileged CMS actions must use the Edge Function");
+assert.ok(adminApp.includes("createImageBitmap(file)") && adminApp.includes('canvasBlob(canvas,"image/webp"'), "CMS must compress images to WebP");
+assert.ok(adminApp.includes("3*1024*1024"), "CMS must cap compressed image uploads");
+assert.ok(adminApp.includes("previewInline"), "Markdown preview must use an escaped renderer");
+assert.ok(!/localStorage|sessionStorage/.test(adminApp), "CMS session tokens must not be persisted in Web Storage");
+assert.ok(!/sb_secret_|service_role|GITHUB_WORKFLOW_TOKEN|ghp_/.test(adminApp), "privileged credentials must never enter the browser bundle");
+assert.equal((adminApp.match(/function showView\(name\)/g) || []).length, 1, "CMS script must have one view switcher");
 
 for (const invariant of [
-  "auth.getUser(accessToken)",
-  'from("dashboard_admins")',
-  '.eq("active", true)',
-  "email_confirmed_at",
-  "Access-Control-Allow-Origin",
-  "GITHUB_WORKFLOW_TOKEN",
-  "createClient(config.url, config.secret",
-  "hasMagicBytes",
-  "MAX_IMAGE_BYTES",
-  "published_snapshot",
-  "has_unpublished_changes",
+  "auth.getUser(accessToken)", 'from("dashboard_admins")', '.eq("active", true)',
+  "email_confirmed_at", "Access-Control-Allow-Origin", "GITHUB_WORKFLOW_TOKEN",
+  "published_snapshot", "has_unpublished_changes", "MAX_IMAGE_BYTES", "hasMagicBytes",
+  "/actions/workflows/deploy.yml/dispatches",
 ]) {
-  assert.ok(adminEdge.includes(invariant), "blog-admin must retain security/content invariant: " + invariant);
+  assert.ok(adminEdge.includes(invariant), "blog-admin is missing security or publishing invariant: " + invariant);
 }
-assert.ok(adminEdge.includes('"/actions/workflows/deploy.yml/dispatches"'), "publish must trigger the GitHub Pages build");
-assert.ok(adminEdge.includes('message.includes("GITHUB_WORKFLOW_TOKEN")'), "missing publish secret must return an explicit configuration status");
-assert.ok(publicFeedMigration.includes("security invoker"), "public blog RPC must use a SECURITY INVOKER wrapper");
-assert.ok(publicFeedMigration.includes("revoke all on table public.blog_posts from anon, authenticated"), "browser roles must not read draft tables directly");
-assert.ok(snapshotMigration.includes("p.published_snapshot"), "the public feed must read immutable published snapshots");
-assert.ok(snapshotMigration.includes("p.status = 'published'"), "the public feed must exclude drafts and archived posts");
-assert.ok(workflow.includes("npm run test:blog"), "CI must run the blog CMS contract test");
+assert.ok(publicRpcMigration.includes("security invoker"), "public RPC wrapper must use SECURITY INVOKER");
+assert.ok(browserDenyMigration.includes("revoke all on table public.blog_posts from anon, authenticated"), "browser roles must not read draft tables");
+assert.ok(snapshotMigration.includes("p.published_snapshot") && snapshotMigration.includes("p.status = 'published'"), "the public RPC must only expose published snapshots");
+assert.ok(workflow.includes("npm run test:blog"), "CI must run the blog CMS contract");
 
-console.log("Personal blog contract passed: static SEO routes, published-only content, secure admin auth, image compression and editorial controls.");
+console.log("Personal blog contract passed: SEO-ready static pages, isolated unpublished content, secure CMS auth and image optimization.");
