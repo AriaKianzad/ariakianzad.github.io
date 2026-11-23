@@ -3,9 +3,13 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { BlogPost } from "@/lib/blog-data";
-import { readingTime } from "@/lib/blog-data";
 
 type Category = { name: string; count: number; slug: string };
+
+function readingTime(content: string, language: "fa" | "en" = "fa") {
+  const words = content.trim().split(/\\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / (language === "fa" ? 180 : 220)));
+}
 
 function formatDate(value: string, language: "fa" | "en") {
   return new Intl.DateTimeFormat(language === "fa" ? "fa-IR" : "en-US", {
