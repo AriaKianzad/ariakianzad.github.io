@@ -16,7 +16,7 @@ const s = payload.settings || {};
 const result = {
   settings: {
     title:s.title||"نوشته‌ها", tagline:s.tagline||"یادداشت‌هایی درباره برند، معنا و ارتباط",
-    description:s.description||"", background_theme:s.background_theme||"paper",
+    description:s.description||"", canonical_url:s.canonical_url||"", background_theme:s.background_theme||"paper",
     accent_color:s.accent_color||"#a86f54", card_style:s.card_style||"editorial",
     layout_style:s.layout_style||"editorial", content_width:s.content_width||"reading",
     posts_per_page:Math.min(24,Math.max(3,Number(s.posts_per_page||9))),

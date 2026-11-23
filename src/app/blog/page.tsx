@@ -6,14 +6,15 @@ import { BlogListingClient, BlogPostCard } from "./BlogListingClient";
 import HeroVisual from "@/components/hero-visual";
 
 const blogSettings = getBlogSettings();
+const blogCanonicalUrl = blogSettings.canonical_url || site.url + "/blog/";
 
 export const metadata: Metadata = {
   title: blogSettings.default_meta_title || "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد",
   description: blogSettings.default_meta_description || blogSettings.description || "اینجا درباره استراتژی برند، جایگاه‌یابی، ارتباطات و پرسونال برندینگ می‌نویسم؛ با تمرکز بر معنا، رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن.",
   robots: { index: blogSettings.default_robots_index, follow: blogSettings.default_robots_follow },
-  alternates: { canonical: site.url + "/blog/", types: { "application/rss+xml": site.url + "/blog/feed.xml" } },
+  alternates: { canonical: blogCanonicalUrl, types: { "application/rss+xml": site.url + "/blog/feed.xml" } },
   openGraph: blogSettings.open_graph_enabled ? {
-    type: "website", url: site.url + "/blog/", siteName: "Aria Kianzad",
+    type: "website", url: blogCanonicalUrl, siteName: "Aria Kianzad",
     title: blogSettings.default_og_title || "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد",
     description: blogSettings.default_og_description || blogSettings.description,
     images: [{ url: blogSettings.default_og_image || site.url + "/og/og.jpg", width: 1200, height: 630 }],
@@ -30,7 +31,7 @@ export default function BlogIndexPage() {
   const schema = {
     "@context": "https://schema.org", "@type": "Blog",
     name: settings.title, description: settings.description,
-    url: site.url + "/blog/", inLanguage: settings.default_language === "fa" ? "fa-IR" : "en",
+    url: settings.canonical_url || site.url + "/blog/", inLanguage: settings.default_language === "fa" ? "fa-IR" : "en",
     publisher: { "@type": "Person", name: "Aria Kianzad", url: site.url },
   };
   return (
@@ -46,6 +47,7 @@ export default function BlogIndexPage() {
           <div className="blog-intro-visual" aria-hidden="true">
             <HeroVisual />
           </div>
+          {settings.description ? <p className="blog-intro-description">{settings.description}</p> : null}
         </section>
         {featured ? (
           <section className="blog-featured-section blog-container" aria-label="نوشتۀ منتخب">

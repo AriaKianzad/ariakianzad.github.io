@@ -90,6 +90,17 @@ function hexColor(value: unknown, fallback: string) {
   return color;
 }
 
+function blogCanonicalUrl(value: unknown, fallback: string): string {
+  const candidate = textValue(value, 500, "نشانی معیار صفحه اصلی وبلاگ");
+  if (!candidate) return fallback;
+  let url: URL;
+  try { url = new URL(candidate); } catch { throw new Error("نشانی معیار صفحه اصلی معتبر نیست."); }
+  if (url.origin !== SITE_ORIGIN || url.pathname !== "/blog/" || url.search || url.hash) {
+    throw new Error("نشانی معیار صفحه اصلی باید دقیقاً به نشانی HTTPS صفحۀ اصلی همین وبلاگ اشاره کنه.");
+  }
+  return url.href;
+}
+
 function mediaUrl(value: unknown): string | null {
   if (value === null || value === undefined || value === "") return null;
   if (typeof value !== "string" || !value.startsWith(MEDIA_PREFIX) || value.includes("..")) {
@@ -452,7 +463,7 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
     const languages = ["fa", "en"];
     const defaultOg = mediaUrl(input.default_og_image);
     const { data: currentSettings, error: currentSettingsError } = await client.from("blog_settings")
-      .select("categories,category_seo,default_og_title,default_og_description,default_robots_index,default_robots_follow,noindex_empty_categories,sitemap_include_categories,sitemap_include_articles,schema_type,breadcrumbs_enabled,breadcrumb_home_label,open_graph_enabled,twitter_card_type")
+      .select("canonical_url,categories,category_seo,default_og_title,default_og_description,default_robots_index,default_robots_follow,noindex_empty_categories,sitemap_include_categories,sitemap_include_articles,schema_type,breadcrumbs_enabled,breadcrumb_home_label,open_graph_enabled,twitter_card_type")
       .eq("id", 1).maybeSingle();
     if (currentSettingsError) throw new Error("دریافت تنظیمات فعلی ناموفق بود.");
     const categories = input.categories === undefined
@@ -499,6 +510,9 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
       intro_body: textValue(input.intro_body, 600, "متن معرفی"),
       default_meta_title: textValue(input.default_meta_title, 75, "عنوان متای پیش‌فرض"),
       default_meta_description: textValue(input.default_meta_description, 320, "توضیحات متای پیش‌فرض"),
+      canonical_url: input.canonical_url === undefined
+        ? (currentSettings?.canonical_url || "")
+        : blogCanonicalUrl(input.canonical_url, ""),
       default_og_image: defaultOg || "",
       footer_note: textValue(input.footer_note, 200, "متن پابرگ"),
       categories,

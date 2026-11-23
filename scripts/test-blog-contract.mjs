@@ -49,8 +49,64 @@ const categorySeoMigration = await read("supabase/migrations/20261123130000_add_
 const categoryTaxonomyMigration = await read("supabase/migrations/20261123200000_add_blog_category_taxonomy_and_advanced_seo.sql");
 const multipleCategoryMigration = await read("supabase/migrations/20261124210000_add_multiple_post_categories.sql");
 const snapshotCategorySyncMigration = await read("supabase/migrations/20261124220000_sync_multi_category_published_snapshots.sql");
+const canonicalMigration = await read("supabase/migrations/20261124230000_add_blog_default_canonical_url.sql");
 const categoryUtils = await read("src/lib/blog-category-utils.ts");
 const listingClient = await read("src/app/blog/BlogListingClient.tsx");
+const listingScript = await read("public/blog-listing.js");
+new Script(listingScript, { filename: "public/blog-listing.js" });
+const listingEvents = {};
+const makeListingCard = (slug, category, searchable) => ({
+  hidden:false,
+  dataset:{categorySlugs:category,searchText:searchable},
+});
+const listingCards = [
+  makeListingCard("brand-strategy","branding","استراتژی برند"),
+  makeListingCard("culture-notes","culture","فرهنگ روزمره"),
+];
+const makeFilter = (category) => ({
+  dataset:{categoryFilter:category},
+  classList:{toggle(){}},
+  attributes:{},
+  setAttribute(name,value){this.attributes[name]=value;},
+  addEventListener(type,handler){listingEvents["filter:"+category+":"+type]=handler;},
+});
+const listingFilters = [makeFilter(""),makeFilter("branding"),makeFilter("culture")];
+const listingSearch = {value:"",addEventListener(type,handler){listingEvents["search:"+type]=handler;},focus(){}};
+const listingMore = {addEventListener(type,handler){listingEvents["more:"+type]=handler;}};
+const listingClear = {hidden:true,addEventListener(type,handler){listingEvents["clear:"+type]=handler;}};
+const listingMoreWrap = {hidden:true};
+const listingEmpty = {hidden:true};
+const listingResults = {textContent:""};
+const listingWidget = {
+  dataset:{pageSize:"1"},
+  classList:{add(){}},
+  querySelectorAll(selector){return selector==="[data-blog-post-card]"?listingCards:selector==="[data-category-filter]"?listingFilters:[];},
+  querySelector(selector){
+    return ({
+      "[data-blog-search]":listingSearch,
+      "[data-blog-results]":listingResults,
+      "[data-clear-blog-filters]":listingClear,
+      "[data-blog-empty]":listingEmpty,
+      "[data-blog-load-more]":listingMoreWrap,
+      "[data-load-more]":listingMore,
+    })[selector]||null;
+  },
+};
+runInNewContext(listingScript,{document:{querySelectorAll:()=>[listingWidget]}});
+assert.equal(listingCards[0].hidden,false,"the first matching article card must be visible on initial render");
+assert.equal(listingCards[1].hidden,true,"load-more must initially hide cards outside the page size");
+assert.equal(listingMoreWrap.hidden,false,"load-more must appear when more articles exist");
+listingEvents["more:click"]();
+assert.equal(listingCards[1].hidden,false,"load-more must reveal the next page of articles");
+listingEvents["filter:branding:click"]();
+assert.equal(listingCards[0].hidden,false,"the chosen category must retain matching articles");
+assert.equal(listingCards[1].hidden,true,"the chosen category must hide non-matching articles");
+listingEvents["filter:culture:click"]();
+listingSearch.value="فرهنگ";
+listingEvents["search:input"]();
+assert.equal(listingCards[0].hidden,true,"search must hide cards whose searchable text does not match");
+assert.equal(listingCards[1].hidden,false,"search must show matching cards in the currently selected category");
+
 const copyLinkButton = await read("src/app/blog/CopyLinkButton.tsx");
 const blogCopyScript = await read("public/blog-copy.js");
 new Script(blogCopyScript, { filename: "public/blog-copy.js" });
@@ -116,6 +172,8 @@ assert.ok(imageScript.includes("sharp(") && imageScript.includes("jpeg({quality:
 assert.ok(dataSource.includes("readFileSync"), "blog data must be loaded at build time, not per public request");
 
 assert.ok(listingPage.includes("getBlogPosts()") && listingPage.includes("BlogListingClient"), "the blog archive must be server-rendered with client search controls");
+assert.ok(listingScript.includes("data-blog-listing") && listingScript.includes("includes(activeCategory)") && listingScript.includes("visibleLimit += pageSize"), "standalone listing script must provide search, category filtering and load-more behavior");
+assert.ok(rootLayout.includes('<script src="/blog-listing.js" defer />'), "static blog search behavior must load as a same-origin script");
 assert.ok(listingPage.includes('"@type": "Blog"'), "the archive must include Blog structured data");
 assert.ok(articlePage.includes("generateStaticParams"), "published articles must be statically generated");
 assert.ok(articlePage.includes('{ slug: "__empty__" }') && articlePage.includes("robots: { index: false, follow: false }"), "empty article fallback must remain noindex");
@@ -213,7 +271,8 @@ assert.ok(heroVisualComponent.includes("data-hero-visual") && signalScene.includ
 assert.ok(heroBootstrap.includes("MutationObserver") && heroBootstrap.includes("syncRoots"), "hero scene must initialize after client-side route changes");
 assert.ok(publicHeader.includes("<span>آریا کیانزاد</span>"), "blog header brand must show the author's name");
 assert.ok(blogCss.includes(".blog-theme .blog-header-blog-link {") && blogCss.includes('grid-template-areas:"visual copy"') && blogCss.includes("position:absolute;"), "blog header and hero must retain their desktop/mobile layout contracts");
-assert.ok(!listingPage.includes("blog-intro-description") && !listingPage.includes("با تمرکز بر رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن"), "blog hero must not repeat the long positioning description");
+assert.ok(listingPage.includes("blog-intro-description") && listingPage.includes("settings.description"), "blog homepage must show the configured homepage description separately from its SEO description");
+assert.ok(blogCss.includes(".blog-theme .blog-intro > .blog-intro-description") && blogCss.includes("grid-column:1 / -1") && blogCss.includes("max-width:none"), "homepage description must have a full-width responsive row on mobile and desktop");
 assert.ok(blogLayout.includes("/blog-favicon.svg") && blogLayout.includes('themeColor: "#f4f1e9"'), "blog must use its own favicon and browser theme colour");
 assert.ok(contactPage.includes("BlogHeader") && contactPage.includes("BlogFooter") && contactPage.includes("ContactForm"), "contact page must use the blog editorial shell");
 assert.ok(contactPage.includes('title: "تماس با من | درخواست همکاری و اسپانسری"') && contactPage.includes("<h3>رپورتاژ و محتوای تبلیغاتی</h3>") && contactPage.includes("<h3>اسپانسری دوره‌ای</h3>") && contactPage.includes("<h3>همکاری و پیشنهادهای دیگر</h3>"), "contact page must use the revised title and H3 hierarchy");
@@ -260,6 +319,12 @@ assert.ok(!articlePage.includes("mailto:") && !articlePage.includes(">ایمیل
 assert.ok(!copyLinkButton.includes("\"use client\"") && copyLinkButton.includes("data-copy-link") && copyLinkButton.includes("data-copy-url") && copyLinkButton.includes("data-copy-feedback"), "copy-link markup must be a static server-rendered control, not a React hydration component");
 assert.ok(blogCopyScript.includes('document.addEventListener("click"') && blogCopyScript.includes("navigator.clipboard.writeText") && blogCopyScript.includes('document.execCommand("copy")') && blogCopyScript.includes("showManualCopy") && blogCopyScript.includes("لینک کپی شد"), "standalone copy script must handle click, clipboard, fallback and success feedback");
 assert.ok(rootLayout.includes('<script src="/blog-copy.js" defer />') && blogCss.includes(".blog-share-copy-wrap [hidden]"), "static copy script must load under the same-origin CSP and keep inactive feedback hidden");
+assert.ok(blogCss.includes(".blog-card-meta time") && blogCss.includes(".blog-reading-time") && blogCss.includes("unicode-bidi:isolate"), "blog dates and reading-time labels must have stable bidirectional formatting");
+assert.ok(adminHtml.includes('id="view-analytics"') && adminHtml.includes('data-view="analytics"') && adminApp.includes("async function loadArticleAnalytics") && adminApp.includes("function renderArticleAnalytics"), "the CMS must include a protected per-article analytics workspace");
+assert.ok(adminApp.includes("analyticsEpoch") && adminApp.includes("state.articleAnalytics=null") && adminApp.includes("requestEpoch!==state.analyticsEpoch"), "cached article metrics must be cleared and in-flight reports invalidated at sign-in and logout");
+assert.ok(canonicalMigration.includes("add column if not exists canonical_url") && canonicalMigration.includes("blog_get_public_blog_settings_extras"), "blog canonical URL must be persisted and included in the safe public payload");
+assert.ok(dataSource.includes("canonical_url:string") && fetchScript.includes("canonical_url:s.canonical_url") && listingPage.includes("blogCanonicalUrl"), "blog canonical URL must flow from Supabase settings into static homepage metadata");
+assert.ok(adminHtml.includes('id="setting-canonical-url"') && adminApp.includes('canonical_url:get("setting-canonical-url")') && adminEdge.includes("blogCanonicalUrl") && adminEdge.includes('url.pathname !== "/blog/"'), "blog admin must manage and validate only the canonical homepage URL");
 assert.ok(adminApp.includes("function clipboardHeadingLevel") && adminApp.includes("font-size") && adminApp.includes("largest>=30") && adminApp.includes('tag==="h1"?2'), "Google Docs styled headings must be preserved and heading levels serialized without shifting");
 assert.ok(markdownSource.includes("setext=lines[index+1].trim().match") && markdownSource.includes('class="blog-inline-image"'), "public Markdown renderer must preserve Setext headings and semantic images");
 assert.ok(adminApp.includes("const setext=lines[index+1].trim().match") && adminApp.includes("renderPreviewMarkdown"), "CMS preview must render Setext and ATX heading structures");
@@ -275,7 +340,8 @@ assert.ok(adminHtml.includes("سایت‌مپ هم خودکار بازسازی �
 assert.ok(multipleCategoryMigration.includes("add column if not exists categories text[]") && multipleCategoryMigration.includes("add column if not exists primary_category text") && multipleCategoryMigration.includes("cardinality(categories) <= 3") && multipleCategoryMigration.includes("black-friday-history") && multipleCategoryMigration.includes("array['culture']"), "multi-category migration must add primary/secondary categories, cap at three and move Black Friday to Culture");
 assert.ok(snapshotCategorySyncMigration.includes("published_snapshot = published_snapshot || jsonb_build_object") && snapshotCategorySyncMigration.includes("'categories'") && snapshotCategorySyncMigration.includes("'primary_category'"), "published article snapshots must receive multi-category metadata for public rendering");
 assert.ok(categoryUtils.includes("export function getPostCategorySlugs") && categoryUtils.includes("export function getPrimaryCategorySlug"), "category helpers must be pure and client-safe");
-assert.ok(listingClient.includes('from "@/lib/blog-category-utils"') && listingClient.includes("categorySlugs.includes(category)") && listingClient.includes("getPrimaryCategorySlug(post)") && !listingClient.includes('import { getBlogCategoryName } from "@/lib/blog-data"'), "client listing must filter all categories and use primary category without bundling Node-only blog data");
+assert.ok(!listingClient.startsWith('"use client"') && listingClient.includes('from "@/lib/blog-category-utils"') && listingClient.includes("data-category-slugs") && listingClient.includes("data-blog-search") && listingClient.includes("getPrimaryCategorySlug(post)") && !listingClient.includes('import { getBlogCategoryName } from "@/lib/blog-data"'), "blog archive must render static article cards and filter controls without React hydration");
+assert.ok(listingClient.includes("searchableTerms") && listingClient.includes("categories.find((item) => item.slug === slug)?.name"), "blog search data must include localized labels for primary and secondary article categories");
 assert.ok(adminHtml.includes('id="post-category-options"') && adminHtml.includes('id="post-primary-category"'), "article editor must expose multi-select categories and an explicit primary category");
 assert.ok(adminApp.includes("function selectedEditorCategories()") && adminApp.includes("chosen.length>3") && adminApp.includes("post.primary_category=post.categories.includes"), "CMS must limit articles to three categories and persist an explicit primary category");
 assert.ok(adminEdge.includes("rawCategories.length > 3") && adminEdge.includes("categories.length > 3") && adminEdge.includes("!categories.includes(primaryCategory)") && adminEdge.includes(".overlaps(\"categories\", removedSlugs)"), "Edge Function must validate the three-category limit, primary selection and protect secondary-category dependencies");

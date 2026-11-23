@@ -707,6 +707,214 @@ async function getSearchConsoleData(accessToken: string) {
   };
 }
 
+
+function blogSlugFromPath(value: string): string | null {
+  try {
+    const parsed = new URL(value, SITE_ORIGIN);
+    const match = parsed.pathname.match(/^\/blog\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/i);
+    return match?.[1]?.toLowerCase() || null;
+  } catch {
+    return null;
+  }
+}
+
+async function getArticleAnalyticsData(accessToken: string) {
+  const keys = getSupabaseKeys();
+  const adminClient = createClient(keys.supabaseUrl, keys.secretKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: publishedPosts, error: postsError } = await adminClient
+    .from("blog_posts")
+    .select("slug,title,published_at,canonical_url")
+    .eq("status", "published")
+    .order("published_at", { ascending: false })
+    .limit(500);
+  if (postsError) throw new Error("دریافت فهرست مقاله‌های منتشرشده برای گزارش آمار ناموفق بود.");
+
+  const dateRanges = [{ startDate: "29daysAgo", endDate: "today" }];
+  const [pageReportResult, sourceReportResult, gscOverviewResult] = await Promise.allSettled([
+    ga4Report(accessToken, {
+      dateRanges,
+      dimensions: [{ name: "pagePath" }],
+      metrics: [
+        { name: "screenPageViews" },
+        { name: "totalUsers" },
+        { name: "sessions" },
+        { name: "engagedSessions" },
+      ],
+      dimensionFilter: {
+        filter: {
+          fieldName: "pagePath",
+          stringFilter: { matchType: "BEGINS_WITH", value: "/blog/" },
+        },
+      },
+      limit: "10000",
+    }),
+    ga4Report(accessToken, {
+      dateRanges,
+      dimensions: [{ name: "landingPage" }, { name: "sessionSourceMedium" }],
+      metrics: [{ name: "sessions" }, { name: "totalUsers" }],
+      dimensionFilter: {
+        filter: {
+          fieldName: "landingPage",
+          stringFilter: { matchType: "BEGINS_WITH", value: "/blog/" },
+        },
+      },
+      orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+      limit: "10000",
+    }),
+    getSearchConsoleData(accessToken),
+  ]);
+
+  const pageRows = pageReportResult.status === "fulfilled" ? pageReportResult.value.rows : [];
+  const sourceRows = sourceReportResult.status === "fulfilled" ? sourceReportResult.value.rows : [];
+  const pageMetrics = new Map<string, { pageViews: number; users: number; sessions: number; engagedSessions: number }>();
+  const sourceMetrics = new Map<string, Array<{ sourceMedium: string; sessions: number; users: number }>>();
+
+  for (const row of pageRows) {
+    const slug = blogSlugFromPath(String(row.pagePath || ""));
+    if (!slug) continue;
+    const current = pageMetrics.get(slug) || { pageViews: 0, users: 0, sessions: 0, engagedSessions: 0 };
+    current.pageViews += Number(row.screenPageViews || 0);
+    current.users += Number(row.totalUsers || 0);
+    current.sessions += Number(row.sessions || 0);
+    current.engagedSessions += Number(row.engagedSessions || 0);
+    pageMetrics.set(slug, current);
+  }
+
+  for (const row of sourceRows) {
+    const slug = blogSlugFromPath(String(row.landingPage || ""));
+    if (!slug) continue;
+    const entries = sourceMetrics.get(slug) || [];
+    entries.push({
+      sourceMedium: String(row.sessionSourceMedium || "(not set)"),
+      sessions: Number(row.sessions || 0),
+      users: Number(row.totalUsers || 0),
+    });
+    sourceMetrics.set(slug, entries);
+  }
+
+  let gscStatus: "ok" | "error" | "no_access" | "no_data" = "error";
+  let gscMessage = "";
+  let gscDates = { startDate: "", endDate: "" };
+  const gscMetrics = new Map<string, { clicks: number; impressions: number; weightedPosition: number }>();
+  if (gscOverviewResult.status === "fulfilled") {
+    const overview = gscOverviewResult.value;
+    gscDates = { startDate: overview.startDate || "", endDate: overview.endDate || "" };
+    if (!overview.propertyAccess || !overview.propertyUrl) {
+      gscStatus = "no_access";
+      gscMessage = overview.message || "به Property سرچ‌کنسول دسترسی تأییدشده‌ای وجود نداره.";
+    } else if (overview.status === "no_data") {
+      gscStatus = "no_data";
+      gscMessage = overview.message || "در بازۀ گزارش‌شده، Search Console داده‌ای برای سایت برنگردونده.";
+    } else {
+      try {
+        const report = await searchConsoleReport(accessToken, overview.propertyUrl, {
+          startDate: overview.startDate,
+          endDate: overview.endDate,
+          dimensions: ["page"],
+          rowLimit: 25000,
+        });
+        const articlePageRows = report.rows || [];
+        let mappedArticlePageRows = 0;
+        for (const row of articlePageRows) {
+          const slug = blogSlugFromPath(String(row.keys?.[0] || ""));
+          if (!slug) continue;
+          mappedArticlePageRows += 1;
+          const clicks = Number(row.clicks || 0);
+          const impressions = Number(row.impressions || 0);
+          const position = Number(row.position || 0);
+          const current = gscMetrics.get(slug) || { clicks: 0, impressions: 0, weightedPosition: 0 };
+          current.clicks += clicks;
+          current.impressions += impressions;
+          current.weightedPosition += position * impressions;
+          gscMetrics.set(slug, current);
+        }
+        gscStatus = mappedArticlePageRows ? "ok" : "no_data";
+        if (!mappedArticlePageRows) gscMessage = "در بازۀ گزارش‌شده، Search Console دادهٔ صفحه‌ای برای مقاله‌ها برنگردونده.";
+      } catch (error) {
+        gscStatus = "error";
+        gscMessage = String(error instanceof Error ? error.message : error).slice(0, 240);
+      }
+    }
+  } else {
+    gscStatus = "error";
+    gscMessage = String(gscOverviewResult.reason?.message || gscOverviewResult.reason).slice(0, 240);
+  }
+
+  const ga4HasRows = pageReportResult.status === "fulfilled" && pageMetrics.size > 0;
+  const ga4Status = pageReportResult.status === "rejected"
+    ? "error"
+    : ga4HasRows ? "ok" : "no_data";
+  const ga4Message = pageReportResult.status === "rejected"
+    ? String(pageReportResult.reason?.message || pageReportResult.reason).slice(0, 240)
+    : ga4HasRows ? "" : "در بازۀ گزارش‌شده، GA4 برای صفحه‌های مقاله ردیفی برنگردونده.";
+  const sourcesStatus = sourceReportResult.status === "rejected"
+    ? "error"
+    : sourceMetrics.size ? "ok" : "no_data";
+  const articleLandingSessions = Array.from(sourceMetrics.values())
+    .flat()
+    .reduce((sum, source) => sum + source.sessions, 0);
+  const articles = (publishedPosts || []).map((post) => {
+    const page = pageMetrics.get(post.slug) || { pageViews: 0, users: 0, sessions: 0, engagedSessions: 0 };
+    const search = gscMetrics.get(post.slug) || { clicks: 0, impressions: 0, weightedPosition: 0 };
+    const postSources = sourceMetrics.get(post.slug) || [];
+    const landingSessions = postSources.reduce((sum, source) => sum + source.sessions, 0);
+    const sources = [...postSources]
+      .sort((a, b) => b.sessions - a.sessions)
+      .slice(0, 4);
+    return {
+      slug: post.slug,
+      title: post.title,
+      publishedAt: post.published_at,
+      canonicalUrl: post.canonical_url || SITE_ORIGIN + "/blog/" + post.slug + "/",
+      ga4: {
+        status: ga4Status,
+        pageViews: page.pageViews,
+        users: page.users,
+        sessions: page.sessions,
+        engagedSessions: page.engagedSessions,
+        landingSessions,
+        sources,
+        sourcesStatus,
+      },
+      searchConsole: {
+        status: gscStatus,
+        clicks: search.clicks,
+        impressions: search.impressions,
+        ctr: search.impressions > 0 ? search.clicks / search.impressions : 0,
+        position: search.impressions > 0 ? search.weightedPosition / search.impressions : 0,
+      },
+    };
+  });
+
+  const hasReportData = ga4Status === "ok" || gscStatus === "ok";
+  const hasReportError = ga4Status === "error" || gscStatus === "error" || gscStatus === "no_access";
+  const overallStatus = hasReportData
+    ? (ga4Status !== "ok" || gscStatus !== "ok" ? "partial" : "ok")
+    : hasReportError ? "error" : "no_data";
+  return {
+    status: overallStatus,
+    generatedAt: new Date().toISOString(),
+    periods: {
+      ga4: "۳۰ روز اخیر تا امروز؛ روز جاری ممکن است ناقص باشد",
+      searchConsole: gscDates,
+    },
+    propertyId: GA4_PROPERTY_ID,
+    searchConsoleSite: gscOverviewResult.status === "fulfilled"
+      ? gscOverviewResult.value.propertyUrl || GSC_SITE_URL
+      : GSC_SITE_URL,
+    ga4: { status: ga4Status, message: ga4Message },
+    sources: {
+      status: sourcesStatus,
+      articleLandingSessions,
+    },
+    searchConsole: { status: gscStatus, message: gscMessage },
+    articleCount: articles.length,
+    articles,
+  };
+}
+
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -718,7 +926,7 @@ Deno.serve(async (request: Request) => {
     if (origin && origin !== SITE_ORIGIN) return json({ error: "Origin not allowed." }, 403);
 
     const requestBody = await request.json().catch(() => ({}));
-    const requestMode = requestBody?.mode === "realtime" || requestBody?.mode === "ga4"
+    const requestMode = requestBody?.mode === "realtime" || requestBody?.mode === "ga4" || requestBody?.mode === "articles"
       ? requestBody.mode
       : "dashboard";
 
@@ -741,7 +949,28 @@ Deno.serve(async (request: Request) => {
           ga4Realtime: { status: "not_configured", message },
         }, 424);
       }
-      if (requestMode === "ga4") {
+      if (requestMode === "articles") {
+        return json({
+          status: "not_configured",
+          message,
+          ga4: { status: "not_configured", message },
+          searchConsole: { status: "not_configured", message },
+          articles: [],
+        }, 424);
+      }
+      if (requestMode === "articles") {
+      const articles = await getArticleAnalyticsData(google.accessToken);
+      console.info("site-analytics article report diagnostics", {
+        status: articles.status,
+        articleCount: articles.articleCount,
+        ga4: articles.ga4.status,
+        sources: articles.sources.status,
+        searchConsole: articles.searchConsole.status,
+      });
+      return json(articles);
+    }
+
+    if (requestMode === "ga4") {
         return json({
           status: "not_configured",
           message,

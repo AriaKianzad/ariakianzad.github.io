@@ -4,7 +4,7 @@
   const supabaseUrl = typeof config.supabaseUrl === "string" ? config.supabaseUrl.replace(/\/+$/,"") : "";
   const anonKey = typeof config.supabaseAnonKey === "string" ? config.supabaseAnonKey : "";
   const $ = (selector) => document.querySelector(selector);
-  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false };
+  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0 };
   const statusLabels = { draft:"پیش‌نویس", published:"منتشرشده", archived:"بایگانی" };
   const validConfig = supabaseUrl === "https://bkohdqwecnvbmeaiuyyx.supabase.co" && anonKey.startsWith("sb_publishable_");
 
@@ -48,6 +48,7 @@
     }catch{return false;}
   }
   async function finishSignIn(email,password,remember,quiet) {
+    state.analyticsEpoch+=1;state.articleAnalytics=null;state.analyticsBusy=false;
     await signIn(email,password);
     const user=await fetch(supabaseUrl+"/auth/v1/user",{headers:{apikey:anonKey,Authorization:"Bearer "+state.accessToken}});
     const userData=await parseResponse(user);window.blogAdminEmail=userData.email||"مدیر";
@@ -96,6 +97,16 @@
     if(response.status===401){logout(false);throw new Error("نشست ورود معتبر نیست. دوباره وارد شو.");}
     return parseResponse(response);
   }
+  async function siteAnalytics(mode,retried) {
+    const response=await fetch(supabaseUrl+"/functions/v1/site-analytics",{
+      method:"POST",
+      headers:{apikey:anonKey,Authorization:"Bearer "+state.accessToken,"Content-Type":"application/json"},
+      body:JSON.stringify({mode})
+    });
+    if(response.status===401&&!retried&&await refreshSession())return siteAnalytics(mode,true);
+    if(response.status===401){logout(false);throw new Error("نشست ورود معتبر نیست. دوباره وارد شو.");}
+    return parseResponse(response);
+  }
   async function uploadRequest(form,retried) {
     const response=await fetch(supabaseUrl+"/functions/v1/blog-admin",{
       method:"POST",headers:{apikey:anonKey,Authorization:"Bearer "+state.accessToken},body:form
@@ -117,6 +128,7 @@
   async function logout(revoke) {
     const token=state.accessToken;
     if(navigator.credentials?.preventSilentAccess)navigator.credentials.preventSilentAccess().catch(()=>{});
+    state.analyticsEpoch+=1;state.articleAnalytics=null;state.analyticsBusy=false;
     state.accessToken="";state.refreshToken="";state.posts=[];state.currentPost=null;state.settings=null;
     if(revoke!==false&&token&&validConfig){
       fetch(supabaseUrl+"/auth/v1/logout?scope=local",{method:"POST",headers:{apikey:anonKey,Authorization:"Bearer "+token}}).catch(()=>{});
@@ -125,7 +137,7 @@
   }
   function dateLabel(value) {
     if(!value)return "—";
-    return new Intl.DateTimeFormat("fa-IR",{year:"numeric",month:"short",day:"numeric"}).format(new Date(value));
+    return new Intl.DateTimeFormat("fa-IR-u-ca-persian",{year:"numeric",month:"short",day:"numeric",timeZone:"Asia/Tehran"}).format(new Date(value));
   }
   function statusBadge(post) {
     const span=document.createElement("span");
@@ -172,6 +184,132 @@
     const grid=$("#posts-grid");grid.replaceChildren();
     posts.forEach((post)=>grid.appendChild(createPostRow(post)));
     $("#posts-empty").hidden=posts.length>0;
+  }
+  function formatMetric(value) {
+    return Number(value||0).toLocaleString("fa-IR");
+  }
+  function analyticsMetric(label,value,detail) {
+    const item=document.createElement("div");item.className="article-analytics-metric";
+    const caption=document.createElement("span");caption.textContent=label;
+    const amount=document.createElement("strong");amount.textContent=value;
+    item.append(caption,amount);
+    if(detail){const note=document.createElement("small");note.textContent=detail;item.appendChild(note);}
+    return item;
+  }
+  function renderArticleAnalytics() {
+    const data=state.articleAnalytics;
+    const list=$("#article-analytics-results");
+    const summary=$("#article-analytics-summary");
+    if(!list||!summary)return;
+    list.replaceChildren();summary.replaceChildren();
+    if(!data||!Array.isArray(data.articles)){
+      $("#article-analytics-empty").hidden=true;
+      return;
+    }
+    const articles=data.articles;
+    const ga4Ok=data.ga4?.status==="ok";
+    const gscOk=data.searchConsole?.status==="ok";
+    const landingOk=data.sources?.status==="ok";
+    const total=(key,source)=>articles.reduce((sum,item)=>sum+Number(item[source]?.[key]||0),0);
+    summary.append(
+      analyticsMetric("بازدید صفحات",ga4Ok?formatMetric(total("pageViews","ga4")):"—"),
+      analyticsMetric("نشست‌های ورودی به مقاله‌ها",landingOk?formatMetric(data.sources.articleLandingSessions):"—"),
+      analyticsMetric("کلیک از گوگل",gscOk?formatMetric(total("clicks","searchConsole")):"—"),
+      analyticsMetric("نمایش در گوگل",gscOk?formatMetric(total("impressions","searchConsole")):"—")
+    );
+    const reportPeriod="GA4: "+(data.periods?.ga4||"۳۰ روز اخیر")+" · Search Console: "+
+      ((data.periods?.searchConsole?.startDate&&data.periods?.searchConsole?.endDate)
+        ? data.periods.searchConsole.startDate+" تا "+data.periods.searchConsole.endDate
+        : "بازه در دسترس نیست");
+    const note=$("#article-analytics-status");
+    const states=[];
+    states.push(ga4Ok?"GA4 متصل":"GA4: "+(data.ga4?.message||"گزارش در دسترس نیست"));
+    states.push(gscOk?"Search Console متصل":(data.searchConsole?.message||"Search Console داده‌ای برنگردوند."));
+    note.textContent=reportPeriod+" · "+states.join(" · ")+" · آخرین دریافت: "+
+      new Intl.DateTimeFormat("fa-IR-u-ca-persian",{dateStyle:"short",timeStyle:"short",timeZone:"Asia/Tehran"}).format(new Date(data.generatedAt||Date.now()));
+    const needle=($("#article-analytics-search")?.value||"").trim().toLocaleLowerCase();
+    const filtered=articles.filter((article)=>!needle||[article.title,article.slug].join(" ").toLocaleLowerCase().includes(needle));
+    $("#article-analytics-empty").hidden=filtered.length>0;
+    filtered.forEach((article)=>{
+      const card=document.createElement("article");card.className="article-analytics-card";
+      const heading=document.createElement("div");heading.className="article-analytics-heading";
+      const main=document.createElement("div");main.className="article-analytics-main";
+      const title=document.createElement("a");title.className="article-analytics-title";
+      title.href="/blog/"+encodeURIComponent(article.slug)+"/";title.target="_blank";title.rel="noopener noreferrer";
+      title.textContent=article.title||article.slug;
+      const slug=document.createElement("span");slug.className="article-analytics-slug";slug.textContent="/blog/"+article.slug+"/";
+      main.append(title,slug);
+      const published=document.createElement("time");published.className="article-analytics-published";
+      published.dateTime=article.publishedAt||"";
+      published.textContent=article.publishedAt?dateLabel(article.publishedAt):"تاریخ انتشار نامشخص";
+      heading.append(main,published);
+      const groups=document.createElement("div");groups.className="article-analytics-groups";
+      const gaGroup=document.createElement("section");gaGroup.className="article-analytics-group";
+      const gaTitle=document.createElement("h3");gaTitle.textContent="Google Analytics";
+      const gaMetrics=document.createElement("div");gaMetrics.className="article-analytics-metrics";
+      const ga=article.ga4||{};
+      gaMetrics.append(
+        analyticsMetric("بازدید صفحه",ga.status==="ok"?formatMetric(ga.pageViews):"—"),
+        analyticsMetric("کاربران",ga.status==="ok"?formatMetric(ga.users):"—"),
+        analyticsMetric("نشست‌های صفحه",ga.status==="ok"?formatMetric(ga.sessions):"—"),
+        analyticsMetric("نشست‌های ورودی",ga.sourcesStatus==="ok"?formatMetric(ga.landingSessions):"—")
+      );
+      gaGroup.append(gaTitle,gaMetrics);
+      const gscGroup=document.createElement("section");gscGroup.className="article-analytics-group";
+      const gscTitle=document.createElement("h3");gscTitle.textContent="Google Search Console";
+      const gscMetrics=document.createElement("div");gscMetrics.className="article-analytics-metrics";
+      const sc=article.searchConsole||{};
+      gscMetrics.append(
+        analyticsMetric("کلیک",sc.status==="ok"?formatMetric(sc.clicks):"—"),
+        analyticsMetric("نمایش",sc.status==="ok"?formatMetric(sc.impressions):"—"),
+        analyticsMetric("CTR",sc.status==="ok"?(Number(sc.ctr||0)*100).toLocaleString("fa-IR",{maximumFractionDigits:1})+"٪":"—"),
+        analyticsMetric("میانگین جایگاه",sc.status==="ok"&&Number(sc.impressions||0)>0?Number(sc.position||0).toLocaleString("fa-IR",{maximumFractionDigits:1}):"—")
+      );
+      gscGroup.append(gscTitle,gscMetrics);
+      groups.append(gaGroup,gscGroup);
+      const sourceBlock=document.createElement("div");sourceBlock.className="article-analytics-sources";
+      const sourceTitle=document.createElement("strong");sourceTitle.textContent="منابع و رسانه‌های ورودی";
+      const sourceList=document.createElement("div");sourceList.className="article-analytics-source-list";
+      if(ga.sourcesStatus==="ok"&&Array.isArray(ga.sources)&&ga.sources.length){
+        ga.sources.forEach((source)=>{
+          const item=document.createElement("span");
+          item.textContent=String(source.sourceMedium||"(not set)")+" · "+formatMetric(source.sessions)+" نشست";
+          sourceList.appendChild(item);
+        });
+      }else{
+        const emptySource=document.createElement("span");
+        emptySource.textContent=ga.sourcesStatus==="error"?"گزارش منابع ورودی در دسترس نیست.":"هنوز منبع ورودیِ تفکیک‌شده‌ای ثبت نشده.";
+        sourceList.appendChild(emptySource);
+      }
+      sourceBlock.append(sourceTitle,sourceList);
+      card.append(heading,groups,sourceBlock);
+      list.appendChild(card);
+    });
+  }
+  async function loadArticleAnalytics(force) {
+    if(state.analyticsBusy)return;
+    if(state.articleAnalytics&&!force){renderArticleAnalytics();return;}
+    state.analyticsBusy=true;
+    const requestEpoch=state.analyticsEpoch;
+    const button=$("#refresh-article-analytics");
+    setButton(button,true,"در حال دریافت…");
+    $("#article-analytics-status").textContent="در حال دریافت و تطبیق گزارش‌های GA4 و Search Console…";
+    try{
+      const report=await siteAnalytics("articles");
+      if(requestEpoch!==state.analyticsEpoch)return;
+      state.articleAnalytics=report;
+      renderArticleAnalytics();
+      if(state.articleAnalytics.status==="error")toast("بخشی از گزارش‌های آمار مقاله‌ها در دسترس نیست.",true);
+    }catch(error){
+      if(requestEpoch!==state.analyticsEpoch)return;
+      $("#article-analytics-status").textContent=error.message;
+      toast(error.message,true);
+    }finally{
+      if(requestEpoch===state.analyticsEpoch){
+        state.analyticsBusy=false;
+        setButton(button,false);
+      }
+    }
   }
   const newPost=()=>({
     id:"",slug:"",title:"",excerpt:"",content:"",language:"fa",category:"",categories:[],primary_category:"",tags:[],
@@ -1052,7 +1190,7 @@
       show_search:check("setting-search"),show_categories:check("setting-categories"),
       show_featured:check("setting-featured"),show_reading_time:check("setting-readtime"),
       show_toc:check("setting-toc"),show_related_posts:check("setting-related"),show_share:check("setting-share"),
-      enable_rss:check("setting-rss"),default_meta_title:get("setting-meta-title"),default_meta_description:get("setting-meta-description"),
+      enable_rss:check("setting-rss"),default_meta_title:get("setting-meta-title"),default_meta_description:get("setting-meta-description"),canonical_url:get("setting-canonical-url"),
       footer_note:get("setting-footer"),default_og_image:settings?.default_og_image||"",
       categories:collectCategories(settings?.categories||[]),
       category_seo:collectCategorySeo(settings?.category_seo||{}),
@@ -1074,7 +1212,7 @@
     set("setting-accent",settings.accent_color||"#a86f54");set("setting-card-style",settings.card_style);set("setting-layout",settings.layout_style);
     set("setting-width",settings.content_width);set("setting-language",settings.default_language);set("setting-per-page",settings.posts_per_page);
     set("setting-heading-scale",settings.heading_scale);set("setting-line-height",settings.body_line_height);
-    set("setting-meta-title",settings.default_meta_title);set("setting-meta-description",settings.default_meta_description);
+    set("setting-meta-title",settings.default_meta_title);set("setting-meta-description",settings.default_meta_description);set("setting-canonical-url",settings.canonical_url);
     set("setting-default-og-title",settings.default_og_title);set("setting-default-og-description",settings.default_og_description);
     set("setting-schema-type",settings.schema_type||"Article");set("setting-breadcrumb-label",settings.breadcrumb_home_label||"خانه");
     set("setting-twitter-card",settings.twitter_card_type||"summary_large_image");
@@ -1119,11 +1257,14 @@
   function bindEvents() {
     document.querySelectorAll("[data-view]").forEach((button)=>button.addEventListener("click",()=>{
       const name=button.dataset.view;showView(name);if(name==="settings")void loadSettings().catch((e)=>toast(e.message,true));
+      if(name==="analytics")void loadArticleAnalytics(false);
     }));
     document.querySelectorAll("[data-new-post]").forEach((button)=>button.addEventListener("click",newArticle));
     $("#back-to-posts").addEventListener("click",()=>showView("posts"));
     document.querySelectorAll(".editor-tab").forEach((button)=>button.addEventListener("click",()=>showTab(button.dataset.tab)));
     $("#posts-search").addEventListener("input",renderPosts);$("#posts-filter").addEventListener("change",renderPosts);
+    $("#refresh-article-analytics").addEventListener("click",()=>void loadArticleAnalytics(true));
+    $("#article-analytics-search").addEventListener("input",renderArticleAnalytics);
     $("#post-content").addEventListener("input",()=>{updatePreview();updateSeo();refreshLinkManager();updateFormatToolbar();});
     ["keyup","mouseup","focus"].forEach((eventName)=>$("#post-content").addEventListener(eventName,updateFormatToolbar));
     document.addEventListener("selectionchange",updateFormatToolbar);
@@ -1226,7 +1367,7 @@
   function showView(name) {
     document.querySelectorAll(".view").forEach((view)=>{view.hidden=view.id!=="view-"+name;view.classList.toggle("active",view.id==="view-"+name);});
     document.querySelectorAll(".side-link").forEach((button)=>button.classList.toggle("active",button.dataset.view===name));
-    $("#workspace-title").textContent=({overview:"نمای کلی",posts:"مقاله‌ها",editor:"ویرایش مقاله",settings:"تنظیمات بلاگ"})[name]||"مدیریت";
+    $("#workspace-title").textContent=({overview:"نمای کلی",posts:"مقاله‌ها",editor:"ویرایش مقاله",settings:"تنظیمات بلاگ",analytics:"آمار بازدید"})[name]||"مدیریت";
     if(name==="posts")renderPosts();
   }
   $("#login-form").addEventListener("submit",async(event)=>{
