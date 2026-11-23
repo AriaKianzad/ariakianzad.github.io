@@ -125,6 +125,8 @@ assert.ok(functionSource.includes("rowLimit: 25000") && functionSource.includes(
 assert.ok(functionSource.includes('const ga4Status = pageReportResult.status === "rejected"') && functionSource.includes('gscStatus = articlePageRows.length ? "ok" : "no_data"') && functionSource.includes("const overallStatus ="), "article reports must distinguish API failures, empty data and partial reports");
 assert.ok(blogAdminHtml.includes('id="view-analytics"') && blogAdminHtml.includes('id="refresh-article-analytics"'), "CMS must expose a refreshable article analytics view");
 assert.ok(blogAdmin.includes('siteAnalytics("articles")') && blogAdmin.includes("function renderArticleAnalytics"), "CMS must call the authorized per-article analytics endpoint and render its result");
+assert.ok(functionSource.includes("landingSessions") && functionSource.includes("articleLandingSessions") && functionSource.includes("landingPage"), "per-article analytics must separate sessions that start on an article from sessions that view it");
+assert.ok(blogAdmin.includes("نشست‌های ورودی به مقاله‌ها") && blogAdmin.includes("نشست‌های ورودی"), "the CMS must label article-entry sessions separately from page-associated sessions");
 assert.ok(dashboard.includes("REALTIME_REFRESH_MS = 60_000"), "Realtime metrics must refresh every 60 seconds");
 assert.ok(dashboard.includes("GA4_REPORT_REFRESH_MS = 15 * 60_000"), "standard GA4 reports must refresh every 15 minutes");
 assert.ok(dashboard.includes('requestSiteAnalytics(false, "realtime")'), "dashboard must request live GA4 data");
