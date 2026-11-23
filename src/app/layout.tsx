@@ -76,7 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <meta
           httpEquiv="Content-Security-Policy"
-          content="default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' data: https://www.google-analytics.com; font-src 'self'; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests"
+          content="default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' data: https://www.google-analytics.com https://bkohdqwecnvbmeaiuyyx.supabase.co; font-src 'self'; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests"
         />
       </head>
       <body>
@@ -134,6 +134,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="site-footer__links" aria-label="Related projects">
                 <a href="https://rexo.agency/" target="_blank" rel="noopener noreferrer">Rexo <ExtArrow /></a>
                 <a href="/Mian-e-Ma/">میانِ ما</a>
+                <a href="/blog/">Blog / نوشته‌ها</a>
                 <a href="mailto:kianzadaria@gmail.com">Email</a>
               </div>
             </div>
