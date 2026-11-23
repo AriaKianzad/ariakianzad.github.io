@@ -10,7 +10,7 @@ export type BlogPost = {
   focusKeyword?: string; canonicalUrl?: string; ogTitle?: string; ogDescription?: string;
   robotsIndex?: boolean; robotsFollow?: boolean; featured?: boolean; tocEnabled?: boolean;
   dropCap?: boolean; contentWidth?: "reading" | "wide"; accentColor?: string;
-  faqs?: BlogFaq[]; publishedAt?: string;
+  faqs?: BlogFaq[]; publishedAt?: string; updatedAt?: string;
 };
 export type BlogSettings = {
   title: string; tagline: string; description: string;
