@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { Script } from "node:vm";
+import { Script, runInNewContext } from "node:vm";
 
 const read = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
 const [
@@ -50,6 +50,48 @@ const categoryTaxonomyMigration = await read("supabase/migrations/20261123200000
 const copyLinkButton = await read("src/app/blog/CopyLinkButton.tsx");
 const blogCopyScript = await read("public/blog-copy.js");
 new Script(blogCopyScript, { filename: "public/blog-copy.js" });
+
+const copyHandlers = {};
+let copiedUrl = "";
+const copyFeedback = { hidden: true, textContent: "", classList: { toggle() {} } };
+const manualPanel = { hidden: true };
+const copyWrapper = {
+  querySelector(selector) {
+    if (selector === "[data-copy-feedback]") return copyFeedback;
+    if (selector === "[data-copy-manual-wrap]") return manualPanel;
+    return null;
+  },
+};
+const copyButton = {
+  disabled: false,
+  dataset: {},
+  closest(selector) {
+    return selector === ".blog-share-copy-wrap" ? copyWrapper : null;
+  },
+  getAttribute(name) {
+    return name === "data-copy-url" ? "https://ariakianzad.github.io/blog/copy-test/" : null;
+  },
+  setAttribute() {},
+  removeAttribute() {},
+};
+const copyDocument = {
+  addEventListener(type, handler) {
+    copyHandlers[type] = handler;
+  },
+};
+runInNewContext(blogCopyScript, {
+  document: copyDocument,
+  navigator: { clipboard: { writeText: async (value) => { copiedUrl = value; } } },
+  window: { isSecureContext: true, setTimeout: () => 1, clearTimeout() {} },
+});
+assert.equal(typeof copyHandlers.click, "function", "static copy script must register a document-level click handler");
+await copyHandlers.click({
+  target: { closest: (selector) => selector === "[data-copy-link]" ? copyButton : null },
+  preventDefault() {},
+});
+assert.equal(copiedUrl, "https://ariakianzad.github.io/blog/copy-test/", "copy click must send the canonical article URL to the clipboard");
+assert.equal(copyFeedback.textContent, "لینک کپی شد", "successful copy must show the Persian success toast");
+assert.equal(copyFeedback.hidden, false, "successful copy toast must become visible");
 const analyticsConsent = await read("public/analytics-consent.js");
 const notFoundContent = await read("src/app/NotFoundContent.tsx");
 const notFoundCss = await read("src/app/not-found.css");
