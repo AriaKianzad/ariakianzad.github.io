@@ -423,6 +423,7 @@ Deno.serve(async (request: Request) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : "درخواست ناموفق بود.";
     console.warn("blog-admin rejected", { message: message.slice(0, 140) });
-    return json({ error: message }, 400);
+    const status = message.includes("GITHUB_WORKFLOW_TOKEN") ? 424 : 400;
+    return json({ error: message }, status);
   }
 });

@@ -4,15 +4,17 @@ import { getBlogCategories, getBlogPosts, getBlogSettings } from "@/lib/blog-dat
 import { BlogHeader, BlogFooter } from "./BlogHeader";
 import { BlogListingClient, BlogPostCard } from "./BlogListingClient";
 
+const blogSettings = getBlogSettings();
+
 export const metadata: Metadata = {
-  title: "وبلاگ آریا کیانزاد | استراتژی برند و پرسونال برندینگ",
-  description: "مقاله‌ها و یادداشت‌های آریا کیانزاد درباره استراتژی برند، جایگاه‌یابی، هویت، ارتباطات و پرسونال برندینگ.",
-  alternates: { canonical: site.url + "/blog/" },
+  title: blogSettings.default_meta_title || "وبلاگ آریا کیانزاد | استراتژی برند و پرسونال برندینگ",
+  description: blogSettings.default_meta_description || blogSettings.description || "مقاله‌ها و یادداشت‌های آریا کیانزاد درباره استراتژی برند، جایگاه‌یابی، هویت، ارتباطات و پرسونال برندینگ.",
+  alternates: { canonical: site.url + "/blog/", types: { "application/rss+xml": site.url + "/blog/feed.xml" } },
   openGraph: {
     type: "website", url: site.url + "/blog/", siteName: "Aria Kianzad",
     title: "نوشته‌ها | آریا کیانزاد",
     description: "ایده‌ها و تحلیل‌هایی درباره برند، معنا و ارتباط.",
-    images: [{ url: site.url + "/og/og.jpg", width: 1200, height: 630 }],
+    images: [{ url: blogSettings.default_og_image || site.url + "/og/og.jpg", width: 1200, height: 630 }],
   },
   twitter: { card: "summary_large_image", title: "نوشته‌ها | آریا کیانزاد", images: [site.url + "/og/og.jpg"] },
 };

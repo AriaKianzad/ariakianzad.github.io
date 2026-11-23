@@ -5,7 +5,6 @@
   const anonKey = typeof config.supabaseAnonKey === "string" ? config.supabaseAnonKey : "";
   const $ = (selector) => document.querySelector(selector);
   const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false };
-  const viewTitles = { overview:"نمای کلی", posts:"مقاله‌ها", editor:"ویرایش مقاله", settings:"تنظیمات بلاگ" };
   const statusLabels = { draft:"پیش‌نویس", published:"منتشرشده", archived:"بایگانی" };
   const validConfig = supabaseUrl === "https://bkohdqwecnvbmeaiuyyx.supabase.co" && anonKey.startsWith("sb_publishable_");
 

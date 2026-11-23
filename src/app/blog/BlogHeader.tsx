@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getBlogSettings } from "@/lib/blog-data";
 
 export function BlogHeader() {
-  const settings = getBlogSettings();
   return (
     <header className="blog-header">
       <div className="blog-container blog-header-inner">

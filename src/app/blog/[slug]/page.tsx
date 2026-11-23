@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { site } from "@/lib/site";
@@ -72,7 +73,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
   } : null;
   const language = post.language === "fa" ? "fa" : "en";
   const direction = post.language === "fa" ? "rtl" : "ltr";
-  const articleStyle = { "--post-accent": post.accent_color || settings.accent_color } as React.CSSProperties;
+  const articleStyle = { "--post-accent": post.accent_color || settings.accent_color } as CSSProperties;
   return (
     <>
       <BlogHeader />
