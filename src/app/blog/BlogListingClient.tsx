@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { getPostCategorySlugs, getPrimaryCategorySlug, getBlogCategoryName } from "@/lib/blog-data";
+import { getPostCategorySlugs, getPrimaryCategorySlug, getBlogCategoryName } from "@/lib/blog-data";
 import type { BlogPost } from "@/lib/blog-data";
 
 type Category = { name: string; count: number; slug: string };
@@ -54,8 +55,10 @@ export function BlogListingClient({
   const filtered = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
     return posts.filter((post) => {
-      const matchesCategory = !category || post.category === category;
-      const content = [post.title, post.excerpt, post.category, categories.find((item)=>item.slug===post.category)?.name||"", post.focus_keyword, ...(post.tags || [])].join(" ").toLocaleLowerCase();
+      const categorySlugs=getPostCategorySlugs(post);
+      const matchesCategory = !category || categorySlugs.includes(category);
+      const categoryNames=categorySlugs.map((slug)=>categories.find((item)=>item.slug===slug)?.name||getBlogCategoryName(slug));
+      const content = [post.title, post.excerpt, ...categorySlugs, ...categoryNames, post.focus_keyword, ...(post.tags || [])].join(" ").toLocaleLowerCase();
       return matchesCategory && (!needle || content.includes(needle));
     });
   }, [posts, query, category, categories]);
