@@ -908,7 +908,8 @@
           input.checked=false;
           toast("هر مقاله حداکثر می‌تونه سه دسته‌بندی داشته باشه.",true);
         }
-        syncPrimaryCategorySelect(primary);
+        const preferredPrimary=$("#post-primary-category")?.value||primary;
+        syncPrimaryCategorySelect(preferredPrimary);
       });
       label.append(input,name);
       container.appendChild(label);
