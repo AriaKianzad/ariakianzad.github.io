@@ -125,11 +125,27 @@ function safeAccent(value: unknown): string {
 }
 
 function safeImageUrl(value: unknown): string | null {
-  const url = cleanText(value, 1500);
-  if (!url) return null;
+  const raw = cleanText(value, 1500);
+  if (!raw) return null;
   const prefix = PROJECT_URL + "/storage/v1/object/public/" + BLOG_MEDIA_BUCKET + "/";
-  if (!url.startsWith(prefix)) throw new Error("تصاویر مقاله باید از کتابخانۀ رسانه‌های بلاگ انتخاب بشن.");
-  return url;
+  let parsed: URL;
+  try { parsed = new URL(raw); } catch { throw new Error("نشانی تصویر معتبر نیست."); }
+  if (parsed.origin !== PROJECT_URL || !parsed.pathname.startsWith("/storage/v1/object/public/" + BLOG_MEDIA_BUCKET + "/") ||
+      parsed.username || parsed.password || parsed.hash || parsed.search || !raw.startsWith(prefix)) {
+    throw new Error("تصاویر مقاله باید از کتابخانۀ رسانه‌های بلاگ انتخاب بشن.");
+  }
+  return raw;
+}
+
+function safeCanonical(value: unknown): string {
+  const raw = cleanText(value, 1500);
+  if (!raw) return "";
+  let parsed: URL;
+  try { parsed = new URL(raw); } catch { throw new Error("Canonical باید یک نشانی کامل HTTPS باشه."); }
+  if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.hash) {
+    throw new Error("Canonical باید یک نشانی HTTPS معتبر و بدون fragment باشه.");
+  }
+  return parsed.toString();
 }
 
 function normalizeFaqs(value: unknown) {
@@ -165,7 +181,7 @@ function normalizePost(input: Record<string, unknown>) {
     seo_title: cleanText(input.seo_title, 90),
     meta_description: cleanText(input.meta_description, 220),
     focus_keyword: cleanText(input.focus_keyword, 100),
-    canonical_url: cleanText(input.canonical_url, 1500),
+    canonical_url: safeCanonical(input.canonical_url),
     og_title: cleanText(input.og_title, 90),
     og_description: cleanText(input.og_description, 220),
     robots_index: input.robots_index !== false,
@@ -222,6 +238,7 @@ function publishedPayload(post: Record<string, unknown>) {
     accentColor: post.accent_color,
     faqs: post.faqs || [],
     publishedAt: post.published_at || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 }
 
@@ -544,6 +561,17 @@ async function handleAction(adminClient: ReturnType<typeof createClient>, action
   if (action === "delete_media") {
     const path = cleanText(input.path, 240);
     if (!/^images\/[a-f0-9-]{36}\.(webp|jpg|png)$/.test(path)) throw new Error("مسیر فایل معتبر نیست.");
+    const publicUrl = adminClient.storage.from(BLOG_MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;
+    const { data: references, error: referenceError } = await adminClient
+      .from("blog_posts")
+      .select("id,slug,hero_image_url,og_image_url,content")
+      .limit(500);
+    if (referenceError) throw referenceError;
+    const inUse = (references || []).some((post) =>
+      post.hero_image_url === publicUrl || post.og_image_url === publicUrl ||
+      (typeof post.content === "string" && (post.content.includes(publicUrl) || post.content.includes(path)))
+    );
+    if (inUse) throw new Error("این تصویر در یک یا چند مقاله استفاده شده؛ اول از مقاله‌ها حذفش کن.");
     const { error } = await adminClient.storage.from(BLOG_MEDIA_BUCKET).remove([path]);
     if (error) throw error;
     return { deleted: true };
