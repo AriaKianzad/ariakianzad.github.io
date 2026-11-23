@@ -85,6 +85,15 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
     publisher: { "@type": "Person", name: "Aria Kianzad", url: "https://ariakianzad.github.io/" },
     author: { "@type": "Person", name: "Aria Kianzad", url: "https://ariakianzad.github.io/" },
   };
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "نوشته‌ها", item: "https://ariakianzad.github.io/blog/" },
+      { "@type": "ListItem", position: 2, name: post.category, item: "https://ariakianzad.github.io/blog/category/" + encodeURIComponent(post.category) + "/" },
+      { "@type": "ListItem", position: 3, name: post.title, item: canonical },
+    ],
+  };
   const faqSchema = post.faqs?.length ? {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -111,7 +120,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
               {post.publishedAt && <time dateTime={post.publishedAt}>
                 {formatBlogDate(post.publishedAt, post.language === "en" ? "en-US" : "fa-IR")}
               </time>}
-              <span>{minutes} دقیقه مطالعه</span>
+              {settings.showReadingTime && <span>{minutes} دقیقه مطالعه</span>}
               {post.tags.slice(0, 4).map((tag) => <span key={tag}>#{tag}</span>)}
             </div>
             {post.heroImageUrl && <figure className="blog-hero-image">
@@ -147,6 +156,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
         </section>}
       </main>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema).replace(/</g, "\\u003c") }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema).replace(/</g, "\\u003c") }} />
       {faqSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema).replace(/</g, "\\u003c") }} />}
     </BlogFrame>
   );
