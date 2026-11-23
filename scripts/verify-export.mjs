@@ -240,6 +240,11 @@ const required = [
   join("_hero", "hero-visual.js"),
   join("og", "og.png"),
   join("og", "og.jpg"),
+  join("blog", "index.html"),
+  join("blog", "feed.xml"),
+  join("admin", "blog", "index.html"),
+  join("admin", "blog", "blog.css"),
+  join("admin", "blog", "app.js"),
   join("Mian-e-Ma", "index.html"),
   join("Mian-e-Ma", "styles.css"),
   join("Mian-e-Ma", "assets", "Mian-e-Ma.pdf"),
@@ -279,6 +284,10 @@ if (existsSync(sitemapPath)) {
   }
   if (bookUrl && !sitemap.includes(bookUrl)) {
     problems.push("sitemap.xml: the Persian book page is missing");
+  }
+  const blogUrl = siteOrigin ? siteOrigin + "/blog/" : null;
+  if (blogUrl && !sitemap.includes(blogUrl)) {
+    problems.push("sitemap.xml: the blog archive is missing");
   }
 }
 

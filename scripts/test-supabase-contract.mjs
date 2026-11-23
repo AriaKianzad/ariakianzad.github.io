@@ -9,9 +9,15 @@ const [
   analytics,
   downloadDeno,
   analyticsDeno,
+  blogAdmin,
+  blogAdminDeno,
   clientConfig,
   adminApp,
   adminHtml,
+  blogAdminApp,
+  blogAdminHtml,
+  blogPublicMigration,
+  blogSnapshotMigration,
   allowlistMigration,
   snapshotsMigration,
   privateFunctionMigration,
@@ -22,9 +28,15 @@ const [
   read("supabase/functions/site-analytics/index.ts"),
   read("supabase/functions/download-stats/deno.json"),
   read("supabase/functions/site-analytics/deno.json"),
+  read("supabase/functions/blog-admin/index.ts"),
+  read("supabase/functions/blog-admin/deno.json"),
   read("public/admin/config.js"),
   read("public/admin/app.js"),
   read("public/admin/index.html"),
+  read("public/admin/blog/app.js"),
+  read("public/admin/blog/index.html"),
+  read("supabase/migrations/20261123110500_harden_public_blog_rpc.sql"),
+  read("supabase/migrations/20261123112000_separate_blog_published_snapshots.sql"),
   read("supabase/migrations/20261121001000_create_dashboard_admin_allowlist.sql"),
   read("supabase/migrations/20261121000000_create_download_snapshots.sql"),
   read("supabase/migrations/20261121171913_create_private_github_download_snapshot_job.sql"),
@@ -35,6 +47,7 @@ const sdkVersion = "npm:@supabase/supabase-js@2.119.2";
 for (const [name, source, deno] of [
   ["download-stats", download, downloadDeno],
   ["site-analytics", analytics, analyticsDeno],
+  ["blog-admin", blogAdmin, blogAdminDeno],
 ]) {
   const imports = JSON.parse(deno).imports;
   assert.equal(imports["@supabase/supabase-js"], sdkVersion, name + " must use the pinned Supabase SDK");
@@ -116,4 +129,35 @@ assert.ok(adminApp.includes('/auth/v1/logout?scope=local'),
 assert.ok(adminHtml.includes('id="remember-session"') && !/id="remember-session"[^>]*checked/.test(adminHtml),
   "remembered sessions must be off by default");
 
-console.log("Supabase contract passed: SDK pinning, explicit Auth verification, admin allowlist, CORS, no-store, RLS grants, private SECURITY DEFINER function and cron schedule.");
+
+assert.ok(blogAdmin.includes("auth.getUser(accessToken)"), "blog-admin must verify the signed-in user with Supabase Auth");
+assert.ok(blogAdmin.includes('from("dashboard_admins")') && blogAdmin.includes('.eq("active", true)'),
+  "blog-admin must require an active address in the server-side allowlist");
+assert.ok(blogAdmin.includes("email_confirmed_at") || blogAdmin.includes("confirmed_at"),
+  "blog-admin must require a confirmed email");
+assert.ok(blogAdmin.includes("GITHUB_WORKFLOW_TOKEN") && !blogAdminApp.includes("GITHUB_WORKFLOW_TOKEN"),
+  "the GitHub workflow token must remain server-side");
+assert.ok(blogAdmin.includes("published_snapshot") && blogAdmin.includes("has_unpublished_changes"),
+  "blog-admin must isolate unpublished edits from the public snapshot");
+assert.ok(blogAdmin.includes("hasMagicBytes") && blogAdmin.includes("MAX_IMAGE_BYTES"),
+  "blog-admin must validate image signatures and upload size");
+assert.ok(blogAdmin.includes("getPublicUrl(path)") && blogAdmin.includes('from(BLOG_BUCKET)'),
+  "blog-admin must save optimized article images to the dedicated media bucket");
+assert.ok(config.includes("[functions.blog-admin]") && config.includes("verify_jwt = false"),
+  "blog-admin must keep the existing manual Auth and allowlist check");
+assert.ok(blogAdminHtml.includes('name="robots" content="noindex, nofollow, noarchive"'),
+  "blog admin must not be indexed");
+assert.ok(blogPublicMigration.includes("security invoker"),
+  "the public blog RPC must be a SECURITY INVOKER wrapper");
+assert.ok(blogPublicMigration.includes("revoke all on table public.blog_posts from anon, authenticated"),
+  "the browser must not query CMS tables directly");
+assert.ok(blogSnapshotMigration.includes("p.published_snapshot"),
+  "public posts must come from immutable publish snapshots");
+assert.ok(blogSnapshotMigration.includes("p.status = 'published'"),
+  "the public RPC must exclude drafts and archived posts");
+assert.ok(blogAdminApp.includes("/auth/v1/token?grant_type=password"),
+  "blog admin must use Supabase email and password auth");
+assert.ok(!/localStorage|sessionStorage/.test(blogAdminApp),
+  "blog admin must not persist session tokens in Web Storage");
+
+console.log("Supabase contract passed: SDK pinning, Auth verification, admin allowlists, CORS, RLS grants and private CMS boundaries.");
