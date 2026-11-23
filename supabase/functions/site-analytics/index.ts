@@ -854,7 +854,9 @@ async function getArticleAnalyticsData(accessToken: string) {
   const articles = (publishedPosts || []).map((post) => {
     const page = pageMetrics.get(post.slug) || { pageViews: 0, users: 0, sessions: 0, engagedSessions: 0 };
     const search = gscMetrics.get(post.slug) || { clicks: 0, impressions: 0, weightedPosition: 0 };
-    const sources = (sourceMetrics.get(post.slug) || [])
+    const postSources = sourceMetrics.get(post.slug) || [];
+    const landingSessions = postSources.reduce((sum, source) => sum + source.sessions, 0);
+    const sources = [...postSources]
       .sort((a, b) => b.sessions - a.sessions)
       .slice(0, 4);
     return {
@@ -868,6 +870,7 @@ async function getArticleAnalyticsData(accessToken: string) {
         users: page.users,
         sessions: page.sessions,
         engagedSessions: page.engagedSessions,
+        landingSessions,
         sources,
         sourcesStatus,
       },
@@ -898,7 +901,10 @@ async function getArticleAnalyticsData(accessToken: string) {
       ? gscOverviewResult.value.propertyUrl || GSC_SITE_URL
       : GSC_SITE_URL,
     ga4: { status: ga4Status, message: ga4Message },
-    sources: { status: sourcesStatus },
+    sources: {
+      status: sourcesStatus,
+      articleLandingSessions: sourceRows.reduce((sum, row) => sum + Number(row.sessions || 0), 0),
+    },
     searchConsole: { status: gscStatus, message: gscMessage },
     articleCount: articles.length,
     articles,
