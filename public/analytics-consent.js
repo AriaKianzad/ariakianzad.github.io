@@ -124,7 +124,7 @@
 
   // Blog pages intentionally keep their reading surface free of consent overlays.
   // A previously granted choice still governs whether analytics may load.
-  if (/^\\/blog(?:\\/|$)/.test(window.location.pathname)) {
+  if (window.location.pathname === "/blog" || window.location.pathname.startsWith("/blog/")) {
     panel.hidden = true;
     preferences.hidden = true;
     if (getSavedChoice() === "granted") loadGoogleAnalytics();
