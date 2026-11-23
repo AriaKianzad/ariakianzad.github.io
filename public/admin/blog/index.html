@@ -5,8 +5,8 @@
 <meta name="robots" content="noindex, nofollow, noarchive"><meta name="theme-color" content="#f4f1e9">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://bkohdqwecnvbmeaiuyyx.supabase.co; font-src 'self'; connect-src 'self' https://bkohdqwecnvbmeaiuyyx.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <title>مدیریت بلاگ | آریا کیانزاد</title>
-<link rel="stylesheet" href="./blog.css?v=20261123-4">
-<script src="../config.js?v=20261121-2"></script><script src="./app.js?v=20261123-4" defer></script>
+<link rel="stylesheet" href="./blog.css?v=20261123-5">
+<script src="../config.js?v=20261121-2"></script><script src="./app.js?v=20261123-5" defer></script>
 </head>
 <body>
 <main class="admin-root">
@@ -71,7 +71,7 @@
 <div class="content-panel editor-title-panel">
 <div class="editor-fields-row">
 <label class="field-label">زبان مقاله<select id="post-language" data-field="language"><option value="fa">فارسی</option><option value="en">انگلیسی</option></select></label>
-<label class="field-label">دسته‌بندی<input id="post-category" data-field="category" maxlength="80" placeholder="مثلاً استراتژی برند"></label>
+<label class="field-label">دسته‌بندی<select id="post-category" data-field="category"><option value="">بدون دسته‌بندی</option></select></label>
 <label class="field-label">برچسب‌ها<input id="post-tags" placeholder="با ویرگول جدا کن"></label>
 </div>
 <label class="sr-only" for="post-title">عنوان مقاله</label><input id="post-title" class="title-input" data-field="title" maxlength="180" placeholder="عنوان مقاله رو بنویس…" required>
@@ -176,12 +176,38 @@
 <label class="field-label">عنوان متای پیش‌فرض<input id="setting-meta-title" maxlength="75"></label>
 <label class="field-label">توضیحات متای پیش‌فرض<textarea id="setting-meta-description" maxlength="320" rows="3"></textarea></label>
 <p class="help-text">این مقادیر برای مقاله‌هایی استفاده می‌شن که فیلد سئوی اختصاصی براشون خالی باشه.</p>
+<div class="advanced-seo-grid">
+<label class="field-label">عنوان Open Graph پیش‌فرض<input id="setting-default-og-title" maxlength="100"></label>
+<label class="field-label">توضیح Open Graph پیش‌فرض<textarea id="setting-default-og-description" maxlength="300" rows="2"></textarea></label>
+<label class="field-label">عنوان مسیر راهنما<input id="setting-breadcrumb-label" maxlength="40" placeholder="خانه"></label>
+<label class="field-label">نوع دادهٔ ساختاریافته<select id="setting-schema-type"><option value="Article">Article</option><option value="BlogPosting">BlogPosting</option></select></label>
+<label class="field-label">نوع کارت X/Twitter<select id="setting-twitter-card"><option value="summary_large_image">تصویر بزرگ</option><option value="summary">خلاصه</option></select></label>
+</div>
+<div class="check-row advanced-seo-options">
+<label><input id="setting-default-index" type="checkbox" checked> ایندکس‌کردن پیش‌فرض مقاله‌ها</label>
+<label><input id="setting-default-follow" type="checkbox" checked> دنبال‌کردن لینک‌ها به‌صورت پیش‌فرض</label>
+<label><input id="setting-noindex-empty" type="checkbox" checked> آرشیو خالی دسته‌بندی‌ها noindex باشه</label>
+<label><input id="setting-sitemap-categories" type="checkbox" checked> دسته‌بندی‌ها در Sitemap باشن</label>
+<label><input id="setting-sitemap-articles" type="checkbox" checked> مقاله‌ها در Sitemap باشن</label>
+<label><input id="setting-breadcrumbs" type="checkbox" checked> نمایش مسیر راهنما</label>
+<label><input id="setting-open-graph" type="checkbox" checked> فعال‌بودن Open Graph</label>
+</div>
 <div class="media-editor">
 <div class="panel-heading"><div><span class="kicker">تصویر پیش‌فرض اشتراک‌گذاری</span><h2>تصویر پیش‌فرض وبلاگ</h2></div></div>
 <div id="setting-og-preview" class="media-preview media-preview-small"><span>تصویر پیش‌فرض اشتراک‌گذاری اختیاریه.</span></div>
 <label class="file-button">انتخاب تصویر پیش‌فرض <input id="setting-og-file" type="file" accept="image/jpeg,image/png,image/webp"></label>
 <p class="help-text">برای صفحۀ اصلی بلاگ استفاده می‌شه؛ تصویر اختصاصی مقاله اولویت داره.</p>
 </div>
+</section>
+<section class="content-panel settings-section settings-category-manager">
+<span class="kicker">مدیریت دسته‌بندی‌ها</span><h2>دسته‌بندی‌های وبلاگ</h2>
+<p class="help-text">نام فارسی برای نمایش در وبلاگ استفاده می‌شه؛ نامک انگلیسی نشانی دسته‌بندی رو تعیین می‌کنه. نامک هر دسته‌بندی بعد از انتشار بهتره تغییر نکنه.</p>
+<div id="category-manager-list" class="category-manager-list"></div>
+<div class="category-create-grid">
+<label class="field-label">نام نمایشی فارسی<input id="new-category-name" maxlength="80" placeholder="مثلاً استراتژی برند"></label>
+<label class="field-label">نامک انگلیسی<input id="new-category-slug" maxlength="120" dir="ltr" placeholder="brand-strategy"></label>
+</div>
+<div class="category-manager-actions"><button id="add-category-button" class="button button-light" type="button">افزودن دسته‌بندی</button><span id="category-manager-message" role="status"></span></div>
 </section>
 <section class="content-panel settings-section settings-category-seo">
 <span class="kicker">سئوی دسته‌بندی‌ها</span><h2>تنظیمات جداگانۀ هر دسته‌بندی</h2>
