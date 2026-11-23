@@ -5,7 +5,7 @@ import { useState, type FormEvent } from "react";
 const BLOG_CONTACT_ENDPOINT = "https://bkohdqwecnvbmeaiuyyx.supabase.co/functions/v1/blog-contact";
 const BLOG_CONTACT_PUBLIC_KEY = "sb_publishable_FZBK8LPOyf2nAtS8jhchUw_3SVXvo6h";
 
-type RequestType = "advertorial" | "sponsorship" | "collaboration" | "general";
+type RequestType = "advertorial" | "editorial_link" | "sponsorship" | "collaboration" | "general";
 
 type ContactValues = {
   name: string;
@@ -53,7 +53,9 @@ export function ContactForm() {
     try {
       const submissionId = typeof crypto.randomUUID === "function"
         ? crypto.randomUUID()
-        : String(Date.now()) + "-" + Math.random().toString(36).slice(2);
+        : Array.from(crypto.getRandomValues(new Uint8Array(16)))
+            .map((value) => value.toString(16).padStart(2, "0"))
+            .join("");
 
       const response = await fetch(BLOG_CONTACT_ENDPOINT, {
         method: "POST",
@@ -86,6 +88,7 @@ export function ContactForm() {
   }
 
   const isAdvertorial = values.requestType === "advertorial";
+  const isEditorialLink = values.requestType === "editorial_link";
   const isSponsorship = values.requestType === "sponsorship";
 
   return (
@@ -152,13 +155,14 @@ export function ContactForm() {
             disabled={submitting}
           >
             <option value="advertorial">رپورتاژ یا محتوای تبلیغاتی</option>
+            <option value="editorial_link">بررسی ارجاع تحریریه‌ای Follow بدون پرداخت بابت لینک</option>
             <option value="sponsorship">اسپانسری دوره‌ای</option>
             <option value="collaboration">همکاری محتوایی یا حرفه‌ای</option>
             <option value="general">پیام عمومی یا موضوع دیگر</option>
           </select>
         </div>
 
-        {(isAdvertorial || isSponsorship) ? (
+        {(isAdvertorial || isEditorialLink || isSponsorship) ? (
           <div className="blog-contact-field full">
             <label htmlFor="contact-website">آدرس وب‌سایت برند یا رسانه</label>
             <input
@@ -176,8 +180,13 @@ export function ContactForm() {
           </div>
         ) : null}
 
-        {isAdvertorial ? (
+        {(isAdvertorial || isEditorialLink) ? (
           <>
+            {isEditorialLink ? (
+              <div className="blog-contact-field full">
+                <small>این درخواست فقط برای ارجاع تحریریه‌ای مستقل و بدون پرداخت بابت لینک بررسی می‌شه؛ درج Follow تضمین نمی‌شه.</small>
+              </div>
+            ) : null}
             <div className="blog-contact-field">
               <label htmlFor="contact-target">آدرس صفحۀ مقصد لینک</label>
               <input
