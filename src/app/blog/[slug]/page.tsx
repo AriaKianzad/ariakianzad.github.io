@@ -92,7 +92,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
           {post.excerpt ? <p className="blog-article-excerpt">{post.excerpt}</p> : null}
           <div className="blog-article-meta">
             <span>آریا کیانزاد</span>
-            <time dateTime={post.published_at}>{new Intl.DateTimeFormat(language === "fa" ? "fa-IR" : "en-US", {year:"numeric",month:"long",day:"numeric"}).format(new Date(post.published_at))}</time>
+            <time dateTime={post.published_at}>{new Intl.DateTimeFormat(language === "fa" ? "fa-IR" : "en-US", {year:"numeric",month:"long",day:"numeric",timeZone:language==="fa"?"Asia/Tehran":"UTC"}).format(new Date(post.published_at))}</time>
             {settings.show_reading_time ? <span>{readingTime(post.content, post.language)} دقیقه مطالعه</span> : null}
           </div>
           {post.hero_image_url ? (

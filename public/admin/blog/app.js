@@ -245,6 +245,8 @@
   }
   function updatePreview() {
     const title=$("#post-title").value||"عنوان مقاله";
+    $("#google-preview").dir=$("#post-language").value==="fa"?"rtl":"ltr";
+    $("#post-content").dir=$("#post-language").value==="fa"?"rtl":"ltr";
     $("#preview-content").innerHTML="<h1>"+escapeHtml(title)+"</h1>"+renderPreviewMarkdown($("#post-content").value);
   }
   function updateSeo() {

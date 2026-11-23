@@ -13,7 +13,7 @@ function readingTime(content: string, language: "fa" | "en" = "fa") {
 
 function formatDate(value: string, language: "fa" | "en") {
   return new Intl.DateTimeFormat(language === "fa" ? "fa-IR" : "en-US", {
-    year: "numeric", month: "short", day: "numeric",
+    year: "numeric", month: "short", day: "numeric", timeZone: language === "fa" ? "Asia/Tehran" : "UTC",
   }).format(new Date(value));
 }
 
