@@ -1090,11 +1090,13 @@ body:has(.blog-theme) > main#main { display:contents; }
   .blog-article-copy h1 {
     max-width:none;
     margin:0;
+  }
+  .blog-article-title-highlight {
     padding-inline:.08em;
     background-image:linear-gradient(
       to top,
-      color-mix(in srgb,var(--blog-accent) 50%,transparent) 0 46%,
-      transparent 46% 100%
+      color-mix(in srgb,var(--blog-accent) 50%,transparent) 0 48%,
+      transparent 48% 100%
     );
     -webkit-box-decoration-break:clone;
     box-decoration-break:clone;
