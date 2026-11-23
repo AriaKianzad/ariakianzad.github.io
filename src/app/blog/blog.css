@@ -562,6 +562,9 @@ body:has(.blog-theme) > main#main { display:contents; }
 .blog-contact-field.full {
   grid-column:1/-1;
 }
+.blog-contact-field[hidden] {
+  display:none !important;
+}
 .blog-contact-field label {
   color:var(--blog-ink-soft);
   font-size:12px;
