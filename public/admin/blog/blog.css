@@ -424,6 +424,7 @@ body, body * { font-family: Estedad, Tahoma, sans-serif !important; }
   .article-analytics-heading { flex-direction:column; }
   .article-analytics-published { white-space:normal; }
   .article-analytics-groups { grid-template-columns:minmax(0,1fr); }
+  .article-analytics-group:first-child .article-analytics-metrics,
   .article-analytics-group:nth-child(2) .article-analytics-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .article-analytics-metric>strong { font-size:18px; }
 }
