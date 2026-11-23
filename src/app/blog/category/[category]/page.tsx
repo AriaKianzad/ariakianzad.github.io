@@ -21,20 +21,23 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
 
   const settings = getBlogSettings();
   const seo = settings.category_seo?.[category];
+  const postCount = getPostsByCategory(category).length;
   const fallbackDescription = "یادداشت‌ها و مقاله‌های من دربارهٔ " + item.name + ".";
   const description = seo?.meta_description || seo?.description || fallbackDescription;
   const canonical = seo?.canonical_url || site.url + "/blog/category/" + encodeURIComponent(category) + "/";
   const title = seo?.seo_title || item.name + " | نوشته‌های آریا کیانزاد";
-  const ogTitle = seo?.og_title || title;
-  const ogDescription = seo?.og_description || description;
+  const ogTitle = seo?.og_title || settings.default_og_title || title;
+  const ogDescription = seo?.og_description || settings.default_og_description || description;
+  const index = settings.default_robots_index && seo?.robots_index !== false && !(postCount === 0 && settings.noindex_empty_categories);
+  const follow = settings.default_robots_follow && seo?.robots_follow !== false;
 
   return {
     title,
     description,
     alternates: { canonical },
-    robots: { index: seo?.robots_index !== false, follow: true },
-    openGraph: { type: "website", url: canonical, siteName: "Aria Kianzad", title: ogTitle, description: ogDescription },
-    twitter: { card: "summary", title: ogTitle, description: ogDescription },
+    robots: { index, follow },
+    openGraph: settings.open_graph_enabled ? { type: "website", url: canonical, siteName: "Aria Kianzad", title: ogTitle, description: ogDescription } : undefined,
+    twitter: { card: settings.twitter_card_type, title: ogTitle, description: ogDescription },
   };
 }
 
@@ -66,6 +69,7 @@ export default async function BlogCategoryPage({ params }: { params: Promise<{ c
       <BlogHeader />
       <main className="blog-main" dir="rtl">
         <section className="blog-container blog-category-heading">
+          {settings.breadcrumbs_enabled ? <nav className="blog-breadcrumbs blog-category-breadcrumbs" aria-label="مسیر راهنما"><Link href="/blog/">{settings.breadcrumb_home_label || "خانه"}</Link><span aria-hidden="true">/</span><span>{item.name}</span></nav> : null}
           <h1>{item.name}</h1>
           {seo?.description ? <p className="blog-category-description">{seo.description}</p> : null}
           <p className="blog-category-count">{posts.length.toLocaleString("fa-IR")} نوشته</p>
@@ -73,7 +77,7 @@ export default async function BlogCategoryPage({ params }: { params: Promise<{ c
         </section>
         <section className="blog-container blog-listing-section" aria-label={"نوشته‌های دسته‌بندی " + item.name}>
           <div className="blog-card-grid">
-            {posts.map((post) => <BlogPostCard key={post.slug} post={post} showReadingTime={settings.show_reading_time} />)}
+            {posts.map((post) => <BlogPostCard key={post.slug} post={post} categoryName={item.name} showReadingTime={settings.show_reading_time} />)}
           </div>
         </section>
       </main>
