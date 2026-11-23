@@ -33,7 +33,7 @@ export function BlogPostCard({ post, featured = false, showReadingTime = true, c
       <div className="blog-card-copy">
         <div className="blog-card-meta">
           {getPrimaryCategorySlug(post) ? <span>{categoryName || getPrimaryCategorySlug(post).replace(/-/g, " ")}</span> : null}
-          <time dateTime={post.published_at} dir="rtl">{formatDate(post.published_at, post.language)}</time>
+          <time dateTime={post.published_at} dir={dir}>{formatDate(post.published_at, post.language)}</time>
         </div>
         <h2><Link href={"/blog/" + post.slug + "/"}>{post.title}</Link></h2>
         {post.excerpt ? <p>{post.excerpt}</p> : null}
