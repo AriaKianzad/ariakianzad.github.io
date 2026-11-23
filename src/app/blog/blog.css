@@ -516,10 +516,12 @@ body:has(.blog-theme) > main#main { display:contents; }
   padding:15px 0;
   border-top:1px solid var(--blog-line);
 }
-.blog-contact-detail strong {
+.blog-contact-detail h3 {
+  margin:0;
   color:var(--blog-accent);
-  font-size:11px;
+  font-size:15px;
   font-weight:750;
+  line-height:1.8;
 }
 .blog-contact-detail span {
   color:var(--blog-ink-soft);
