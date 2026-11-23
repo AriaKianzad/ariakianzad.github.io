@@ -919,12 +919,9 @@
   }
 
   function categorySeoEntries() {
-    const categories=new Map();
-    collectCategories(state.settings?.categories||[]).forEach((item)=>categories.set(item.slug,item.name));
-    Object.entries(state.settings?.category_seo||{}).forEach(([slug])=>{
-      if(!categories.has(slug))categories.set(slug,slug.replace(/-/g," "));
-    });
-    return [...categories.entries()].sort((a,b)=>a[1].localeCompare(b[1],"fa"));
+    return collectCategories(state.settings?.categories||[])
+      .map((item)=>[item.slug,item.name])
+      .sort((a,b)=>a[1].localeCompare(b[1],"fa"));
   }
   function renderCategorySeoEditor(settings) {
     const list=$("#category-seo-list");if(!list)return;
