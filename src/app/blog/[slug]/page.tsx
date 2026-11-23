@@ -32,8 +32,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     description,
     alternates: { canonical },
     robots: {
-      index: post.robots_index, follow: post.robots_follow,
-      googleBot: { index: post.robots_index, follow: post.robots_follow, "max-image-preview": "large", "max-snippet": -1 },
+      index: robotsIndex, follow: robotsFollow,
+      googleBot: { index: robotsIndex, follow: robotsFollow, "max-image-preview": "large", "max-snippet": -1 },
     },
     openGraph: settings.open_graph_enabled ? {
       type: "article", siteName: "Aria Kianzad", url: canonical,
