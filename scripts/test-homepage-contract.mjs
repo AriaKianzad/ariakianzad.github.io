@@ -51,6 +51,7 @@ const [
   page,
   content,
   layout,
+  siteChrome,
   metadata,
   site,
   hero,
@@ -71,6 +72,7 @@ const [
   read("src/app/page.tsx"),
   read("src/content/home.ts"),
   read("src/app/layout.tsx"),
+  read("src/components/SiteChrome.tsx"),
   read("src/lib/metadata.ts"),
   read("src/lib/site.ts"),
   read("src/components/hero-visual.tsx"),
@@ -104,7 +106,7 @@ for (const heading of [
 }
 assert.ok(page.includes("<HeroVisual />"), "the 3D hero must be mounted in the homepage");
 assert.ok(page.includes('data-reveal="up"'), "scroll-reveal hooks must exist in homepage sections");
-assert.ok(layout.includes('href="/Mian-e-Ma/"'), "the Persian book remains discoverable from the footer");
+assert.ok(siteChrome.includes('href="/Mian-e-Ma/"'), "the Persian book remains discoverable from the portfolio footer");
 assert.ok(metadata.includes('url: "/og/og.jpg"') && metadata.includes('width: 1200') &&
   metadata.includes('height: 630') && metadata.includes('type: "image/jpeg"'),
   "homepage must use its own 1200x630 JPEG social image");
@@ -197,7 +199,7 @@ assert.ok(socialGenerator.includes("mian-e-ma-cover-v2.webp") &&
 
 
 // Accessibility and consent controls stay out of the normal page flow.
-assert.ok(layout.includes('className="skip-link" href="#main"'), "keyboard skip navigation must remain available");
+assert.ok(siteChrome.includes('className="skip-link" href="#main"'), "keyboard skip navigation must remain available on portfolio routes");
 assert.ok(chrome.includes(".skip-link:focus-visible"), "skip navigation must appear when keyboard-focused");
 assert.ok(chrome.includes(".analytics-consent {\n  position: fixed;"), "analytics dialog must be viewport-fixed");
 assert.ok(chrome.includes(".analytics-preferences {\n  position: fixed;"), "analytics shortcut must be viewport-fixed");

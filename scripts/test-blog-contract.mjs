@@ -96,4 +96,15 @@ assert.ok(browserDenyMigration.includes("revoke all on table public.blog_posts f
 assert.ok(snapshotMigration.includes("p.published_snapshot") && snapshotMigration.includes("p.status = 'published'"), "the public RPC must only expose published snapshots");
 assert.ok(workflow.includes("npm run test:blog"), "CI must run the blog CMS contract");
 
-console.log("Personal blog contract passed: SEO-ready static pages, isolated unpublished content, secure CMS auth and image optimization.");
+const siteChrome = await read("src/components/SiteChrome.tsx");
+assert.ok(adminHtml.includes('contenteditable="true"'), "CMS must use a rich text editing surface");
+assert.ok(adminHtml.includes('id="link-settings-toggle"') && adminHtml.includes('id="link-settings-list"'), "CMS must expose per-link controls");
+assert.ok(adminApp.includes("sanitizeClipboardHtml") && adminApp.includes("handleEditorPaste"), "CMS must sanitize and preserve rich clipboard HTML");
+assert.ok(adminApp.includes("editorToMarkdown") && adminApp.includes("refreshLinkManager"), "CMS must serialize rich text and expose per-link settings");
+assert.ok(markdownSource.includes("rel=(follow|nofollow|sponsored|ugc)") && markdownSource.includes("target=(_blank|_self)"), "public Markdown renderer must preserve link relationship and target settings");
+assert.ok(markdownSource.includes("<table>") && markdownSource.includes("<u>"), "public Markdown renderer must support pasted tables and underline");
+assert.ok(siteChrome.includes("usePathname") && siteChrome.includes("isBlog"), "blog routes must not inherit the portfolio chrome");
+assert.ok(listingPage.includes('settings.tagline || "یادداشت‌هایی درباره برند، معنا و ارتباط"'), "blog archive H1 must use the descriptive tagline");
+assert.ok(blogCss.includes("body:has(.blog-theme)") && blogCss.includes("font-family:var(--font-estedad)"), "blog pages must keep their own shell and Estedad typography");
+
+console.log("Personal blog contract passed: secure CMS, rich paste, per-link SEO, isolated blog shell and SEO-ready static publishing.");

@@ -19,12 +19,12 @@ export type BlogSettings={
 };
 const defaults:BlogSettings={
   title:"نوشته‌ها",tagline:"یادداشت‌هایی درباره برند، معنا و ارتباط",
-  description:"مقاله‌ها و یادداشت‌های آریا کیانزاد درباره استراتژی برند و پرسونال برندینگ.",
+  description:"اینجا درباره استراتژی برند، جایگاه‌یابی، ارتباطات و پرسونال برندینگ می‌نویسم؛ با تمرکز بر معنا، رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن.",
   background_theme:"paper",accent_color:"#a86f54",card_style:"editorial",layout_style:"editorial",
   content_width:"reading",posts_per_page:9,show_search:true,show_categories:true,show_featured:true,
   show_reading_time:true,show_toc:true,show_related_posts:true,show_share:true,enable_rss:true,
-  default_language:"fa",heading_scale:1,body_line_height:1.95,intro_title:"فکر کردن، بخشی از کاره",
-  intro_body:"",default_meta_title:"وبلاگ آریا کیانزاد",default_meta_description:"",default_og_image:"",footer_note:"",
+  default_language:"fa",heading_scale:1,body_line_height:1.95,intro_title:"از استراتژی برند تا ارتباطات روزمره",
+  intro_body:"من اینجا درباره استراتژی برند، جایگاه‌یابی، هویت، ارتباطات و پرسونال برندینگ می‌نویسم؛ با تمرکز بر رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن.",default_meta_title:"وبلاگ آریا کیانزاد",default_meta_description:"",default_og_image:"",footer_note:"",
 };
 type Payload={settings:BlogSettings;posts:BlogPost[]};
 let cache:Payload|null=null;
