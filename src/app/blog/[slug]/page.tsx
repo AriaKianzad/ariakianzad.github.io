@@ -5,6 +5,7 @@ import { site } from "@/lib/site";
 import { getBlogPost, getBlogPosts, getBlogSettings, readingTime } from "@/lib/blog-data";
 import { extractToc, extractMarkdownImageUrls, renderMarkdown } from "@/lib/blog-markdown";
 import { BlogHeader, BlogFooter } from "../BlogHeader";
+import { CopyLinkButton } from "../CopyLinkButton";
 import { BlogPostCard } from "../BlogListingClient";
 
 export const dynamicParams = false;
@@ -144,6 +145,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
         {settings.show_share ? (
           <div className="blog-share blog-container">
             <span>این نوشته رو به اشتراک بذار</span>
+            <CopyLinkButton url={canonical} />
             <a href={"https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(canonical)} target="_blank" rel="noopener noreferrer">لینکدین ↗</a>
             <a href={"https://x.com/intent/post?url=" + encodeURIComponent(canonical)} target="_blank" rel="noopener noreferrer">ایکس ↗</a>
             <a href={"mailto:?subject=" + encodeURIComponent(post.title) + "&body=" + encodeURIComponent(canonical)}>ایمیل ↗</a>
