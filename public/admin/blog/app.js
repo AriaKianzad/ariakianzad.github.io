@@ -679,7 +679,7 @@
     const post=await savePost();
     const result=await api("publish_post",{id:post.id});
     state.currentPost=result.post;await loadPosts();updateEditorStatus();
-    toast("درخواست انتشار ثبت شد. بعد از ساخت سایت، مقاله نمایش داده می‌شه.");
+    toast("درخواست انتشار ثبت شد؛ بعد از Build مقاله و سایت‌مپ به‌روز می‌شن.");
   }
   async function changeStatus(action) {
     const post=state.currentPost;if(!post?.id)return;
@@ -1042,7 +1042,7 @@
       state.settings=result.settings;
       if(result.buildDispatched){
         $("#settings-message").textContent="تنظیمات ذخیره شد و ساخت سایت آغاز شد.";
-        toast("تنظیمات ذخیره شد. بعد از Build تغییرات روی سایت دیده می‌شن.");
+        toast("تنظیمات ذخیره شد؛ بعد از Build سایت‌مپ هم به‌روز می‌شه.");
       }else{
         $("#settings-message").textContent="تنظیمات ذخیره شد؛ انتشار عمومی منتظر تنظیم توکن GitHub است.";
         toast("تنظیمات ذخیره شد. برای اعمال روی سایت، توکن انتشار GitHub رو در تنظیمات سرور ثبت کن.",true);
