@@ -39,8 +39,8 @@ export default function BlogIndexPage() {
         <section className="blog-intro blog-container">
           <div className="blog-eyebrow"><span /> WRITING / BRAND STRATEGY</div>
           <h1>{settings.tagline || "یادداشت‌هایی درباره برند، معنا و ارتباط"}</h1>
-          <p className="blog-intro-lede">{settings.intro_body || "از استراتژی برند و جایگاه‌یابی تا ارتباطات و پرسونال برندینگ؛ این‌ها موضوعاتی‌ان که اینجا از زاویۀ تجربه، تحقیق و پرسش‌های خودم بهشون نگاه می‌کنم."}</p>
-          <p className="blog-intro-description">{settings.description}</p>
+          <p className="blog-intro-lede">{settings.intro_title || "از استراتژی برند تا ارتباطات روزمره"}</p>
+          <p className="blog-intro-description">{settings.intro_body || settings.description}</p>
           <div className="blog-intro-rule"><span>01</span><span>IDEAS, RESEARCH &amp; PERSPECTIVE</span></div>
         </section>
         {featured ? (
