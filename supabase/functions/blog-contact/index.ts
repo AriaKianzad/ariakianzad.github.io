@@ -181,7 +181,7 @@ Deno.serve(async (request: Request) => {
     const serviceKey = supabaseSecretKey();
     const resendKey = readSecret("RESEND_API_KEY");
     const fromEmail = readSecret("BLOG_CONTACT_FROM_EMAIL");
-    const toEmail = readSecret("BLOG_CONTACT_TO_EMAIL");
+    const toEmail = readSecret("BLOG_CONTACT_TO_EMAIL") || "kianzadaria@gmail.com";
 
     if (!supabaseUrl || !serviceKey) {
       console.error("blog-contact missing Supabase server credentials");
