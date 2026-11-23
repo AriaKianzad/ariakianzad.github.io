@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { site } from "@/lib/site";
-import { getBlogCategories, getBlogPosts, getBlogSettings, getBlogCategoryName } from "@/lib/blog-data";
+import { getBlogCategories, getBlogPosts, getBlogSettings, getBlogCategoryName, getPrimaryCategorySlug } from "@/lib/blog-data";
 import { BlogHeader, BlogFooter } from "./BlogHeader";
 import { BlogListingClient, BlogPostCard } from "./BlogListingClient";
 import HeroVisual from "@/components/hero-visual";
@@ -50,7 +50,7 @@ export default function BlogIndexPage() {
         {featured ? (
           <section className="blog-featured-section blog-container" aria-label="نوشتۀ منتخب">
             <div className="blog-section-label"><span>01</span> نوشتۀ منتخب</div>
-            <BlogPostCard post={featured} categoryName={getBlogCategoryName(featured.category)} featured showReadingTime={settings.show_reading_time} />
+            <BlogPostCard post={featured} categoryName={getBlogCategoryName(getPrimaryCategorySlug(featured))} featured showReadingTime={settings.show_reading_time} />
           </section>
         ) : null}
         <section className="blog-listing-section blog-container" aria-labelledby="blog-list-title">
