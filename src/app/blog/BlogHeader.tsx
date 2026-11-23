@@ -5,11 +5,11 @@ export function BlogHeader() {
   return (
     <header className="blog-header">
       <div className="blog-container blog-header-inner">
-        <Link className="blog-brand" href="/blog/" aria-label="وبلاگ آریا کیانزاد">
-          <span className="blog-brand-mark">AK</span>
+        <Link className="blog-brand" href="/blog/" aria-label="یادداشت‌های آریا کیانزاد">
+          <span className="blog-brand-mark" aria-hidden="true">AK</span>
           <span className="blog-brand-copy">
             <strong>آریا کیانزاد</strong>
-            <small>یادداشت‌ها و مقاله‌ها</small>
+            <small>یادداشت‌هایی از زاویۀ من</small>
           </span>
         </Link>
         <nav className="blog-header-nav" aria-label="مسیرهای وبلاگ">
@@ -28,17 +28,21 @@ export function BlogFooter() {
   return (
     <footer className="blog-footer">
       <div className="blog-container blog-footer-inner">
-        <div>
-          <strong>آریا کیانزاد</strong>
-          <p>{settings.footer_note || "استراتژی برند / جایگاه‌یابی / ارتباطات"}</p>
+        <div className="blog-footer-main">
+          <span className="blog-footer-kicker">NOTES / THOUGHTS / PERSPECTIVES</span>
+          <h2>بعضی سؤال‌ها با یک جواب تموم نمی‌شن.</h2>
+          <p>{settings.footer_note || "من اینجا درباره برند، معنا و ارتباط می‌نویسم؛ از چیزهایی که در کارم می‌بینم تا سؤال‌هایی که هنوز جواب قطعی براشون ندارم."}</p>
         </div>
         <div className="blog-footer-links">
-          <Link href="/blog/">بلاگ</Link>
-          <Link href="/">وب‌سایت اصلی</Link>
-          {settings.enable_rss ? <a href="/blog/feed.xml">RSS</a> : null}
+          <Link href="/blog/">همۀ نوشته‌ها</Link>
+          <Link href="/#about">دربارۀ من</Link>
+          {settings.enable_rss ? <a href="/blog/feed.xml">فید RSS</a> : null}
           <a href="mailto:kianzadaria@gmail.com">ایمیل</a>
         </div>
-        <small>© {new Date().getFullYear()} Aria Kianzad</small>
+        <div className="blog-footer-bottom">
+          <small>© {new Date().getFullYear()} Aria Kianzad</small>
+          <span>این نوشته‌ها رو از نگاه و تجربهٔ خودم می‌نویسم.</span>
+        </div>
       </div>
     </footer>
   );
