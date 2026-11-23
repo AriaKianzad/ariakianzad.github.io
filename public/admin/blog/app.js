@@ -174,7 +174,7 @@
     $("#posts-empty").hidden=posts.length>0;
   }
   const newPost=()=>({
-    id:"",slug:"",title:"",excerpt:"",content:"",language:"fa",category:"",tags:[],
+    id:"",slug:"",title:"",excerpt:"",content:"",language:"fa",category:"",categories:[],primary_category:"",tags:[],
     hero_image_url:"",hero_image_alt:"",hero_image_caption:"",og_image_url:"",
     seo_title:"",meta_description:"",focus_keyword:"",canonical_url:"",og_title:"",og_description:"",
     robots_index:true,robots_follow:true,featured:false,toc_enabled:true,drop_cap:false,
@@ -194,7 +194,7 @@
   function fillEditor(post) {
     const fields={
       "#post-title":"title","#post-slug":"slug","#post-excerpt":"excerpt","#post-language":"language",
-      "#post-category":"category","#post-hero-url":"hero_image_url",
+      "#post-hero-url":"hero_image_url",
       "#post-hero-alt":"hero_image_alt","#post-hero-caption":"hero_image_caption","#post-og-url":"og_image_url",
       "#post-seo-title":"seo_title","#post-meta-description":"meta_description","#post-focus-keyword":"focus_keyword",
       "#post-canonical":"canonical_url","#post-og-title":"og_title","#post-og-description":"og_description",
@@ -202,7 +202,7 @@
       "#post-toc":"toc_enabled","#post-dropcap":"drop_cap","#post-width":"content_width","#post-accent":"accent_color",
     };
     Object.entries(fields).forEach(([selector,key])=>setField(selector,post[key]));
-    syncPostCategorySelect(post.category||"");
+    renderPostCategoryControls(post.categories,post.primary_category||post.category||"");
     $("#post-content").innerHTML=renderPreviewMarkdown(String(post.content||""));
     $("#post-tags").value=(post.tags||[]).join("، ");
     $("#post-faqs").value=(post.faqs||[]).map((faq)=>"پرسش: "+faq.question+"\nپاسخ: "+faq.answer).join("\n\n");
@@ -231,6 +231,11 @@
     });
     post.content=editorToMarkdown($("#post-content"));
     post.robots_follow=true;
+    post.categories=selectedEditorCategories();
+    post.primary_category=post.categories.includes($("#post-primary-category").value)
+      ? $("#post-primary-category").value
+      : (post.categories[0]||"");
+    post.category=post.primary_category;
     post.tags=$("#post-tags").value.split(/[،,]/).map((s)=>s.trim()).filter(Boolean);
     post.faqs=parseFaqs($("#post-faqs").value);
     return post;
@@ -837,24 +842,79 @@
       setButton(button,false);
     }
   }
+  function postCategorySlugs(post) {
+    const values=Array.isArray(post?.categories)&&post.categories.length
+      ? post.categories
+      : [post?.primary_category||post?.category||""];
+    return [...new Set(values.map((value)=>String(value||"").trim()).filter(Boolean))].slice(0,3);
+  }
   function getConfiguredCategories(settings) {
     const source=Array.isArray(settings?.categories)?settings.categories:[];
     const result=source.map((item)=>({slug:String(item?.slug||""),name:String(item?.name||"")})).filter((item)=>item.slug&&item.name);
     const known=new Set(result.map((item)=>item.slug));
     state.posts.forEach((post)=>{
-      const slug=String(post.category||"").trim();
-      if(slug&&!known.has(slug)){result.push({slug,name:slug.replace(/-/g," ")});known.add(slug);}
+      postCategorySlugs(post).forEach((slug)=>{
+        if(!known.has(slug)){result.push({slug,name:slug.replace(/-/g," ")});known.add(slug);}
+      });
     });
     return result;
   }
-  function syncPostCategorySelect(selected) {
-    const select=$("#post-category");
+  function selectedEditorCategories() {
+    return Array.from(document.querySelectorAll("#post-category-options input[data-category-slug]:checked"))
+      .map((input)=>input.dataset.categorySlug)
+      .filter(Boolean)
+      .slice(0,3);
+  }
+  function syncPrimaryCategorySelect(preferred) {
+    const select=$("#post-primary-category");
     if(!select)return;
-    const value=selected??select.value??"";
-    const options=[new Option("بدون دسته‌بندی","")];
-    getConfiguredCategories(state.settings).forEach((item)=>options.push(new Option(item.name,item.slug)));
+    const selected=selectedEditorCategories();
+    const categories=getConfiguredCategories(state.settings);
+    const options=[new Option(selected.length?"انتخاب دسته‌بندی اصلی":"ابتدا دسته‌بندی رو انتخاب کن","")];
+    selected.forEach((slug)=>{
+      const item=categories.find((category)=>category.slug===slug);
+      if(item)options.push(new Option(item.name,item.slug));
+    });
     select.replaceChildren(...options);
-    select.value=options.some((item)=>item.value===value)?value:"";
+    const value=selected.includes(preferred)?preferred:(selected[0]||"");
+    select.value=value;
+    select.disabled=selected.length===0;
+    if(selected.length===1)select.disabled=true;
+  }
+  function renderPostCategoryControls(values,primary) {
+    const container=$("#post-category-options");
+    if(!container)return;
+    const configured=getConfiguredCategories(state.settings);
+    const requested=Array.isArray(values)&&values.length
+      ? values
+      : (primary?[primary]:[]);
+    const selected=new Set(requested.filter((slug)=>configured.some((item)=>item.slug===slug)).slice(0,3));
+    container.replaceChildren();
+    if(!configured.length){
+      const empty=document.createElement("small");
+      empty.textContent="ابتدا از تنظیمات، دسته‌بندی بساز.";
+      container.appendChild(empty);
+      syncPrimaryCategorySelect("");
+      return;
+    }
+    configured.forEach((item)=>{
+      const label=document.createElement("label");
+      label.className="post-category-option";
+      const input=document.createElement("input");
+      input.type="checkbox";input.dataset.categorySlug=item.slug;input.checked=selected.has(item.slug);
+      const name=document.createElement("span");name.textContent=item.name;name.dataset.categoryLabel=item.slug;
+      input.addEventListener("change",()=>{
+        const chosen=selectedEditorCategories();
+        if(chosen.length>3){
+          input.checked=false;
+          toast("هر مقاله حداکثر می‌تونه سه دسته‌بندی داشته باشه.",true);
+        }
+        syncPrimaryCategorySelect(primary);
+      });
+      label.append(input,name);
+      container.appendChild(label);
+    });
+    syncPrimaryCategorySelect(primary);
   }
   function collectCategories(previous) {
     const list=$("#category-manager-list");
@@ -875,7 +935,7 @@
       list.appendChild(empty);
     }
     categories.forEach((item)=>{
-      const used=state.posts.filter((post)=>post.category===item.slug).length;
+      const used=state.posts.filter((post)=>postCategorySlugs(post).includes(item.slug)).length;
       const row=document.createElement("div");row.className="category-manager-item";row.dataset.categorySlug=item.slug;
       const nameLabel=document.createElement("label");nameLabel.className="field-label";nameLabel.textContent="نام نمایشی";
       const name=document.createElement("input");name.type="text";name.maxLength=80;name.value=item.name;name.dataset.categoryName="true";
@@ -893,14 +953,14 @@
         state.settings={...(state.settings||{}),categories:next};
         const seo={...(state.settings.category_seo||{})};delete seo[item.slug];
         state.settings.category_seo=seo;
-        renderCategoryManager(state.settings);syncPostCategorySelect();
+        renderCategoryManager(state.settings);renderPostCategoryControls(state.currentPost?.categories,state.currentPost?.primary_category||state.currentPost?.category);
         renderCategorySeoEditor(state.settings);
         $("#category-manager-message").textContent="دسته‌بندی حذف شد؛ برای ثبت نهایی تنظیمات رو ذخیره کن.";
       });
       row.append(nameLabel,slugBox,count,remove);
       list.appendChild(row);
     });
-    syncPostCategorySelect($("#post-category")?.value);
+    if(state.currentPost)renderPostCategoryControls(state.currentPost.categories,state.currentPost.primary_category||state.currentPost.category);
   }
   function addManagedCategory() {
     const name=$("#new-category-name").value.trim();
@@ -1141,8 +1201,10 @@
         const seoCard=slug?document.querySelector('.category-seo-card[data-category-slug="'+CSS.escape(slug)+'"]'):null;
         const title=seoCard?.querySelector(".category-seo-heading strong");
         if(title)title.textContent=event.target.value.trim()||slug;
-        const option=$("#post-category option[value='"+slug+"']");
+        const option=$("#post-category-options [data-category-label='"+slug+"']");
         if(option)option.textContent=event.target.value.trim()||slug;
+        const primaryOption=$("#post-primary-category option[value='"+slug+"']");
+        if(primaryOption)primaryOption.textContent=event.target.value.trim()||slug;
       }
     });
     $("#settings-form").addEventListener("submit",saveSettings);
