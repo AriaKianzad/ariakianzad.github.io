@@ -257,11 +257,11 @@ assert.ok(mobileNavigation.includes("position: absolute;") && mobileNavigation.i
   "mobile menu must open beneath the sticky header rather than inside its backdrop-filter containing block");
 assert.ok(mobileNavigation.includes("height: calc(100dvh - var(--header-h));") && mobileNavigation.includes("overflow-y: auto;"),
   "mobile menu must use the available dynamic viewport height and remain scrollable");
-assert.ok(mobileNavigation.includes(".header-cta {") && mobileNavigation.includes("flex: 0 0 auto;"),
-  "the Let's talk action must keep its layout space on mobile");
+assert.ok(mobileNavigation.includes(".header-cta {") && mobileNavigation.includes("display: none;"),
+  "the Let's talk header action must be hidden at the mobile breakpoint");
 const narrowHeader = chrome.split("@media (max-width: 480px)")[1]?.split("@media (max-width: 360px)")[0] ?? "";
 assert.ok(narrowHeader.includes(".wordmark__copy small {\n    display: none;"),
-  "small screens must compact the brand lockup to preserve the CTA");
+  "small screens must retain the compact wordmark lockup");
 assert.ok(ui.includes("first.focus({ preventScroll: true })"),
   "opening the mobile menu must not scroll the page behind its overlay");
 assert.ok(sections.includes(".expertise-card__graphic {\n  position: relative;\n  display: grid;\n  height: 190px;") &&

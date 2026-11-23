@@ -375,6 +375,10 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
     flex: 0 0 auto;
   }
 
+  .header-cta {
+    display: none;
+  }
+
   html[data-js] .menu-btn {
     display: inline-flex;
     flex: 0 0 auto;
