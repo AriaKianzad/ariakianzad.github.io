@@ -11,6 +11,7 @@ const corsHeaders = {
 
 const requestLabels: Record<string, string> = {
   advertorial: "رپورتاژ یا محتوای تبلیغاتی",
+  editorial_link: "بررسی ارجاع تحریریه‌ای Follow بدون پرداخت بابت لینک",
   sponsorship: "اسپانسری دوره‌ای",
   collaboration: "همکاری محتوایی یا حرفه‌ای",
   general: "پیام عمومی یا موضوع دیگر",
@@ -219,7 +220,7 @@ Deno.serve(async (request: Request) => {
       "<hr><p style=\"font-size:12px;color:#777f77\">برای پاسخ مستقیم، به همین ایمیل Reply کنید.</p></div>";
     const textBody = rows.map(([label, value]) => label + ": " + value).join("\n") +
       "\n\nتوضیحات:\n" + message +
-      "\n\nیادآوری: لینک‌های درج‌شده در محتوای تبلیغاتی پولی با ویژگی sponsored یا nofollow مشخص می‌شوند.";
+      "\n\nیادآوری: لینک‌های درج‌شده در محتوای تبلیغاتی پولی با ویژگی sponsored یا nofollow مشخص می‌شوند. درخواست Follow فقط برای ارجاع تحریریه‌ای مستقل و بدون پرداخت بابت لینک قابل بررسی است و تضمینی برای درج وجود ندارد.";
 
     const mailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
