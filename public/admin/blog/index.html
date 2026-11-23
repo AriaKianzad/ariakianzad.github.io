@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive"><meta name="theme-color" content="#f4f1e9">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://bkohdqwecnvbmeaiuyyx.supabase.co; font-src 'self'; connect-src 'self' https://bkohdqwecnvbmeaiuyyx.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<title>مدیریت بلاگ | آریا کیانزاد</title>
+<link rel="stylesheet" href="./blog.css?v=20261123-1">
+<script src="../config.js?v=20261121-2"></script><script src="./app.js?v=20261123-1" defer></script>
+</head>
+<body>
+<main class="admin-root">
+<section id="login-screen" class="login-screen" aria-labelledby="login-title">
+<a class="login-back" href="/blog/">بازگشت به وبلاگ ↗</a>
+<div class="login-card">
+<div class="brand-line"><span class="brand-seal">AK</span><span><strong>ARIA KIANZAD</strong><small>EDITORIAL / BLOG CMS</small></span></div>
+<span class="kicker">PRIVATE WORKSPACE</span><h1 id="login-title">ورود به فضای نوشته‌ها</h1>
+<p class="login-intro">برای نوشتن، ویرایش و انتشار مقاله‌ها وارد حساب مدیریتی شو.</p>
+<form id="login-form">
+<label for="login-email">ایمیل</label><input id="login-email" type="email" autocomplete="username" inputmode="email" placeholder="name@example.com" required>
+<label for="login-password">رمز عبور</label><input id="login-password" type="password" autocomplete="current-password" placeholder="رمز عبور حساب" required>
+<button id="login-submit" class="button button-dark button-full" type="submit">ورود به پنل <span aria-hidden="true">←</span></button>
+<p id="login-message" class="form-message" role="status" aria-live="polite"></p>
+</form>
+<button id="forgot-password" class="text-button" type="button">رمز عبورم رو فراموش کردم</button>
+<p class="security-note"><span></span> دسترسی این پنل فقط برای حساب‌های مدیریتی تأییدشده فعاله.</p>
+</div>
+<footer class="login-footer"><span>ARIA KIANZAD / BLOG ADMIN</span><a href="/">MAIN WEBSITE</a></footer>
+</section>
+
+<div id="app" class="app-shell" hidden>
+<aside class="sidebar">
+<a href="/blog/" class="side-brand"><span class="brand-seal">AK</span><span><strong>نوشته‌ها</strong><small>EDITORIAL DESK</small></span></a>
+<div class="side-label">WORKSPACE</div>
+<nav class="side-nav" aria-label="بخش‌های مدیریت">
+<button class="side-link active" type="button" data-view="overview"><span>▦</span> نمای کلی</button>
+<button class="side-link" type="button" data-view="posts"><span>▤</span> مقاله‌ها <small id="nav-post-count">۰</small></button>
+<button class="side-link" type="button" data-view="settings"><span>⚙</span> تنظیمات بلاگ</button>
+</nav>
+<div class="sidebar-bottom"><a href="/blog/" target="_blank" rel="noopener noreferrer">مشاهدۀ وبلاگ ↗</a><button id="logout-button" type="button">خروج از حساب</button><small>PRIVATE ADMIN AREA</small></div>
+</aside>
+<div class="workspace">
+<header class="workspace-header"><div class="workspace-crumb"><span>ARIA KIANZAD</span><i>/</i><strong id="workspace-title">نمای کلی</strong></div><div class="workspace-user"><span class="online-dot"></span><span id="admin-email">مدیر</span><button id="header-logout-button" type="button">خروج</button></div></header>
+
+<section id="view-overview" class="view active">
+<div class="page-heading"><div><span class="kicker">EDITORIAL OVERVIEW</span><h1>اتاق نوشته‌ها</h1><p>پیش‌نویس‌ها، مقاله‌های منتشرشده و وضعیت انتشار.</p></div><button class="button button-dark" type="button" data-new-post>+ نوشتۀ تازه</button></div>
+<div class="overview-stats">
+<article class="stat-card stat-accent"><span>همۀ مقاله‌ها</span><strong id="stat-total">۰</strong><small>تمام وضعیت‌ها</small></article>
+<article class="stat-card"><span>منتشرشده</span><strong id="stat-published">۰</strong><small>در وبلاگ عمومی</small></article>
+<article class="stat-card"><span>پیش‌نویس</span><strong id="stat-drafts">۰</strong><small>فقط در پنل مدیریت</small></article>
+<article class="stat-card"><span>تغییرات منتشرنشده</span><strong id="stat-changes">۰</strong><small>نیازمند انتشار مجدد</small></article>
+</div>
+<div class="content-panel"><div class="panel-heading"><div><span class="kicker">RECENT WORK</span><h2>آخرین نوشته‌ها</h2></div><button class="inline-link" type="button" data-view="posts">مشاهدۀ همه ←</button></div><div id="recent-posts" class="post-list"></div></div>
+<div class="overview-note"><span>✳</span><div><strong>یک نکته درباره انتشار</strong><p>ذخیرۀ پیش‌نویس، نسخۀ عمومی مقاله رو تغییر نمی‌ده. برای اعمال تغییرات روی سایت باید «انتشار» رو بزنی تا سایت دوباره ساخته بشه.</p></div></div>
+</section>
+
+<section id="view-posts" class="view" hidden>
+<div class="page-heading"><div><span class="kicker">CONTENT LIBRARY</span><h1>مقاله‌ها</h1><p>همۀ نوشته‌ها، پیش‌نویس‌ها و آرشیو.</p></div><button class="button button-dark" type="button" data-new-post>+ نوشتۀ تازه</button></div>
+<div class="list-toolbar"><label class="search-input"><span>⌕</span><input id="posts-search" type="search" placeholder="جست‌وجوی عنوان یا نامک"></label>
+<select id="posts-filter" aria-label="فیلتر وضعیت"><option value="all">همۀ وضعیت‌ها</option><option value="draft">پیش‌نویس</option><option value="published">منتشرشده</option><option value="archived">بایگانی</option></select></div>
+<div id="posts-grid" class="post-list content-panel"></div><p id="posts-empty" class="empty-state" hidden>مقاله‌ای با این مشخصات پیدا نشد.</p>
+</section>
+
+<section id="view-editor" class="view" hidden>
+<div class="editor-topbar"><div><button id="back-to-posts" class="back-button" type="button">← بازگشت به مقاله‌ها</button><span id="editor-state" class="status-badge draft">پیش‌نویس</span></div>
+<div class="editor-actions"><button id="preview-toggle" class="button button-light" type="button">پیش‌نمایش</button><button id="save-post" class="button button-light" type="button">ذخیرۀ پیش‌نویس</button><button id="publish-post" class="button button-dark" type="button">انتشار مقاله ↗</button></div></div>
+<form id="editor-form" class="editor-layout">
+<div class="editor-main">
+<div class="content-panel editor-title-panel">
+<div class="editor-fields-row">
+<label class="field-label">زبان مقاله<select id="post-language" data-field="language"><option value="fa">فارسی</option><option value="en">English</option></select></label>
+<label class="field-label">دسته‌بندی<input id="post-category" data-field="category" maxlength="80" placeholder="مثلاً استراتژی برند"></label>
+<label class="field-label">برچسب‌ها<input id="post-tags" placeholder="با ویرگول جدا کن"></label>
+</div>
+<label class="sr-only" for="post-title">عنوان مقاله</label><input id="post-title" class="title-input" data-field="title" maxlength="180" placeholder="عنوان مقاله رو بنویس…" required>
+<div class="slug-row"><span>URL</span><span>ariakianzad.github.io/blog/</span><input id="post-slug" data-field="slug" placeholder="article-slug" autocomplete="off"></div>
+<label class="field-label block-label">خلاصۀ مقاله<textarea id="post-excerpt" data-field="excerpt" rows="2" maxlength="700" placeholder="خلاصه‌ای کوتاه برای کارت مقاله و توضیحات صفحه…"></textarea></label>
+</div>
+<div class="editor-toolbar"><span class="kicker">ARTICLE BODY / MARKDOWN</span><div class="format-tools">
+<button type="button" data-insert="## تیتر بخش">H2</button><button type="button" data-insert="**متن برجسته**">B</button><button type="button" data-insert="*تأکید*"><i>I</i></button><button type="button" data-insert="[متن لینک](https://example.com)">↗</button><button type="button" data-insert="> نقل‌قول">❞</button><button type="button" data-insert="![توضیح تصویر](https://...)">▧</button><button type="button" data-insert="کد:">{"}"}</button>
+</div></div>
+<div id="editor-workarea" class="editor-workarea"><textarea id="post-content" data-field="content" spellcheck="true" placeholder="# تیتر اصلی مقاله&#10;&#10;اینجا بنویس…&#10;&#10;## تیتر بخش&#10;&#10;متن مقاله رو با Markdown ساختاربندی کن." aria-label="متن مقاله"></textarea>
+<div id="markdown-preview" class="markdown-preview" hidden><div class="preview-label">LIVE PREVIEW</div><article id="preview-content" class="blog-prose"></article></div></div>
+
+<div class="editor-tabs" role="tablist"><button class="editor-tab active" type="button" data-tab="seo">سئو و شبکه‌های اجتماعی</button><button class="editor-tab" type="button" data-tab="appearance">ظاهر مقاله</button><button class="editor-tab" type="button" data-tab="faq">پرسش‌های متداول</button></div>
+<section class="tab-panel active" id="tab-seo"><div class="content-panel">
+<div class="panel-heading"><div><span class="kicker">SEARCH PREVIEW</span><h2>نمایش در گوگل</h2></div><span id="seo-score" class="seo-score">۰ / ۱۰۰</span></div>
+<div id="google-preview" class="google-preview" dir="rtl"><span id="seo-preview-url">https://ariakianzad.github.io/blog/</span><strong id="seo-preview-title">عنوان مقاله</strong><p id="seo-preview-description">توضیحات مقاله در نتایج جست‌وجو اینجا نمایش داده می‌شه.</p></div>
+<label class="field-label">عنوان SEO <small id="seo-title-count">۰ / ۶۰</small><input id="post-seo-title" data-field="seo_title" maxlength="75" placeholder="عنوانی واضح برای نتیجۀ جست‌وجو"></label>
+<label class="field-label">توضیحات متا <small id="seo-description-count">۰ / ۱۶۰</small><textarea id="post-meta-description" data-field="meta_description" rows="3" maxlength="320" placeholder="توضیح دقیق و مفید درباره محتوای مقاله"></textarea></label>
+<label class="field-label">کلمۀ کلیدی اصلی<input id="post-focus-keyword" data-field="focus_keyword" maxlength="120" placeholder="عبارت اصلی که مقاله براش نوشته شده"></label>
+<label class="field-label">Canonical URL<input id="post-canonical" data-field="canonical_url" type="url" placeholder="https://ariakianzad.github.io/blog/.../"></label>
+<div class="two-fields"><label class="field-label">عنوان Open Graph<input id="post-og-title" data-field="og_title" maxlength="100"></label><label class="field-label">توضیح Open Graph<textarea id="post-og-description" data-field="og_description" rows="2" maxlength="300"></textarea></label></div>
+<div class="check-row"><label><input id="post-robots-index" data-field="robots_index" type="checkbox" checked> ایندکس شود</label><label><input id="post-robots-follow" data-field="robots_follow" type="checkbox" checked> لینک‌ها دنبال شوند</label></div>
+<div class="seo-checklist"><strong>چک‌لیست سئو</strong><ul id="seo-checks"></ul></div>
+</div></section>
+
+<section class="tab-panel" id="tab-appearance" hidden><div class="content-panel">
+<div class="panel-heading"><div><span class="kicker">ARTICLE DESIGN</span><h2>ظاهر و چیدمان</h2></div></div>
+<div class="two-fields"><label class="field-label">عرض متن<select id="post-width" data-field="content_width"><option value="reading">خواندن / استاندارد</option><option value="wide">عریض</option></select></label><label class="field-label">رنگ تأکیدی<input id="post-accent" data-field="accent_color" type="color" value="#a86f54"></label></div>
+<div class="check-row"><label><input id="post-featured" data-field="featured" type="checkbox"> نوشتۀ منتخب</label><label><input id="post-toc" data-field="toc_enabled" type="checkbox" checked> فهرست مطالب</label><label><input id="post-dropcap" data-field="drop_cap" type="checkbox"> حرف اول بزرگ</label></div>
+<div class="media-editor"><div class="panel-heading"><div><span class="kicker">COVER IMAGE</span><h2>تصویر اصلی مقاله</h2></div></div>
+<div id="hero-image-preview" class="media-preview"><span>تصویر مقاله هنوز انتخاب نشده.</span></div><input id="post-hero-url" data-field="hero_image_url" type="hidden">
+<label class="file-button">انتخاب تصویر<input id="hero-image-file" type="file" accept="image/jpeg,image/png,image/webp"></label>
+<label class="field-label">متن جایگزین تصویر (Alt)<input id="post-hero-alt" data-field="hero_image_alt" maxlength="240" placeholder="شرح دقیق تصویر برای دسترس‌پذیری و سئو"></label>
+<label class="field-label">زیرنویس تصویر<input id="post-hero-caption" data-field="hero_image_caption" maxlength="400"></label></div>
+<div class="media-editor"><div class="panel-heading"><div><span class="kicker">SOCIAL PREVIEW</span><h2>تصویر اشتراک‌گذاری</h2></div></div>
+<div id="og-image-preview" class="media-preview media-preview-small"><span>تصویر اجتماعی جداگانه اختیاریه.</span></div><input id="post-og-url" data-field="og_image_url" type="hidden">
+<label class="file-button">انتخاب تصویر Open Graph<input id="og-image-file" type="file" accept="image/jpeg,image/png,image/webp"></label></div>
+</div></section>
+
+<section class="tab-panel" id="tab-faq" hidden><div class="content-panel">
+<div class="panel-heading"><div><span class="kicker">STRUCTURED CONTENT</span><h2>پرسش‌های متداول</h2></div></div>
+<p class="help-text">هر پرسش و پاسخ رو در یک بلوک جدا وارد کن. ساختار: یک خط با «پرسش:» و خط بعد با «پاسخ:».</p>
+<textarea id="post-faqs" rows="9" placeholder="پرسش: استراتژی برند یعنی چی؟&#10;پاسخ: استراتژی برند چارچوب تصمیم‌هایی است که..."></textarea>
+</div></section>
+</div>
+
+<aside class="editor-sidebar">
+<div class="content-panel sticky-panel"><div class="panel-heading"><div><span class="kicker">PUBLISHING</span><h2>وضعیت انتشار</h2></div></div>
+<p id="publish-status-text" class="help-text">این نوشته هنوز منتشر نشده.</p><div class="publish-meta"><span>آخرین ذخیره</span><strong id="post-updated">—</strong></div>
+<button id="sidebar-save" class="button button-light button-full" type="button">ذخیرۀ پیش‌نویس</button><button id="sidebar-publish" class="button button-dark button-full" type="button">انتشار مقاله ↗</button>
+<button id="unpublish-post" class="text-button" type="button" hidden>خارج‌کردن از انتشار</button><button id="archive-post" class="text-button danger-text" type="button" hidden>انتقال به بایگانی</button>
+</div>
+<div class="content-panel"><span class="kicker">EDITORIAL CHECK</span><h3>پیش از انتشار</h3><ul class="editor-checks"><li>عنوان و نامک دقیق</li><li>خلاصۀ اختصاصی</li><li>ساختار تیترها</li><li>متن جایگزین تصویر</li><li>عنوان و توضیحات متا</li><li>پیش‌نمایش موبایل</li></ul></div>
+</aside>
+</form>
+</section>
+
+<section id="view-settings" class="view" hidden>
+<div class="page-heading"><div><span class="kicker">BLOG IDENTITY</span><h1>تنظیمات بلاگ</h1><p>هویت بصری، ساختار و پیش‌فرض‌های سئو رو مدیریت کن.</p></div></div>
+<form id="settings-form" class="settings-layout">
+<section class="content-panel settings-section"><span class="kicker">GENERAL</span><h2>اطلاعات اصلی</h2>
+<label class="field-label">عنوان بلاگ<input id="setting-title" maxlength="100"></label>
+<label class="field-label">زیرعنوان<input id="setting-tagline" maxlength="180"></label>
+<label class="field-label">توضیحات بلاگ<textarea id="setting-description" rows="3" maxlength="500"></textarea></label>
+<label class="field-label">عنوان معرفی صفحه اصلی<input id="setting-intro-title" maxlength="180"></label>
+<label class="field-label">متن معرفی<textarea id="setting-intro-body" rows="3" maxlength="600"></textarea></label>
+<label class="field-label">متن پایین صفحه<input id="setting-footer" maxlength="200"></label></section>
+<section class="content-panel settings-section"><span class="kicker">VISUAL SYSTEM</span><h2>هویت بصری</h2>
+<div class="theme-options"><label><input name="setting-theme" type="radio" value="paper" checked><span class="theme-swatch theme-paper"></span><b>کاغذی</b></label><label><input name="setting-theme" type="radio" value="white"><span class="theme-swatch theme-white"></span><b>سفید</b></label><label><input name="setting-theme" type="radio" value="warm"><span class="theme-swatch theme-warm"></span><b>گرم</b></label></div>
+<div class="two-fields">
+<label class="field-label">رنگ تأکیدی<input id="setting-accent" type="color" value="#a86f54"></label>
+<label class="field-label">سبک کارت‌ها<select id="setting-card-style"><option value="editorial">تحریریه‌ای</option><option value="minimal">مینیمال</option><option value="image-led">تصویرمحور</option></select></label>
+<label class="field-label">چیدمان<select id="setting-layout"><option value="editorial">تحریریه‌ای</option><option value="minimal">مینیمال</option><option value="magazine">مجله‌ای</option></select></label>
+<label class="field-label">عرض محتوا<select id="setting-width"><option value="reading">خواندن</option><option value="wide">عریض</option></select></label>
+<label class="field-label">زبان پیش‌فرض<select id="setting-language"><option value="fa">فارسی</option><option value="en">English</option></select></label>
+<label class="field-label">تعداد مقاله در صفحه<input id="setting-per-page" type="number" min="3" max="24" value="9"></label></div>
+<label class="field-label">اندازۀ تیترها<input id="setting-heading-scale" type="range" min="0.85" max="1.2" step="0.01"></label>
+<label class="field-label">فاصلۀ خطوط متن<input id="setting-line-height" type="range" min="1.6" max="2.4" step="0.05"></label>
+<div class="check-row">
+<label><input id="setting-search" type="checkbox" checked> جست‌وجو</label><label><input id="setting-categories" type="checkbox" checked> دسته‌بندی‌ها</label>
+<label><input id="setting-featured" type="checkbox" checked> نوشتۀ منتخب</label><label><input id="setting-readtime" type="checkbox" checked> زمان مطالعه</label>
+<label><input id="setting-toc" type="checkbox" checked> فهرست مطالب</label><label><input id="setting-related" type="checkbox" checked> نوشته‌های مرتبط</label>
+<label><input id="setting-share" type="checkbox" checked> اشتراک‌گذاری</label><label><input id="setting-rss" type="checkbox" checked> فید RSS</label>
+</div></section>
+<section class="content-panel settings-section"><span class="kicker">DEFAULT SEO</span><h2>پیش‌فرض‌های سئو</h2>
+<label class="field-label">عنوان متای پیش‌فرض<input id="setting-meta-title" maxlength="75"></label>
+<label class="field-label">توضیحات متای پیش‌فرض<textarea id="setting-meta-description" maxlength="320" rows="3"></textarea></label>
+<p class="help-text">این مقادیر برای مقاله‌هایی استفاده می‌شن که فیلد SEO اختصاصی براشون خالی باشه.</p>
+<div class="media-editor">
+<div class="panel-heading"><div><span class="kicker">DEFAULT SOCIAL IMAGE</span><h2>تصویر پیش‌فرض وبلاگ</h2></div></div>
+<div id="setting-og-preview" class="media-preview media-preview-small"><span>تصویر Open Graph پیش‌فرض اختیاریه.</span></div>
+<label class="file-button">انتخاب تصویر پیش‌فرض <input id="setting-og-file" type="file" accept="image/jpeg,image/png,image/webp"></label>
+<p class="help-text">برای صفحۀ اصلی بلاگ استفاده می‌شه؛ تصویر اختصاصی مقاله اولویت داره.</p>
+</div>
+</section>
+<div class="settings-save-row"><span id="settings-message" role="status"></span><button id="save-settings" class="button button-dark" type="submit">ذخیرۀ تنظیمات و انتشار ↗</button></div>
+</form>
+</section>
+
+<footer class="workspace-footer"><span>ARIA KIANZAD / PRIVATE EDITORIAL DESK</span><span>ESTEDAD / LIGHT EDITION</span></footer>
+</div></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</main></body></html>

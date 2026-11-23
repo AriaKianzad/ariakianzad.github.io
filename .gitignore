@@ -42,3 +42,8 @@ supabase/.branches/
 # Local credentials and service-account exports
 *service-account*.json
 *service_account*.json
+
+# Generated blog Open Graph images
+/public/og/blog/*.jpg
+/public/og/blog/*.jpeg
+/public/og/blog/*.png

@@ -68,6 +68,9 @@ jobs:
       - name: Test Google Analytics and Search Console reporting
         run: npm run test:analytics
 
+      - name: Test personal blog and CMS contracts
+        run: npm run test:blog
+
       - name: Audit dependencies
         run: npm audit --audit-level=high
 
@@ -125,6 +128,11 @@ jobs:
           grep -Fq 'Person' out/index.html
           grep -Fq 'Personal branding' out/llms.txt
           test -s out/Mian-e-Ma/index.html
+          test -s out/blog/index.html
+          test -s out/blog/feed.xml
+          test -s out/admin/blog/index.html
+          test -s out/admin/blog/blog.css
+          test -s out/admin/blog/app.js
           test -s out/admin/index.html
           test -s out/admin/admin.css
           test -s out/admin/app.js
@@ -135,6 +143,10 @@ jobs:
           grep -Fq 'bkohdqwecnvbmeaiuyyx.supabase.co' out/admin/index.html
           grep -Fq 'ga4-title' out/admin/index.html
           grep -Fq 'gsc-title' out/admin/index.html
+          grep -Fq 'blog-admin' out/admin/blog/app.js
+          grep -Fq 'get_public_blog_payload' scripts/fetch-blog-content.mjs
+          grep -Fq 'noindex, nofollow, noarchive' out/admin/blog/index.html
+          node --check public/admin/blog/app.js
           grep -Fq 'site-analytics' out/admin/app.js
           grep -Fq 'remember-session' out/admin/index.html
           grep -Fq 'mian-e-ma-dashboard-refresh-v1' out/admin/app.js
