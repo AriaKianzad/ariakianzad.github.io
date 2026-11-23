@@ -4,6 +4,7 @@ body:has(.blog-surface) { background:var(--blog-paper); color:var(--blog-ink); c
 body:has(.blog-surface)::before { display:none; }
 body:has(.blog-surface) .site-header, body:has(.blog-surface) .site-footer { display:none; }
 .blog-surface { --blog-accent:#405a42; min-height:100vh; background:var(--blog-paper); color:var(--blog-ink); font-family:var(--font-sans); }
+.blog-theme-paper { background:var(--blog-paper); }
 .blog-theme-white { background:#fff; }
 .blog-theme-warm { background:#f5f0e7; }
 .blog-accent-forest { --blog-accent:#405a42; }
