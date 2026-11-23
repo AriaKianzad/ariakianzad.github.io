@@ -655,7 +655,7 @@
   }
 
   async function publishPost() {
-    if (!state.currentPost?.id) await saveDraft();
+    await saveDraft();
     const result = await edgeAction("publish_post", { id: state.currentPost.id });
     if (result.warning) {
       showAppMessage(result.warning, "error");
@@ -982,9 +982,8 @@
       return;
     }
     try {
-      await authRequest("/auth/v1/recover", "POST", {
+      await authRequest("/auth/v1/recover?redirect_to=" + encodeURIComponent(config.siteUrl + "/blog-admin/"), "POST", {
         email,
-        redirect_to: config.siteUrl + "/blog-admin/",
       });
       message("#auth-message", "در صورت معتبر بودن ایمیل، لینک بازیابی از طرف Supabase ارسال می‌شه.", "success");
     } catch (error) {
