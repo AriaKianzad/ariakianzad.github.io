@@ -105,8 +105,13 @@ export function initSignalScene(host: HTMLElement) {
     innerCore = new THREE.Mesh(innerGeometry, innerMaterial);
   }
 
-  innerCore.rotation.set(0.2, 0.34, 0.12);
-  world.add(innerCore);
+  if (isBlog) {
+    innerCore.rotation.set(0, 0, 0);
+    core.add(innerCore);
+  } else {
+    innerCore.rotation.set(0.2, 0.34, 0.12);
+    world.add(innerCore);
+  }
 
   const shellGeometry = new THREE.IcosahedronGeometry(1.12, 2);
   const shellMaterial = new THREE.MeshBasicMaterial({
@@ -121,14 +126,14 @@ export function initSignalScene(host: HTMLElement) {
   world.add(shell);
 
   const ringMaterials = [
-    new THREE.MeshBasicMaterial({ color: accentColor, transparent: true, opacity: 0.65 }),
-    new THREE.MeshBasicMaterial({ color: accentSoftColor, transparent: true, opacity: 0.34 }),
-    new THREE.MeshBasicMaterial({ color: secondaryColor, transparent: true, opacity: 0.42 }),
+    new THREE.MeshBasicMaterial({ color: accentColor, transparent: true, opacity: isBlog ? 0.78 : 0.65 }),
+    new THREE.MeshBasicMaterial({ color: accentSoftColor, transparent: true, opacity: isBlog ? 0.5 : 0.34 }),
+    new THREE.MeshBasicMaterial({ color: secondaryColor, transparent: true, opacity: isBlog ? 0.62 : 0.42 }),
   ];
   const rings = [
-    new THREE.Mesh(new THREE.TorusGeometry(1.52, 0.005, 6, 220), ringMaterials[0]),
-    new THREE.Mesh(new THREE.TorusGeometry(1.82, 0.004, 6, 220), ringMaterials[1]),
-    new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.003, 6, 220), ringMaterials[2]),
+    new THREE.Mesh(new THREE.TorusGeometry(1.52, isBlog ? 0.007 : 0.005, 6, 220), ringMaterials[0]),
+    new THREE.Mesh(new THREE.TorusGeometry(1.82, isBlog ? 0.006 : 0.004, 6, 220), ringMaterials[1]),
+    new THREE.Mesh(new THREE.TorusGeometry(1.35, isBlog ? 0.005 : 0.003, 6, 220), ringMaterials[2]),
   ];
   rings[0].rotation.set(0.96, 0.22, -0.35);
   rings[1].rotation.set(0.35, 1.05, 0.16);
