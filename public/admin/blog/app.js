@@ -877,12 +877,7 @@
 
   function categorySeoEntries() {
     const categories=new Map();
-    state.posts.forEach((post)=>{
-      const name=String(post.category||"").trim();
-      if(!name)return;
-      const slug=name.toLowerCase().replace(/\s+/g,"-");
-      if(!categories.has(slug))categories.set(slug,name);
-    });
+    collectCategories(state.settings?.categories||[]).forEach((item)=>categories.set(item.slug,item.name));
     Object.entries(state.settings?.category_seo||{}).forEach(([slug])=>{
       if(!categories.has(slug))categories.set(slug,slug.replace(/-/g," "));
     });
@@ -926,7 +921,10 @@
       const indexLabel=document.createElement("label");const index=document.createElement("input");
       index.type="checkbox";index.dataset.categoryField="robots_index";index.checked=values.robots_index!==false;
       indexLabel.append(index,document.createTextNode(" این دسته‌بندی در موتورهای جست‌وجو ایندکس بشه"));
-      options.appendChild(indexLabel);card.appendChild(options);
+      const followLabel=document.createElement("label");const follow=document.createElement("input");
+      follow.type="checkbox";follow.dataset.categoryField="robots_follow";follow.checked=values.robots_follow!==false;
+      followLabel.append(follow,document.createTextNode(" لینک‌های این دسته‌بندی دنبال بشن"));
+      options.append(indexLabel,followLabel);card.appendChild(options);
       list.appendChild(card);
     });
   }
