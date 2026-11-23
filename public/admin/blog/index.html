@@ -71,7 +71,12 @@
 <div class="content-panel editor-title-panel">
 <div class="editor-fields-row">
 <label class="field-label">زبان مقاله<select id="post-language" data-field="language"><option value="fa">فارسی</option><option value="en">انگلیسی</option></select></label>
-<label class="field-label">دسته‌بندی<select id="post-category" data-field="category"><option value="">بدون دسته‌بندی</option></select></label>
+<div class="field-label category-assignment">
+<span>دسته‌بندی‌های مقاله</span>
+<small>حداکثر ۳ دسته رو انتخاب کن.</small>
+<div id="post-category-options" class="post-category-options" role="group" aria-label="دسته‌بندی‌های مقاله"></div>
+<label class="primary-category-field">دسته‌بندی اصلی<select id="post-primary-category" aria-label="دسته‌بندی اصلی مقاله" disabled><option value="">ابتدا دسته‌بندی رو انتخاب کن</option></select></label>
+</div>
 <label class="field-label">برچسب‌ها<input id="post-tags" placeholder="با ویرگول جدا کن"></label>
 </div>
 <label class="sr-only" for="post-title">عنوان مقاله</label><input id="post-title" class="title-input" data-field="title" maxlength="180" placeholder="عنوان مقاله رو بنویس…" required>
