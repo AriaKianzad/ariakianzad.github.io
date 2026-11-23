@@ -225,7 +225,9 @@ export function initSignalScene(host: HTMLElement) {
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     if (isBlog) {
-      const fitRadius = 2.35;
+      // Mobile blog heroes use a narrower column beside the title. Give the orbit system
+      // a wider camera margin there so its outer rings remain fully inside the canvas.
+      const fitRadius = window.matchMedia("(max-width: 700px)").matches ? 2.72 : 2.35;
       const visibleHalfHeight = fitRadius / Math.min(1, camera.aspect);
       camera.position.z = visibleHalfHeight / Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5));
       world.scale.setScalar(1);
