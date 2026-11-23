@@ -50,13 +50,16 @@
     await signIn(email,password);
     const user=await fetch(supabaseUrl+"/auth/v1/user",{headers:{apikey:anonKey,Authorization:"Bearer "+state.accessToken}});
     const userData=await parseResponse(user);window.blogAdminEmail=userData.email||"مدیر";
-    if(remember&&!quiet){
-      const saved=await saveBrowserCredential(email,password);
-      if(!saved&&!quiet)toast("ورود انجام شد؛ این مرورگر ذخیرۀ امن ورود خودکار رو پشتیبانی نکرد. از مدیر گذرواژۀ مرورگر استفاده کن.",true);
+    await loadWorkspace();
+    if(remember){
+      if(!quiet){
+        const saved=await saveBrowserCredential(email,password);
+        if(!saved)toast("ورود انجام شد؛ این مرورگر ذخیرۀ امن ورود خودکار رو پشتیبانی نکرد. از مدیر گذرواژۀ مرورگر استفاده کن.",true);
+      }
     }else if(navigator.credentials?.preventSilentAccess){
       await navigator.credentials.preventSilentAccess().catch(()=>{});
     }
-    await loadWorkspace();showApp();showView("overview");
+    showApp();showView("overview");
   }
   async function restoreRememberedCredential() {
     if(!window.PasswordCredential||!navigator.credentials?.get)return;
