@@ -91,6 +91,7 @@ jobs:
           node --check scripts/test-supabase-contract.mjs
           node --check scripts/test-google-analytics-contract.mjs
           node --check public/admin/app.js
+          node scripts/test-blog-cms-contract.mjs
           node --check scripts/test-analytics-consent.mjs
           node --check public/analytics-consent.js
           node --check scripts/make-hosting-bundle.mjs
@@ -129,6 +130,20 @@ jobs:
           test -s out/admin/admin.css
           test -s out/admin/app.js
           test -s out/admin/config.js
+          test -s out/blog/index.html
+          test -s out/blog-admin/index.html
+          test -s out/blog-admin/admin.css
+          test -s out/blog-admin/app.js
+          test -s out/blog-admin/config.js
+          test -s out/blog/feed.xml
+          grep -Fq 'noindex, nofollow, noarchive' out/blog-admin/index.html
+          grep -Fq '/blog-admin/' out/robots.txt
+          grep -Fq '/blog/' out/sitemap.xml
+          grep -Fq 'AK' out/blog/index.html
+          node --check public/blog-admin/app.js
+          node --check public/blog-ui.js
+          node --check public/blog-admin/config.js
+          ! grep -Eq 'sb_secret_|service_role|BLOG_GITHUB_TOKEN|ghp_' out/blog-admin/config.js out/blog-admin/app.js
           grep -Fq 'http-equiv="Content-Security-Policy"' out/index.html
           grep -Fq 'http-equiv="Content-Security-Policy"' out/Mian-e-Ma/index.html
           grep -Fq 'http-equiv="Content-Security-Policy"' out/admin/index.html
