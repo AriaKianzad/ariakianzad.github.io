@@ -149,6 +149,7 @@
     state.preview=false;$("#editor-form").reset();fillEditor(state.currentPost);
     showView("editor");updatePreview();updateSeo();updateEditorStatus();
     $("#markdown-preview").hidden=true;$("#post-content").hidden=false;
+    $("#link-settings").hidden=true;refreshLinkManager();
     document.querySelectorAll(".editor-tab").forEach((b)=>b.classList.toggle("active",b.dataset.tab==="seo"));
     document.querySelectorAll(".tab-panel").forEach((p)=>{p.hidden=p.id!=="tab-seo";p.classList.toggle("active",p.id==="tab-seo");});
   }
@@ -157,7 +158,7 @@
   function fillEditor(post) {
     const fields={
       "#post-title":"title","#post-slug":"slug","#post-excerpt":"excerpt","#post-language":"language",
-      "#post-category":"category","#post-content":"content","#post-hero-url":"hero_image_url",
+      "#post-category":"category","#post-hero-url":"hero_image_url",
       "#post-hero-alt":"hero_image_alt","#post-hero-caption":"hero_image_caption","#post-og-url":"og_image_url",
       "#post-seo-title":"seo_title","#post-meta-description":"meta_description","#post-focus-keyword":"focus_keyword",
       "#post-canonical":"canonical_url","#post-og-title":"og_title","#post-og-description":"og_description",
@@ -165,6 +166,7 @@
       "#post-toc":"toc_enabled","#post-dropcap":"drop_cap","#post-width":"content_width","#post-accent":"accent_color",
     };
     Object.entries(fields).forEach(([selector,key])=>setField(selector,post[key]));
+    $("#post-content").innerHTML=renderPreviewMarkdown(String(post.content||""));
     $("#post-tags").value=(post.tags||[]).join("، ");
     $("#post-faqs").value=(post.faqs||[]).map((faq)=>"پرسش: "+faq.question+"\nپاسخ: "+faq.answer).join("\n\n");
     updateImagePreview("hero-image-preview",post.hero_image_url,post.hero_image_alt);
@@ -190,6 +192,7 @@
       const key=field.dataset.field;
       post[key]=field.type==="checkbox"?field.checked:field.value.trim();
     });
+    post.content=editorToMarkdown($("#post-content"));
     post.tags=$("#post-tags").value.split(/[،,]/).map((s)=>s.trim()).filter(Boolean);
     post.faqs=parseFaqs($("#post-faqs").value);
     return post;
@@ -221,8 +224,15 @@
   function previewInline(text) {
     let value=escapeHtml(text);
     value=value.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g,(_m,alt,url)=>'<img src="'+escapeHtml(safeHref(url))+'" alt="'+alt+'">');
-    value=value.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,(_m,label,url)=>'<a href="'+escapeHtml(safeHref(url))+'">'+label+"</a>");
+    value=value.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
+      const href=safeHref(url),external=/^https?:\/\//i.test(href);
+      const relation=(String(options||"").match(/rel=(follow|nofollow|sponsored|ugc)/i)||[])[1]||"follow";
+      const target=(String(options||"").match(/target=(_blank|_self)/i)||[])[1]||(external?"_blank":"_self");
+      const rel=[...(relation!=="follow"?[relation]:[]),...(target==="_blank"?["noopener","noreferrer"]:[])].join(" ");
+      return '<a href="'+escapeHtml(href)+'"'+(title?' title="'+escapeHtml(title)+'"':"")+' target="'+target+'" data-link-rel="'+relation+'" data-link-target="'+target+'"'+(rel?' rel="'+rel+'"':"")+">"+label+"</a>";
+    });
     value=value.replace(/\x60([^\x60]+)\x60/g,"<code>$1</code>");
+    value=value.replace(/\+\+([^+]+)\+\+/g,"<u>$1</u>").replace(/~~([^~]+)~~/g,"<del>$1</del>");
     value=value.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/\*([^*]+)\*/g,"<em>$1</em>");
     return value;
   }
@@ -231,7 +241,19 @@
     const close=()=>{if(paragraph.length){output.push("<p>"+previewInline(paragraph.join(" "))+"</p>");paragraph=[];}};
     let list=null;
     const closeList=()=>{if(list){output.push("</"+list+">");list=null;}};
-    markdown.split(/\r?\n/).forEach((line)=>{
+    const lines=markdown.split(/\r?\n/);
+    for(let index=0;index<lines.length;index++){
+      const line=lines[index];
+      if(/^\s*\|?.+\|.+\|?\s*$/.test(line)&&index+1<lines.length&&/^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(lines[index+1])){
+        close();closeList();
+        const cells=(value)=>value.trim().replace(/^\||\|$/g,"").split("|").map((cell)=>cell.trim());
+        const headers=cells(line),rows=[];
+        index+=2;
+        while(index<lines.length&&/^\s*\|?.+\|.+\|?\s*$/.test(lines[index])){rows.push(cells(lines[index]));index++;}
+        index--;
+        output.push("<table><thead><tr>"+headers.map((cell)=>"<th>"+previewInline(cell)+"</th>").join("")+"</tr></thead><tbody>"+rows.map((row)=>"<tr>"+row.map((cell)=>"<td>"+previewInline(cell)+"</td>").join("")+"</tr>").join("")+"</tbody></table>");
+        continue;
+      }
       if(!line.trim()){close();closeList();return;}
       const heading=line.match(/^(#{1,4})\s+(.+)$/);
       if(heading){close();closeList();const level=Math.max(2,heading[1].length);output.push("<h"+level+">"+previewInline(heading[2])+"</h"+level+">");return;}
@@ -239,22 +261,205 @@
       if(quote){close();closeList();output.push("<blockquote><p>"+previewInline(quote[1])+"</p></blockquote>");return;}
       const item=line.match(/^\s*([-*+]|\d+[.)])\s+(.+)$/);
       if(item){close();const next=/^\d/.test(item[1])?"ol":"ul";if(list!==next){closeList();list=next;output.push("<"+list+">");}output.push("<li>"+previewInline(item[2])+"</li>");return;}
+      if(/^\s*(---+|___+|\*\*\*+)\s*$/.test(line)){close();closeList();output.push("<hr>");continue;}
       closeList();paragraph.push(line.trim());
-    });
+    }
     close();closeList();return output.join("");
+  }
+  function inlineToMarkdown(node) {
+    if(node.nodeType===Node.TEXT_NODE)return node.nodeValue||"";
+    if(node.nodeType!==Node.ELEMENT_NODE)return "";
+    const element=node,tag=element.tagName.toLowerCase();
+    if(tag==="br")return "\n";
+    if(tag==="img") {
+      const src=safeHref(element.getAttribute("src"));
+      return src==="#"?"":"!["+((element.getAttribute("alt")||"").replace(/]/g,"\\]"))+"]("+src+")";
+    }
+    const inner=Array.from(element.childNodes).map(inlineToMarkdown).join("");
+    if(tag==="strong"||tag==="b")return "**"+inner+"**";
+    if(tag==="em"||tag==="i")return "*"+inner+"*";
+    if(tag==="u")return "++"+inner+"++";
+    if(tag==="del"||tag==="s"||tag==="strike")return "~~"+inner+"~~";
+    if(tag==="code")return "\x60"+inner+"\x60";
+    if(tag==="a"){
+      const href=safeHref(element.getAttribute("href"));
+      if(href==="#")return inner;
+      const external=/^https?:\/\//i.test(href);
+      const relation=element.dataset.linkRel||((element.getAttribute("rel")||"").split(/\s+/).find((v)=>["nofollow","sponsored","ugc"].includes(v))||"follow");
+      const target=element.dataset.linkTarget||element.getAttribute("target")||(external?"_blank":"_self");
+      const options=[];
+      if(relation!=="follow")options.push("rel="+relation);
+      if((external&&target!=="_blank")||(!external&&target==="_blank"))options.push("target="+target);
+      return "["+inner+"]("+href+")"+(options.length?"{"+options.join(" ")+"}":"");
+    }
+    return inner;
+  }
+  function listToMarkdown(list,depth) {
+    const ordered=list.tagName.toLowerCase()==="ol",indent="  ".repeat(depth);
+    let number=1;
+    return Array.from(list.children).filter((node)=>node.tagName==="LI").map((item)=>{
+      const parts=[],nested=[];
+      Array.from(item.childNodes).forEach((child)=>{
+        if(child.nodeType===Node.ELEMENT_NODE&&["UL","OL"].includes(child.tagName))nested.push(listToMarkdown(child,depth+1));
+        else if(child.nodeType===Node.ELEMENT_NODE&&["P","DIV"].includes(child.tagName))parts.push(Array.from(child.childNodes).map(inlineToMarkdown).join(""));
+        else parts.push(inlineToMarkdown(child));
+      });
+      const marker=ordered?(number++)+".":"-";
+      return indent+marker+" "+parts.join("").trim()+"\n"+nested.join("\n");
+    }).join("\n");
+  }
+  function blockToMarkdown(node) {
+    if(node.nodeType===Node.TEXT_NODE)return node.nodeValue?.trim()?"<p>"+escapeHtml(node.nodeValue.trim())+"</p>":"";
+    if(node.nodeType!==Node.ELEMENT_NODE)return "";
+    const element=node,tag=element.tagName.toLowerCase();
+    if(tag==="h2"||tag==="h3"||tag==="h4")return "#".repeat(Number(tag.slice(1)))+" "+Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
+    if(tag==="p")return Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
+    if(tag==="ul"||tag==="ol")return listToMarkdown(element,0)+"\n\n";
+    if(tag==="blockquote"){
+      const inner=Array.from(element.childNodes).map((child)=>child.nodeType===Node.ELEMENT_NODE&&["P","DIV"].includes(child.tagName)?Array.from(child.childNodes).map(inlineToMarkdown).join(""):inlineToMarkdown(child)).join("\n");
+      return inner.split("\n").map((line)=>"> "+line).join("\n")+"\n\n";
+    }
+    if(tag==="pre")return "\x60\x60\x60\n"+(element.textContent||"").replace(/\n+$/,"")+"\n\x60\x60\x60\n\n";
+    if(tag==="hr")return "---\n\n";
+    if(tag==="table"){
+      const rows=Array.from(element.querySelectorAll("tr")).map((row)=>Array.from(row.querySelectorAll("th,td")).map((cell)=>Array.from(cell.childNodes).map(inlineToMarkdown).join("").replace(/\|/g,"\\|").trim()));
+      if(!rows.length)return "";
+      const width=Math.max(...rows.map((row)=>row.length));
+      const render=(row)=>"| "+Array.from({length:width},(_,i)=>row[i]||"").join(" | ")+" |";
+      return [render(rows[0]),render(Array.from({length:width},()=> "---")), ...rows.slice(1).map(render)].join("\n")+"\n\n";
+    }
+    if(tag==="div"||tag==="section") {
+      const children=Array.from(element.childNodes);
+      const hasBlocks=children.some((child)=>child.nodeType===Node.ELEMENT_NODE&&["P","DIV","H2","H3","H4","UL","OL","BLOCKQUOTE","TABLE","PRE","HR"].includes(child.tagName));
+      return hasBlocks?children.map(blockToMarkdown).join(""):Array.from(children).map(inlineToMarkdown).join("").trim()+"\n\n";
+    }
+    return Array.from(element.childNodes).map(inlineToMarkdown).join("");
+  }
+  function editorToMarkdown(editor) {
+    return Array.from(editor.childNodes).map(blockToMarkdown).join("").replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
+  }
+  function cleanClipboardNode(node) {
+    if(node.nodeType===Node.TEXT_NODE)return document.createTextNode(node.nodeValue||"");
+    if(node.nodeType!==Node.ELEMENT_NODE)return null;
+    const source=node,tag=source.tagName.toLowerCase();
+    if(["script","style","iframe","object","embed","svg","meta","link"].includes(tag))return null;
+    const children=()=>Array.from(source.childNodes).map(cleanClipboardNode).filter(Boolean);
+    if(tag==="span"||tag==="font"){
+      let fragment=document.createDocumentFragment();children().forEach((child)=>fragment.appendChild(child));
+      const style=(source.getAttribute("style")||"").toLowerCase();
+      if(/font-weight\s*:\s*(bold|[6-9]00)/.test(style)){const strong=document.createElement("strong");strong.append(fragment);fragment=strong;}
+      if(/font-style\s*:\s*italic/.test(style)){const em=document.createElement("em");em.append(fragment);fragment=em;}
+      if(/text-decoration[^;]*underline/.test(style)){const underline=document.createElement("u");underline.append(fragment);fragment=underline;}
+      return fragment;
+    }
+    const tags={b:"strong",strong:"strong",i:"em",em:"em",u:"u",s:"del",strike:"del",del:"del",h1:"h2",h2:"h2",h3:"h3",h4:"h4",h5:"h4",h6:"h4"};
+    const allowed=new Set(["p","div","h2","h3","h4","ul","ol","li","blockquote","br","hr","pre","code","table","thead","tbody","tfoot","tr","th","td","strong","em","u","del","a"]);
+    const outputTag=tags[tag]||tag;
+    if(!allowed.has(outputTag)){
+      const fragment=document.createDocumentFragment();children().forEach((child)=>fragment.appendChild(child));return fragment;
+    }
+    const clean=document.createElement(outputTag);
+    if(tag==="a"){
+      const href=safeHref(source.getAttribute("href"));
+      if(href==="#"){const fragment=document.createDocumentFragment();children().forEach((child)=>fragment.appendChild(child));return fragment;}
+      clean.setAttribute("href",href);
+      const rel=(source.getAttribute("rel")||"").split(/\s+/).find((value)=>["nofollow","sponsored","ugc"].includes(value))||"follow";
+      const target=source.getAttribute("target")==="_self"?"_self":source.getAttribute("target")==="_blank"?"_blank":(/^https?:\/\//i.test(href)?"_blank":"_self");
+      clean.dataset.linkRel=rel;clean.dataset.linkTarget=target;clean.setAttribute("target",target);
+      if(target==="_blank")clean.setAttribute("rel",([rel==="follow"?[]:[rel],"noopener","noreferrer"].flat()).join(" "));
+      else if(rel!=="follow")clean.setAttribute("rel",rel);
+    }
+    if(tag==="th"||tag==="td"){
+      const colspan=Number(source.getAttribute("colspan")||1);
+      if(colspan>1)clean.setAttribute("colspan",String(Math.min(12,colspan)));
+    }
+    children().forEach((child)=>clean.appendChild(child));
+    return clean;
+  }
+  function sanitizeClipboardHtml(html) {
+    const parsed=new DOMParser().parseFromString(html,"text/html");
+    const wrapper=document.createElement("div");
+    Array.from(parsed.body.childNodes).map(cleanClipboardNode).filter(Boolean).forEach((node)=>wrapper.appendChild(node));
+    return wrapper.innerHTML;
+  }
+  function insertHtmlAtCaret(html) {
+    const editor=$("#post-content"),selection=window.getSelection();
+    let range;
+    if(selection&&selection.rangeCount&&editor.contains(selection.anchorNode))range=selection.getRangeAt(0);
+    else{range=document.createRange();range.selectNodeContents(editor);range.collapse(false);}
+    range.deleteContents();
+    const template=document.createElement("template");template.innerHTML=html;
+    const fragment=template.content,last=fragment.lastChild;
+    range.insertNode(fragment);
+    if(last){range.setStartAfter(last);range.collapse(true);selection?.removeAllRanges();selection?.addRange(range);}
+    editor.focus();updatePreview();updateSeo();refreshLinkManager();
+  }
+  function handleEditorPaste(event) {
+    event.preventDefault();
+    const html=event.clipboardData?.getData("text/html")||"";
+    if(html){insertHtmlAtCaret(sanitizeClipboardHtml(html));return;}
+    const plain=event.clipboardData?.getData("text/plain")||"";
+    const safe=plain.split(/\r?\n/).map((line)=>line.trim()?("<p>"+escapeHtml(line)+"</p>"):"").join("");
+    insertHtmlAtCaret(safe);
+  }
+  function refreshLinkManager() {
+    const editor=$("#post-content"),list=$("#link-settings-list");
+    if(!editor||!list)return;
+    const links=Array.from(editor.querySelectorAll("a[href]"));
+    list.replaceChildren();
+    if(!links.length){const empty=document.createElement("p");empty.className="link-manager-empty";empty.textContent="هنوز پیوندی در متن وجود نداره. می‌تونی از نوار ابزار لینک اضافه کنی.";list.appendChild(empty);return;}
+    links.forEach((anchor,index)=>{
+      const row=document.createElement("div");row.className="link-manager-row";
+      const details=document.createElement("div");details.className="link-manager-details";
+      const label=document.createElement("strong");label.textContent=(anchor.textContent||"پیوند بدون عنوان").trim();
+      const url=document.createElement("small");url.textContent=anchor.href;url.dir="ltr";
+      details.append(label,url);
+      const relationLabel=document.createElement("label");relationLabel.textContent="نوع لینک";
+      const relation=document.createElement("select");relation.setAttribute("aria-label","نوع لینک برای "+(anchor.textContent||"پیوند "+(index+1)));
+      [["follow","Follow · دنبال‌شونده"],["nofollow","Nofollow · دنبال‌نشونده"],["sponsored","Sponsored · تبلیغاتی"],["ugc","UGC · محتوای کاربر"]].forEach(([value,title])=>{const option=document.createElement("option");option.value=value;option.textContent=title;relation.appendChild(option);});
+      relation.value=anchor.dataset.linkRel||((anchor.rel||"").split(/\s+/).find((v)=>["nofollow","sponsored","ugc"].includes(v))||"follow");
+      relation.addEventListener("change",()=>{anchor.dataset.linkRel=relation.value;if(relation.value==="follow")anchor.removeAttribute("data-link-rel");anchor.rel=[...(relation.value==="follow"?[]:[relation.value]),...(anchor.target==="_blank"?["noopener","noreferrer"]:[])].join(" ");updatePreview();updateSeo();});
+      const targetLabel=document.createElement("label");targetLabel.textContent="بازشدن";
+      const target=document.createElement("select");target.setAttribute("aria-label","نحوۀ بازشدن "+(anchor.textContent||"پیوند "+(index+1)));
+      [["auto","پیش‌فرض"],["_self","همین زبانه"],["_blank","زبانه جدید"]].forEach(([value,title])=>{const option=document.createElement("option");option.value=value;option.textContent=title;target.appendChild(option);});
+      target.value=anchor.dataset.linkTarget||anchor.target||"auto";
+      target.addEventListener("change",()=>{const external=/^https?:\/\//i.test(anchor.href);const value=target.value==="auto"?(external?"_blank":"_self"):target.value;anchor.dataset.linkTarget=value;if(value==="_self")anchor.setAttribute("target","_self");else anchor.setAttribute("target","_blank");const rel=anchor.dataset.linkRel||"follow";anchor.rel=[...(rel==="follow"?[]:[rel]),...(value==="_blank"?["noopener","noreferrer"]:[])].join(" ");updatePreview();updateSeo();});
+      const controls=document.createElement("div");controls.className="link-manager-controls";
+      controls.append(relationLabel,relation,targetLabel,target);row.append(details,controls);list.appendChild(row);
+    });
+  }
+  function insertLink() {
+    const editor=$("#post-content");editor.focus();
+    const selected=window.getSelection()?.toString()||"";
+    const raw=window.prompt("آدرس پیوند را وارد کن:","https://");
+    if(!raw)return;
+    const href=safeHref(raw);
+    if(href==="#"){toast("این نوع آدرس برای پیوند مجاز نیست.",true);return;}
+    if(selected){document.execCommand("createLink",false,href);}
+    else{
+      const label=window.prompt("متن نمایشی پیوند را وارد کن:","مشاهدۀ منبع");
+      if(!label)return;
+      insertHtmlAtCaret('<a href="'+escapeHtml(href)+'" target="'+(/^https?:\/\//i.test(href)?"_blank":"_self")+'" data-link-rel="follow" data-link-target="'+(/^https?:\/\//i.test(href)?"_blank":"_self")+'">'+escapeHtml(label)+"</a>");
+      return;
+    }
+    const selection=window.getSelection(),node=selection?.anchorNode;
+    const anchor=node instanceof Element?node.closest("a"):node?.parentElement?.closest("a");
+    if(anchor){anchor.dataset.linkRel="follow";anchor.dataset.linkTarget=/^https?:\/\//i.test(href)?"_blank":"_self";if(anchor.target==="_blank")anchor.rel="noopener noreferrer";}
+    updatePreview();updateSeo();refreshLinkManager();
   }
   function updatePreview() {
     const title=$("#post-title").value||"عنوان مقاله";
+    const content=editorToMarkdown($("#post-content"));
     $("#google-preview").dir=$("#post-language").value==="fa"?"rtl":"ltr";
     $("#post-content").dir=$("#post-language").value==="fa"?"rtl":"ltr";
-    $("#preview-content").innerHTML="<h1>"+escapeHtml(title)+"</h1>"+renderPreviewMarkdown($("#post-content").value);
+    $("#preview-content").innerHTML="<h1>"+escapeHtml(title)+"</h1>"+renderPreviewMarkdown(content);
   }
   function updateSeo() {
     const title=$("#post-title").value.trim(), slug=$("#post-slug").value.trim();
     const seoTitle=$("#post-seo-title").value.trim()||title;
     const description=$("#post-meta-description").value.trim()||$("#post-excerpt").value.trim();
     const keyword=$("#post-focus-keyword").value.trim().toLocaleLowerCase();
-    const content=$("#post-content").value;
+    const content=editorToMarkdown($("#post-content"));
     const firstParagraph=content.split(/\n\s*\n/)[0]||"";
     const checks=[
       {label:"عنوان SEO در بازۀ پیشنهادی ۳۰ تا ۶۵ نویسه",pass:seoTitle.length>=30&&seoTitle.length<=65},
@@ -401,7 +606,15 @@
     $("#back-to-posts").addEventListener("click",()=>showView("posts"));
     document.querySelectorAll(".editor-tab").forEach((button)=>button.addEventListener("click",()=>showTab(button.dataset.tab)));
     $("#posts-search").addEventListener("input",renderPosts);$("#posts-filter").addEventListener("change",renderPosts);
-    $("#post-content").addEventListener("input",()=>{updatePreview();updateSeo();});
+    $("#post-content").addEventListener("input",()=>{updatePreview();updateSeo();refreshLinkManager();});
+    $("#post-content").addEventListener("paste",handleEditorPaste);
+    $("#link-settings-toggle").addEventListener("click",()=>{const panel=$("#link-settings");panel.hidden=!panel.hidden;refreshLinkManager();});
+    document.querySelectorAll("[data-command]").forEach((button)=>button.addEventListener("click",()=>{
+      $("#post-content").focus();
+      document.execCommand(button.dataset.command,false,button.dataset.value||null);
+      updatePreview();updateSeo();refreshLinkManager();
+    }));
+    $("#insert-link").addEventListener("click",insertLink);
     ["#post-title","#post-slug","#post-excerpt","#post-seo-title","#post-meta-description","#post-focus-keyword","#post-hero-alt","#post-canonical"]
       .forEach((selector)=>$(selector).addEventListener("input",updateSeo));
     $("#post-title").addEventListener("input",()=>{if(!$("#post-slug").value)$("#post-slug").value=slugSuggestion($("#post-title").value);});
@@ -411,10 +624,7 @@
       $("#preview-toggle").textContent=state.preview?"بازگشت به ویرایش":"پیش‌نمایش";
       updatePreview();
     });
-    document.querySelectorAll("[data-insert]").forEach((button)=>button.addEventListener("click",()=>{
-      const area=$("#post-content"),text=button.dataset.insert||"",start=area.selectionStart,end=area.selectionEnd;
-      area.setRangeText(text,start,end,"select");area.focus();updatePreview();updateSeo();
-    }));
+
     $("#save-post").addEventListener("click",()=>void savePost().catch((e)=>toast(e.message,true)));
     $("#sidebar-save").addEventListener("click",()=>void savePost().catch((e)=>toast(e.message,true)));
     $("#publish-post").addEventListener("click",()=>void publishPost().catch((e)=>toast(e.message,true)));
