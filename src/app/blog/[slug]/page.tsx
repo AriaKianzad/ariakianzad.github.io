@@ -78,7 +78,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
     description: post.metaDescription || post.excerpt,
     image: image ? [image] : undefined,
     datePublished: post.publishedAt,
-    dateModified: post.publishedAt,
+    dateModified: post.updatedAt || post.publishedAt,
     inLanguage: post.language === "en" ? "en" : "fa-IR",
     articleSection: post.category,
     keywords: [post.focusKeyword, ...post.tags].filter(Boolean).join(", "),
