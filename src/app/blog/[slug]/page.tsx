@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { site } from "@/lib/site";
-import { getBlogPost, getBlogPosts, getBlogSettings, readingTime } from "@/lib/blog-data";
+import { getBlogPost, getBlogPosts, getBlogSettings, readingTime, getBlogCategoryName } from "@/lib/blog-data";
 import { extractToc, extractMarkdownImageUrls, renderMarkdown } from "@/lib/blog-markdown";
 import { BlogHeader, BlogFooter } from "../BlogHeader";
 import { CopyLinkButton } from "../CopyLinkButton";
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!post) return { title: "مقاله پیدا نشد | آریا کیانزاد", robots: { index: false, follow: false } };
   const settings = getBlogSettings();
   const canonical = post.canonical_url || site.url + "/blog/" + post.slug + "/";
-  const image = site.url + "/og/blog/" + post.slug + ".jpg";
+  const image = post.og_image_url || post.hero_image_url || settings.default_og_image || site.url + "/og/blog/" + post.slug + ".jpg";
   const description = post.meta_description || post.excerpt || settings.default_meta_description;
   return {
     title: post.seo_title || post.title,
@@ -33,17 +33,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       index: post.robots_index, follow: post.robots_follow,
       googleBot: { index: post.robots_index, follow: post.robots_follow, "max-image-preview": "large", "max-snippet": -1 },
     },
-    openGraph: {
+    openGraph: settings.open_graph_enabled ? {
       type: "article", siteName: "Aria Kianzad", url: canonical,
-      title: post.og_title || post.seo_title || post.title,
-      description: post.og_description || description,
+      title: post.og_title || settings.default_og_title || post.seo_title || post.title,
+      description: post.og_description || settings.default_og_description || description,
       publishedTime: post.published_at, modifiedTime: post.updated_at,
       locale: post.language === "fa" ? "fa_IR" : "en_US",
       images: [{ url: image, width: 1200, height: 630, alt: post.hero_image_alt || post.title }],
-    },
+    } : undefined,
     twitter: {
-      card: "summary_large_image", title: post.og_title || post.title,
-      description: post.og_description || description, images: [image],
+      card: settings.twitter_card_type, title: post.og_title || settings.default_og_title || post.title,
+      description: post.og_description || settings.default_og_description || description, images: [image],
     },
   };
 }
@@ -75,7 +75,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
     : [];
   const canonical = post.canonical_url || site.url + "/blog/" + post.slug + "/";
   const schema = {
-    "@context": "https://schema.org", "@type": "Article",
+    "@context": "https://schema.org", "@type": settings.schema_type,
     headline: post.title, description: post.meta_description || post.excerpt,
     datePublished: post.published_at, dateModified: post.updated_at,
     mainEntityOfPage: canonical,
@@ -101,15 +101,17 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
       <main className="blog-article-main" lang={language} dir={direction} style={articleStyle}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
         {faqSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema).replace(/</g, "\\u003c") }} /> : null}
-        <div className="blog-container blog-breadcrumbs">
-          <Link href="/blog/">یادداشت‌ها</Link><span aria-hidden="true">/</span>
-          {post.category ? <Link href={"/blog/category/" + encodeURIComponent(post.category.toLowerCase().replace(/\s+/g, "-")) + "/"}>{post.category}</Link> : <span>مقاله</span>}
-        </div>
-
+        {settings.breadcrumbs_enabled ? (
+          <nav className="blog-container blog-breadcrumbs" aria-label="مسیر راهنما">
+            <Link href="/blog/">{settings.breadcrumb_home_label || "خانه"}</Link>
+            <span aria-hidden="true">/</span>
+            {post.category ? <Link href={"/blog/category/" + encodeURIComponent(post.category) + "/"}>{categoryName}</Link> : <span>مقاله</span>}
+          </nav>
+        ) : null}
         <header className="blog-article-header">
           <div className="blog-container blog-article-header-grid">
             <div className="blog-article-copy" dir={direction}>
-              <div className="blog-eyebrow"><span /> {post.category || "یادداشت"}</div>
+              <div className="blog-eyebrow"><span /> {categoryName || "یادداشت"}</div>
               <h1>{post.title}</h1>
               {post.excerpt ? <p className="blog-article-excerpt">{post.excerpt}</p> : null}
               <div className="blog-article-meta">
@@ -148,13 +150,12 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
             <CopyLinkButton url={canonical} />
             <a href={"https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(canonical)} target="_blank" rel="noopener noreferrer">لینکدین ↗</a>
             <a href={"https://x.com/intent/post?url=" + encodeURIComponent(canonical)} target="_blank" rel="noopener noreferrer">ایکس ↗</a>
-            <a href={"mailto:?subject=" + encodeURIComponent(post.title) + "&body=" + encodeURIComponent(canonical)}>ایمیل ↗</a>
           </div>
         ) : null}
         {related.length ? (
           <section className="blog-related blog-container">
             <div className="blog-section-heading"><div><span className="blog-section-label"><span>۰۳</span> مرتبط</span><h2>نوشته‌های مرتبط</h2></div></div>
-            <div className="blog-card-grid">{related.map((item) => <BlogPostCard key={item.slug} post={item} showReadingTime={settings.show_reading_time} />)}</div>
+            <div className="blog-card-grid">{related.map((item) => <BlogPostCard key={item.slug} post={item} categoryName={item.category ? getBlogCategoryName(item.category) : ""} showReadingTime={settings.show_reading_time} />)}</div>
           </section>
         ) : null}
       </main>
