@@ -46,7 +46,7 @@ export default async function BlogArchivePageNumber({ params }: { params: Promis
           <p>آرشیو مقاله‌ها و یادداشت‌ها</p>
         </div>
         <div className="blog-post-grid">
-          {visiblePosts.map((post) => <BlogPostCard key={post.slug} post={post} />)}
+          {visiblePosts.map((post) => <BlogPostCard key={post.slug} post={post} showReadingTime={settings.showReadingTime} />)}
         </div>
         <BlogPagination currentPage={currentPage} totalPages={totalPages} />
       </main>
