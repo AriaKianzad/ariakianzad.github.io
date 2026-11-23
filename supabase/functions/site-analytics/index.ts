@@ -711,7 +711,7 @@ async function getSearchConsoleData(accessToken: string) {
 function blogSlugFromPath(value: string): string | null {
   try {
     const parsed = new URL(value, SITE_ORIGIN);
-    const match = parsed.pathname.match(/^\\/blog\\/([a-z0-9]+(?:-[a-z0-9]+)*)\\/?$/i);
+    const match = parsed.pathname.match(/^\/blog\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/i);
     return match?.[1]?.toLowerCase() || null;
   } catch {
     return null;
