@@ -38,6 +38,41 @@
     state.accessToken=payload.access_token;
     state.refreshToken=payload.refresh_token;
   }
+  async function saveBrowserCredential(email,password) {
+    if(!window.PasswordCredential||!navigator.credentials?.store)return false;
+    try{
+      const credential=new window.PasswordCredential({id:email,password,name:"آریا کیانزاد"});
+      await navigator.credentials.store(credential);
+      return true;
+    }catch{return false;}
+  }
+  async function finishSignIn(email,password,remember,quiet) {
+    await signIn(email,password);
+    const user=await fetch(supabaseUrl+"/auth/v1/user",{headers:{apikey:anonKey,Authorization:"Bearer "+state.accessToken}});
+    const userData=await parseResponse(user);window.blogAdminEmail=userData.email||"مدیر";
+    if(remember){
+      const saved=await saveBrowserCredential(email,password);
+      if(!saved&&!quiet)toast("ورود انجام شد؛ این مرورگر ذخیرۀ امن ورود خودکار رو پشتیبانی نکرد. از مدیر گذرواژۀ مرورگر استفاده کن.",true);
+    }else if(navigator.credentials?.preventSilentAccess){
+      await navigator.credentials.preventSilentAccess().catch(()=>{});
+    }
+    await loadWorkspace();showApp();showView("overview");
+  }
+  async function restoreRememberedCredential() {
+    if(!window.PasswordCredential||!navigator.credentials?.get)return;
+    try{
+      const credential=await navigator.credentials.get({password:true,mediation:"silent"});
+      if(!credential||credential.type!=="password"||!credential.password)return;
+      $("#login-email").value=credential.id||"";
+      $("#login-password").value=credential.password;
+      $("#remember-me").checked=true;
+      await finishSignIn(credential.id,credential.password,false,true);
+    }catch(error){
+      state.accessToken="";state.refreshToken="";
+      $("#login-password").value="";
+      $("#login-message").textContent="ورود خودکار انجام نشد؛ رمز عبورت رو وارد کن.";
+    }
+  }
   async function refreshSession() {
     if(!state.refreshToken)return false;
     const response=await fetch(supabaseUrl+"/auth/v1/token?grant_type=refresh_token",{
@@ -81,6 +116,7 @@
   }
   async function logout(revoke) {
     const token=state.accessToken;
+    if(navigator.credentials?.preventSilentAccess)navigator.credentials.preventSilentAccess().catch(()=>{});
     state.accessToken="";state.refreshToken="";state.posts=[];state.currentPost=null;state.settings=null;
     if(revoke!==false&&token&&validConfig){
       fetch(supabaseUrl+"/auth/v1/logout?scope=local",{method:"POST",headers:{apikey:anonKey,Authorization:"Bearer "+token}}).catch(()=>{});
@@ -145,7 +181,7 @@
     content_width:"reading",accent_color:"#a86f54",faqs:[],status:"draft",has_unpublished_changes:false,
   });
   function showEditor(post) {
-    state.currentPost={...newPost(),...(post||{})};
+    state.currentPost={...newPost(),...(post||{}),robots_follow:true};
     state.preview=false;$("#editor-form").reset();fillEditor(state.currentPost);
     showView("editor");updatePreview();updateSeo();updateEditorStatus();
     $("#markdown-preview").hidden=true;$("#post-content").hidden=false;
@@ -162,7 +198,7 @@
       "#post-hero-alt":"hero_image_alt","#post-hero-caption":"hero_image_caption","#post-og-url":"og_image_url",
       "#post-seo-title":"seo_title","#post-meta-description":"meta_description","#post-focus-keyword":"focus_keyword",
       "#post-canonical":"canonical_url","#post-og-title":"og_title","#post-og-description":"og_description",
-      "#post-robots-index":"robots_index","#post-robots-follow":"robots_follow","#post-featured":"featured",
+      "#post-robots-index":"robots_index","#post-featured":"featured",
       "#post-toc":"toc_enabled","#post-dropcap":"drop_cap","#post-width":"content_width","#post-accent":"accent_color",
     };
     Object.entries(fields).forEach(([selector,key])=>setField(selector,post[key]));
@@ -193,6 +229,7 @@
       post[key]=field.type==="checkbox"?field.checked:field.value.trim();
     });
     post.content=editorToMarkdown($("#post-content"));
+    post.robots_follow=true;
     post.tags=$("#post-tags").value.split(/[،,]/).map((s)=>s.trim()).filter(Boolean);
     post.faqs=parseFaqs($("#post-faqs").value);
     return post;
@@ -416,7 +453,7 @@
       details.append(label,url);
       const relationLabel=document.createElement("label");relationLabel.textContent="نوع لینک";
       const relation=document.createElement("select");relation.setAttribute("aria-label","نوع لینک برای "+(anchor.textContent||"پیوند "+(index+1)));
-      [["follow","Follow · دنبال‌شونده"],["nofollow","Nofollow · دنبال‌نشونده"],["sponsored","Sponsored · تبلیغاتی"],["ugc","UGC · محتوای کاربر"]].forEach(([value,title])=>{const option=document.createElement("option");option.value=value;option.textContent=title;relation.appendChild(option);});
+      [["follow","عادی · دنبال‌شونده"],["nofollow","دنبال‌نشونده"],["sponsored","تبلیغاتی"],["ugc","محتوای کاربر"]].forEach(([value,title])=>{const option=document.createElement("option");option.value=value;option.textContent=title;relation.appendChild(option);});
       relation.value=anchor.dataset.linkRel||((anchor.rel||"").split(/\s+/).find((v)=>["nofollow","sponsored","ugc"].includes(v))||"follow");
       relation.addEventListener("change",()=>{anchor.dataset.linkRel=relation.value;if(relation.value==="follow")anchor.removeAttribute("data-link-rel");anchor.rel=[...(relation.value==="follow"?[]:[relation.value]),...(anchor.target==="_blank"?["noopener","noreferrer"]:[])].join(" ");updatePreview();updateSeo();});
       const targetLabel=document.createElement("label");targetLabel.textContent="بازشدن";
@@ -446,6 +483,55 @@
     const anchor=node instanceof Element?node.closest("a"):node?.parentElement?.closest("a");
     if(anchor){anchor.dataset.linkRel="follow";anchor.dataset.linkTarget=/^https?:\/\//i.test(href)?"_blank":"_self";if(anchor.target==="_blank")anchor.rel="noopener noreferrer";}
     updatePreview();updateSeo();refreshLinkManager();
+  }
+  function currentEditorBlock() {
+    const editor=$("#post-content"),selection=window.getSelection();
+    if(!selection||!selection.rangeCount||!editor.contains(selection.anchorNode))return null;
+    let node=selection.anchorNode;
+    if(node.nodeType===Node.TEXT_NODE)node=node.parentElement;
+    return node instanceof Element?node.closest("h2,h3,h4,blockquote,li,p,div"):null;
+  }
+  function getSelectedBlockquote() {
+    const editor=$("#post-content"),selection=window.getSelection();
+    if(!selection||!selection.rangeCount)return null;
+    const nodes=[selection.anchorNode,selection.focusNode];
+    for(let node of nodes){
+      if(node?.nodeType===Node.TEXT_NODE)node=node.parentElement;
+      const quote=node instanceof Element?node.closest("blockquote"):null;
+      if(quote&&editor.contains(quote))return quote;
+    }
+    return null;
+  }
+  function unwrapBlockquote(quote) {
+    const fragment=document.createDocumentFragment();
+    const children=Array.from(quote.childNodes);
+    children.forEach((child)=>{
+      if(child.nodeType===Node.ELEMENT_NODE&&["P","DIV"].includes(child.tagName)){
+        fragment.appendChild(child);
+      }else if(child.nodeType===Node.TEXT_NODE&&!child.textContent.trim()){
+        return;
+      }else{
+        const paragraph=document.createElement("p");paragraph.appendChild(child);fragment.appendChild(paragraph);
+      }
+    });
+    if(!fragment.childNodes.length){const paragraph=document.createElement("p");paragraph.appendChild(document.createElement("br"));fragment.appendChild(paragraph);}
+    quote.replaceWith(fragment);
+  }
+  function updateFormatToolbar() {
+    const editor=$("#post-content");
+    if(!editor||!editor.isConnected)return;
+    const block=currentEditorBlock();
+    const blockName=block?.tagName?.toLowerCase()||"";
+    document.querySelectorAll(".format-tools [data-command]").forEach((button)=>{
+      const command=button.dataset.command,value=(button.dataset.value||"").toLowerCase();
+      let active=false;
+      try{
+        if(command==="formatBlock")active=value==="blockquote"?Boolean(getSelectedBlockquote()):blockName===value;
+        else active=document.queryCommandState(command);
+      }catch{}
+      button.classList.toggle("is-active",Boolean(active));
+      button.setAttribute("aria-pressed",active?"true":"false");
+    });
   }
   function updatePreview() {
     const title=$("#post-title").value||"عنوان مقاله";
@@ -494,7 +580,7 @@
     const post=await savePost();
     const result=await api("publish_post",{id:post.id});
     state.currentPost=result.post;await loadPosts();updateEditorStatus();
-    toast("درخواست انتشار ثبت شد. بعد از تکمیل Build مقاله روی سایت قرار می‌گیره.");
+    toast("درخواست انتشار ثبت شد. بعد از ساخت سایت، مقاله نمایش داده می‌شه.");
   }
   async function changeStatus(action) {
     const post=state.currentPost;if(!post?.id)return;
@@ -539,6 +625,72 @@
     } catch(error) {toast(error.message,true);}
     finally {input.disabled=false;input.value="";}
   }
+  function categorySeoEntries() {
+    const categories=new Map();
+    state.posts.forEach((post)=>{
+      const name=String(post.category||"").trim();
+      if(!name)return;
+      const slug=name.toLowerCase().replace(/\s+/g,"-");
+      if(!categories.has(slug))categories.set(slug,name);
+    });
+    Object.entries(state.settings?.category_seo||{}).forEach(([slug])=>{
+      if(!categories.has(slug))categories.set(slug,slug.replace(/-/g," "));
+    });
+    return [...categories.entries()].sort((a,b)=>a[1].localeCompare(b[1],"fa"));
+  }
+  function renderCategorySeoEditor(settings) {
+    const list=$("#category-seo-list");if(!list)return;
+    list.replaceChildren();
+    const categories=categorySeoEntries();
+    if(!categories.length){
+      const note=document.createElement("p");note.className="empty-state";
+      note.textContent="بعد از اینکه مقاله‌ای به یک دسته‌بندی اختصاص بدی، تنظیمات سئوی همون دسته‌بندی اینجا نمایش داده می‌شه.";
+      list.appendChild(note);return;
+    }
+    const current=settings.category_seo||{};
+    categories.forEach(([slug,name])=>{
+      const values=current[slug]||{};
+      const card=document.createElement("section");card.className="category-seo-card";card.dataset.categorySlug=slug;
+      const heading=document.createElement("div");heading.className="category-seo-heading";
+      const title=document.createElement("strong");title.textContent=name;
+      const slugLabel=document.createElement("small");slugLabel.textContent="/blog/category/"+slug+"/";slugLabel.dir="ltr";
+      heading.append(title,slugLabel);card.appendChild(heading);
+      const grid=document.createElement("div");grid.className="category-seo-fields";
+      const addField=(labelText,key,value,tag)=>{
+        const label=document.createElement("label");label.className="field-label";label.textContent=labelText;
+        const field=document.createElement(tag==="textarea"?"textarea":"input");
+        if(tag!=="textarea")field.type="text";
+        field.value=value||"";field.maxLength=key==="meta_description"?320:key==="og_description"?300:key==="seo_title"?75:500;
+        field.dataset.categoryField=key;
+        if(tag==="textarea")field.rows=2;
+        label.appendChild(field);grid.appendChild(label);
+      };
+      addField("عنوان سئو","seo_title",values.seo_title,"input");
+      addField("توضیحات متا","meta_description",values.meta_description,"textarea");
+      addField("توضیح نمایشی دسته‌بندی","description",values.description,"textarea");
+      addField("عنوان اشتراک‌گذاری","og_title",values.og_title,"input");
+      addField("توضیح اشتراک‌گذاری","og_description",values.og_description,"textarea");
+      addField("نشانی معیار","canonical_url",values.canonical_url,"input");
+      card.appendChild(grid);
+      const options=document.createElement("div");options.className="check-row";
+      const indexLabel=document.createElement("label");const index=document.createElement("input");
+      index.type="checkbox";index.dataset.categoryField="robots_index";index.checked=values.robots_index!==false;
+      indexLabel.append(index,document.createTextNode(" این دسته‌بندی در موتورهای جست‌وجو ایندکس بشه"));
+      options.appendChild(indexLabel);card.appendChild(options);
+      list.appendChild(card);
+    });
+  }
+  function collectCategorySeo(previous) {
+    const result={...(previous||{})};
+    document.querySelectorAll(".category-seo-card[data-category-slug]").forEach((card)=>{
+      const item={};
+      card.querySelectorAll("[data-category-field]").forEach((field)=>{
+        item[field.dataset.categoryField]=field.type==="checkbox"?field.checked:field.value.trim();
+      });
+      result[card.dataset.categorySlug]=item;
+    });
+    return result;
+  }
   function parseSettingsForm(settings) {
     const get=(id)=>$("#"+id).value;
     const check=(id)=>$("#"+id).checked;
@@ -554,6 +706,7 @@
       show_toc:check("setting-toc"),show_related_posts:check("setting-related"),show_share:check("setting-share"),
       enable_rss:check("setting-rss"),default_meta_title:get("setting-meta-title"),default_meta_description:get("setting-meta-description"),
       footer_note:get("setting-footer"),default_og_image:settings?.default_og_image||"",
+      category_seo:collectCategorySeo(settings?.category_seo||{}),
     };
   }
   function fillSettings(settings) {
@@ -571,6 +724,7 @@
     check("setting-featured",settings.show_featured);check("setting-readtime",settings.show_reading_time);
     check("setting-toc",settings.show_toc);check("setting-related",settings.show_related_posts);
     check("setting-share",settings.show_share);check("setting-rss",settings.enable_rss);
+    renderCategorySeoEditor(settings);
     updateImagePreview("setting-og-preview",settings.default_og_image,"تصویر پیش‌فرض وبلاگ");
   }
   async function loadSettings() {
@@ -583,11 +737,11 @@
       const result=await api("save_settings",{settings:parseSettingsForm(state.settings)});
       state.settings=result.settings;
       if(result.buildDispatched){
-        $("#settings-message").textContent="تنظیمات ذخیره شد و Build آغاز شد.";
+        $("#settings-message").textContent="تنظیمات ذخیره شد و ساخت سایت آغاز شد.";
         toast("تنظیمات ذخیره شد. بعد از Build تغییرات روی سایت دیده می‌شن.");
       }else{
-        $("#settings-message").textContent="تنظیمات در Supabase ذخیره شد؛ انتشار عمومی منتظر تنظیم GitHub Token است.";
-        toast("تنظیمات ذخیره شد. برای اعمال روی سایت، GitHub Token انتشار رو در Supabase ثبت کن.",true);
+        $("#settings-message").textContent="تنظیمات ذخیره شد؛ انتشار عمومی منتظر تنظیم توکن GitHub است.";
+        toast("تنظیمات ذخیره شد. برای اعمال روی سایت، توکن انتشار GitHub رو در تنظیمات سرور ثبت کن.",true);
       }
     }catch(error){toast(error.message,true);}
     finally{setButton(button,false);}
@@ -606,14 +760,29 @@
     $("#back-to-posts").addEventListener("click",()=>showView("posts"));
     document.querySelectorAll(".editor-tab").forEach((button)=>button.addEventListener("click",()=>showTab(button.dataset.tab)));
     $("#posts-search").addEventListener("input",renderPosts);$("#posts-filter").addEventListener("change",renderPosts);
-    $("#post-content").addEventListener("input",()=>{updatePreview();updateSeo();refreshLinkManager();});
+    $("#post-content").addEventListener("input",()=>{updatePreview();updateSeo();refreshLinkManager();updateFormatToolbar();});
+    ["keyup","mouseup","focus"].forEach((eventName)=>$("#post-content").addEventListener(eventName,updateFormatToolbar));
+    document.addEventListener("selectionchange",updateFormatToolbar);
     $("#post-content").addEventListener("paste",handleEditorPaste);
     $("#link-settings-toggle").addEventListener("click",()=>{const panel=$("#link-settings");panel.hidden=!panel.hidden;refreshLinkManager();});
-    document.querySelectorAll("[data-command]").forEach((button)=>button.addEventListener("click",()=>{
-      $("#post-content").focus();
-      document.execCommand(button.dataset.command,false,button.dataset.value||null);
-      updatePreview();updateSeo();refreshLinkManager();
-    }));
+    document.querySelectorAll("[data-command]").forEach((button)=>{
+      button.addEventListener("mousedown",(event)=>event.preventDefault());
+      button.addEventListener("click",()=>{
+        const editor=$("#post-content");editor.focus();
+        const command=button.dataset.command,value=button.dataset.value||null;
+        if(command==="formatBlock"&&value==="BLOCKQUOTE"){
+          const blockquote=getSelectedBlockquote();
+          if(blockquote)unwrapBlockquote(blockquote);
+          else document.execCommand("formatBlock",false,"BLOCKQUOTE");
+        }else if(command==="formatBlock"){
+          const active=currentEditorBlock()?.tagName===value;
+          document.execCommand("formatBlock",false,active?"P":value);
+        }else{
+          document.execCommand(command,false,value);
+        }
+        updatePreview();updateSeo();refreshLinkManager();updateFormatToolbar();
+      });
+    });
     $("#insert-link").addEventListener("click",insertLink);
     ["#post-title","#post-slug","#post-excerpt","#post-seo-title","#post-meta-description","#post-focus-keyword","#post-hero-alt","#post-canonical"]
       .forEach((selector)=>$(selector).addEventListener("input",updateSeo));
@@ -666,16 +835,14 @@
     if(name==="posts")renderPosts();
   }
   $("#login-form").addEventListener("submit",async(event)=>{
-    event.preventDefault();if(!validConfig){$("#login-message").textContent="تنظیمات اتصال Supabase معتبر نیست.";return;}
-    const button=$("#login-submit");setButton(button,true,"در حال بررسی…");$("#login-message").textContent="";
-    try{
-      await signIn($("#login-email").value.trim(),$("#login-password").value);
-      const user=await fetch(supabaseUrl+"/auth/v1/user",{headers:{apikey:anonKey,Authorization:"Bearer "+state.accessToken}});
-      const userData=await parseResponse(user);window.blogAdminEmail=userData.email||"مدیر";
-      await loadWorkspace();showApp();showView("overview");
-    }catch(error){state.accessToken="";state.refreshToken="";$("#login-password").value="";$("#login-message").textContent=error.message;}
+    event.preventDefault();if(!validConfig){$("#login-message").textContent="تنظیمات اتصال معتبر نیست.";return;}
+    const button=$("#login-submit"),email=$("#login-email").value.trim(),password=$("#login-password").value,remember=$("#remember-me").checked;
+    setButton(button,true,"در حال بررسی…");$("#login-message").textContent="";
+    try{await finishSignIn(email,password,remember,false);}
+    catch(error){state.accessToken="";state.refreshToken="";$("#login-password").value="";$("#login-message").textContent=error.message;}
     finally{setButton(button,false);}
   });
   bindEvents();
   if(!validConfig){$("#login-submit").disabled=true;$("#login-message").textContent="اتصال امن داشبورد پیکربندی نشده.";}
+  else void restoreRememberedCredential();
 })();
