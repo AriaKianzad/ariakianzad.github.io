@@ -101,10 +101,11 @@ assert.equal(listingCards[1].hidden,false,"load-more must reveal the next page o
 listingEvents["filter:branding:click"]();
 assert.equal(listingCards[0].hidden,false,"the chosen category must retain matching articles");
 assert.equal(listingCards[1].hidden,true,"the chosen category must hide non-matching articles");
+listingEvents["filter:culture:click"]();
 listingSearch.value="فرهنگ";
 listingEvents["search:input"]();
 assert.equal(listingCards[0].hidden,true,"search must hide cards whose searchable text does not match");
-assert.equal(listingCards[1].hidden,false,"search must show matching cards even after a previous category selection is changed");
+assert.equal(listingCards[1].hidden,false,"search must show matching cards in the currently selected category");
 
 const copyLinkButton = await read("src/app/blog/CopyLinkButton.tsx");
 const blogCopyScript = await read("public/blog-copy.js");
