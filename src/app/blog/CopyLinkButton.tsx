@@ -1,59 +1,98 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+
+type CopyFeedback = "copied" | "manual" | null;
 
 export function CopyLinkButton({ url }: { url: string }) {
-  const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState<CopyFeedback>(null);
   const [manualCopy, setManualCopy] = useState(false);
+  const feedbackTimer = useRef<number | null>(null);
+
+  function showFeedback(next: CopyFeedback) {
+    setFeedback(next);
+    if (feedbackTimer.current !== null) {
+      window.clearTimeout(feedbackTimer.current);
+    }
+    if (next !== null) {
+      feedbackTimer.current = window.setTimeout(() => {
+        setFeedback(null);
+        feedbackTimer.current = null;
+      }, 2200);
+    }
+  }
 
   async function copyLink() {
-    setCopied(false);
     setManualCopy(false);
-    try {
-      if (navigator.clipboard?.writeText) {
-        try {
-          await navigator.clipboard.writeText(url);
-          setCopied(true);
-          return;
-        } catch {
-          // Fall through to the selection-based fallback below.
-        }
-      }
+    showFeedback(null);
 
-      const field = document.createElement("textarea");
-      field.value = url;
-      field.setAttribute("readonly", "");
-      field.setAttribute("aria-hidden", "true");
-      field.style.position = "fixed";
-      field.style.insetInlineStart = "0";
-      field.style.top = "0";
-      field.style.width = "2px";
-      field.style.height = "2px";
-      field.style.padding = "0";
-      field.style.border = "0";
-      field.style.opacity = "0.02";
+    if (window.isSecureContext && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(url);
+        showFeedback("copied");
+        return;
+      } catch {
+        // Continue to the legacy clipboard path when browser permission is denied.
+      }
+    }
+
+    let copiedWithLegacyCommand = false;
+    const field = document.createElement("textarea");
+    field.value = url;
+    field.setAttribute("readonly", "");
+    field.setAttribute("aria-hidden", "true");
+    field.style.position = "fixed";
+    field.style.top = "0";
+    field.style.left = "0";
+    field.style.width = "1px";
+    field.style.height = "1px";
+    field.style.padding = "0";
+    field.style.border = "0";
+    field.style.opacity = "0";
+    field.style.zIndex = "-1";
+
+    try {
       document.body.appendChild(field);
-      field.focus();
+      field.focus({ preventScroll: true });
       field.select();
       field.setSelectionRange(0, field.value.length);
-      let success = false;
-      try {
-        success = document.execCommand("copy");
-      } finally {
-        field.remove();
-      }
-      if (success) setCopied(true);
-      else setManualCopy(true);
+      copiedWithLegacyCommand = document.execCommand("copy");
     } catch {
-      setManualCopy(true);
+      copiedWithLegacyCommand = false;
+    } finally {
+      field.remove();
     }
+
+    if (copiedWithLegacyCommand) {
+      showFeedback("copied");
+      return;
+    }
+
+    setManualCopy(true);
+    showFeedback("manual");
   }
 
   return (
     <div className="blog-share-copy-wrap">
-      <button className="blog-share-copy" type="button" onClick={copyLink} aria-live="polite">
-        {copied ? "لینک کپی شد ✓" : manualCopy ? "انتخاب لینک برای کپی" : "کپی لینک"}
+      <button
+        className="blog-share-copy"
+        type="button"
+        onClick={copyLink}
+        aria-label="کپی کردن لینک مقاله"
+      >
+        کپی لینک
       </button>
+
+      {feedback ? (
+        <span
+          className={"blog-copy-toast" + (feedback === "manual" ? " is-manual" : "")}
+          role="status"
+          aria-live="polite"
+        >
+          {feedback === "copied" ? "لینک کپی شد" : "کپی خودکار در دسترس نیست"}
+        </span>
+      ) : null}
+
       {manualCopy ? (
         <div className="blog-share-manual-copy" dir="rtl">
           <input
@@ -63,11 +102,11 @@ export function CopyLinkButton({ url }: { url: string }) {
             aria-label="نشانی مقاله برای کپی دستی"
             onFocus={(event) => event.currentTarget.select()}
             onClick={(event) => event.currentTarget.select()}
+            onCopy={() => showFeedback("copied")}
           />
-          <small>کپی خودکار در این مرورگر در دسترس نبود؛ لینک انتخاب شده، Ctrl+C رو بزن.</small>
+          <small>لینک انتخاب شده؛ برای کپی دستی Ctrl+C رو بزن.</small>
         </div>
       ) : null}
-      {copied ? <span className="blog-copy-status" role="status">نشانی اصلی مقاله کپی شد.</span> : null}
     </div>
   );
 }
