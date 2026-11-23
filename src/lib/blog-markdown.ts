@@ -6,7 +6,7 @@ function inline(value:string){
   let s=esc(value);
   s=s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>'<img src="'+esc(allowedUrl(url.replace(/&amp;/g,"&"))+'" alt="'+alt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">');
   s=s.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
-    const href=allowedUrl(url),external=/^https?:\/\//i.test(href);
+    const href=allowedUrl(url.replace(/&amp;/g,"&")),external=/^https?:\/\//i.test(href);
     const relation=(String(options||"").match(/rel=(follow|nofollow|sponsored|ugc)/i)||[])[1]||"follow";
     const target=(String(options||"").match(/target=(_blank|_self)/i)||[])[1]||(external?"_blank":"");
     const rel=[...(relation!=="follow"?[relation]:[]),...(target==="_blank"?["noopener","noreferrer"]:[])].join(" ");
