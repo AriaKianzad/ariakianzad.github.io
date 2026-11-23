@@ -186,6 +186,7 @@ function normalizePost(input: Record<string, unknown>) {
   }
   const legacyCategory = textValue(input?.category, 120, "دسته‌بندی");
   const rawCategories = Array.isArray(input?.categories) ? input.categories : [];
+  if (rawCategories.length > 3) throw new Error("هر مقاله حداکثر می‌تونه سه دسته‌بندی داشته باشه.");
   const categories = [...new Set(
     (rawCategories.length ? rawCategories : (legacyCategory ? [legacyCategory] : []))
       .map((value) => textValue(value, 120, "دسته‌بندی", true).toLowerCase())
