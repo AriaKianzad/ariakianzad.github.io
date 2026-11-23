@@ -125,7 +125,7 @@
   }
   function dateLabel(value) {
     if(!value)return "—";
-    return new Intl.DateTimeFormat("fa-IR",{year:"numeric",month:"short",day:"numeric"}).format(new Date(value));
+    return new Intl.DateTimeFormat("fa-IR-u-ca-persian",{year:"numeric",month:"short",day:"numeric",timeZone:"Asia/Tehran"}).format(new Date(value));
   }
   function statusBadge(post) {
     const span=document.createElement("span");
