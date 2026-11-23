@@ -641,17 +641,21 @@
   async function compressImage(file) {
     if(!["image/jpeg","image/png","image/webp"].includes(file.type))throw new Error("فقط تصویر JPG، PNG یا WebP پذیرفته می‌شه.");
     const bitmap=await createImageBitmap(file);
-    const maxEdge=1800,scale=Math.min(1,maxEdge/Math.max(bitmap.width,bitmap.height));
     const canvas=document.createElement("canvas");
-    canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+    // Keep the original pixel dimensions and aspect ratio; only change encoding quality.
+    canvas.width=bitmap.width;
+    canvas.height=bitmap.height;
     const context=canvas.getContext("2d",{alpha:false});
-    if(!context)throw new Error("مرورگر امکان فشرده‌سازی تصویر رو فراهم نکرد.");
+    if(!context){bitmap.close();throw new Error("مرورگر امکان فشرده‌سازی تصویر رو فراهم نکرد.");}
     context.fillStyle="#f4f1e9";context.fillRect(0,0,canvas.width,canvas.height);
-    context.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();
-    let blob=await canvasBlob(canvas,"image/webp",0.84);
-    if(blob.size>3*1024*1024)blob=await canvasBlob(canvas,"image/webp",0.72);
-    if(blob.size>3*1024*1024)blob=await canvasBlob(canvas,"image/webp",0.6);
-    if(blob.size>3*1024*1024)throw new Error("حجم تصویر بعد از فشرده‌سازی هنوز بیشتر از ۳ مگابایته.");
+    context.drawImage(bitmap,0,0,canvas.width,canvas.height);
+    bitmap.close();
+    let blob=await canvasBlob(canvas,"image/webp",0.88);
+    for(const quality of [0.82,0.76,0.7,0.64,0.58,0.52,0.46]){
+      if(blob.size<=3*1024*1024)break;
+      blob=await canvasBlob(canvas,"image/webp",quality);
+    }
+    if(blob.size>3*1024*1024)throw new Error("تصویر با حفظ ابعاد اصلی، پس از فشرده‌سازی هم بیشتر از ۳ مگابایته. لطفاً نسخۀ کم‌حجم‌تری انتخاب کن.");
     return blob;
   }
   async function uploadImage(file) {
