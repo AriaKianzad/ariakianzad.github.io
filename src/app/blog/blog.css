@@ -1099,7 +1099,7 @@ body:has(.blog-theme) > main#main { display:contents; }
     -webkit-box-decoration-break:clone;
     box-decoration-break:clone;
   }
-  .blog-article-copy .blog-article-meta {
+  .blog-article-meta {
     display:flex !important;
     align-items:center;
     justify-content:flex-start;
