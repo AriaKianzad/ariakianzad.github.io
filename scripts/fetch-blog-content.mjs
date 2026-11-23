@@ -1,0 +1,39 @@
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
+const configSource = await readFile(resolve("public/admin/config.js"), "utf8");
+const url = configSource.match(/supabaseUrl:\s*"([^"]+)"/)?.[1];
+const key = configSource.match(/supabaseAnonKey:\s*"([^"]+)"/)?.[1];
+if (!url || !key || !key.startsWith("sb_publishable_")) throw new Error("Public Supabase configuration not found.");
+const response = await fetch(url.replace(/\/+$/, "") + "/rest/v1/rpc/get_public_blog_payload", {
+  method: "POST",
+  headers: { apikey: key, "Content-Type": "application/json", Accept: "application/json" },
+  body: "{}", signal: AbortSignal.timeout(20000),
+});
+if (!response.ok) throw new Error("Could not fetch published blog payload (HTTP " + response.status + ").");
+const payload = await response.json();
+if (!payload || !Array.isArray(payload.posts) || typeof payload.settings !== "object") throw new Error("Published blog payload has an unexpected structure.");
+const s = payload.settings || {};
+const result = {
+  settings: {
+    title:s.title||"نوشته‌ها", tagline:s.tagline||"یادداشت‌هایی درباره برند، معنا و ارتباط",
+    description:s.description||"", background_theme:s.background_theme||"paper",
+    accent_color:s.accent_color||"#a86f54", card_style:s.card_style||"editorial",
+    layout_style:s.layout_style||"editorial", content_width:s.content_width||"reading",
+    posts_per_page:Math.min(24,Math.max(3,Number(s.posts_per_page||9))),
+    show_search:s.show_search!==false, show_categories:s.show_categories!==false,
+    show_featured:s.show_featured!==false, show_reading_time:s.show_reading_time!==false,
+    show_toc:s.show_toc!==false, show_related_posts:s.show_related_posts!==false,
+    show_share:s.show_share!==false, enable_rss:s.enable_rss!==false,
+    default_language:s.default_language||"fa", heading_scale:Number(s.heading_scale||1),
+    body_line_height:Number(s.body_line_height||1.95), intro_title:s.intro_title||"",
+    intro_body:s.intro_body||"", default_meta_title:s.default_meta_title||"وبلاگ آریا کیانزاد",
+    default_meta_description:s.default_meta_description||"", default_og_image:s.default_og_image||"",
+    footer_note:s.footer_note||"",
+  },
+  posts:payload.posts.filter((p)=>p&&typeof p.slug==="string"&&/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(p.slug)&&typeof p.content==="string"),
+  fetchedAt:new Date().toISOString(),
+};
+const output=resolve(".cache/blog-content.json");
+await mkdir(dirname(output),{recursive:true});
+await writeFile(output,JSON.stringify(result,null,2)+"\n","utf8");
+console.log("Fetched "+result.posts.length+" published blog post(s) from Supabase.");
