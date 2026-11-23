@@ -92,11 +92,11 @@ function doPost(event) {
 
 function safeString(value, maxLength) {
   if (typeof value !== "string") return "";
-  return value.replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]/g, " ").trim().slice(0, maxLength);
+  return value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " ").trim().slice(0, maxLength);
 }
 
 function isEmail(value) {
-  return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(value);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
 }
 
 function jsonOutput(value) {
