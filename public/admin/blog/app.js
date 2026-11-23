@@ -399,6 +399,7 @@
     $("#post-title").addEventListener("input",()=>{if(!$("#post-slug").value)$("#post-slug").value=slugSuggestion($("#post-title").value);});
     $("#preview-toggle").addEventListener("click",()=>{
       state.preview=!state.preview;$("#post-content").hidden=state.preview;$("#markdown-preview").hidden=!state.preview;
+      $("#editor-workarea").classList.toggle("preview-mode",state.preview);
       $("#preview-toggle").textContent=state.preview?"بازگشت به ویرایش":"پیش‌نمایش";
       updatePreview();
     });
@@ -426,6 +427,7 @@
     });
     $("#settings-form").addEventListener("submit",saveSettings);
     $("#logout-button").addEventListener("click",()=>void logout(true));
+    $("#header-logout-button").addEventListener("click",()=>void logout(true));
     $("#forgot-password").addEventListener("click",async()=>{
       const email=$("#login-email").value.trim();if(!email){$("#login-message").textContent="اول ایمیلت رو وارد کن.";return;}
       try{
