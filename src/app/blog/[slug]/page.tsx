@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { site } from "@/lib/site";
 import { getBlogPost, getBlogPosts, getBlogSettings, readingTime } from "@/lib/blog-data";
-import { extractToc, renderMarkdown } from "@/lib/blog-markdown";
+import { extractToc, extractMarkdownImageUrls, renderMarkdown } from "@/lib/blog-markdown";
 import { BlogHeader, BlogFooter } from "../BlogHeader";
 import { BlogPostCard } from "../BlogListingClient";
 
@@ -77,7 +77,8 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
     "@context": "https://schema.org", "@type": "Article",
     headline: post.title, description: post.meta_description || post.excerpt,
     datePublished: post.published_at, dateModified: post.updated_at,
-    mainEntityOfPage: canonical, image: [site.url + "/og/blog/" + post.slug + ".jpg"],
+    mainEntityOfPage: canonical,
+    image: [...new Set([site.url + "/og/blog/" + post.slug + ".jpg", ...(post.hero_image_url ? [post.hero_image_url] : []), ...extractMarkdownImageUrls(post.content)])],
     author: { "@type": "Person", name: "Aria Kianzad", url: site.url },
     publisher: { "@type": "Person", name: "Aria Kianzad", url: site.url },
     inLanguage: post.language === "fa" ? "fa-IR" : "en",
@@ -103,20 +104,25 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
           <Link href="/blog/">یادداشت‌ها</Link><span aria-hidden="true">/</span>
           {post.category ? <Link href={"/blog/category/" + encodeURIComponent(post.category.toLowerCase().replace(/\s+/g, "-")) + "/"}>{post.category}</Link> : <span>مقاله</span>}
         </div>
-        <header className="blog-article-header blog-container">
-          <div className="blog-eyebrow"><span /> {post.category || "یادداشت"}</div>
-          <h1>{post.title}</h1>
-          {post.hero_image_url ? (
-            <figure className="blog-hero-image">
-              <img src={post.hero_image_url} alt={post.hero_image_alt || ""} fetchPriority="high" />
-              {post.hero_image_caption ? <figcaption>{post.hero_image_caption}</figcaption> : null}
-            </figure>
-          ) : null}
-          {post.excerpt ? <p className="blog-article-excerpt">{post.excerpt}</p> : null}
-          <div className="blog-article-meta">
-            <span>آریا کیانزاد</span>
-            <time dateTime={post.published_at}>{new Intl.DateTimeFormat(language === "fa" ? "fa-IR" : "en-US", {year:"numeric",month:"long",day:"numeric",timeZone:language==="fa"?"Asia/Tehran":"UTC"}).format(new Date(post.published_at))}</time>
-            {settings.show_reading_time ? <span>{readingTime(post.content, post.language)} دقیقه مطالعه</span> : null}
+
+        <header className="blog-article-header">
+          <div className="blog-container blog-article-header-grid">
+            <div className="blog-article-copy">
+              <div className="blog-eyebrow"><span /> {post.category || "یادداشت"}</div>
+              <h1>{post.title}</h1>
+              {post.excerpt ? <p className="blog-article-excerpt">{post.excerpt}</p> : null}
+              <div className="blog-article-meta">
+                <span>آریا کیانزاد</span>
+                <time dateTime={post.published_at}>{new Intl.DateTimeFormat(language === "fa" ? "fa-IR" : "en-US", {year:"numeric",month:"long",day:"numeric",timeZone:language==="fa"?"Asia/Tehran":"UTC"}).format(new Date(post.published_at))}</time>
+                {settings.show_reading_time ? <span>{readingTime(post.content, post.language)} دقیقه مطالعه</span> : null}
+              </div>
+            </div>
+            {post.hero_image_url ? (
+              <figure className="blog-hero-image">
+                <img src={post.hero_image_url} alt={post.hero_image_alt || ""} fetchPriority="high" />
+                {post.hero_image_caption ? <figcaption>{post.hero_image_caption}</figcaption> : null}
+              </figure>
+            ) : <div className="blog-article-visual-empty" aria-hidden="true" />}
           </div>
         </header>
         <div className={"blog-article-grid blog-container" + (toc.length ? " has-toc" : " no-toc") + (post.content_width === "wide" || settings.content_width === "wide" ? " content-wide" : "")}>
