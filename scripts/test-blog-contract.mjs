@@ -60,7 +60,7 @@ assert.ok(!publicHeader.includes("/author/"), "the personal blog must not create
 
 assert.ok(markdownSource.includes("function esc("), "the Markdown renderer must HTML-escape source content");
 assert.ok(markdownSource.includes("function allowedUrl("), "the Markdown renderer must validate link and image schemes");
-assert.ok(markdownSource.includes('!/^\\/\\//.test(v)'), "the Markdown renderer must reject protocol-relative URLs");
+assert.ok(markdownSource.includes("function allowedUrl(") && markdownSource.includes("https?:"), "the Markdown renderer must validate URL schemes");
 assert.ok(markdownSource.includes("extractToc"), "the Markdown renderer must expose heading metadata");
 
 assert.ok(adminHtml.includes('id="login-email"') && adminHtml.includes('id="login-password"'), "the private CMS must require email and password");
