@@ -100,11 +100,11 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
         {faqSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema).replace(/</g, "\\u003c") }} /> : null}
         <div className="blog-container blog-breadcrumbs">
-          <Link href="/blog/">نوشته‌ها</Link><span aria-hidden="true">/</span>
+          <Link href="/blog/">یادداشت‌ها</Link><span aria-hidden="true">/</span>
           {post.category ? <Link href={"/blog/category/" + encodeURIComponent(post.category.toLowerCase().replace(/\s+/g, "-")) + "/"}>{post.category}</Link> : <span>مقاله</span>}
         </div>
         <header className="blog-article-header blog-container">
-          <div className="blog-eyebrow"><span /> {post.category || "یادداشت"} / {post.language === "fa" ? "مقاله" : "ARTICLE"}</div>
+          <div className="blog-eyebrow"><span /> {post.category || "یادداشت"}</div>
           <h1>{post.title}</h1>
           {post.excerpt ? <p className="blog-article-excerpt">{post.excerpt}</p> : null}
           <div className="blog-article-meta">
@@ -145,7 +145,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
         ) : null}
         {related.length ? (
           <section className="blog-related blog-container">
-            <div className="blog-section-heading"><div><span className="blog-section-label"><span>03</span> RELATED</span><h2>نوشته‌های مرتبط</h2></div></div>
+            <div className="blog-section-heading"><div><span className="blog-section-label"><span>۰۳</span> مرتبط</span><h2>نوشته‌های مرتبط</h2></div></div>
             <div className="blog-card-grid">{related.map((item) => <BlogPostCard key={item.slug} post={item} showReadingTime={settings.show_reading_time} />)}</div>
           </section>
         ) : null}
