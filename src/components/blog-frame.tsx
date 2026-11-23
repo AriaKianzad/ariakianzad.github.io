@@ -5,9 +5,16 @@ import type { BlogSettings } from "@/lib/blog-content";
 export function BlogFrame({ children, settings }: { children: ReactNode; settings: BlogSettings }) {
   const theme = settings.backgroundTheme === "white"
     ? "blog-theme-white" : settings.backgroundTheme === "warm" ? "blog-theme-warm" : "blog-theme-paper";
+  const accent = ({
+    "#405a42": "blog-accent-forest",
+    "#737443": "blog-accent-olive",
+    "#a45c45": "blog-accent-terracotta",
+    "#435b75": "blog-accent-navy",
+    "#765b77": "blog-accent-plum",
+  } as Record<string, string>)[settings.accentColor.toLowerCase()] || "blog-accent-forest";
 
   return (
-    <div className={"blog-surface " + theme + " blog-cards-" + settings.cardStyle}>
+    <div className={"blog-surface " + theme + " " + accent + " blog-cards-" + settings.cardStyle}>
       <div className="blog-shell">
         <header className="blog-header">
           <Link className="blog-brand" href="/blog/" aria-label="وبلاگ آریا کیانزاد">
