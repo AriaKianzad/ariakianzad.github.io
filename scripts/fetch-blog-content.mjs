@@ -28,7 +28,7 @@ const result = {
     body_line_height:Number(s.body_line_height||1.95), intro_title:s.intro_title||"",
     intro_body:s.intro_body||"", default_meta_title:s.default_meta_title||"وبلاگ آریا کیانزاد",
     default_meta_description:s.default_meta_description||"", default_og_image:s.default_og_image||"",
-    footer_note:s.footer_note||"",
+    footer_note:s.footer_note||"", category_seo:s.category_seo||{},
   },
   posts:payload.posts.filter((p)=>p&&typeof p.slug==="string"&&/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(p.slug)&&typeof p.content==="string"),
   fetchedAt:new Date().toISOString(),
