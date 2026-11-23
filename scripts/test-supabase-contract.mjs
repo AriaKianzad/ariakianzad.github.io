@@ -17,6 +17,7 @@ const [
   blogAdminApp,
   blogAdminHtml,
   blogPublicMigration,
+  blogBrowserDenyMigration,
   blogSnapshotMigration,
   allowlistMigration,
   snapshotsMigration,
@@ -36,6 +37,7 @@ const [
   read("public/admin/blog/app.js"),
   read("public/admin/blog/index.html"),
   read("supabase/migrations/20261123110500_harden_public_blog_rpc.sql"),
+  read("supabase/migrations/20261123095924_deny_browser_access_to_blog_cms.sql"),
   read("supabase/migrations/20261123112000_separate_blog_published_snapshots.sql"),
   read("supabase/migrations/20261121001000_create_dashboard_admin_allowlist.sql"),
   read("supabase/migrations/20261121000000_create_download_snapshots.sql"),
@@ -149,7 +151,7 @@ assert.ok(blogAdminHtml.includes('name="robots" content="noindex, nofollow, noar
   "blog admin must not be indexed");
 assert.ok(blogPublicMigration.includes("security invoker"),
   "the public blog RPC must be a SECURITY INVOKER wrapper");
-assert.ok(blogPublicMigration.includes("revoke all on table public.blog_posts from anon, authenticated"),
+assert.ok(blogBrowserDenyMigration.includes("revoke all on table public.blog_posts from anon, authenticated"),
   "the browser must not query CMS tables directly");
 assert.ok(blogSnapshotMigration.includes("p.published_snapshot"),
   "public posts must come from immutable publish snapshots");
