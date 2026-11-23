@@ -22,10 +22,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const description = post.metaDescription || post.excerpt;
   const canonical = post.canonicalUrl || "/blog/" + post.slug + "/";
   const image = post.ogImageUrl || post.heroImageUrl || undefined;
+  const keywords = [post.focusKeyword, ...post.tags].filter((value): value is string => typeof value === "string" && value.length > 0);
   return {
     title,
     description,
-    keywords: [post.focusKeyword, ...post.tags].filter(Boolean),
+    keywords,
     alternates: { canonical },
     robots: {
       index: post.robotsIndex !== false,
