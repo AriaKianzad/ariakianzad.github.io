@@ -29,7 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     ...posts.filter((post) => post.robotsIndex !== false).map((post) => ({
       url: new URL("/blog/" + post.slug + "/", site.url).toString(),
-      lastModified: post.publishedAt ? new Date(post.publishedAt) : undefined,
+      lastModified: post.updatedAt ? new Date(post.updatedAt) : post.publishedAt ? new Date(post.publishedAt) : undefined,
       changeFrequency: "monthly" as const,
       priority: post.featured ? 0.8 : 0.7,
     })),
