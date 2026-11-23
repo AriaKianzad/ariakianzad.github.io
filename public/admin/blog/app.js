@@ -332,7 +332,7 @@
       const src=safeHref(element.getAttribute("src"));
       if(src==="#")return "";
       const alt=String(element.getAttribute("alt")||"").replace(/\\/g,"\\\\").replace(/]/g,"\\]");
-      const title=String(element.getAttribute("title")||"").trim().replace(/\\/g,"\\\\").replace(/"/g,'\\"').replace(/[\\r\\n]+/g," ");
+      const title=String(element.getAttribute("title")||"").trim().replace(/\\/g,"\\\\").replace(/"/g,'\\"').replace(/[\r\n]+/g," ");
       return "!["+alt+"]("+src+(title?' "'+title+'"':"")+")";
     }
     const inner=Array.from(element.childNodes).map(inlineToMarkdown).join("");
@@ -381,7 +381,7 @@
       const alt=String(image.getAttribute("alt")||"").replace(/\\/g,"\\\\").replace(/]/g,"\\]");
       const title=escapeAttribute(image.getAttribute("title")||"");
       const caption=escapeAttribute(element.querySelector("figcaption")?.textContent||"");
-      return "!["+alt+"]("+src+(title?' "'+title+'"':"")+")"+(caption?' {caption="'+caption+'"}':"")+"\\n\\n";
+      return "!["+alt+"]("+src+(title?' "'+title+'"':"")+")"+(caption?' {caption="'+caption+'"}':"")+"\n\n";
     }
     if(tag==="h2"||tag==="h3"||tag==="h4")return "#".repeat(Number(tag.slice(1)))+" "+Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
     if(tag==="p")return Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
