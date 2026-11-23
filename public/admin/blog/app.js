@@ -419,12 +419,50 @@
   function editorToMarkdown(editor) {
     return Array.from(editor.childNodes).map(blockToMarkdown).join("").replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
   }
+  function clipboardHeadingLevel(source) {
+    const tag=source.tagName?.toLowerCase()||"";
+    if(/^h[1-6]$/.test(tag))return Math.min(4,Math.max(2,Number(tag.slice(1))+1));
+    const role=source.getAttribute("role")==="heading";
+    const ariaLevel=Number(source.getAttribute("aria-level")||source.getAttribute("data-heading-level")||0);
+    if(role&&ariaLevel>=1&&ariaLevel<=6)return Math.min(4,Math.max(2,ariaLevel+1));
+    const classes=String(source.getAttribute("class")||"").toLowerCase();
+    if(/mso(title|heading1)|heading[_ -]?1|title[_ -]?1/.test(classes))return 2;
+    if(/mso(subtitle|heading2)|heading[_ -]?2|subtitle/.test(classes))return 3;
+    if(/heading[_ -]?3/.test(classes))return 4;
+    const styleNodes=[source,...Array.from(source.querySelectorAll?.("[style]")||[])];
+    let largest=0,bold=false;
+    styleNodes.forEach((element)=>{
+      const style=(element.getAttribute("style")||"").toLowerCase();
+      const size=(style.match(/font-size\\s*:\\s*([0-9.]+)(px|pt|em|rem)?/)||[]);
+      if(size[1]){
+        let value=Number(size[1]),unit=size[2]||"px";
+        if(unit==="pt")value*=4/3;
+        if(unit==="em"||unit==="rem")value*=16;
+        largest=Math.max(largest,value);
+      }
+      if(/font-weight\\s*:\\s*(bold|[6-9]00)/.test(style))bold=true;
+      if(["b","strong"].includes(element.tagName?.toLowerCase()))bold=true;
+    });
+    if(!bold)return 0;
+    if(largest>=30)return 2;
+    if(largest>=25)return 3;
+    if(largest>=20)return 4;
+    return 0;
+  }
   function cleanClipboardNode(node) {
     if(node.nodeType===Node.TEXT_NODE)return document.createTextNode(node.nodeValue||"");
     if(node.nodeType!==Node.ELEMENT_NODE)return null;
     const source=node,tag=source.tagName.toLowerCase();
     if(["script","style","iframe","object","embed","svg","meta","link"].includes(tag))return null;
     const children=()=>Array.from(source.childNodes).map(cleanClipboardNode).filter(Boolean);
+    if(["p","div"].includes(tag)){
+      const level=clipboardHeadingLevel(source);
+      if(level){
+        const heading=document.createElement("h"+level);
+        children().forEach((child)=>heading.appendChild(child));
+        return heading;
+      }
+    }
     if(tag==="span"||tag==="font"){
       let fragment=document.createDocumentFragment();children().forEach((child)=>fragment.appendChild(child));
       const style=(source.getAttribute("style")||"").toLowerCase();
