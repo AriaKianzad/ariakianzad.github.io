@@ -129,10 +129,16 @@ jobs:
           grep -Fq 'Personal branding' out/llms.txt
           test -s out/Mian-e-Ma/index.html
           test -s out/blog/index.html
+          test -s out/blog-listing.js
+          grep -Fq '/blog-listing.js' out/blog/index.html
+          grep -Fq 'data-blog-search' out/blog/index.html
+          grep -Fq 'data-blog-post-card' out/blog/index.html
           test -s out/blog/feed.xml
           test -s out/admin/blog/index.html
           test -s out/admin/blog/blog.css
           test -s out/admin/blog/app.js
+          grep -Fq 'آمار بازدید مقاله‌ها' out/admin/blog/index.html
+          grep -Fq 'id="view-analytics"' out/admin/blog/index.html
           test -s out/admin/index.html
           test -s out/admin/admin.css
           test -s out/admin/app.js
@@ -147,6 +153,7 @@ jobs:
           grep -Fq 'get_public_blog_payload' scripts/fetch-blog-content.mjs
           grep -Fq 'noindex, nofollow, noarchive' out/admin/blog/index.html
           node --check public/admin/blog/app.js
+          node --check public/blog-listing.js
           grep -Fq 'site-analytics' out/admin/app.js
           grep -Fq 'remember-session' out/admin/index.html
           grep -Fq 'mian-e-ma-dashboard-refresh-v1' out/admin/app.js
