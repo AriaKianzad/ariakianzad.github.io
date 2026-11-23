@@ -179,7 +179,7 @@
   .blog-hero-image figcaption{padding-top:5px;text-align:right}
   .blog-article-grid,.blog-article-grid.content-wide,.blog-article-grid.no-toc,.blog-article-grid.content-wide.no-toc{display:block;width:min(100% - 32px,680px);max-width:680px;margin:0 auto}
   .blog-toc{display:none}
-  .blog-prose{width:100%;font-size:16px;line-height:1.95}
+  .blog-prose{width:100%;font-size:16px;line-height:var(--blog-line-height,1.95);text-align:start;letter-spacing:normal}
   .blog-prose>*:first-child{margin-top:0}
 
   .blog-prose h2{font-size:1.5em}
