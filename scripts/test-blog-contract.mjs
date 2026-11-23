@@ -128,7 +128,7 @@ assert.ok(!/localStorage|sessionStorage/.test(adminApp), "CMS session tokens mus
 assert.ok(adminApp.includes("PasswordCredential") && adminApp.includes("navigator.credentials.get") && adminApp.includes("preventSilentAccess"), "remember-me must rely on browser-managed credentials, not client-side token storage");
 assert.ok(adminApp.includes("updateFormatToolbar") && adminApp.includes("getSelectedBlockquote") && adminApp.includes("unwrapBlockquote"), "format toolbar must reflect selection state and allow unwrapping blockquotes");
 assert.ok(adminApp.includes("category_seo:collectCategorySeo") && adminApp.includes("renderCategorySeoEditor"), "CMS must edit and persist per-category SEO settings");
-assert.ok(sitemap.includes("categorySeo[category.slug]?.robots_index !== false"), "noindex categories must be excluded from the sitemap");
+assert.ok(sitemap.includes("settings.sitemap_include_categories") && sitemap.includes("settings.category_seo?.[category.slug]") && sitemap.includes("settings.noindex_empty_categories"), "sitemap must respect global category inclusion and category robots settings");
 assert.ok(!/sb_secret_|service_role|GITHUB_WORKFLOW_TOKEN|ghp_/.test(adminApp), "privileged credentials must never enter the browser bundle");
 assert.equal((adminApp.match(/function showView\(name\)/g) || []).length, 1, "CMS script must have one view switcher");
 
