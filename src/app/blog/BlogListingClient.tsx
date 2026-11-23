@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { getPostCategorySlugs, getPrimaryCategorySlug, getBlogCategoryName } from "@/lib/blog-data";
+import { getPostCategorySlugs, getPrimaryCategorySlug } from "@/lib/blog-category-utils";
 import type { BlogPost } from "@/lib/blog-data";
 
 type Category = { name: string; count: number; slug: string };
@@ -29,7 +29,7 @@ export function BlogPostCard({ post, featured = false, showReadingTime = true, c
       </Link>
       <div className="blog-card-copy">
         <div className="blog-card-meta">
-          {getPrimaryCategorySlug(post) ? <span>{categoryName || getBlogCategoryName(getPrimaryCategorySlug(post))}</span> : null}
+          {getPrimaryCategorySlug(post) ? <span>{categoryName || getPrimaryCategorySlug(post).replace(/-/g," ")}</span> : null}
           <time dateTime={post.published_at}>{formatDate(post.published_at, post.language)}</time>
         </div>
         <h2><Link href={"/blog/" + post.slug + "/"}>{post.title}</Link></h2>
@@ -56,7 +56,7 @@ export function BlogListingClient({
     return posts.filter((post) => {
       const categorySlugs=getPostCategorySlugs(post);
       const matchesCategory = !category || categorySlugs.includes(category);
-      const categoryNames=categorySlugs.map((slug)=>categories.find((item)=>item.slug===slug)?.name||getBlogCategoryName(slug));
+      const categoryNames=categorySlugs.map((slug)=>categories.find((item)=>item.slug===slug)?.name||slug.replace(/-/g," "));
       const content = [post.title, post.excerpt, ...categorySlugs, ...categoryNames, post.focus_keyword, ...(post.tags || [])].join(" ").toLocaleLowerCase();
       return matchesCategory && (!needle || content.includes(needle));
     });
