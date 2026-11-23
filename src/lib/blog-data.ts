@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+export type BlogCategorySeo={description:string;seo_title:string;meta_description:string;og_title:string;og_description:string;canonical_url:string;robots_index:boolean;};
 export type BlogFaq={question:string;answer:string};
 export type BlogPost={
   id:string;slug:string;title:string;excerpt:string;content:string;language:"fa"|"en";
@@ -15,7 +16,7 @@ export type BlogSettings={
   show_featured:boolean;show_reading_time:boolean;show_toc:boolean;show_related_posts:boolean;show_share:boolean;
   enable_rss:boolean;default_language:"fa"|"en";heading_scale:number;body_line_height:number;
   intro_title:string;intro_body:string;default_meta_title:string;default_meta_description:string;
-  default_og_image:string;footer_note:string;
+  default_og_image:string;footer_note:string;category_seo:Record<string,BlogCategorySeo>;
 };
 const defaults:BlogSettings={
   title:"نوشته‌ها",tagline:"یادداشت‌هایی درباره برند، معنا و ارتباط",
@@ -24,7 +25,7 @@ const defaults:BlogSettings={
   content_width:"reading",posts_per_page:9,show_search:true,show_categories:true,show_featured:true,
   show_reading_time:true,show_toc:true,show_related_posts:true,show_share:true,enable_rss:true,
   default_language:"fa",heading_scale:1,body_line_height:1.95,intro_title:"از استراتژی برند تا ارتباطات روزمره",
-  intro_body:"من اینجا درباره استراتژی برند، جایگاه‌یابی، هویت، ارتباطات و پرسونال برندینگ می‌نویسم؛ با تمرکز بر رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن.",default_meta_title:"وبلاگ آریا کیانزاد",default_meta_description:"",default_og_image:"",footer_note:"",
+  intro_body:"من اینجا درباره استراتژی برند، جایگاه‌یابی، هویت، ارتباطات و پرسونال برندینگ می‌نویسم؛ با تمرکز بر رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن.",default_meta_title:"وبلاگ آریا کیانزاد",default_meta_description:"",default_og_image:"",footer_note:"",category_seo:{},
 };
 type Payload={settings:BlogSettings;posts:BlogPost[]};
 let cache:Payload|null=null;

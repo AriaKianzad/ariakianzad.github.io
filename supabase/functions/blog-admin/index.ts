@@ -98,6 +98,37 @@ function mediaUrl(value: unknown): string | null {
   return value;
 }
 
+function categorySeoValue(value: unknown): Record<string, Record<string, unknown>> {
+  const source = asRecord(value);
+  const entries = Object.entries(source).slice(0, 100);
+  const output: Record<string, Record<string, unknown>> = {};
+  for (const [rawSlug, rawItem] of entries) {
+    const slug = rawSlug.trim().toLowerCase();
+    if (!slug || slug.length > 120 || /[\/\\?#%]/.test(slug) || slug === "." || slug === ".." || /[\u0000-\u001f]/.test(slug)) {
+      throw new Error("شناسه یکی از دسته‌بندی‌ها معتبر نیست.");
+    }
+    const item = asRecord(rawItem);
+    const canonical = textValue(item.canonical_url, 500, "نشانی معیار دسته‌بندی");
+    if (canonical) {
+      let url: URL;
+      try { url = new URL(canonical); } catch { throw new Error("نشانی معیار دسته‌بندی معتبر نیست."); }
+      if (url.origin !== SITE_ORIGIN || !url.pathname.startsWith("/blog/category/")) {
+        throw new Error("نشانی معیار دسته‌بندی باید در مسیر دسته‌بندی‌های همین وبلاگ باشه.");
+      }
+    }
+    output[slug] = {
+      description: textValue(item.description, 500, "توضیحات دسته‌بندی"),
+      seo_title: textValue(item.seo_title, 75, "عنوان SEO دسته‌بندی"),
+      meta_description: textValue(item.meta_description, 320, "توضیحات متای دسته‌بندی"),
+      og_title: textValue(item.og_title, 100, "عنوان اشتراک‌گذاری دسته‌بندی"),
+      og_description: textValue(item.og_description, 300, "توضیحات اشتراک‌گذاری دسته‌بندی"),
+      canonical_url: canonical,
+      robots_index: item.robots_index !== false,
+    };
+  }
+  return output;
+}
+
 function tagsValue(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return [...new Set(value.slice(0, 25)
@@ -397,6 +428,7 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
       default_meta_description: textValue(input.default_meta_description, 320, "توضیحات متای پیش‌فرض"),
       default_og_image: defaultOg || "",
       footer_note: textValue(input.footer_note, 200, "متن پابرگ"),
+      category_seo: categorySeoValue(input.category_seo),
       updated_at: new Date().toISOString(),
     };
     const { data, error } = await client.from("blog_settings")

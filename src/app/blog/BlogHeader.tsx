@@ -1,23 +1,23 @@
 import Link from "next/link";
 import { getBlogSettings } from "@/lib/blog-data";
+import { socials } from "@/lib/site";
+import { SocialIcon } from "@/components/icons";
+
+const socialLabels: Record<string, string> = {
+  youtube: "یوتیوب", instagram: "اینستاگرام", linkedin: "لینکدین", x: "ایکس", unsplash: "آنسپلیش", medium: "مدیوم",
+};
 
 export function BlogHeader() {
   return (
-    <header className="blog-header">
+    <header className="blog-header" dir="rtl">
       <div className="blog-container blog-header-inner">
-        <Link className="blog-brand" href="/blog/" aria-label="یادداشت‌های آریا کیانزاد">
-          <span className="blog-brand-mark" aria-hidden="true">AK</span>
-          <span className="blog-brand-copy">
-            <strong>آریا کیانزاد</strong>
-            <small>یادداشت‌هایی از زاویۀ من</small>
-          </span>
+        <Link className="blog-header-blog-link" href="/blog/" aria-label="وبلاگ و یادداشت‌ها">
+          <span className="blog-brand-mark" aria-hidden="true">آ</span>
+          <span>یادداشت‌ها</span>
         </Link>
-        <nav className="blog-header-nav" aria-label="مسیرهای وبلاگ">
-          <Link href="/blog/">همۀ نوشته‌ها</Link>
-          <Link href="/#about">دربارۀ من</Link>
-          <Link href="/#contact">ارتباط</Link>
-        </nav>
-        <Link className="blog-back-link" href="/">وب‌سایت اصلی <span aria-hidden="true">↗</span></Link>
+        <Link className="blog-back-link" href="/">
+          وب‌سایت اصلی <span aria-hidden="true">↗</span>
+        </Link>
       </div>
     </header>
   );
@@ -26,21 +26,28 @@ export function BlogHeader() {
 export function BlogFooter() {
   const settings = getBlogSettings();
   return (
-    <footer className="blog-footer">
+    <footer className="blog-footer" dir="rtl">
       <div className="blog-container blog-footer-inner">
         <div className="blog-footer-main">
-          <span className="blog-footer-kicker">NOTES / THOUGHTS / PERSPECTIVES</span>
           <h2>بعضی سؤال‌ها با یک جواب تموم نمی‌شن.</h2>
           <p>{settings.footer_note || "من اینجا درباره برند، معنا و ارتباط می‌نویسم؛ از چیزهایی که در کارم می‌بینم تا سؤال‌هایی که هنوز جواب قطعی براشون ندارم."}</p>
         </div>
-        <div className="blog-footer-links">
-          <Link href="/blog/">همۀ نوشته‌ها</Link>
-          <Link href="/#about">دربارۀ من</Link>
-          {settings.enable_rss ? <a href="/blog/feed.xml">فید RSS</a> : null}
-          <a href="mailto:kianzadaria@gmail.com">ایمیل</a>
+        <div className="blog-footer-side">
+          <nav className="blog-footer-links" aria-label="پیوندهای وبلاگ">
+            <Link href="/blog/">همۀ نوشته‌ها</Link>
+            {settings.enable_rss ? <a href="/blog/feed.xml">فید وبلاگ</a> : null}
+            <Link href="/">وب‌سایت اصلی</Link>
+          </nav>
+          <div className="blog-socials" aria-label="شبکه‌های اجتماعی">
+            {socials.map((entry) => (
+              <a key={entry.id} href={entry.href} target="_blank" rel="noopener noreferrer" aria-label={socialLabels[entry.id] || "شبکۀ اجتماعی"} title={socialLabels[entry.id] || "شبکۀ اجتماعی"}>
+                <SocialIcon id={entry.id} />
+              </a>
+            ))}
+          </div>
         </div>
         <div className="blog-footer-bottom">
-          <small>© {new Date().getFullYear()} Aria Kianzad</small>
+          <small>© {new Date().toLocaleDateString("fa-IR", { year: "numeric" })} آریا کیانزاد</small>
           <span>این نوشته‌ها رو از نگاه و تجربهٔ خودم می‌نویسم.</span>
         </div>
       </div>
