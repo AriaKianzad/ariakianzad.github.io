@@ -1,5 +1,3 @@
-type RequestType = "advertorial" | "editorial_link" | "sponsorship" | "collaboration" | "general";
-
 export function ContactForm() {
   return (
     <form className="blog-contact-form" data-blog-contact-form noValidate>
