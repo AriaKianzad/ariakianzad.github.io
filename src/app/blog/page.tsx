@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const description = settings.defaultMetaDescription || settings.description;
   const image = settings.defaultOgImage || undefined;
   return {
-    title, description, alternates: { canonical: "/blog/" },
+    title, description,
     openGraph: { type: "website", title, description, url: "/blog/", images: image ? [image] : undefined },
     twitter: { card: "summary_large_image", title, description, images: image ? [image] : undefined },
     alternates: { canonical: "/blog/", types: { "application/rss+xml": "/blog/feed.xml" } },
