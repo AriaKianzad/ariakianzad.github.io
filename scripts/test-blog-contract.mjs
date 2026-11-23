@@ -6,7 +6,7 @@ const [
   packageJson, fetchScript, imageScript, dataSource, markdownSource,
   listingPage, articlePage, categoryPage, rssRoute, blogCss, adminHtml,
   adminApp, adminEdge, publicRpcMigration, browserDenyMigration, snapshotMigration,
-  publicHeader, workflow, sitemap, robots,
+  publicHeader, workflow, sitemap, robots, heroVisualComponent, signalScene, heroBootstrap,
 ] = await Promise.all([
   read("package.json"),
   read("scripts/fetch-blog-content.mjs"),
@@ -28,6 +28,9 @@ const [
   read(".github/workflows/deploy.yml"),
   read("src/app/sitemap.ts"),
   read("src/app/robots.ts"),
+  read("src/components/hero-visual.tsx"),
+  read("src/client/signal-scene.ts"),
+  read("src/client/hero-visual.ts"),
 ]);
 
 const categorySeoMigration = await read("supabase/migrations/20261123130000_add_category_level_seo.sql");
@@ -114,6 +117,13 @@ assert.ok(markdownSource.includes("rel=(follow|nofollow|sponsored|ugc)") && mark
 assert.ok(markdownSource.includes("<table>") && markdownSource.includes("<u>"), "public Markdown renderer must support pasted tables and underline");
 assert.ok(siteChrome.includes("usePathname") && siteChrome.includes("isBlog"), "blog routes must not inherit the portfolio chrome");
 assert.ok(listingPage.includes('settings.tagline || "یادداشت‌هایی درباره برند، معنا و ارتباط"'), "blog archive H1 must use the descriptive tagline");
+assert.ok(listingPage.includes('import HeroVisual from "@/components/hero-visual"') && listingPage.includes("<HeroVisual />"), "blog archive must reuse the homepage signal animation");
+assert.ok(!listingPage.includes("یادداشت‌ها و مقاله‌ها") && !listingPage.includes("ایده‌ها، تحقیق و نگاه شخصی") && !listingPage.includes("آرشیو نوشته‌ها"), "blog archive must remove the three redundant microcopy labels");
+assert.ok(listingPage.includes("blog-intro-copy") && listingPage.includes("blog-intro-visual"), "blog intro must separate its title from the animation area");
+assert.ok(heroVisualComponent.includes("data-hero-visual") && signalScene.includes('getPropertyValue("--blog-accent")'), "shared hero scene must support the blog colour palette");
+assert.ok(heroBootstrap.includes("MutationObserver") && heroBootstrap.includes("syncRoots"), "hero scene must initialize after client-side route changes");
+assert.ok(publicHeader.includes("<span>آریا کیانزاد</span>"), "blog header brand must show the author's name");
+assert.ok(blogCss.includes(".blog-theme .blog-header-blog-link {") && blogCss.includes('grid-template-areas:"visual copy"') && blogCss.includes("position:absolute;"), "blog header and hero must retain their desktop/mobile layout contracts");
 assert.ok(!articlePage.includes("ARTICLE / ARCHIVE") && !categoryPage.includes("CATEGORY / ARCHIVE"), "public blog screens must not expose English archive labels");
 assert.ok(!adminHtml.includes("Google Docs") && !adminHtml.includes("Open Graph") && !adminHtml.includes(">English<"), "CMS visible interface copy must be Persian");
 assert.ok(blogCss.includes("body:has(.blog-theme)") && blogCss.includes("font-family:var(--font-estedad)"), "blog pages must keep their own shell and Estedad typography");
