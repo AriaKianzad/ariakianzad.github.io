@@ -52,6 +52,8 @@ const analyticsConsent = await read("public/analytics-consent.js");
 const notFoundContent = await read("src/app/NotFoundContent.tsx");
 const notFoundCss = await read("src/app/not-found.css");
 const blogNotFound = await read("src/app/blog/not-found.tsx");
+const legacyCategoryMigration = await read("supabase/migrations/20261123235500_cleanup_legacy_persian_blog_category.sql");
+const legacyCategoryRedirect = await read("public/blog/category/برند-و-کسب‌وکار/index.html");
 new Script(contactBrowserScript, { filename: "public/blog-contact.js" });
 new Script(googleContactScript, { filename: "integrations/google-apps-script/blog-contact.gs" });
 const scripts = JSON.parse(packageJson).scripts;
@@ -207,10 +209,16 @@ assert.ok(categoryPage.includes("settings.noindex_empty_categories") && category
 assert.ok(sitemap.includes("settings.sitemap_include_categories") && sitemap.includes("settings.sitemap_include_articles") && sitemap.includes("category.count === 0"), "sitemap must respect global inclusion rules and empty-category noindex");
 assert.ok(articlePage.includes("settings.schema_type") && articlePage.includes("settings.open_graph_enabled") && articlePage.includes("settings.twitter_card_type") && articlePage.includes("settings.breadcrumbs_enabled") && articlePage.includes("robotsIndex"), "article pages must apply global schema, social, breadcrumb and robots defaults");
 assert.ok(!articlePage.includes("mailto:") && !articlePage.includes(">ایمیل"), "article share row must not expose an email action");
-assert.ok(copyLinkButton.includes("navigator.clipboard?.writeText") && copyLinkButton.includes("document.execCommand(\"copy\")") && copyLinkButton.includes("setManualCopy(true)") && copyLinkButton.includes("Ctrl+C"), "copy-link control must have clipboard and visible manual-selection fallbacks");
+assert.ok(copyLinkButton.includes("navigator.clipboard?.writeText") && copyLinkButton.includes("document.execCommand(\"copy\")") && copyLinkButton.includes("setManualCopy(true)") && copyLinkButton.includes("onCopy={() => showFeedback(\"copied\")}") && copyLinkButton.includes("blog-copy-toast") && copyLinkButton.includes("role=\"status\""), "copy-link control must confirm success and keep a usable manual-copy fallback");
 assert.ok(adminApp.includes("function clipboardHeadingLevel") && adminApp.includes("font-size") && adminApp.includes("largest>=30") && adminApp.includes('tag==="h1"?2'), "Google Docs styled headings must be preserved and heading levels serialized without shifting");
 assert.ok(markdownSource.includes("setext=lines[index+1].trim().match") && markdownSource.includes('class="blog-inline-image"'), "public Markdown renderer must preserve Setext headings and semantic images");
 assert.ok(adminApp.includes("const setext=lines[index+1].trim().match") && adminApp.includes("renderPreviewMarkdown"), "CMS preview must render Setext and ATX heading structures");
 assert.ok(analyticsConsent.includes('window.location.pathname === "/blog"') && analyticsConsent.includes('window.location.pathname.startsWith("/blog/")') && analyticsConsent.includes('getSavedChoice() === "granted"'), "blog paths must hide consent UI while continuing to respect saved analytics choices");
 assert.ok(notFoundContent.includes("usePathname") && notFoundContent.includes("not-found-blog") && notFoundCss.includes(".not-found-blog") && blogNotFound.includes("این آدرس به نوشته‌ای نمی‌رسه"), "blog must have a dedicated branded 404 page");
+assert.ok(legacyCategoryMigration.includes("category = 'brand-and-business'") && legacyCategoryMigration.includes("category_seo =") && legacyCategoryMigration.includes("- 'برند-و-کسب‌وکار'"), "legacy Persian category metadata and article slugs must be removed or migrated");
+assert.ok(legacyCategoryRedirect.includes('http-equiv="refresh"') && legacyCategoryRedirect.includes("/blog/category/brand-and-business/") && legacyCategoryRedirect.includes('name="robots" content="noindex,follow"'), "the former Persian category URL must forward to the English archive without remaining indexable");
+assert.ok(adminApp.includes("function categorySeoEntries()") && !adminApp.slice(adminApp.indexOf("function categorySeoEntries()"),adminApp.indexOf("function renderCategorySeoEditor")).includes("Object.entries(state.settings?.category_seo"), "orphaned category SEO keys must not create ghost categories in the CMS");
+assert.ok(articlePage.includes("--blog-line-height") && articlePage.includes("--blog-paragraph-gap") && blogCss.includes("margin-block-end:var(--blog-paragraph-gap,2.05em)") && blogCss.includes("line-height:var(--blog-line-height,1.95)"), "Persian paragraphs must have a controlled gap slightly larger than the chosen line height");
+assert.ok(adminHtml.includes("سایت‌مپ هم خودکار بازسازی می‌شه") && adminEdge.includes('if (tokenConfigured) await dispatchAfterWrite("save_settings")') && adminEdge.includes('await dispatchAfterWrite("publish_post")') && workflow.includes("workflow_dispatch:"), "saving category settings and publishing an article must trigger a site build and sitemap regeneration");
+
 console.log("Personal blog contract passed: secure CMS, rich paste, category SEO, accessible formatting, responsive reading and isolated Persian editorial chrome.");
