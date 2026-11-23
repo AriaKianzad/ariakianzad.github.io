@@ -5,7 +5,7 @@ import { Script } from "node:vm";
 const read = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
 const [
   packageJson, fetchScript, imageScript, dataSource, markdownSource,
-  listingPage, articlePage, categoryPage, rssRoute, blogCss, adminHtml,
+  listingPage, articlePage, categoryPage, rssRoute, blogCss, adminHtml, adminCss,
   adminApp, adminEdge, publicRpcMigration, browserDenyMigration, snapshotMigration,
   publicHeader, workflow, sitemap, robots, heroVisualComponent, signalScene, heroBootstrap,
   blogLayout, contactPage, contactForm, contactEdge, contactMigration, rootLayout, configToml, googleContactScript, contactBrowserScript,
@@ -21,6 +21,7 @@ const [
   read("src/app/blog/feed.xml/route.ts"),
   read("src/app/blog/blog.css"),
   read("public/admin/blog/index.html"),
+  read("public/admin/blog/blog.css"),
   read("public/admin/blog/app.js"),
   read("supabase/functions/blog-admin/index.ts"),
   read("supabase/migrations/20261123110500_harden_public_blog_rpc.sql"),
@@ -45,6 +46,7 @@ const [
 ]);
 
 const categorySeoMigration = await read("supabase/migrations/20261123130000_add_category_level_seo.sql");
+const copyLinkButton = await read("src/app/blog/CopyLinkButton.tsx");
 new Script(contactBrowserScript, { filename: "public/blog-contact.js" });
 new Script(googleContactScript, { filename: "integrations/google-apps-script/blog-contact.gs" });
 const scripts = JSON.parse(packageJson).scripts;
@@ -98,6 +100,24 @@ assert.ok(adminApp.includes("/auth/v1/token?grant_type=password"), "CMS must use
 assert.ok(adminApp.includes("/functions/v1/blog-admin"), "privileged CMS actions must use the Edge Function");
 assert.ok(adminApp.includes("createImageBitmap(file)") && adminApp.includes('canvasBlob(canvas,"image/webp"'), "CMS must compress images to WebP");
 assert.ok(adminApp.includes("3*1024*1024"), "CMS must cap compressed image uploads");
+const lastMediaPreviewRule = [...adminCss.matchAll(/\.media-preview img\s*\{([^}]*)\}/g)].at(-1)?.[1] || "";
+assert.ok(adminApp.includes("canvas.width=bitmap.width") && adminApp.includes("canvas.height=bitmap.height") && adminApp.includes("drawImage(bitmap,0,0,canvas.width,canvas.height)") && !adminApp.includes("const maxEdge=1800"), "CMS image optimization must compress without resizing or cropping the source");
+assert.ok(lastMediaPreviewRule.includes("object-fit:contain"), "CMS image previews must preserve the original aspect ratio");
+assert.ok(adminHtml.includes('name="username"') && adminHtml.includes('name="password"') && adminHtml.includes('autocomplete="on"'), "login form must expose recognizable username/password autocomplete semantics");
+assert.ok(adminHtml.includes('id="insert-image"') && adminHtml.includes('id="inline-image-dialog"') && adminHtml.includes('id="inline-image-alt"') && adminHtml.includes('id="inline-image-title"') && adminHtml.includes('id="inline-image-caption"'), "CMS must provide inline image insertion with alt, title and caption fields");
+assert.ok(adminApp.includes("function saveInlineImage") && adminApp.includes("placeInlineImageFigure") && adminApp.includes("image.alt=alt") && adminApp.includes("image.title=title"), "inline image editor must upload, place and update accessible image metadata");
+const previewStart=adminApp.indexOf("function renderPreviewMarkdown");
+const previewEnd=adminApp.indexOf("function inlineToMarkdown",previewStart);
+const previewRenderer=adminApp.slice(previewStart,previewEnd);
+assert.ok(previewRenderer.includes("for(let index=0;") && !previewRenderer.includes("return;") && previewRenderer.includes("continue;"), "full article preview must continue rendering after headings, blank lines, quotes and lists");
+assert.ok(markdownSource.includes("parseImageLine") && markdownSource.includes("extractMarkdownImageUrls") && markdownSource.includes('class="blog-inline-image"') && markdownSource.includes("<figcaption>"), "public Markdown renderer must support semantic inline figures and expose them to article metadata");
+assert.ok(copyLinkButton.includes("navigator.clipboard") && copyLinkButton.includes("blog-share-copy"), "article copy-link control must copy the canonical URL with a visible state");
+assert.ok(articlePage.includes("CopyLinkButton") && articlePage.includes("<CopyLinkButton url={canonical} />"), "article share section must render the copy-link control");
+assert.ok(articlePage.includes("blog-article-header-grid") && articlePage.includes("blog-article-copy" ) && articlePage.includes("extractMarkdownImageUrls"), "article page must use a two-column editorial hero and include body images in article metadata");
+const lastFeaturedImageRule = [...blogCss.matchAll(/\.blog-hero-image img\s*\{([^}]*)\}/g)].at(-1)?.[1] || "";
+assert.ok(lastFeaturedImageRule.includes("object-fit:contain") && lastFeaturedImageRule.includes("height:auto") && lastFeaturedImageRule.includes("max-height:none"), "featured article images must preserve their full source dimensions on desktop and mobile");
+assert.ok(blogCss.includes(".blog-inline-image>img") && blogCss.includes(".blog-article-header-grid"), "public inline images and the editorial hero must have dedicated layouts");
+
 assert.ok(adminApp.includes("previewInline"), "Markdown preview must use an escaped renderer");
 assert.ok(!/localStorage|sessionStorage/.test(adminApp), "CMS session tokens must not be persisted in Web Storage");
 assert.ok(adminApp.includes("PasswordCredential") && adminApp.includes("navigator.credentials.get") && adminApp.includes("preventSilentAccess"), "remember-me must rely on browser-managed credentials, not client-side token storage");
