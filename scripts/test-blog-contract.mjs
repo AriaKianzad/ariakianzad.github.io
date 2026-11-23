@@ -44,14 +44,14 @@ assert.ok(dataSource.includes("readFileSync"), "blog data must be loaded at buil
 assert.ok(listingPage.includes("getBlogPosts()") && listingPage.includes("BlogListingClient"), "the blog archive must be server-rendered with client search controls");
 assert.ok(listingPage.includes('"@type": "Blog"'), "the archive must include Blog structured data");
 assert.ok(articlePage.includes("generateStaticParams"), "published articles must be statically generated");
-assert.ok(articlePage.includes('{ slug: "__empty__" }'), "empty blog must still export cleanly without a sample article");
+assert.ok(articlePage.includes('{ slug: "__empty__" }') && articlePage.includes("robots: { index: false, follow: false }"), "empty article fallback must remain noindex");
 assert.ok(articlePage.includes('"@type": "Article"'), "articles must include Article structured data");
 assert.ok(articlePage.includes('"@type": "FAQPage"'), "FAQ schema must be available");
 assert.ok(articlePage.includes("canonical") && articlePage.includes("robots_index"), "article SEO must support canonical and robots directives");
 assert.ok(articlePage.includes("openGraph:") && articlePage.includes("twitter:"), "article metadata must include OG and X cards");
 assert.ok(articlePage.includes("extractToc"), "articles must support a table of contents");
 assert.ok(categoryPage.includes("generateStaticParams"), "category archives must be static pages");
-assert.ok(categoryPage.includes('{ category: "__empty__" }'), "empty blog must export cleanly without sample categories");
+assert.ok(categoryPage.includes('{ category: "__empty__" }') && categoryPage.includes("robots:{index:false,follow:false}"), "empty category fallback must remain noindex");
 assert.ok(rssRoute.includes("application/rss+xml"), "the blog must publish an RSS feed");
 assert.ok(sitemap.includes("getBlogPosts()") && sitemap.includes("/blog/"), "sitemap must include published articles and blog archive");
 assert.ok(robots.includes('disallow: ["/admin/", "/admin/blog/"]'), "robots.txt must disallow both admin areas");

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { getBlogCategories, getBlogSettings, getPostsByCategory } from "@/lib/blog-data";
 import { site } from "@/lib/site";
 import { BlogHeader, BlogFooter } from "../../BlogHeader";
@@ -16,7 +15,7 @@ export function generateStaticParams() {
 export async function generateMetadata({params}:{params:Promise<{category:string}>}):Promise<Metadata>{
   const {category}=await params;
   const item=getBlogCategories().find((entry)=>entry.slug===category);
-  if(!item)return {};
+  if(!item)return {title:"دسته‌بندی پیدا نشد | آریا کیانزاد",robots:{index:false,follow:false}};
   return {
     title:item.name+" | نوشته‌های آریا کیانزاد",
     description:"مقاله‌ها و یادداشت‌های مربوط به "+item.name+" در وبلاگ آریا کیانزاد.",
@@ -27,9 +26,24 @@ export async function generateMetadata({params}:{params:Promise<{category:string
 export default async function BlogCategoryPage({params}:{params:Promise<{category:string}>}){
   const {category}=await params;
   const item=getBlogCategories().find((entry)=>entry.slug===category);
-  if(!item)notFound();
-  const posts=getPostsByCategory(category);
   const settings=getBlogSettings();
+  if(!item) {
+    return (
+      <>
+        <BlogHeader />
+        <main className="blog-main" dir="rtl">
+          <section className="blog-container blog-category-heading">
+            <div className="blog-eyebrow"><span /> CATEGORY / ARCHIVE</div>
+            <h1>هنوز دسته‌بندی‌ای برای نمایش وجود نداره.</h1>
+            <p>بعد از انتشار اولین مقاله، دسته‌بندی‌ها اینجا نمایش داده می‌شن.</p>
+            <Link href="/blog/">بازگشت به همۀ نوشته‌ها</Link>
+          </section>
+        </main>
+        <BlogFooter />
+      </>
+    );
+  }
+  const posts=getPostsByCategory(category);
   return (
     <>
       <BlogHeader />

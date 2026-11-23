@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import { site } from "@/lib/site";
 import { getBlogPost, getBlogPosts, getBlogSettings, readingTime } from "@/lib/blog-data";
@@ -20,7 +19,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const post = getBlogPost(slug);
-  if (!post) return {};
+  if (!post) return { title: "مقاله پیدا نشد | آریا کیانزاد", robots: { index: false, follow: false } };
   const settings = getBlogSettings();
   const canonical = post.canonical_url || site.url + "/blog/" + post.slug + "/";
   const image = site.url + "/og/blog/" + post.slug + ".jpg";
@@ -51,8 +50,23 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function BlogArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = getBlogPost(slug);
-  if (!post) notFound();
   const settings = getBlogSettings();
+  if (!post) {
+    return (
+      <>
+        <BlogHeader />
+        <main className="blog-article-main" dir="rtl">
+          <section className="blog-container blog-category-heading">
+            <div className="blog-eyebrow"><span /> ARTICLE / ARCHIVE</div>
+            <h1>هنوز مقاله‌ای برای نمایش وجود نداره.</h1>
+            <p>بعد از انتشار اولین نوشته، صفحه‌های مقاله اینجا ساخته می‌شن.</p>
+            <Link href="/blog/">بازگشت به همۀ نوشته‌ها</Link>
+          </section>
+        </main>
+        <BlogFooter />
+      </>
+    );
+  }
   const toc = post.toc_enabled && settings.show_toc ? extractToc(post.content) : [];
   const html = renderMarkdown(post.content);
   const related = settings.show_related_posts
