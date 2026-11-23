@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BlogFrame } from "@/components/blog-frame";
 import { BlogPostCard } from "@/components/blog-post-card";
+import { BlogPagination } from "@/components/blog-pagination";
 import { getBlogCategories, getBlogSettings, getPublishedPosts } from "@/lib/blog-content";
 
 export const dynamic = "force-static";
@@ -15,6 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title, description, alternates: { canonical: "/blog/" },
     openGraph: { type: "website", title, description, url: "/blog/", images: image ? [image] : undefined },
     twitter: { card: "summary_large_image", title, description, images: image ? [image] : undefined },
+    alternates: { canonical: "/blog/", types: { "application/rss+xml": "/blog/feed.xml" } },
   };
 }
 
@@ -24,6 +26,8 @@ export default async function BlogArchivePage() {
   ]);
   const featured = settings.showFeatured ? posts.find((post) => post.featured) : undefined;
   const rest = posts.filter((post) => post.slug !== featured?.slug);
+  const totalPages = Math.max(1, Math.ceil(rest.length / settings.postsPerPage));
+  const visiblePosts = rest.slice(0, settings.postsPerPage);
   const blogSchema = {
     "@context": "https://schema.org",
     "@type": "Blog",
@@ -70,8 +74,9 @@ export default async function BlogArchivePage() {
         <section className="blog-archive" aria-labelledby="blog-archive-title">
           <div className="blog-section-heading"><h2 id="blog-archive-title">تازه‌ترین نوشته‌ها</h2><span>THE LATEST NOTES</span></div>
           {rest.length ? <div className="blog-post-grid" id="blog-post-grid">
-            {rest.map((post) => <BlogPostCard key={post.slug} post={post} />)}
+            {visiblePosts.map((post) => <BlogPostCard key={post.slug} post={post} />)}
           </div> : <div className="blog-empty">هنوز مقاله‌ای منتشر نشده. اولین نوشته به‌زودی اینجا قرار می‌گیره.</div>}
+          <BlogPagination currentPage={1} totalPages={totalPages} />
           {rest.length > 0 && <p className="blog-search-empty" id="blog-search-empty" hidden>مقاله‌ای با این عبارت پیدا نشد.</p>}
         </section>
       </main>
