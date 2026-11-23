@@ -104,7 +104,7 @@ function categorySeoValue(value: unknown): Record<string, Record<string, unknown
   const output: Record<string, Record<string, unknown>> = {};
   for (const [rawSlug, rawItem] of entries) {
     const slug = rawSlug.trim().toLowerCase();
-    if (!/^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u.test(slug)) {
+    if (!slug || slug.length > 120 || /[\/\\?#%]/.test(slug) || slug === "." || slug === ".." || /[\u0000-\u001f]/.test(slug)) {
       throw new Error("شناسه یکی از دسته‌بندی‌ها معتبر نیست.");
     }
     const item = asRecord(rawItem);
