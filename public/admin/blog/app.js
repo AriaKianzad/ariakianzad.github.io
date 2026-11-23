@@ -862,8 +862,7 @@
   function selectedEditorCategories() {
     return Array.from(document.querySelectorAll("#post-category-options input[data-category-slug]:checked"))
       .map((input)=>input.dataset.categorySlug)
-      .filter(Boolean)
-      .slice(0,3);
+      .filter(Boolean);
   }
   function syncPrimaryCategorySelect(preferred) {
     const select=$("#post-primary-category");
