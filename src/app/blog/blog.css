@@ -1146,7 +1146,7 @@ body:has(.blog-theme) > main#main { display:contents; }
 }
 .blog-theme .blog-card-meta time {
   display:inline-block;
-  direction:rtl;
+  direction:inherit;
   unicode-bidi:isolate;
   white-space:nowrap;
   font-variant-numeric:tabular-nums;
