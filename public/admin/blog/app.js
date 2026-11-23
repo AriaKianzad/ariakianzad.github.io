@@ -225,7 +225,7 @@
     let value=escapeHtml(text);
     value=value.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g,(_m,alt,url)=>'<img src="'+escapeHtml(safeHref(url))+'" alt="'+alt+'">');
     value=value.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
-      const href=safeHref(url),external=/^https?:\/\//i.test(href);
+      const href=safeHref(url.replace(/&amp;/g,"&")),external=/^https?:\/\//i.test(href);
       const relation=(String(options||"").match(/rel=(follow|nofollow|sponsored|ugc)/i)||[])[1]||"follow";
       const target=(String(options||"").match(/target=(_blank|_self)/i)||[])[1]||(external?"_blank":"_self");
       const rel=[...(relation!=="follow"?[relation]:[]),...(target==="_blank"?["noopener","noreferrer"]:[])].join(" ");
@@ -309,7 +309,7 @@
     }).join("\n");
   }
   function blockToMarkdown(node) {
-    if(node.nodeType===Node.TEXT_NODE)return node.nodeValue?.trim()?"<p>"+escapeHtml(node.nodeValue.trim())+"</p>":"";
+    if(node.nodeType===Node.TEXT_NODE)return node.nodeValue?.trim()?node.nodeValue.trim()+"\n\n":"";
     if(node.nodeType!==Node.ELEMENT_NODE)return "";
     const element=node,tag=element.tagName.toLowerCase();
     if(tag==="h2"||tag==="h3"||tag==="h4")return "#".repeat(Number(tag.slice(1)))+" "+Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
