@@ -7,16 +7,16 @@ import { BlogListingClient, BlogPostCard } from "./BlogListingClient";
 const blogSettings = getBlogSettings();
 
 export const metadata: Metadata = {
-  title: blogSettings.default_meta_title || "وبلاگ آریا کیانزاد | استراتژی برند و پرسونال برندینگ",
-  description: blogSettings.default_meta_description || blogSettings.description || "مقاله‌ها و یادداشت‌های آریا کیانزاد درباره استراتژی برند، جایگاه‌یابی، هویت، ارتباطات و پرسونال برندینگ.",
+  title: blogSettings.default_meta_title || "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد",
+  description: blogSettings.default_meta_description || blogSettings.description || "اینجا درباره استراتژی برند، جایگاه‌یابی، ارتباطات و پرسونال برندینگ می‌نویسم؛ با تمرکز بر معنا، رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن.",
   alternates: { canonical: site.url + "/blog/", types: { "application/rss+xml": site.url + "/blog/feed.xml" } },
   openGraph: {
     type: "website", url: site.url + "/blog/", siteName: "Aria Kianzad",
-    title: "نوشته‌ها | آریا کیانزاد",
-    description: "ایده‌ها و تحلیل‌هایی درباره برند، معنا و ارتباط.",
+    title: "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد",
+    description: "از استراتژی برند و جایگاه‌یابی تا ارتباطات و پرسونال برندینگ؛ اینجا از نگاه و تجربهٔ خودم می‌نویسم.",
     images: [{ url: blogSettings.default_og_image || site.url + "/og/og.jpg", width: 1200, height: 630 }],
   },
-  twitter: { card: "summary_large_image", title: "نوشته‌ها | آریا کیانزاد", images: [site.url + "/og/og.jpg"] },
+  twitter: { card: "summary_large_image", title: "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد", images: [site.url + "/og/og.jpg"] },
 };
 
 export default function BlogIndexPage() {
@@ -38,8 +38,8 @@ export default function BlogIndexPage() {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
         <section className="blog-intro blog-container">
           <div className="blog-eyebrow"><span /> WRITING / BRAND STRATEGY</div>
-          <h1>{settings.intro_title || settings.title}</h1>
-          <p className="blog-intro-lede">{settings.intro_body || settings.tagline}</p>
+          <h1>{settings.tagline || "یادداشت‌هایی درباره برند، معنا و ارتباط"}</h1>
+          <p className="blog-intro-lede">{settings.intro_body || "از استراتژی برند و جایگاه‌یابی تا ارتباطات و پرسونال برندینگ؛ این‌ها موضوعاتی‌ان که اینجا از زاویۀ تجربه، تحقیق و پرسش‌های خودم بهشون نگاه می‌کنم."}</p>
           <p className="blog-intro-description">{settings.description}</p>
           <div className="blog-intro-rule"><span>01</span><span>IDEAS, RESEARCH &amp; PERSPECTIVE</span></div>
         </section>
