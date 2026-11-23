@@ -33,10 +33,10 @@ export default async function BlogCategoryPage({params}:{params:Promise<{categor
         <BlogHeader />
         <main className="blog-main" dir="rtl">
           <section className="blog-container blog-category-heading">
-            <div className="blog-eyebrow"><span /> CATEGORY / ARCHIVE</div>
+            <div className="blog-eyebrow"><span /> دسته‌بندی نوشته‌ها</div>
             <h1>هنوز دسته‌بندی‌ای برای نمایش وجود نداره.</h1>
             <p>بعد از انتشار اولین مقاله، دسته‌بندی‌ها اینجا نمایش داده می‌شن.</p>
-            <Link href="/blog/">بازگشت به همۀ نوشته‌ها</Link>
+            <Link href="/blog/">بازگشت به نوشته‌ها</Link>
           </section>
         </main>
         <BlogFooter />
@@ -52,7 +52,7 @@ export default async function BlogCategoryPage({params}:{params:Promise<{categor
           <div className="blog-eyebrow"><span /> CATEGORY / ARCHIVE</div>
           <h1>{item.name}</h1>
           <p>{posts.length.toLocaleString("fa-IR")} نوشته در این دسته‌بندی</p>
-          <Link href="/blog/">← بازگشت به همۀ نوشته‌ها</Link>
+          <Link href="/blog/">← بازگشت به نوشته‌ها</Link>
         </section>
         <section className="blog-container blog-listing-section">
           <div className="blog-card-grid">{posts.map((post)=><BlogPostCard key={post.slug} post={post} showReadingTime={settings.show_reading_time}/>)}</div>
