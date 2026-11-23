@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { getPostCategorySlugs, getPrimaryCategorySlug, getBlogCategoryName } from "@/lib/blog-data";
-import { getPostCategorySlugs, getPrimaryCategorySlug, getBlogCategoryName } from "@/lib/blog-data";
 import type { BlogPost } from "@/lib/blog-data";
 
 type Category = { name: string; count: number; slug: string };
@@ -84,8 +83,8 @@ export function BlogListingClient({
           <div className="blog-category-filters" aria-label="دسته‌بندی‌ها">
             <button className={!category ? "active" : ""} onClick={() => changeCategory("")} type="button">همه</button>
             {categories.map((item) => (
-              <button key={item.slug} className={category === item.name ? "active" : ""}
-                onClick={() => changeCategory(item.name)} type="button">
+              <button key={item.slug} className={category === item.slug ? "active" : ""}
+                onClick={() => changeCategory(item.slug)} type="button">
                 {item.name} <small>{item.count}</small>
               </button>
             ))}
