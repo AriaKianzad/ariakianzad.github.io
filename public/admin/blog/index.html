@@ -5,8 +5,8 @@
 <meta name="robots" content="noindex, nofollow, noarchive"><meta name="theme-color" content="#f4f1e9">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://bkohdqwecnvbmeaiuyyx.supabase.co; font-src 'self'; connect-src 'self' https://bkohdqwecnvbmeaiuyyx.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <title>مدیریت بلاگ | آریا کیانزاد</title>
-<link rel="stylesheet" href="./blog.css?v=20261123-1">
-<script src="../config.js?v=20261121-2"></script><script src="./app.js?v=20261123-1" defer></script>
+<link rel="stylesheet" href="./blog.css?v=20261123-2">
+<script src="../config.js?v=20261121-2"></script><script src="./app.js?v=20261123-2" defer></script>
 </head>
 <body>
 <main class="admin-root">
@@ -76,11 +76,26 @@
 <div class="slug-row"><span>URL</span><span>ariakianzad.github.io/blog/</span><input id="post-slug" data-field="slug" placeholder="article-slug" autocomplete="off"></div>
 <label class="field-label block-label">خلاصۀ مقاله<textarea id="post-excerpt" data-field="excerpt" rows="2" maxlength="700" placeholder="خلاصه‌ای کوتاه برای کارت مقاله و توضیحات صفحه…"></textarea></label>
 </div>
-<div class="editor-toolbar"><span class="kicker">ARTICLE BODY / MARKDOWN</span><div class="format-tools">
-<button type="button" data-insert="## تیتر بخش">H2</button><button type="button" data-insert="**متن برجسته**">B</button><button type="button" data-insert="*تأکید*"><i>I</i></button><button type="button" data-insert="[متن لینک](https://example.com)">↗</button><button type="button" data-insert="> نقل‌قول">❞</button><button type="button" data-insert="![توضیح تصویر](https://...)">▧</button><button type="button" data-insert="کد:">{"}"}</button>
+<div class="editor-toolbar">
+<span class="kicker">ARTICLE BODY / RICH TEXT</span>
+<div class="format-tools" aria-label="ابزارهای قالب‌بندی">
+<button type="button" data-command="formatBlock" data-value="H2" title="تیتر بخش">H2</button>
+<button type="button" data-command="formatBlock" data-value="H3" title="زیرتیتر">H3</button>
+<button type="button" data-command="bold" title="برجسته">B</button>
+<button type="button" data-command="italic" title="تأکید"><i>I</i></button>
+<button type="button" data-command="insertUnorderedList" title="فهرست نشانه‌دار">•</button>
+<button type="button" data-command="insertOrderedList" title="فهرست شماره‌دار">1.</button>
+<button type="button" data-command="formatBlock" data-value="BLOCKQUOTE" title="نقل‌قول">❞</button>
+<button type="button" id="insert-link" title="افزودن پیوند">↗</button>
+<button type="button" id="link-settings-toggle" title="تنظیم پیوندهای متن">تنظیم لینک‌ها</button>
 </div></div>
-<div id="editor-workarea" class="editor-workarea"><textarea id="post-content" data-field="content" spellcheck="true" placeholder="# تیتر اصلی مقاله&#10;&#10;اینجا بنویس…&#10;&#10;## تیتر بخش&#10;&#10;متن مقاله رو با Markdown ساختاربندی کن." aria-label="متن مقاله"></textarea>
+<p class="paste-hint">از Google Docs مستقیم اینجا Paste کن؛ تیترها، پاراگراف‌ها، بولت‌ها، شماره‌گذاری، برجسته‌سازی، نقل‌قول‌ها و لینک‌ها حفظ می‌شن. تیتر اصلی مقاله رو جداگانه در بالای فرم وارد کن.</p>
+<div id="editor-workarea" class="editor-workarea"><div id="post-content" class="editor-richtext" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" aria-label="متن مقاله" dir="rtl" data-placeholder="اینجا بنویس یا متن ساختاربندی‌شدۀ Google Docs رو Paste کن…"></div>
 <div id="markdown-preview" class="markdown-preview" hidden><div class="preview-label">LIVE PREVIEW</div><article id="preview-content" class="blog-prose"></article></div></div>
+<section id="link-settings" class="link-settings" hidden aria-label="تنظیمات پیوندهای مقاله">
+<div class="link-settings-heading"><strong>تنظیم مستقل هر پیوند</strong><span>Follow، Nofollow، Sponsored و UGC</span></div>
+<div id="link-settings-list" class="link-settings-list"></div>
+</section>
 
 <div class="editor-tabs" role="tablist"><button class="editor-tab active" type="button" data-tab="seo">سئو و شبکه‌های اجتماعی</button><button class="editor-tab" type="button" data-tab="appearance">ظاهر مقاله</button><button class="editor-tab" type="button" data-tab="faq">پرسش‌های متداول</button></div>
 <section class="tab-panel active" id="tab-seo"><div class="content-panel">
