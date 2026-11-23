@@ -1,14 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import "./not-found.css";
 
 export default function NotFoundContent() {
-  const [blogRoute, setBlogRoute] = useState(false);
-
-  useEffect(() => {
-    setBlogRoute(/^\/blog(?:\/|$)/.test(window.location.pathname));
-  }, []);
+  const pathname = usePathname() || "/";
+  const blogRoute = pathname === "/blog" || pathname.startsWith("/blog/");
 
   if (blogRoute) {
     return (
