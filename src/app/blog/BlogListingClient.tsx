@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { getPostCategorySlugs, getPrimaryCategorySlug } from "@/lib/blog-category-utils";
 import type { BlogPost } from "@/lib/blog-data";
