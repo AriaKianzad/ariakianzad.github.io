@@ -44,7 +44,7 @@ export function renderMarkdown(markdown:string):string{
     if(/^\s*(---+|___+|\*\*\*+)\s*$/.test(line)){closeP();closeL();out.push("<hr>");continue;}
     const quote=line.match(/^\s*>\s?(.*)$/);if(quote){closeP();closeL();out.push("<blockquote><p>"+inline(quote[1])+"</p></blockquote>");continue;}
     const un=line.match(/^\s*[-*+]\s+(.+)$/),ord=line.match(/^\s*\d+[.)]\s+(.+)$/);
-    if(un||ord){closeP();const target=un?"ul":"ol";if(list!==target){closeL();out.push("<"+target+">");list=target;}out.push("<li>"+inline((un||ord)[1])+"</li>");continue;}
+    const item=un||ord;if(item){closeP();const target=un?"ul":"ol";if(list!==target){closeL();out.push("<"+target+">");list=target;}out.push("<li>"+inline(item[1])+"</li>");continue;}
     closeL();paragraph.push(line.trim());
   }
   closeP();closeL();if(code)out.push("<pre><code>"+esc(code.join("\n"))+"</code></pre>");
