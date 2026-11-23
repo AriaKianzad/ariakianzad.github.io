@@ -16,11 +16,11 @@ function formatDate(value: string, language: "fa" | "en") {
   }).format(new Date(value));
 }
 
-export function BlogPostCard({ post, featured = false, showReadingTime = true, categoryName }: { post: BlogPost; featured?: boolean; showReadingTime?: boolean; categoryName?: string }) {
+export function BlogPostCard({ post, featured = false, showReadingTime = true, categoryName, searchableTerms = [] }: { post: BlogPost; featured?: boolean; showReadingTime?: boolean; categoryName?: string; searchableTerms?: string[] }) {
   const dir = post.language === "fa" ? "rtl" : "ltr";
   const image = post.hero_image_url || "/og/blog/" + post.slug + ".jpg";
   const categorySlugs = getPostCategorySlugs(post);
-  const categoryLabels = categorySlugs.map((slug) => slug.replace(/-/g, " "));
+  const categoryLabels = [...new Set([categoryName, ...searchableTerms, ...categorySlugs.map((slug) => slug.replace(/-/g, " "))].filter(Boolean))];
   const searchable = [post.title, post.excerpt, post.focus_keyword, ...categorySlugs, ...categoryLabels, ...(post.tags || [])].filter(Boolean).join(" ");
   const minutes = readingTime(post.content, post.language).toLocaleString(post.language === "fa" ? "fa-IR" : "en-US");
   return (
@@ -77,7 +77,11 @@ export function BlogListingClient({
         <button data-clear-blog-filters type="button" hidden>پاک‌کردن فیلترها</button>
       </div>
       <div className="blog-card-grid" data-blog-card-grid>
-        {posts.map((post) => <BlogPostCard key={post.id || post.slug} post={post} categoryName={categories.find((item) => item.slug === getPrimaryCategorySlug(post))?.name} showReadingTime={showReadingTime} />)}
+        {posts.map((post) => {
+          const postCategories = getPostCategorySlugs(post);
+          const categoryNames = postCategories.map((slug) => categories.find((item) => item.slug === slug)?.name || slug.replace(/-/g, " "));
+          return <BlogPostCard key={post.id || post.slug} post={post} categoryName={categories.find((item) => item.slug === getPrimaryCategorySlug(post))?.name} searchableTerms={categoryNames} showReadingTime={showReadingTime} />;
+        })}
       </div>
       <div className="blog-empty" data-blog-empty hidden>
         <span className="blog-empty-mark">۰۱</span>
