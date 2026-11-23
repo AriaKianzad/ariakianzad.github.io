@@ -99,7 +99,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
             </figure>
           ) : null}
         </header>
-        <div className={"blog-article-grid blog-container" + (post.content_width === "wide" || settings.content_width === "wide" ? " content-wide" : "")}>
+        <div className={"blog-article-grid blog-container" + (toc.length ? " has-toc" : " no-toc") + (post.content_width === "wide" || settings.content_width === "wide" ? " content-wide" : "")}>
           {toc.length ? (
             <aside className="blog-toc">
               <strong>در این مقاله</strong>

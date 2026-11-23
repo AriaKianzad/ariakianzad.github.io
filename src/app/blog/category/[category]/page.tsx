@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getBlogCategories, getPostsByCategory, slugifyCategory } from "@/lib/blog-data";
+import { getBlogCategories, getPostsByCategory } from "@/lib/blog-data";
 import { site } from "@/lib/site";
 import { BlogHeader, BlogFooter } from "../../BlogHeader";
 import { BlogPostCard } from "../../BlogListingClient";
