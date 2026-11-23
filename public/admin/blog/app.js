@@ -364,6 +364,7 @@
     check("setting-featured",settings.show_featured);check("setting-readtime",settings.show_reading_time);
     check("setting-toc",settings.show_toc);check("setting-related",settings.show_related_posts);
     check("setting-share",settings.show_share);check("setting-rss",settings.enable_rss);
+    updateImagePreview("setting-og-preview",settings.default_og_image,"تصویر پیش‌فرض وبلاگ");
   }
   async function loadSettings() {
     const result=await api("get_settings");fillSettings(result.settings||{});
@@ -413,6 +414,16 @@
     $("#archive-post").addEventListener("click",()=>void changeStatus("archive_post").catch((e)=>toast(e.message,true)));
     $("#hero-image-file").addEventListener("change",()=>void handleImage("hero-image-file","post-hero-url","hero-image-preview","#post-hero-alt"));
     $("#og-image-file").addEventListener("change",()=>void handleImage("og-image-file","post-og-url","og-image-preview","#post-og-title"));
+    $("#setting-og-file").addEventListener("change",async(event)=>{
+      const file=event.target.files?.[0];if(!file)return;
+      try{
+        const url=await uploadImage(file);
+        state.settings={...(state.settings||{}),default_og_image:url};
+        updateImagePreview("setting-og-preview",url,"تصویر پیش‌فرض وبلاگ");
+        toast("تصویر پیش‌فرض فشرده و بارگذاری شد.");
+      }catch(error){toast(error.message,true);}
+      finally{event.target.value="";}
+    });
     $("#settings-form").addEventListener("submit",saveSettings);
     $("#logout-button").addEventListener("click",()=>void logout(true));
     $("#forgot-password").addEventListener("click",async()=>{

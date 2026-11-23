@@ -56,7 +56,7 @@ export default function BlogIndexPage() {
           </div>
           <BlogListingClient posts={listing} categories={categories}
             showSearch={settings.show_search} showCategories={settings.show_categories}
-            postsPerPage={settings.posts_per_page} />
+            showReadingTime={settings.show_reading_time} postsPerPage={settings.posts_per_page} />
         </section>
       </main>
       <BlogFooter />

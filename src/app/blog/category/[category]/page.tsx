@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getBlogCategories, getPostsByCategory } from "@/lib/blog-data";
+import { getBlogCategories, getBlogSettings, getPostsByCategory } from "@/lib/blog-data";
 import { site } from "@/lib/site";
 import { BlogHeader, BlogFooter } from "../../BlogHeader";
 import { BlogPostCard } from "../../BlogListingClient";
@@ -26,6 +26,7 @@ export default async function BlogCategoryPage({params}:{params:Promise<{categor
   const item=getBlogCategories().find((entry)=>entry.slug===category);
   if(!item)notFound();
   const posts=getPostsByCategory(category);
+  const settings=getBlogSettings();
   return (
     <>
       <BlogHeader />
@@ -37,7 +38,7 @@ export default async function BlogCategoryPage({params}:{params:Promise<{categor
           <Link href="/blog/">← بازگشت به همۀ نوشته‌ها</Link>
         </section>
         <section className="blog-container blog-listing-section">
-          <div className="blog-card-grid">{posts.map((post)=><BlogPostCard key={post.slug} post={post}/>)}</div>
+          <div className="blog-card-grid">{posts.map((post)=><BlogPostCard key={post.slug} post={post} showReadingTime={settings.show_reading_time}/>)}</div>
         </section>
       </main>
       <BlogFooter />

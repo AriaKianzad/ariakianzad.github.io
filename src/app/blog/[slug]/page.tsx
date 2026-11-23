@@ -91,7 +91,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
           <div className="blog-article-meta">
             <span>آریا کیانزاد</span>
             <time dateTime={post.published_at}>{new Intl.DateTimeFormat(language === "fa" ? "fa-IR" : "en-US", {year:"numeric",month:"long",day:"numeric"}).format(new Date(post.published_at))}</time>
-            <span>{readingTime(post.content, post.language)} دقیقه مطالعه</span>
+            {settings.show_reading_time ? <span>{readingTime(post.content, post.language)} دقیقه مطالعه</span> : null}
           </div>
           {post.hero_image_url ? (
             <figure className="blog-hero-image">
@@ -127,7 +127,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
         {related.length ? (
           <section className="blog-related blog-container">
             <div className="blog-section-heading"><div><span className="blog-section-label"><span>03</span> RELATED</span><h2>نوشته‌های مرتبط</h2></div></div>
-            <div className="blog-card-grid">{related.map((item) => <BlogPostCard key={item.slug} post={item} />)}</div>
+            <div className="blog-card-grid">{related.map((item) => <BlogPostCard key={item.slug} post={item} showReadingTime={settings.show_reading_time} />)}</div>
           </section>
         ) : null}
       </main>

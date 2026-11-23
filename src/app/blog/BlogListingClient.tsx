@@ -17,7 +17,7 @@ function formatDate(value: string, language: "fa" | "en") {
   }).format(new Date(value));
 }
 
-export function BlogPostCard({ post, featured = false }: { post: BlogPost; featured?: boolean }) {
+export function BlogPostCard({ post, featured = false, showReadingTime = true }: { post: BlogPost; featured?: boolean; showReadingTime?: boolean }) {
   const dir = post.language === "fa" ? "rtl" : "ltr";
   const image = post.hero_image_url || "/og/blog/" + post.slug + ".jpg";
   return (
@@ -34,7 +34,7 @@ export function BlogPostCard({ post, featured = false }: { post: BlogPost; featu
         <h2><Link href={"/blog/" + post.slug + "/"}>{post.title}</Link></h2>
         {post.excerpt ? <p>{post.excerpt}</p> : null}
         <div className="blog-card-bottom">
-          <span>{readingTime(post.content, post.language)} دقیقه مطالعه</span>
+          {showReadingTime ? <span>{readingTime(post.content, post.language)} دقیقه مطالعه</span> : <span /> }
           <Link href={"/blog/" + post.slug + "/"} aria-label={"خواندن " + post.title}>ادامه مطلب <span aria-hidden="true">←</span></Link>
         </div>
       </div>
@@ -43,9 +43,9 @@ export function BlogPostCard({ post, featured = false }: { post: BlogPost; featu
 }
 
 export function BlogListingClient({
-  posts, categories, showSearch, showCategories, postsPerPage,
+  posts, categories, showSearch, showCategories, showReadingTime, postsPerPage,
 }: {
-  posts: BlogPost[]; categories: Category[]; showSearch: boolean; showCategories: boolean; postsPerPage: number;
+  posts: BlogPost[]; categories: Category[]; showSearch: boolean; showCategories: boolean; showReadingTime: boolean; postsPerPage: number;
 }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
@@ -94,7 +94,7 @@ export function BlogListingClient({
       </div>
       {visible.length ? (
         <div className="blog-card-grid">
-          {visible.map((post) => <BlogPostCard key={post.id || post.slug} post={post} />)}
+          {visible.map((post) => <BlogPostCard key={post.id || post.slug} post={post} showReadingTime={showReadingTime} />)}
         </div>
       ) : (
         <div className="blog-empty">
