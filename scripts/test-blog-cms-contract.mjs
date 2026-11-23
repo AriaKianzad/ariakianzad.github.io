@@ -98,7 +98,7 @@ assert.ok(adminHtml.includes('data-editor-tab="seo"') && adminHtml.includes('id=
 assert.ok(adminHtml.includes('id="hero-image-file"') && adminHtml.includes('id="media-grid"'), "image upload and media library are required");
 assert.ok(adminJs.includes("createImageBitmap") && adminJs.includes('toBlob("image/webp", 0.84)'),
   "the admin must automatically resize and compress images to WebP");
-assert.ok(adminJs.includes("maxSide = 2400") && adminJs.includes("8 مگابایت"),
+assert.ok(adminJs.includes("maxSide = 2400") && adminJs.includes("۸ مگابایت"),
   "image processing must downscale very large images and respect the bucket limit");
 assert.ok(adminJs.includes("safePreviewUrl") && adminJs.includes("escapeHtml"),
   "live preview must escape raw text and validate link destinations");
