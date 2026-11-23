@@ -64,7 +64,7 @@ export const primaryNav = [
   { label: "Expertise", href: "/#expertise" },
   { label: "Method", href: "/#method" },
   { label: "Rexo", href: "/#rexo" },
-  { label: "Writing", href: "/#notes" },
+  { label: "Writing", href: "/blog/" },
   { label: "About", href: "/#about" },
 ] as const;
 
