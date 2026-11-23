@@ -11,9 +11,9 @@ export function BlogHeader() {
   return (
     <header className="blog-header" dir="rtl">
       <div className="blog-container blog-header-inner">
-        <Link className="blog-header-blog-link" href="/blog/" aria-label="وبلاگ و یادداشت‌ها">
+        <Link className="blog-header-blog-link" href="/blog/" aria-label="وبلاگ آریا کیانزاد">
           <span className="blog-brand-mark" aria-hidden="true">آ</span>
-          <span>یادداشت‌ها</span>
+          <span>آریا کیانزاد</span>
         </Link>
         <Link className="blog-back-link" href="/">
           وب‌سایت اصلی <span aria-hidden="true">↗</span>
