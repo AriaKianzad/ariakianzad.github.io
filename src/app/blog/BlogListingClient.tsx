@@ -57,7 +57,7 @@ export function BlogListingClient({
       const content = [post.title, post.excerpt, post.category, categories.find((item)=>item.slug===post.category)?.name||"", post.focus_keyword, ...(post.tags || [])].join(" ").toLocaleLowerCase();
       return matchesCategory && (!needle || content.includes(needle));
     });
-  }, [posts, query, category]);
+  }, [posts, query, category, categories]);
   const visible = filtered.slice(0, visibleCount);
 
   function changeCategory(value: string) {
@@ -94,7 +94,7 @@ export function BlogListingClient({
       </div>
       {visible.length ? (
         <div className="blog-card-grid">
-          {visible.map((post) => <BlogPostCard key={post.id || post.slug} post={post} showReadingTime={showReadingTime} />)}
+          {visible.map((post) => <BlogPostCard key={post.id || post.slug} post={post} categoryName={categories.find((item)=>item.slug===post.category)?.name} showReadingTime={showReadingTime} />)}
         </div>
       ) : (
         <div className="blog-empty">
