@@ -195,7 +195,7 @@ function normalizePost(input: Record<string, unknown>) {
   if (categories.some((value) => !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value))) {
     throw new Error("نامک یکی از دسته‌بندی‌های مقاله معتبر نیست.");
   }
-  const primaryCategory = textValue(input?.primary_category ?? legacyCategory ?? categories[0] ?? "", 120, "دسته‌بندی اصلی").toLowerCase();
+  const primaryCategory = textValue(input?.primary_category ?? (legacyCategory || categories[0] || ""), 120, "دسته‌بندی اصلی").toLowerCase();
   if (categories.length && !categories.includes(primaryCategory)) {
     throw new Error("دسته‌بندی اصلی باید یکی از دسته‌بندی‌های انتخاب‌شده باشه.");
   }
