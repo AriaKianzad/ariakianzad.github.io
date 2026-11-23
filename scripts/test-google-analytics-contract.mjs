@@ -2,11 +2,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
-const [functionSource, dashboard, html, css] = await Promise.all([
+const [functionSource, dashboard, html, css, blogAdmin, blogAdminHtml] = await Promise.all([
   read("supabase/functions/site-analytics/index.ts"),
   read("public/admin/app.js"),
   read("public/admin/index.html"),
   read("public/admin/admin.css"),
+  read("public/admin/blog/app.js"),
+  read("public/admin/blog/index.html"),
 ]);
 
 // A successful Google API call with a real summary row may legitimately return
@@ -117,6 +119,11 @@ assert.ok(functionSource.includes('{ name: "screenPageViews" }'), "Realtime repo
 assert.ok(functionSource.includes('{ name: "eventCount" }'), "Realtime reports must expose event count");
 assert.ok(functionSource.includes('requestMode === "realtime"'), "Realtime requests must avoid the full report path");
 assert.ok(functionSource.includes('requestMode === "ga4"'), "standard GA4 refreshes must avoid Search Console calls");
+assert.ok(functionSource.includes('requestMode === "articles"') && functionSource.includes("getArticleAnalyticsData") && functionSource.includes("blogSlugFromPath"), "private analytics function must return metrics mapped to each published article");
+assert.ok(functionSource.includes('{ name: "landingPage" }') && functionSource.includes('{ name: "sessionSourceMedium" }') && functionSource.includes('{ name: "pagePath" }'), "per-article acquisition must use GA4 landing page and source/medium dimensions");
+assert.ok(functionSource.includes("rowLimit: 25000") && functionSource.includes('dimensions: ["page"]'), "per-article Search Console metrics must query pages rather than only top-level totals");
+assert.ok(blogAdminHtml.includes('id="view-analytics"') && blogAdminHtml.includes('id="refresh-article-analytics"'), "CMS must expose a refreshable article analytics view");
+assert.ok(blogAdmin.includes('siteAnalytics("articles")') && blogAdmin.includes("function renderArticleAnalytics"), "CMS must call the authorized per-article analytics endpoint and render its result");
 assert.ok(dashboard.includes("REALTIME_REFRESH_MS = 60_000"), "Realtime metrics must refresh every 60 seconds");
 assert.ok(dashboard.includes("GA4_REPORT_REFRESH_MS = 15 * 60_000"), "standard GA4 reports must refresh every 15 minutes");
 assert.ok(dashboard.includes('requestSiteAnalytics(false, "realtime")'), "dashboard must request live GA4 data");
