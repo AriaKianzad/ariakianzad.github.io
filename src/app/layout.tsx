@@ -88,7 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <section
           id="analytics-consent"
           className="analytics-consent"
-          role="dialog"
+          role="region"
           aria-label="Analytics preferences"
           aria-describedby="analytics-consent-description"
           hidden
