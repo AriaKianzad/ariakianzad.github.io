@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { Script, runInNewContext } from "node:vm";
+import ts from "typescript";
 
 const read = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
 const [
@@ -281,7 +282,27 @@ assert.ok(adminHtml.includes('id="link-settings-toggle"') && adminHtml.includes(
 assert.ok(adminApp.includes("sanitizeClipboardHtml") && adminApp.includes("handleEditorPaste"), "CMS must sanitize and preserve rich clipboard HTML");
 assert.ok(adminApp.includes("editorToMarkdown") && adminApp.includes("refreshLinkManager"), "CMS must serialize rich text and expose per-link settings");
 assert.ok(markdownSource.includes("rel=(follow|nofollow|sponsored|ugc)") && markdownSource.includes("target=(_blank|_self)") && markdownSource.includes('(external?"nofollow":"follow")'), "public Markdown renderer must preserve link relationship and target settings while defaulting external links to nofollow");
-assert.ok(markdownSource.includes("<table>") && markdownSource.includes("<u>"), "public Markdown renderer must support pasted tables and underline");
+assert.ok(markdownSource.includes('class="blog-table-scroll"') && markdownSource.includes('class="blog-table"') && markdownSource.includes("<thead>") && markdownSource.includes("<tbody>") && markdownSource.includes("<u>"), "public Markdown renderer must emit an accessible, styled table wrapper with semantic table sections and underline support");
+
+const markdownRuntime = { exports: {} };
+const markdownCompiled = ts.transpileModule(markdownSource, {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText;
+new Script(markdownCompiled, { filename: "src/lib/blog-markdown.ts" }).runInNewContext({
+  exports: markdownRuntime.exports,
+  module: { exports: markdownRuntime.exports },
+});
+const sampleTable = [
+  "| **نقش** | **تمرکز اصلی** |",
+  "| --- | --- |",
+  "| استراتژیست برند | تعیین جهت برند، جایگاه و تمایز |",
+  "| طراح برند | تبدیل جهت استراتژیک به سیستم بصری |",
+].join("\n");
+const renderedTable = markdownRuntime.exports.renderMarkdown(sampleTable);
+assert.ok(renderedTable.includes('<div class="blog-table-scroll" role="region" aria-label="جدول مقاله" tabindex="0">'), "Markdown tables must be wrapped in a keyboard-focusable responsive region");
+assert.ok(renderedTable.includes('<table class="blog-table"><thead><tr><th><strong>نقش</strong></th><th><strong>تمرکز اصلی</strong></th></tr></thead>'), "Markdown table headers and inline emphasis must be rendered as semantic HTML");
+assert.ok(renderedTable.includes("<tbody><tr><td>استراتژیست برند</td><td>تعیین جهت برند، جایگاه و تمایز</td></tr><tr><td>طراح برند</td><td>تبدیل جهت استراتژیک به سیستم بصری</td></tr></tbody>"), "Markdown table rows must be retained as separate cells in the right column order");
+assert.ok(blogCss.includes(".blog-prose table.blog-table") && blogCss.includes("overflow-x:auto") && blogCss.includes("min-width:560px") && blogCss.includes("min-width:500px"), "article tables must have visible editorial styling and horizontal scrolling on narrow screens");
 assert.ok(siteChrome.includes("usePathname") && siteChrome.includes("isBlog"), "blog routes must not inherit the portfolio chrome");
 assert.ok(listingPage.includes('settings.tagline || "یادداشت‌هایی درباره برند، معنا و ارتباط"'), "blog archive H1 must use the descriptive tagline");
 assert.ok(listingPage.includes('import HeroVisual from "@/components/hero-visual"') && listingPage.includes("<HeroVisual />"), "blog archive must reuse the homepage signal animation");

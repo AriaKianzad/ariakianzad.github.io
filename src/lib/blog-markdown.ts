@@ -67,7 +67,30 @@ export function extractToc(markdown:string):TocItem[]{
   }
   return items;
 }
-function tableCells(line:string){return line.trim().replace(/^\||\|$/g,"").split("|").map((cell)=>cell.trim());}
+function tableCells(line:string){
+  const source=line.trim();
+  let value=source;
+  if(value.startsWith("|"))value=value.slice(1);
+  if(value.endsWith("|")){
+    let escapes=0;
+    for(let index=value.length-2;index>=0&&value[index]==="\\";index--)escapes++;
+    if(escapes%2===0)value=value.slice(0,-1);
+  }
+  const cells:string[]=[];let cell="",inCode=false;
+  for(let index=0;index<value.length;index++){
+    const char=value[index];
+    if(char==="\\"&&value[index+1]==="|"){cell+="|";index++;continue;}
+    if(char==="`")inCode=!inCode;
+    if(char==="|"&&!inCode){cells.push(cell.trim());cell="";continue;}
+    cell+=char;
+  }
+  cells.push(cell.trim());
+  return cells;
+}
+function isTableDivider(line:string,columns:number){
+  const cells=tableCells(line);
+  return cells.length===columns&&columns>=2&&cells.every((cell)=>/^:?-{3,}:?$/.test(cell));
+}
 export function renderMarkdown(markdown:string):string{
   const lines=markdown.replace(/\r\n/g,"\n").split("\n"),out:string[]=[];
   const seen=new Map<string,number>();let paragraph:string[]=[],list:"ul"|"ol"|null=null,code:string[]|null=null,language="";
@@ -86,13 +109,21 @@ export function renderMarkdown(markdown:string):string{
     const fence=line.match(/^\x60{3}\s*([a-z0-9_-]*)/i);
     if(fence){closeP();closeL();code=[];language=fence[1]||"";continue;}
     if(!line.trim()){closeP();closeL();continue;}
-    if(/^\s*\|?.+\|.+\|?\s*$/.test(line)&&index+1<lines.length&&/^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(lines[index+1])){
+    const headers=tableCells(line);
+    if(index+1<lines.length&&headers.length>=2&&isTableDivider(lines[index+1],headers.length)){
       closeP();closeL();
-      const headers=tableCells(line);const rows:string[][]=[];
+      const rows:string[][]=[];
       index+=2;
-      while(index<lines.length&&/^\s*\|?.+\|.+\|?\s*$/.test(lines[index])){rows.push(tableCells(lines[index]));index++;}
+      while(index<lines.length&&lines[index].trim()){
+        const row=tableCells(lines[index]);
+        if(row.length!==headers.length)break;
+        rows.push(row);
+        index++;
+      }
       index--;
-      out.push("<table><thead><tr>"+headers.map((cell)=>"<th>"+inline(cell)+"</th>").join("")+"</tr></thead><tbody>"+rows.map((row)=>"<tr>"+row.map((cell)=>"<td>"+inline(cell)+"</td>").join("")+"</tr>").join("")+"</tbody></table>");
+      const headerHtml=headers.map((cell)=>"<th>"+inline(cell)+"</th>").join("");
+      const rowHtml=rows.map((row)=>"<tr>"+row.map((cell)=>"<td>"+inline(cell)+"</td>").join("")+"</tr>").join("");
+      out.push('<div class="blog-table-scroll" role="region" aria-label="جدول مقاله" tabindex="0"><table class="blog-table"><thead><tr>'+headerHtml+"</tr></thead><tbody>"+rowHtml+"</tbody></table></div>");
       continue;
     }
     const image=parseImageLine(line);
