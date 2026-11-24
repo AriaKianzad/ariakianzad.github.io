@@ -40,7 +40,7 @@ export default function BlogIndexPage() {
   return (
     <>
       <BlogHeader />
-      <main id="main" className="blog-main" dir={settings.default_language === "fa" ? "rtl" : "ltr"}>
+      <main id="main" tabIndex={-1} className="blog-main" dir={settings.default_language === "fa" ? "rtl" : "ltr"}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
         <section className="blog-intro blog-container" aria-labelledby="blog-intro-title">
           <div className="blog-intro-copy">
