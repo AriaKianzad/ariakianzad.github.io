@@ -12,7 +12,10 @@ export const metadata: Metadata = {
   title: blogSettings.default_meta_title || "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد",
   description: blogSettings.default_meta_description || blogSettings.description || "اینجا درباره استراتژی برند، جایگاه‌یابی، ارتباطات و پرسونال برندینگ می‌نویسم؛ با تمرکز بر معنا، رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن.",
   robots: { index: blogSettings.default_robots_index, follow: blogSettings.default_robots_follow },
-  alternates: { canonical: blogCanonicalUrl, types: { "application/rss+xml": site.url + "/blog/feed.xml" } },
+  alternates: {
+    canonical: blogCanonicalUrl,
+    types: blogSettings.enable_rss ? { "application/rss+xml": site.url + "/blog/feed.xml" } : undefined,
+  },
   openGraph: blogSettings.open_graph_enabled ? {
     type: "website", url: blogCanonicalUrl, siteName: "Aria Kianzad",
     title: blogSettings.default_og_title || "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد",
