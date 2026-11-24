@@ -138,7 +138,7 @@ GA4 reports cover a rolling 30-day range ending today (`29daysAgo` through `toda
 
 The migration files in supabase/migrations/ create the tables, enable pg_cron and http, define the private snapshot function and schedule the daily job. The production project has these migrations applied. Do not edit already-applied migration files; add a new migration for any future database schema or function change.
 
-The branch also adds the pending migration 20261124235900_responsive_article_advertising.sql. It preserves the existing global banner configuration, adds a per-banner show_on_mobile flag (default true), and seeds a third disabled slot for a thin banner at the end of each article's text. Slots 1 and 2 remain in the article sidebar. This migration has **not** been applied to production; reconcile the migration history above before applying it. The Edge Function update in this branch must be deployed together with the schema change.
+The branch also adds the pending migration 20261124111304_responsive_article_advertising.sql. It preserves the existing global banner configuration, adds a per-banner show_on_mobile flag (default true), and seeds a third disabled slot for a thin banner at the end of each article's text. Slots 1 and 2 remain in the article sidebar. This migration has **not** been applied to production; reconcile the migration history above before applying it. The Edge Function update in this branch must be deployed together with the schema change.
 
 To deploy a changed Edge Function with the Supabase CLI:
 
