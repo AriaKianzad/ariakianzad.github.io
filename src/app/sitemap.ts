@@ -27,7 +27,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }] : []),
     { url: new URL("/blog/contact/", site.url).toString(), changeFrequency: "yearly", priority: 0.45 },
     ...categories.map((category) => ({
-      url: new URL("/blog/category/" + encodeURIComponent(category.slug) + "/", site.url).toString(),
+      url: settings.category_seo?.[category.slug]?.canonical_url ||
+        new URL("/blog/category/" + encodeURIComponent(category.slug) + "/", site.url).toString(),
       changeFrequency: "weekly" as const,
       priority: 0.65,
     })),
