@@ -68,6 +68,7 @@ const [
   bookPage,
   bookStyles,
   socialGenerator,
+  notFoundContent,
 ] = await Promise.all([
   read("src/app/page.tsx"),
   read("src/content/home.ts"),
@@ -89,6 +90,7 @@ const [
   read("public/Mian-e-Ma/index.html"),
   read("public/Mian-e-Ma/styles.css"),
   read("scripts/generate-social-previews.mjs"),
+  read("src/app/NotFoundContent.tsx"),
 ]);
 
 // The homepage remains a semantic, server-rendered page with one primary heading.
@@ -201,6 +203,7 @@ assert.ok(socialGenerator.includes("mian-e-ma-cover-v2.webp") &&
 // Accessibility and consent controls stay out of the normal page flow.
 assert.ok(siteChrome.includes('className="skip-link" href="#main"'), "keyboard skip navigation must remain available on portfolio routes");
 assert.ok(chrome.includes(".skip-link:focus-visible"), "skip navigation must appear when keyboard-focused");
+assert.ok(notFoundContent.includes('<div className="not-found-page not-found-main"') && !notFoundContent.includes('<main className="not-found-page not-found-main"'), "root 404 content must not nest a main landmark inside SiteChrome's main");
 assert.ok(layout.includes('role="region"') && layout.includes('aria-labelledby="analytics-consent-title"') && !layout.includes('role="dialog"'), "portfolio privacy preferences must use non-modal labelled-region semantics");
 assert.ok(bookPage.includes('role="region"') && bookPage.includes('aria-labelledby="analytics-consent-title"') && !bookPage.includes('role="dialog"'), "book privacy preferences must use non-modal labelled-region semantics");
 assert.ok(chrome.includes(".analytics-consent {\n  position: fixed;"), "analytics consent panel must be viewport-fixed");
