@@ -54,7 +54,8 @@
   }
 
   function updatePreferencesLabel(choice) {
-    preferences.textContent = copy.settings + " · " + (choice === "granted" ? copy.on : copy.off);
+    const status = choice === "granted" ? copy.on : choice === "denied" ? copy.off : "";
+    preferences.textContent = status ? copy.settings + " · " + status : copy.settings;
   }
 
   function loadGoogleAnalytics() {
@@ -107,7 +108,7 @@
 
     panel.hidden = true;
     updatePreferencesLabel(choice);
-    preferences.hidden = choice === "granted";
+    preferences.hidden = false;
 
     if (choice === "granted") {
       if (typeof window.gtag === "function") {
@@ -119,16 +120,7 @@
       revokeGoogleAnalytics();
     }
 
-    if (!preferences.hidden) preferences.focus?.();
-  }
-
-  // Blog pages intentionally keep their reading surface free of consent overlays.
-  // A previously granted choice still governs whether analytics may load.
-  if (window.location.pathname === "/blog" || window.location.pathname.startsWith("/blog/")) {
-    panel.hidden = true;
-    preferences.hidden = true;
-    if (getSavedChoice() === "granted") loadGoogleAnalytics();
-    return;
+    preferences.focus?.();
   }
 
   accept.addEventListener("click", () => saveChoice("granted"));
@@ -139,10 +131,23 @@
     accept.focus?.();
   });
 
+  const blogRoute = window.location.pathname === "/blog" || window.location.pathname.startsWith("/blog/");
   const savedChoice = getSavedChoice();
-  if (savedChoice === "granted" || savedChoice === "denied") {
+
+  // Blog pages suppress the automatic consent overlay, but visitors can still
+  // open privacy settings and change their choice without leaving the article.
+  if (blogRoute) {
+    panel.hidden = true;
     updatePreferencesLabel(savedChoice);
-    preferences.hidden = savedChoice === "granted";
+    preferences.hidden = false;
+    if (savedChoice === "granted") loadGoogleAnalytics();
+    return;
+  }
+
+  if (savedChoice === "granted" || savedChoice === "denied") {
+    panel.hidden = true;
+    updatePreferencesLabel(savedChoice);
+    preferences.hidden = false;
     if (savedChoice === "granted") loadGoogleAnalytics();
   } else {
     panel.hidden = false;
