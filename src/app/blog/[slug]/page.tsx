@@ -148,7 +148,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
                   </>
                 ) : formatBlogDate(post.published_at, post.language)}
               </time>
-              {settings.show_reading_time ? <span className="blog-reading-time" dir={direction}><bdi>{readingTime(post.content, post.language).toLocaleString(language === "fa" ? "fa-IR" : "en-US")}</bdi> {language === "fa" ? "دقیقه مطالعه" : "min read"}</span> : null}
+              {settings.show_reading_time ? <span className="blog-reading-time" dir="ltr"><bdi dir="ltr">{readingTime(post.content, post.language).toLocaleString(language === "fa" ? "fa-IR" : "en-US")}</bdi><span dir={language === "fa" ? "rtl" : "ltr"}>{language === "fa" ? "دقیقه مطالعه" : "min read"}</span></span> : null}
             </div>
           </div>
         </header>
