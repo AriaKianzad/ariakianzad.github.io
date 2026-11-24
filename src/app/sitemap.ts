@@ -33,7 +33,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.65,
     })),
     ...posts.map((post) => ({
-      url: new URL("/blog/" + post.slug + "/", site.url).toString(),
+      url: post.canonical_url || new URL("/blog/" + post.slug + "/", site.url).toString(),
       lastModified: new Date(post.updated_at || post.published_at),
       changeFrequency: "monthly" as const,
       priority: post.featured ? 0.85 : 0.75,
