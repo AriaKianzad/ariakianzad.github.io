@@ -136,7 +136,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
                 {post.hero_image_caption ? <figcaption>{post.hero_image_caption}</figcaption> : null}
               </figure>
             ) : <div className="blog-article-visual-empty" aria-hidden="true" />}
-            <div className="blog-article-meta" dir={direction}>
+            <div className="blog-article-meta" dir={direction} style={{ direction }}>
               <span>آریا کیانزاد</span>
               <time dateTime={post.published_at || ""} dir={direction}>{formatBlogDate(post.published_at, post.language)}</time>
               {settings.show_reading_time ? <span className="blog-reading-time" dir={direction}><bdi>{readingTime(post.content, post.language).toLocaleString(language === "fa" ? "fa-IR" : "en-US")}</bdi> {language === "fa" ? "دقیقه مطالعه" : "min read"}</span> : null}
