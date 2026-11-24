@@ -784,11 +784,11 @@ async function getArticleAnalyticsData(accessToken: string) {
   const historyRows = historyReportResult.status === "fulfilled" ? historyReportResult.value.rows : [];
   const history = historyRows.map((row) => {
     const rawDate = String(row.date || "");
-    const date = /^\\d{8}$/.test(rawDate)
+    const date = /^\d{8}$/.test(rawDate)
       ? rawDate.slice(0, 4) + "-" + rawDate.slice(4, 6) + "-" + rawDate.slice(6, 8)
       : rawDate;
     return { date, pageViews: Number(row.screenPageViews || 0) };
-  }).filter((row) => /^\\d{4}-\\d{2}-\\d{2}$/.test(row.date));
+  }).filter((row) => /^\d{4}-\d{2}-\d{2}$/.test(row.date));
   const historyStatus = historyReportResult.status === "rejected"
     ? "error"
     : history.length ? "ok" : "no_data";
@@ -916,9 +916,9 @@ async function getArticleAnalyticsData(accessToken: string) {
   });
 
   const hasReportData = ga4Status === "ok" || gscStatus === "ok";
-  const hasReportError = ga4Status === "error" || gscStatus === "error" || gscStatus === "no_access" || historyStatus === "error";
+  const hasReportError = ga4Status === "error" || gscStatus === "error" || gscStatus === "no_access" || historyStatus === "error" || sourcesStatus === "error";
   const overallStatus = hasReportData
-    ? (ga4Status !== "ok" || gscStatus !== "ok" ? "partial" : "ok")
+    ? (ga4Status !== "ok" || gscStatus !== "ok" || historyStatus === "error" || sourcesStatus === "error" ? "partial" : "ok")
     : hasReportError ? "error" : "no_data";
   return {
     status: overallStatus,
