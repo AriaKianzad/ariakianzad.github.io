@@ -202,6 +202,8 @@ assert.ok(socialGenerator.includes("mian-e-ma-cover-v2.webp") &&
 
 // Accessibility and consent controls stay out of the normal page flow.
 assert.ok(siteChrome.includes('className="skip-link" href="#main"'), "keyboard skip navigation must remain available on portfolio routes");
+assert.ok(siteChrome.includes('<main id="main" tabIndex={-1}>'), "the portfolio skip-link target must accept keyboard focus");
+assert.ok(bookPage.includes('class="skip-link" href="#main"') && bookPage.includes('<main id="main" tabindex="-1">'), "the book skip link must target a focusable main landmark");
 assert.ok(chrome.includes(".skip-link:focus-visible"), "skip navigation must appear when keyboard-focused");
 assert.ok(notFoundContent.includes('<div className="not-found-page not-found-main"') && !notFoundContent.includes('<main className="not-found-page not-found-main"'), "root 404 content must not nest a main landmark inside SiteChrome's main");
 assert.ok(layout.includes('role="region"') && layout.includes('aria-labelledby="analytics-consent-title"') && !layout.includes('role="dialog"'), "portfolio privacy preferences must use non-modal labelled-region semantics");
