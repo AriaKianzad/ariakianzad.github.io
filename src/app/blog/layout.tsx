@@ -16,6 +16,8 @@ export const viewport: Viewport = {
 
 export default function BlogLayout({ children }: { children: ReactNode }) {
   const settings = getBlogSettings();
+  const language = settings.default_language === "en" ? "en" : "fa";
+  const direction = language === "fa" ? "rtl" : "ltr";
   const style = {
       "--blog-accent": settings.accent_color || "#a86f54",
       "--blog-heading-scale": String(settings.heading_scale || 1),
@@ -23,6 +25,8 @@ export default function BlogLayout({ children }: { children: ReactNode }) {
     } as CSSProperties;
   return (
     <div
+      lang={language}
+      dir={direction}
       className={"blog-theme theme-" + (settings.background_theme || "paper") + " layout-" + (settings.layout_style || "editorial") + " cards-" + (settings.card_style || "editorial")}
       style={style}
     >

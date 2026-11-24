@@ -5,7 +5,7 @@ export default function BlogNotFound() {
   return (
     <>
       <BlogHeader />
-      <main className="blog-main" dir="rtl">
+      <main id="main" tabIndex={-1} className="blog-main" dir="rtl">
         <section className="blog-container blog-category-heading blog-not-found">
           <div className="blog-eyebrow"><span /> ۴۰۴ · صفحۀ موردنظر پیدا نشد</div>
           <h1>این آدرس به نوشته‌ای نمی‌رسه.</h1>

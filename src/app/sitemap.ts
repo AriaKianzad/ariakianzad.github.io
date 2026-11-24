@@ -20,15 +20,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: new URL("/", site.url).toString(), changeFrequency: "yearly", priority: 1 },
     { url: new URL("/Mian-e-Ma/", site.url).toString(), changeFrequency: "yearly", priority: 0.8 },
-    { url: new URL("/blog/", site.url).toString(), changeFrequency: "weekly", priority: 0.9 },
+    ...(settings.default_robots_index ? [{
+      url: settings.canonical_url || new URL("/blog/", site.url).toString(),
+      changeFrequency: "weekly" as const,
+      priority: 0.9,
+    }] : []),
     { url: new URL("/blog/contact/", site.url).toString(), changeFrequency: "yearly", priority: 0.45 },
     ...categories.map((category) => ({
-      url: new URL("/blog/category/" + encodeURIComponent(category.slug) + "/", site.url).toString(),
+      url: settings.category_seo?.[category.slug]?.canonical_url ||
+        new URL("/blog/category/" + encodeURIComponent(category.slug) + "/", site.url).toString(),
       changeFrequency: "weekly" as const,
       priority: 0.65,
     })),
     ...posts.map((post) => ({
-      url: new URL("/blog/" + post.slug + "/", site.url).toString(),
+      url: post.canonical_url || new URL("/blog/" + post.slug + "/", site.url).toString(),
       lastModified: new Date(post.updated_at || post.published_at),
       changeFrequency: "monthly" as const,
       priority: post.featured ? 0.85 : 0.75,

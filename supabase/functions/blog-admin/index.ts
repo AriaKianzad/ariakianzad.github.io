@@ -461,7 +461,7 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
 
   if (action === "save_ad_banners") {
     const input = Array.isArray(body.banners) ? body.banners : [];
-    if (input.length < 2 || input.length > 8) throw new Error("حداقل دو و حداکثر هشت جایگاه تبلیغاتی می‌تونی داشته باشی.");
+    if (input.length < 3 || input.length > 8) throw new Error("سه جایگاه اصلی و در مجموع حداکثر هشت جایگاه تبلیغاتی می‌تونی داشته باشی.");
     const allowedRel = ["follow", "nofollow", "sponsored", "ugc", "nofollow sponsored", "nofollow ugc", "nofollow sponsored ugc"];
     const seen = new Set<string>();
     const banners = input.map((entry: unknown, index: number) => {
@@ -484,8 +484,9 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
         if (link.protocol !== "https:" || link.username || link.password) throw new Error("پیوند بنر باید یک نشانی HTTPS معتبر باشه.");
       }
       if (linkUrl && !imageUrl) throw new Error("برای تنظیم پیوند مقصد، ابتدا تصویر بنر رو انتخاب کن.");
-      return { id, enabled, label, image_url: imageUrl, alt, link_url: linkUrl, link_rel: linkRel };
+      return { id, enabled, label, image_url: imageUrl, alt, link_url: linkUrl, link_rel: linkRel, show_on_mobile: item.show_on_mobile !== false };
     });
+    if (!banners.some((banner) => banner.id === "banner-3")) throw new Error("جایگاه سوم برای نمایش بنر انتهای مقاله باید حفظ بشه.");
     const { data, error } = await client.from("blog_settings")
       .update({ ad_banners: banners, updated_at: new Date().toISOString() })
       .eq("id", 1).select("*").single();

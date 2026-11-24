@@ -36,8 +36,14 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
     description,
     alternates: { canonical },
     robots: { index, follow },
-    openGraph: settings.open_graph_enabled ? { type: "website", url: canonical, siteName: "Aria Kianzad", title: ogTitle, description: ogDescription } : undefined,
-    twitter: { card: settings.twitter_card_type, title: ogTitle, description: ogDescription },
+    openGraph: settings.open_graph_enabled ? {
+      type: "website", url: canonical, siteName: "Aria Kianzad", title: ogTitle, description: ogDescription,
+      images: [{ url: settings.default_og_image || site.url + "/og/og.jpg", width: 1200, height: 630 }],
+    } : undefined,
+    twitter: {
+      card: settings.twitter_card_type, title: ogTitle, description: ogDescription,
+      images: [settings.default_og_image || site.url + "/og/og.jpg"],
+    },
   };
 }
 
@@ -50,7 +56,7 @@ export default async function BlogCategoryPage({ params }: { params: Promise<{ c
     return (
       <>
         <BlogHeader />
-        <main className="blog-main" dir="rtl">
+        <main id="main" tabIndex={-1} className="blog-main" dir="rtl">
           <section className="blog-container blog-category-heading">
             <h1>هنوز دسته‌بندی‌ای برای نمایش وجود نداره.</h1>
             <p>بعد از انتشار اولین مقاله، دسته‌بندی‌ها اینجا نمایش داده می‌شن.</p>
@@ -67,7 +73,7 @@ export default async function BlogCategoryPage({ params }: { params: Promise<{ c
   return (
     <>
       <BlogHeader />
-      <main className="blog-main" dir="rtl">
+      <main id="main" tabIndex={-1} className="blog-main" dir="rtl">
         <section className="blog-container blog-category-heading">
           {settings.breadcrumbs_enabled ? <nav className="blog-breadcrumbs blog-category-breadcrumbs" aria-label="مسیر راهنما"><Link href="/blog/">{settings.breadcrumb_home_label || "خانه"}</Link><span aria-hidden="true">/</span><span>{item.name}</span></nav> : null}
           <h1>{item.name}</h1>

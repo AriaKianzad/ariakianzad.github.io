@@ -1,13 +1,23 @@
 export type TocItem={id:string;title:string;level:number};
 export function slugHeading(value:string){return value.trim().toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu,"").replace(/\s+/g,"-").replace(/-+/g,"-")||"section";}
 function esc(value:string){return value.replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]||c));}
-function allowedUrl(value:string){const v=value.trim();return /^(https?:\/\/|mailto:|\/|#)/i.test(v)&&!/^\/\//.test(v)?v:"#";}
+function allowedUrl(value:string){
+  const candidate=value.trim();
+  if(!candidate)return "#";
+  if(candidate.startsWith("#"))return candidate;
+  if(candidate.startsWith("/")&&candidate[1]!=="/"&&candidate[1]!==String.fromCharCode(92))return candidate;
+  try{
+    const url=new URL(candidate);
+    if(["http:","https:","mailto:"].includes(url.protocol)&&!url.username&&!url.password)return candidate;
+  }catch{}
+  return "#";
+}
 function inline(value:string){
   let s=esc(value);
   s=s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>'<img src="'+esc(allowedUrl(url.replace(/&amp;/g,"&")))+'" alt="'+alt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">');
   s=s.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
     const href=allowedUrl(url.replace(/&amp;/g,"&")),external=/^https?:\/\//i.test(href);
-    const relation=(String(options||"").match(/rel=(follow|nofollow|sponsored|ugc)/i)||[])[1]||"follow";
+    const relation=(String(options||"").match(/rel=(follow|nofollow|sponsored|ugc)/i)||[])[1]||(external?"nofollow":"follow");
     const target=(String(options||"").match(/target=(_blank|_self)/i)||[])[1]||(external?"_blank":"");
     const rel=[...(relation!=="follow"?[relation]:[]),...(target==="_blank"?["noopener","noreferrer"]:[])].join(" ");
     return '<a href="'+esc(href)+'"'+(title?' title="'+esc(title)+'"':"")+(target?' target="'+target+'"':"")+(rel?' rel="'+rel+'"':"")+'>'+label+'</a>';

@@ -9,17 +9,20 @@ const socialLabels: Record<string, string> = {
 
 export function BlogHeader() {
   return (
-    <header className="blog-header" dir="rtl">
-      <div className="blog-container blog-header-inner">
-        <Link className="blog-header-blog-link" href="/blog/" aria-label="وبلاگ آریا کیانزاد">
-          <span className="blog-brand-mark" aria-hidden="true">آ</span>
-          <span>آریا کیانزاد</span>
-        </Link>
-        <Link className="blog-back-link" href="/">
-          وب‌سایت اصلی <span aria-hidden="true">↗</span>
-        </Link>
-      </div>
-    </header>
+    <>
+      <a className="blog-skip-link" href="#main">رفتن به محتوای اصلی</a>
+      <header className="blog-header" dir="rtl">
+        <div className="blog-container blog-header-inner">
+          <Link className="blog-header-blog-link" href="/blog/" aria-label="وبلاگ آریا کیانزاد">
+            <span className="blog-brand-mark" aria-hidden="true">آ</span>
+            <span>آریا کیانزاد</span>
+          </Link>
+          <Link className="blog-back-link" href="/">
+            وب‌سایت اصلی <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
+      </header>
+    </>
   );
 }
 
@@ -48,7 +51,7 @@ export function BlogFooter() {
           </div>
         </div>
         <div className="blog-footer-bottom">
-          <small>© {new Date().toLocaleDateString("fa-IR", { year: "numeric" })} آریا کیانزاد</small>
+          <small>© {new Date().toLocaleDateString("fa-IR", { year: "numeric", timeZone: "Asia/Tehran" })} آریا کیانزاد</small>
           <span>این نوشته‌ها رو از نگاه و تجربهٔ خودم می‌نویسم.</span>
         </div>
       </div>

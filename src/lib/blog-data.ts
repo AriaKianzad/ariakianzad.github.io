@@ -12,6 +12,7 @@ export type BlogFaq={question:string;answer:string};
 export type BlogAdBanner={
   id:string;enabled:boolean;label:string;image_url:string;alt:string;link_url:string;
   link_rel:"follow"|"nofollow"|"sponsored"|"ugc"|"nofollow sponsored"|"nofollow ugc"|"nofollow sponsored ugc";
+  show_on_mobile:boolean;
 };
 export type BlogPost={
   id:string;slug:string;title:string;excerpt:string;content:string;language:"fa"|"en";
@@ -49,8 +50,9 @@ const defaults:BlogSettings={
   schema_type:"Article",breadcrumbs_enabled:true,breadcrumb_home_label:"خانه",
   open_graph_enabled:true,twitter_card_type:"summary_large_image",
   ad_banners:[
-    {id:"banner-1",enabled:false,label:"",image_url:"",alt:"",link_url:"",link_rel:"follow"},
-    {id:"banner-2",enabled:false,label:"",image_url:"",alt:"",link_url:"",link_rel:"follow"},
+    {id:"banner-1",enabled:false,label:"",image_url:"",alt:"",link_url:"",link_rel:"follow",show_on_mobile:true},
+    {id:"banner-2",enabled:false,label:"",image_url:"",alt:"",link_url:"",link_rel:"follow",show_on_mobile:true},
+    {id:"banner-3",enabled:false,label:"",image_url:"",alt:"",link_url:"",link_rel:"follow",show_on_mobile:true},
   ],
 };
 type Payload={settings:BlogSettings;posts:BlogPost[]};

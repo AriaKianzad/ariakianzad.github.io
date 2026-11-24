@@ -3,16 +3,42 @@ import { mkdir, readFile, readdir, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 const data=JSON.parse(await readFile(".cache/blog-content.json","utf8"));
 const outputDir=resolve("public/og/blog");
+const MEDIA_ORIGIN="https://bkohdqwecnvbmeaiuyyx.supabase.co";
+const MEDIA_PATH="/storage/v1/object/public/blog-media/";
+const MAX_MEDIA_BYTES=8*1024*1024;
+
+function trustedMediaUrl(value){
+  if(typeof value!=="string"||!value)return null;
+  try{
+    const url=new URL(value);
+    if(
+      url.protocol!=="https:"||
+      url.origin!==MEDIA_ORIGIN||
+      !url.pathname.startsWith(MEDIA_PATH)||
+      url.username||url.password||url.search||url.hash
+    )return null;
+    return url.href;
+  }catch{return null;}
+}
 await mkdir(outputDir,{recursive:true});
 for(const name of await readdir(outputDir)){if(/\.(jpe?g|png)$/i.test(name))await rm(resolve(outputDir,name),{force:true});}
 const candidate=data.settings?.accent_color||"#a86f54";
 const accent=/^#[0-9a-fA-F]{6}$/.test(candidate)?candidate:"#a86f54";
 function xml(value){return String(value).replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c]));}
 for(const post of data.posts||[]){
-  const target=resolve(outputDir,post.slug+".jpg"), image=post.og_image_url||post.hero_image_url;
+  const target=resolve(outputDir,post.slug+".jpg");
+  const image=trustedMediaUrl(post.og_image_url||post.hero_image_url);
   let pipeline=null;
-  if(image&&image.startsWith("https://")){
-    try{const r=await fetch(image,{signal:AbortSignal.timeout(15000)});if(!r.ok)throw new Error("image");pipeline=sharp(Buffer.from(await r.arrayBuffer())).rotate().resize(1200,630,{fit:"cover",position:"attention"});}catch{pipeline=null;}
+  if(image){
+    try{
+      const response=await fetch(image,{signal:AbortSignal.timeout(15000),redirect:"error"});
+      if(!response.ok)throw new Error("image");
+      const declaredSize=Number(response.headers.get("content-length")||0);
+      if(declaredSize>MAX_MEDIA_BYTES)throw new Error("image too large");
+      const bytes=Buffer.from(await response.arrayBuffer());
+      if(bytes.length>MAX_MEDIA_BYTES)throw new Error("image too large");
+      pipeline=sharp(bytes).rotate().resize(1200,630,{fit:"cover",position:"attention"});
+    }catch{pipeline=null;}
   }
   if(pipeline){await pipeline.jpeg({quality:88,mozjpeg:true}).toFile(target);continue;}
   const title=xml(String(post.title||"Aria Kianzad").slice(0,70));

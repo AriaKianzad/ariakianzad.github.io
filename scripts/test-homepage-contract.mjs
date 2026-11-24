@@ -68,6 +68,7 @@ const [
   bookPage,
   bookStyles,
   socialGenerator,
+  notFoundContent,
 ] = await Promise.all([
   read("src/app/page.tsx"),
   read("src/content/home.ts"),
@@ -89,6 +90,7 @@ const [
   read("public/Mian-e-Ma/index.html"),
   read("public/Mian-e-Ma/styles.css"),
   read("scripts/generate-social-previews.mjs"),
+  read("src/app/NotFoundContent.tsx"),
 ]);
 
 // The homepage remains a semantic, server-rendered page with one primary heading.
@@ -200,8 +202,13 @@ assert.ok(socialGenerator.includes("mian-e-ma-cover-v2.webp") &&
 
 // Accessibility and consent controls stay out of the normal page flow.
 assert.ok(siteChrome.includes('className="skip-link" href="#main"'), "keyboard skip navigation must remain available on portfolio routes");
+assert.ok(siteChrome.includes('<main id="main" tabIndex={-1}>'), "the portfolio skip-link target must accept keyboard focus");
+assert.ok(bookPage.includes('class="skip-link" href="#main"') && bookPage.includes('<main id="main" tabindex="-1">'), "the book skip link must target a focusable main landmark");
 assert.ok(chrome.includes(".skip-link:focus-visible"), "skip navigation must appear when keyboard-focused");
-assert.ok(chrome.includes(".analytics-consent {\n  position: fixed;"), "analytics dialog must be viewport-fixed");
+assert.ok(notFoundContent.includes('<div className="not-found-page not-found-main"') && !notFoundContent.includes('<main className="not-found-page not-found-main"'), "root 404 content must not nest a main landmark inside SiteChrome's main");
+assert.ok(layout.includes('role="region"') && layout.includes('aria-labelledby="analytics-consent-title"') && !layout.includes('role="dialog"'), "portfolio privacy preferences must use non-modal labelled-region semantics");
+assert.ok(bookPage.includes('role="region"') && bookPage.includes('aria-labelledby="analytics-consent-title"') && !bookPage.includes('role="dialog"'), "book privacy preferences must use non-modal labelled-region semantics");
+assert.ok(chrome.includes(".analytics-consent {\n  position: fixed;"), "analytics consent panel must be viewport-fixed");
 assert.ok(chrome.includes(".analytics-preferences {\n  position: fixed;"), "analytics shortcut must be viewport-fixed");
 assert.ok(chrome.includes(".analytics-consent[hidden]") && chrome.includes("display: none !important"), "hidden consent controls must respect the hidden attribute");
 assert.ok(chrome.includes("@media (max-width: 560px)"), "consent controls need a narrow-screen layout");
@@ -287,6 +294,7 @@ assert.ok(site.includes("Personal Branding Consultant"), "Person job title must 
 assert.ok(llms.includes("Personal branding"), "llms.txt must describe personal branding");
 assert.ok(llms.includes("research and insight"), "llms.txt must describe research-led strategy");
 assert.ok(llms.includes("RexoMag"), "llms.txt must expose the editorial platform");
+assert.ok(llms.includes("## Personal blog") && llms.includes("https://ariakianzad.github.io/blog/") && llms.includes("https://ariakianzad.github.io/blog/feed.xml"), "llms.txt must identify the first-party blog and its RSS feed");
 assert.ok(llms.includes("creative agency"), "llms.txt must describe Rexo as an agency");
 
 // Security invariants: no new external runtime origin, unsafe inline JS or eval.

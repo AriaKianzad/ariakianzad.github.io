@@ -108,17 +108,17 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
 
   assert.equal(page.stored.get("aria-google-analytics-consent-v1"), "granted");
   assert.equal(get(page, "analytics-consent").hidden, true);
-  assert.equal(get(page, "analytics-preferences").hidden, true);
+  assert.equal(get(page, "analytics-preferences").hidden, false);
   assert.equal(get(page, "analytics-preferences").textContent, "Privacy settings · On");
   assert.equal(page.scripts.length, 1, "GA script should load only after consent");
   assert.equal(page.scripts[0].src, "https://www.googletagmanager.com/gtag/js?id=G-0CKL90M5R2");
 }
 
-// Returning visitor who accepted previously: hide the persistent status control.
+// Returning visitor who accepted previously: keep privacy settings available.
 {
   const page = createPage("/", "granted");
   assert.equal(get(page, "analytics-consent").hidden, true);
-  assert.equal(get(page, "analytics-preferences").hidden, true);
+  assert.equal(get(page, "analytics-preferences").hidden, false);
   assert.equal(get(page, "analytics-preferences").textContent, "Privacy settings · On");
   assert.equal(page.scripts.length, 1, "GA script should load for saved consent");
 }
@@ -136,16 +136,21 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
   assert.equal(get(page, "analytics-preferences").hidden, true);
   accept(page);
   assert.equal(get(page, "analytics-consent").hidden, true);
-  assert.equal(get(page, "analytics-preferences").hidden, true);
+  assert.equal(get(page, "analytics-preferences").hidden, false);
   assert.equal(get(page, "analytics-preferences").textContent, "Privacy settings · On");
   assert.equal(page.scripts.length, 1);
 }
 
-// The Persian book page hides the status when analytics is on and shows it when off.
+// The Persian book page also keeps privacy settings reachable after acceptance or refusal.
 {
   const accepted = createPage("/Mian-e-Ma/", "granted");
-  assert.equal(get(accepted, "analytics-preferences").hidden, true);
+  assert.equal(get(accepted, "analytics-preferences").hidden, false);
   assert.equal(get(accepted, "analytics-preferences").textContent, "تنظیمات حریم خصوصی · فعال");
+  openPreferences(accepted);
+  assert.equal(get(accepted, "analytics-consent").hidden, false);
+  reject(accepted);
+  assert.equal(get(accepted, "analytics-preferences").hidden, false);
+  assert.equal(get(accepted, "analytics-preferences").textContent, "تنظیمات حریم خصوصی · غیرفعال");
   assert.equal(accepted.scripts.length, 1);
 
   const declined = createPage("/Mian-e-Ma/", "denied");
@@ -154,26 +159,38 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
   assert.equal(declined.scripts.length, 0);
 }
 
-// Blog routes never display the Analytics preferences dialog or its persistent control.
+// Blog routes suppress the automatic prompt but keep privacy settings reachable.
 {
   const firstVisit = createPage("/blog/");
   assert.equal(get(firstVisit, "analytics-consent").hidden, true);
-  assert.equal(get(firstVisit, "analytics-preferences").hidden, true);
+  assert.equal(get(firstVisit, "analytics-preferences").hidden, false);
+  assert.equal(get(firstVisit, "analytics-preferences").textContent, "تنظیمات حریم خصوصی");
   assert.equal(firstVisit.scripts.length, 0, "analytics must remain unloaded without prior consent on blog pages");
+
+  openPreferences(firstVisit);
+  assert.equal(get(firstVisit, "analytics-consent").hidden, false);
+  accept(firstVisit);
+  assert.equal(get(firstVisit, "analytics-preferences").hidden, false);
+  assert.equal(get(firstVisit, "analytics-preferences").textContent, "تنظیمات حریم خصوصی · فعال");
+  assert.equal(firstVisit.scripts.length, 1, "first-time blog visitors must be able to opt in");
 
   const accepted = createPage("/blog/black-friday-history/", "granted");
   assert.equal(get(accepted, "analytics-consent").hidden, true);
-  assert.equal(get(accepted, "analytics-preferences").hidden, true);
+  assert.equal(get(accepted, "analytics-preferences").hidden, false);
   assert.equal(accepted.scripts.length, 1, "previously granted consent still permits analytics on blog pages");
+  openPreferences(accepted);
+  reject(accepted);
+  assert.equal(get(accepted, "analytics-preferences").hidden, false);
+  assert.equal(get(accepted, "analytics-preferences").textContent, "تنظیمات حریم خصوصی · غیرفعال");
 
   const declined = createPage("/blog/category/brand-and-business/", "denied");
   assert.equal(get(declined, "analytics-consent").hidden, true);
-  assert.equal(get(declined, "analytics-preferences").hidden, true);
+  assert.equal(get(declined, "analytics-preferences").hidden, false);
   assert.equal(declined.scripts.length, 0, "previously declined consent must remain denied on blog pages");
 
   const nested = createPage("/blog/contact/", null);
   assert.equal(get(nested, "analytics-consent").hidden, true);
-  assert.equal(get(nested, "analytics-preferences").hidden, true);
+  assert.equal(get(nested, "analytics-preferences").hidden, false);
 }
 
 // Declining from the initial dialog exposes the Off control and does not load GA.
@@ -186,4 +203,4 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
   assert.equal(page.scripts.length, 0);
 }
 
-console.log("Analytics consent tests passed: opt-in is preserved and the privacy-status control is visible only when analytics is inactive.");
+console.log("Analytics consent tests passed: preferences remain reachable and stored choices can be changed on every route.");

@@ -50,7 +50,7 @@ export function BlogListingClient({
           </label>
         ) : <span />}
         {showCategories ? (
-          <div className="blog-category-filters" aria-label="دسته‌بندی‌ها">
+          <div className="blog-category-filters" role="group" aria-label="دسته‌بندی‌ها">
             <button className="active" data-category-filter="" aria-pressed="true" type="button">همه</button>
             {categories.map((item) => (
               <button key={item.slug} data-category-filter={item.slug} aria-pressed="false" type="button">

@@ -47,7 +47,7 @@ export function SiteChrome({ children }: { children: ReactNode }) {
           </a>
         </div>
       </header>
-      <main id="main">{children}</main>
+      <main id="main" tabIndex={-1}>{children}</main>
       <footer className="site-footer">
         <div className="shell">
           <div className="site-footer__top">

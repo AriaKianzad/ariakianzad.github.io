@@ -55,11 +55,13 @@ const [analyticsEdge, adBannerMigration, siteConfig, socialIcons, socialIconExtr
   read("assets-src/icons/telegram.svg"),
 ]);
 
+const blogChromeCss = await read("src/app/chrome.css");
 const categorySeoMigration = await read("supabase/migrations/20261123130000_add_category_level_seo.sql");
 const categoryTaxonomyMigration = await read("supabase/migrations/20261123200000_add_blog_category_taxonomy_and_advanced_seo.sql");
 const multipleCategoryMigration = await read("supabase/migrations/20261124210000_add_multiple_post_categories.sql");
 const snapshotCategorySyncMigration = await read("supabase/migrations/20261124220000_sync_multi_category_published_snapshots.sql");
 const canonicalMigration = await read("supabase/migrations/20261124230000_add_blog_default_canonical_url.sql");
+const responsiveAdMigration = await read("supabase/migrations/20261124111304_responsive_article_advertising.sql");
 const categoryUtils = await read("src/lib/blog-category-utils.ts");
 const listingClient = await read("src/app/blog/BlogListingClient.tsx");
 const listingScript = await read("public/blog-listing.js");
@@ -179,6 +181,7 @@ assert.ok(fetchScript.includes(".cache/blog-content.json"), "build payload must 
 assert.ok(!fetchScript.includes("blog_posts"), "the public build must not query private CMS tables directly");
 assert.ok(/resize\(\s*1200\s*,\s*630\s*,/.test(imageScript), "social images must be 1200x630");
 assert.ok(imageScript.includes("sharp(") && imageScript.includes("jpeg({quality:88"), "social images must be optimized in the build");
+assert.ok(imageScript.includes("trustedMediaUrl") && imageScript.includes('url.origin!==MEDIA_ORIGIN') && imageScript.includes('url.protocol!=="https:"') && imageScript.includes('redirect:"error"') && imageScript.includes("MAX_MEDIA_BYTES"), "social preview generation must fetch only bounded images from the project's public blog-media bucket");
 assert.ok(dataSource.includes("readFileSync"), "blog data must be loaded at build time, not per public request");
 
 assert.ok(listingPage.includes("getBlogPosts()") && listingPage.includes("BlogListingClient"), "the blog archive must be server-rendered with client search controls");
@@ -191,6 +194,8 @@ assert.ok(articlePage.includes('"@context": "https://schema.org"') && articlePag
 assert.ok(articlePage.includes('"@type": "FAQPage"'), "FAQ schema must be available");
 assert.ok(articlePage.includes("canonical") && articlePage.includes("robots_index"), "article SEO must support canonical and robots directives");
 assert.ok(articlePage.includes("openGraph:") && articlePage.includes("twitter:"), "article metadata must include OG and X cards");
+assert.ok(articlePage.includes('const image = site.url + "/og/blog/" + post.slug + ".jpg"'), "article OG and X metadata must use the normalized 1200x630 build asset rather than the raw uploaded image");
+assert.ok(contactPage.includes('images: [{ url: site.url + "/og/og.jpg", width: 1200, height: 630 }]') && contactPage.includes('card: "summary_large_image"'), "blog contact metadata must include a large social preview image");
 assert.ok(articlePage.includes("extractToc"), "articles must support a table of contents");
 assert.ok(categoryPage.includes("generateStaticParams"), "category archives must be static pages");
 assert.ok(categoryPage.includes("settings.category_seo") && categoryPage.includes("meta_description"), "category archives must support separate metadata per category");
@@ -202,10 +207,13 @@ assert.ok(robots.includes('disallow: ["/admin/", "/admin/blog/"]'), "robots.txt 
 assert.ok(!publicHeader.includes("/author/"), "no separate author archive should be generated");
 
 assert.ok(markdownSource.includes("function esc(") && markdownSource.includes("function allowedUrl("), "Markdown rendering must escape HTML and validate links");
-assert.ok(markdownSource.includes("https?:") && markdownSource.includes("mailto:"), "Markdown links must use an explicit safe URL allowlist");
+assert.ok(markdownSource.includes('new URL(candidate)') && markdownSource.includes('url.username') && markdownSource.includes('url.password'), "Markdown links must reject credential-bearing and unsupported URL schemes");
+assert.ok(adminApp.includes('new URL(value)') && adminApp.includes('url.username') && adminApp.includes('url.password'), "CMS preview and clipboard URLs must use the same explicit safe-protocol checks");
+assert.ok(markdownSource.includes('"http:","https:","mailto:"') && markdownSource.includes("new URL(candidate)"), "Markdown links must use an explicit safe URL allowlist");
 assert.ok(markdownSource.includes("extractToc"), "Markdown headings must provide TOC data");
 
 assert.ok(blogCss.includes("Estedad") && blogCss.includes("theme-white") && blogCss.includes("theme-warm"), "the public blog must use Estedad and the light theme variants");
+assert.ok(blogCss.includes("body:has(.blog-theme) .analytics-consent") && blogCss.includes("body:has(.blog-theme) .analytics-preferences") && blogCss.includes("font-family: var(--font-estedad)"), "blog consent controls must use the light editorial palette and Estedad rather than the portfolio's dark chrome");
 assert.ok(blogCss.includes("--blog-heading-scale") && blogCss.includes("--blog-line-height"), "global editorial typography settings must apply to public content");
 
 assert.ok(adminHtml.includes('id="login-email"') && adminHtml.includes('id="login-password"'), "CMS login must use email and password");
@@ -272,7 +280,7 @@ assert.ok(adminHtml.includes('contenteditable="true"'), "CMS must use a rich tex
 assert.ok(adminHtml.includes('id="link-settings-toggle"') && adminHtml.includes('id="link-settings-list"'), "CMS must expose per-link controls");
 assert.ok(adminApp.includes("sanitizeClipboardHtml") && adminApp.includes("handleEditorPaste"), "CMS must sanitize and preserve rich clipboard HTML");
 assert.ok(adminApp.includes("editorToMarkdown") && adminApp.includes("refreshLinkManager"), "CMS must serialize rich text and expose per-link settings");
-assert.ok(markdownSource.includes("rel=(follow|nofollow|sponsored|ugc)") && markdownSource.includes("target=(_blank|_self)"), "public Markdown renderer must preserve link relationship and target settings");
+assert.ok(markdownSource.includes("rel=(follow|nofollow|sponsored|ugc)") && markdownSource.includes("target=(_blank|_self)") && markdownSource.includes('(external?"nofollow":"follow")'), "public Markdown renderer must preserve link relationship and target settings while defaulting external links to nofollow");
 assert.ok(markdownSource.includes("<table>") && markdownSource.includes("<u>"), "public Markdown renderer must support pasted tables and underline");
 assert.ok(siteChrome.includes("usePathname") && siteChrome.includes("isBlog"), "blog routes must not inherit the portfolio chrome");
 assert.ok(listingPage.includes('settings.tagline || "یادداشت‌هایی درباره برند، معنا و ارتباط"'), "blog archive H1 must use the descriptive tagline");
@@ -286,8 +294,14 @@ assert.ok(blogCss.includes(".blog-theme .blog-header-blog-link {") && blogCss.in
 assert.ok(listingPage.includes("blog-intro-description") && listingPage.includes("settings.description"), "blog homepage must show the configured homepage description separately from its SEO description");
 assert.ok(blogCss.includes(".blog-theme .blog-intro > .blog-intro-description") && blogCss.includes("grid-column:1 / -1") && blogCss.includes("max-width:none"), "homepage description must have a full-width responsive row on mobile and desktop");
 assert.ok(blogLayout.includes("/blog-favicon.svg") && blogLayout.includes('themeColor: "#f4f1e9"'), "blog must use its own favicon and browser theme colour");
+assert.ok(blogLayout.includes('lang={language}') && blogLayout.includes('dir={direction}'), "the blog shell must declare its active language and direction for all nested content");
+assert.ok(publicHeader.includes('className="blog-skip-link" href="#main"') && blogChromeCss.includes(".blog-skip-link:focus-visible"), "blog header must provide keyboard-visible skip navigation");
+assert.ok((listingPage.match(/<main id="main"/g)||[]).length===1 && (articlePage.match(/<main id="main"/g)||[]).length===2 && (categoryPage.match(/<main id="main"/g)||[]).length===2 && contactPage.includes('<main id="main"') && blogNotFound.includes('<main id="main"') && notFoundContent.includes('<main id="main"'), "all public blog routes and blog 404 states must provide a main landmark target");
+assert.ok(listingPage.includes('id="main" tabIndex={-1}') && articlePage.includes('id="main" tabIndex={-1}') && categoryPage.includes('id="main" tabIndex={-1}') && contactPage.includes('id="main" tabIndex={-1}') && blogNotFound.includes('id="main" tabIndex={-1}') && notFoundContent.includes('id="main" tabIndex={-1}'), "blog skip-link targets must be programmatically focusable");
+assert.ok(listingClient.includes('role="group" aria-label="دسته‌بندی‌ها"'), "category filter controls must expose an accessible group name");
+assert.ok(rootLayout.includes('role="region"') && !rootLayout.includes('role="dialog"'), "the non-modal analytics preferences panel must not claim modal dialog semantics");
 assert.ok(contactPage.includes("BlogHeader") && contactPage.includes("BlogFooter") && contactPage.includes("ContactForm"), "contact page must use the blog editorial shell");
-assert.ok(contactPage.includes('title: "تماس با من | درخواست همکاری و اسپانسری"') && contactPage.includes("<h3>رپورتاژ و محتوای تبلیغاتی</h3>") && contactPage.includes("<h3>اسپانسری دوره‌ای</h3>") && contactPage.includes("<h3>همکاری و پیشنهادهای دیگر</h3>"), "contact page must use the revised title and H3 hierarchy");
+assert.ok(contactPage.includes('title: "تماس با من | درخواست همکاری و اسپانسری"') && contactPage.includes("<h3>رپورتاژ و محتوای تبلیغاتی</h3>") && contactPage.includes("<h3>اسپانسری دوره‌ای و بنرهای تبلیغاتی</h3>") && contactPage.includes("<h3>همکاری و پیشنهادهای دیگر</h3>"), "contact page must use the revised title and H3 hierarchy");
 assert.ok(contactForm.includes("data-blog-contact-form") && contactForm.includes("noValidate") && contactForm.includes("advertorial") && contactForm.includes("sponsorship") && !contactForm.includes("editorial_link") && !contactForm.includes("بررسی ارجاع تحریریه‌ای") && !contactForm.includes('"use client"'), "contact form must omit the editorial-link request option and remain static HTML");
 assert.ok(contactForm.includes('data-show-for="advertorial sponsorship"') && contactForm.includes('data-show-for="sponsorship" hidden') && contactForm.includes('name="sponsorshipDuration"'), "sponsorship duration must exist only in the sponsorship conditional field");
 assert.ok(blogCss.includes(".blog-contact-field[hidden] {") && /\.blog-contact-field\[hidden\]\s*\{\s*display:\s*none\s*!important;/.test(blogCss), "hidden conditional contact fields must not be overridden by display:grid");
@@ -298,6 +312,8 @@ assert.ok(contactBrowserScript.includes("sb_publishable_") && contactBrowserScri
 assert.ok(!contactForm.includes("targetUrl") && !contactForm.includes("anchorText") && !contactForm.includes("contact-target") && !contactForm.includes("contact-anchor"), "contact form must not ask for destination URLs or anchor text");
 assert.ok(!contactForm.includes("developers.google.com/search/docs/essentials/spam-policies") && !contactForm.includes("لینک Follow در ازای پرداخت ارائه نمی‌شه"), "contact form must not show the paid-link policy paragraph");
 assert.ok(contactEdge.includes('editorial_link: "بررسی ارجاع تحریریه‌ای Follow بدون پرداخت بابت لینک"'), "contact endpoint must distinguish unpaid editorial link requests from paid advertorials");
+assert.ok(contactEdge.includes('request.headers.get("cf-connecting-ip")') && !contactEdge.includes('"x-real-ip"') && !contactEdge.includes('"x-forwarded-for"'), "contact rate limiting must not trust caller-controlled forwarding-header fallbacks");
+assert.ok(contactEdge.includes('name: "HMAC"') && contactEdge.includes('hash: "SHA-256"'), "contact rate-limit fingerprints must use keyed HMAC-SHA-256");
 assert.ok(contactEdge.includes("GOOGLE_APPS_SCRIPT_URL") && contactEdge.includes("GOOGLE_APPS_SCRIPT_TOKEN") && !contactEdge.includes("RESEND_API_KEY"), "contact Edge Function must route email delivery through the private Google Apps Script endpoint");
 assert.ok(googleContactScript.includes("MailApp.sendEmail") && googleContactScript.includes("BLOG_CONTACT_TOKEN") && googleContactScript.includes("BLOG_CONTACT_TO_EMAIL") && googleContactScript.includes("CacheService"), "Google Apps Script mail sender must protect its endpoint, use the owner's Gmail and deduplicate submissions");
 assert.ok(contactEdge.includes("consume_blog_contact_rate_limit") && contactEdge.includes("companyFax") && contactEdge.includes("SITE_ORIGIN"), "contact endpoint must enforce origin, honeypot and rate limits");
@@ -326,13 +342,15 @@ assert.ok(dataSource.includes("categories:BlogCategory[]") && dataSource.include
 assert.ok(fetchScript.includes("categories:Array.isArray(s.categories)?s.categories:[]") && fetchScript.includes("default_robots_index"), "static build payload must include taxonomy and advanced SEO settings");
 assert.ok(categoryPage.includes("settings.noindex_empty_categories") && categoryPage.includes("settings.default_robots_follow") && categoryPage.includes("item.name"), "category pages must use display labels and global/category robots rules");
 assert.ok(sitemap.includes("settings.sitemap_include_categories") && sitemap.includes("settings.sitemap_include_articles") && sitemap.includes("category.count === 0"), "sitemap must respect global inclusion rules and empty-category noindex");
+assert.ok(sitemap.includes("settings.canonical_url ||") && sitemap.includes("post.canonical_url ||") && sitemap.includes("category_seo?.[category.slug]?.canonical_url"), "sitemap must use the configured canonical URL for the archive, articles and categories");
+assert.ok(sitemap.includes("settings.default_robots_index ?"), "a noindex blog archive must not be advertised in the sitemap");
 assert.ok(articlePage.includes("settings.schema_type") && articlePage.includes("settings.open_graph_enabled") && articlePage.includes("settings.twitter_card_type") && articlePage.includes("settings.breadcrumbs_enabled") && articlePage.includes("robotsIndex"), "article pages must apply global schema, social, breadcrumb and robots defaults");
 assert.ok(!articlePage.includes("mailto:") && !articlePage.includes(">ایمیل"), "article share row must not expose an email action");
 assert.ok(!copyLinkButton.includes("\"use client\"") && copyLinkButton.includes("data-copy-link") && copyLinkButton.includes("data-copy-url") && copyLinkButton.includes("data-copy-feedback"), "copy-link markup must be a static server-rendered control, not a React hydration component");
 assert.ok(blogCopyScript.includes('document.addEventListener("click"') && blogCopyScript.includes("navigator.clipboard.writeText") && blogCopyScript.includes('document.execCommand("copy")') && blogCopyScript.includes("showManualCopy") && blogCopyScript.includes("لینک کپی شد"), "standalone copy script must handle click, clipboard, fallback and success feedback");
 assert.ok(rootLayout.includes('<script src="/blog-copy.js" defer />') && blogCss.includes(".blog-share-copy-wrap [hidden]"), "static copy script must load under the same-origin CSP and keep inactive feedback hidden");
 assert.ok(articlePage.includes('className="blog-reading-time-number"') && articlePage.includes('className="blog-reading-time-unit"') && listingClient.includes('className="blog-reading-time-number"') && listingClient.includes('className="blog-reading-time-unit"') && blogCss.includes('grid-template-areas:"unit number"') && blogCss.includes(".blog-reading-time.is-en") && blogCss.includes("grid-area:number") && blogCss.includes("grid-area:unit") && blogCss.includes("direction:ltr !important"), "reading-time number and unit must use explicit physical grid positions: Persian number right, unit left");
-assert.ok(fetchScript.includes("ad_banners:Array.isArray(s.ad_banners)?s.ad_banners:[]"), "static blog payload must preserve global ad banner settings from the public Supabase RPC");
+assert.ok(fetchScript.includes("ad_banners:Array.isArray(s.ad_banners)") && fetchScript.includes("show_on_mobile:banner.show_on_mobile!==false"), "static blog payload must preserve global ad banner settings from the public Supabase RPC");
 assert.ok(adminHtml.includes('id="view-analytics"') && adminHtml.includes('data-view="analytics"') && adminApp.includes("async function loadArticleAnalytics") && adminApp.includes("function renderArticleAnalytics"), "the CMS must include a protected per-article analytics workspace");
 assert.ok(adminApp.includes("analyticsEpoch") && adminApp.includes("state.articleAnalytics=null") && adminApp.includes("requestEpoch!==state.analyticsEpoch"), "cached article metrics must be cleared and in-flight reports invalidated at sign-in and logout");
 assert.ok(canonicalMigration.includes("add column if not exists canonical_url") && canonicalMigration.includes("blog_get_public_blog_settings_extras"), "blog canonical URL must be persisted and included in the safe public payload");
@@ -341,7 +359,7 @@ assert.ok(adminHtml.includes('id="setting-canonical-url"') && adminApp.includes(
 assert.ok(adminApp.includes("function clipboardHeadingLevel") && adminApp.includes("font-size") && adminApp.includes("largest>=30") && adminApp.includes('tag==="h1"?2'), "Google Docs styled headings must be preserved and heading levels serialized without shifting");
 assert.ok(markdownSource.includes("setext=lines[index+1].trim().match") && markdownSource.includes('class="blog-inline-image"'), "public Markdown renderer must preserve Setext headings and semantic images");
 assert.ok(adminApp.includes("const setext=lines[index+1].trim().match") && adminApp.includes("renderPreviewMarkdown"), "CMS preview must render Setext and ATX heading structures");
-assert.ok(analyticsConsent.includes('window.location.pathname === "/blog"') && analyticsConsent.includes('window.location.pathname.startsWith("/blog/")') && analyticsConsent.includes('getSavedChoice() === "granted"'), "blog paths must hide consent UI while continuing to respect saved analytics choices");
+assert.ok(analyticsConsent.includes('const blogRoute = window.location.pathname === "/blog"') && analyticsConsent.includes('const persian = window.location.pathname.startsWith("/Mian-e-Ma/") || blogRoute') && analyticsConsent.includes('preferences.hidden = false') && analyticsConsent.includes('savedChoice === "granted"'), "blog paths must suppress the automatic consent panel, keep preferences reachable and use Persian labels");
 assert.ok(notFoundContent.includes("usePathname") && notFoundContent.includes("not-found-blog") && notFoundCss.includes(".not-found-blog") && blogNotFound.includes("این آدرس به نوشته‌ای نمی‌رسه"), "blog must have a dedicated branded 404 page");
 assert.ok(legacyCategoryMigration.includes("category = 'brand-and-business'") && legacyCategoryMigration.includes("category_seo =") && legacyCategoryMigration.includes("- 'برند-و-کسب‌وکار'"), "legacy Persian category metadata and article slugs must be removed or migrated");
 assert.ok(legacyCategoryRedirect.includes('http-equiv="refresh"') && legacyCategoryRedirect.includes('http-equiv="Content-Security-Policy"') && legacyCategoryRedirect.includes("/blog/category/brand-and-business/") && legacyCategoryRedirect.includes('name="robots" content="noindex,follow"'), "the former Persian category URL must forward to the English archive without remaining indexable");
@@ -382,4 +400,19 @@ assert.ok(blogCss.includes(".blog-article-meta {\n    display:flex !important;")
 
 console.log("Personal blog contract passed: secure CMS, rich paste, category SEO, accessible formatting, responsive reading and isolated Persian editorial chrome.");
 
-assert.ok(blogCss.includes(".blog-theme .blog-article-sidebar {\n  position:sticky;") && blogCss.includes(".blog-theme .blog-article-sidebar .blog-toc {\n  position:static;") && blogCss.includes("@media(max-width:700px) {\n  .blog-theme .blog-article-sidebar {\n    position:static;") && articlePage.includes("adBanners.map"), "desktop TOC and ad cards must share one sticky sidebar while mobile sidebar stays in document flow");
+assert.ok(blogCss.includes(".blog-theme .blog-article-sidebar {\n  position:sticky;") && blogCss.includes(".blog-theme .blog-article-sidebar .blog-toc {\n  position:static;") && blogCss.includes("@media(max-width:700px) {\n  .blog-theme .blog-article-sidebar {\n    position:static;") && articlePage.includes("sidebarAdBanners.map"), "desktop TOC and ad cards must share one sticky sidebar while mobile sidebar stays in document flow");
+
+
+assert.ok(contactPage.includes("اسپانسری دوره‌ای و بنرهای تبلیغاتی") && contactPage.includes("جایگاه‌های مشخص صفحه‌های مقاله"), "the contact page must describe periodic sponsorship and article banner placements");
+assert.ok(adminApp.includes('function normalizeAdBanners(value)') && adminApp.includes('makeDefaultAdBanner(3)') && adminApp.includes('data-ad-field="show_on_mobile"') && adminApp.includes('banner.show_on_mobile!==false'), "the CMS must keep three core placements and expose per-banner mobile visibility");
+assert.ok(adminEdge.includes("input.length < 3") && adminEdge.includes("show_on_mobile: item.show_on_mobile !== false") && adminEdge.includes('banner.id === "banner-3"'), "the admin API must persist mobile visibility and retain the article-end placement");
+assert.ok(dataSource.includes("show_on_mobile:boolean") && dataSource.includes('id:"banner-3"') && fetchScript.includes("show_on_mobile:banner.show_on_mobile!==false"), "the public build payload must normalize mobile visibility and include the third slot");
+assert.ok(articlePage.includes('banner.id !== "banner-3"') && articlePage.includes('banner.id === "banner-3"') && articlePage.includes("blog-in-article-ad-slot") && articlePage.includes("blog-prose-content"), "the third ad must render after the article HTML inside the article column, not in the sidebar");
+assert.ok(blogCss.includes("aspect-ratio:8.5 / 1") && blogCss.includes("object-fit:contain") && blogCss.includes(".blog-in-article-ad.is-desktop-only"), "the article-end banner must preserve its full artwork and hide on mobile only when configured");
+assert.ok(adminCss.includes(".ad-management-preview.is-article-end {aspect-ratio:8.5 / 1}") && adminCss.includes(".ad-mobile-toggle"), "the CMS must preview the horizontal banner ratio and expose the mobile toggle");
+assert.ok(responsiveAdMigration.includes('"banner-3"') && responsiveAdMigration.includes("'show_on_mobile'") && responsiveAdMigration.includes("between 3 and 8"), "the migration must seed the third slot and backfill mobile visibility without overwriting configured banners");
+assert.ok(adminApp.includes('relation=external?"nofollow":"follow"') && adminApp.includes('anchor.dataset.linkRel=relation'), "new external links must default to nofollow while explicit follow choices remain persistent");
+assert.ok(!adminApp.slice(adminApp.indexOf("function clipboardHeadingLevel"),adminApp.indexOf("function cleanClipboardNode")).includes('querySelectorAll?.("[style]")'), "Google Docs heading detection must not promote an entire paragraph based on a single styled child run");
+
+assert.ok(adminApp.includes('explicitRelation==="follow"') && adminApp.includes('if(relation!=="follow"||explicitRelation==="follow")'), "an explicitly selected follow relation must survive Markdown serialization and subsequent editing");
+assert.ok(adminApp.includes('["follow","nofollow","sponsored","ugc"].includes(value)') && adminApp.includes('const external=/^https?:\\/\\//i.test(href)'), "clipboard sanitization must preserve explicit follow while defaulting pasted external links to nofollow");

@@ -77,15 +77,22 @@ function escapeHtml(value: string): string {
 }
 
 function clientIp(request: Request): string {
-  const direct = request.headers.get("cf-connecting-ip") || request.headers.get("x-real-ip");
-  if (direct?.trim()) return direct.trim().slice(0, 100);
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwarded ? forwarded.slice(0, 100) : "unknown";
+  // Only trust the client address supplied by Cloudflare's managed ingress.
+  // Do not fall back to caller-controlled forwarding headers.
+  const direct = request.headers.get("cf-connecting-ip")?.trim();
+  if (!direct || direct.length > 64 || /[,;\s]/.test(direct)) return "unknown";
+  return direct.toLowerCase();
 }
 
 async function fingerprint(ip: string, secret: string): Promise<string> {
-  const bytes = new TextEncoder().encode(secret + ":" + ip);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const digest = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(ip));
   return Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, "0")).join("");
 }
 
