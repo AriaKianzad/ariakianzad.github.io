@@ -39,7 +39,7 @@ The client configuration contains only the Supabase project URL and an sb_publis
 
 ## Leaked-password protection and Free-plan fallback
 
-The live Supabase Security Advisor reported `auth_leaked_password_protection` as disabled on **2026-11-24**. Confirm the current plan's feature availability in the dashboard and enable the hosted breached-password check when available. This setting cannot be enabled through SQL migrations or a client-side check. No plan upgrade or billing change has been made.
+The live organization was verified as **Free** on 2026-11-24, and the Security Advisor reported `auth_leaked_password_protection` as disabled. Supabase's current password-security documentation states that hosted leaked-password protection is available on **Pro and above**. It cannot be enabled through SQL migrations or a client-side check, and no plan upgrade or billing change has been made.
 
 For the current Free plan, use the available password-strength controls in **Authentication → Sign In / Providers → Email**:
 
