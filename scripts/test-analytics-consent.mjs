@@ -114,7 +114,7 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
   assert.equal(page.scripts[0].src, "https://www.googletagmanager.com/gtag/js?id=G-0CKL90M5R2");
 }
 
-// Returning visitor who accepted previously: hide the persistent status control.
+// Returning visitor who accepted previously: keep privacy settings available.
 {
   const page = createPage("/", "granted");
   assert.equal(get(page, "analytics-consent").hidden, true);
@@ -136,12 +136,12 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
   assert.equal(get(page, "analytics-preferences").hidden, true);
   accept(page);
   assert.equal(get(page, "analytics-consent").hidden, true);
-  assert.equal(get(page, "analytics-preferences").hidden, true);
+  assert.equal(get(page, "analytics-preferences").hidden, false);
   assert.equal(get(page, "analytics-preferences").textContent, "Privacy settings · On");
   assert.equal(page.scripts.length, 1);
 }
 
-// The Persian book page hides the status when analytics is on and shows it when off.
+// The Persian book page also keeps privacy settings reachable after acceptance or refusal.
 {
   const accepted = createPage("/Mian-e-Ma/", "granted");
   assert.equal(get(accepted, "analytics-preferences").hidden, false);
