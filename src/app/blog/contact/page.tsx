@@ -27,7 +27,7 @@ export default function BlogContactPage() {
   return (
     <>
       <BlogHeader />
-      <main className="blog-main" dir="rtl">
+      <main id="main" className="blog-main" dir="rtl">
         <section className="blog-container blog-contact-intro">
           <div className="blog-contact-intro-copy">
             <p className="blog-contact-kicker">ارتباط و همکاری</p>
