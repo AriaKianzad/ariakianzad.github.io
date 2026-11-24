@@ -59,7 +59,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
     return (
       <>
         <BlogHeader />
-        <main className="blog-article-main" dir="rtl">
+        <main id="main" className="blog-article-main" dir="rtl">
           <section className="blog-container blog-category-heading">
             <div className="blog-eyebrow"><span /> آرشیو نوشته‌ها</div>
             <h1>هنوز مقاله‌ای برای نمایش وجود نداره.</h1>
