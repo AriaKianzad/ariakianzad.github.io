@@ -1663,3 +1663,43 @@ body:has(.blog-theme) > main#main { display:contents; }
     top:auto;
   }
 }
+
+
+/* Reading-time visual order is defined by physical grid areas rather than
+   Unicode bidi resolution. In Persian, the number is on the right and the
+   unit is on the left; English keeps number then unit from left to right. */
+.blog-theme .blog-reading-time,
+.blog-theme .blog-article-meta .blog-reading-time {
+  display:inline-grid !important;
+  direction:ltr !important;
+  grid-template-columns:max-content max-content;
+  grid-template-areas:"unit number";
+  align-items:center;
+  justify-content:start;
+  column-gap:.32em;
+  white-space:nowrap;
+  unicode-bidi:isolate;
+}
+.blog-theme .blog-reading-time.is-en {
+  grid-template-areas:"number unit";
+}
+.blog-theme .blog-reading-time-number {
+  grid-area:number;
+  direction:ltr;
+  unicode-bidi:isolate;
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.blog-theme .blog-reading-time-unit {
+  grid-area:unit;
+  direction:rtl;
+  unicode-bidi:isolate;
+  white-space:nowrap;
+}
+.blog-theme .blog-reading-time.is-en .blog-reading-time-unit {
+  direction:ltr;
+}
+.blog-theme .blog-article-meta .blog-reading-time::before {
+  content:none !important;
+  display:none !important;
+}
