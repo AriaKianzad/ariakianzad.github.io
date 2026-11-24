@@ -9,7 +9,7 @@ export default function NotFoundContent() {
 
   if (blogRoute) {
     return (
-      <main className="not-found-page not-found-blog" dir="rtl">
+      <main className="not-found-page not-found-blog" lang="fa" dir="rtl">
         <div className="not-found-topline">
           <a className="not-found-brand" href="/blog/">
             <span className="not-found-mark">آ</span>
