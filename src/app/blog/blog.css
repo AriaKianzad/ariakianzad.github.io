@@ -1590,3 +1590,26 @@ body:has(.blog-theme) > main#main { display:contents; }
   direction:rtl;
   unicode-bidi:isolate;
 }
+
+
+/* Keep the reading-time value and its unit in a deterministic visual order.
+   The number comes first, followed by the Persian/English unit. */
+.blog-theme .blog-reading-time {
+  display:inline-flex;
+  direction:ltr !important;
+  unicode-bidi:isolate;
+  flex-direction:row;
+  align-items:center;
+  justify-content:flex-start;
+  gap:.32em;
+  white-space:nowrap;
+}
+.blog-theme .blog-reading-time>bdi {
+  direction:ltr;
+  unicode-bidi:isolate;
+  flex:0 0 auto;
+}
+.blog-theme .blog-reading-time>span {
+  unicode-bidi:isolate;
+  flex:0 0 auto;
+}
