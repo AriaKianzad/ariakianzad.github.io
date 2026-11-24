@@ -210,6 +210,7 @@ assert.ok(markdownSource.includes('"http:","https:","mailto:"') && markdownSourc
 assert.ok(markdownSource.includes("extractToc"), "Markdown headings must provide TOC data");
 
 assert.ok(blogCss.includes("Estedad") && blogCss.includes("theme-white") && blogCss.includes("theme-warm"), "the public blog must use Estedad and the light theme variants");
+assert.ok(blogCss.includes("body:has(.blog-theme) .analytics-consent") && blogCss.includes("body:has(.blog-theme) .analytics-preferences") && blogCss.includes("font-family: var(--font-estedad)"), "blog consent controls must use the light editorial palette and Estedad rather than the portfolio's dark chrome");
 assert.ok(blogCss.includes("--blog-heading-scale") && blogCss.includes("--blog-line-height"), "global editorial typography settings must apply to public content");
 
 assert.ok(adminHtml.includes('id="login-email"') && adminHtml.includes('id="login-password"'), "CMS login must use email and password");
