@@ -59,7 +59,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
     return (
       <>
         <BlogHeader />
-        <main id="main" className="blog-article-main" dir="rtl">
+        <main id="main" tabIndex={-1} className="blog-article-main" dir="rtl">
           <section className="blog-container blog-category-heading">
             <div className="blog-eyebrow"><span /> آرشیو نوشته‌ها</div>
             <h1>هنوز مقاله‌ای برای نمایش وجود نداره.</h1>
@@ -116,7 +116,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
   return (
     <>
       <BlogHeader />
-      <main id="main" className="blog-article-main" lang={language} dir={direction} style={articleStyle}>
+      <main id="main" tabIndex={-1} className="blog-article-main" lang={language} dir={direction} style={articleStyle}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
         {faqSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema).replace(/</g, "\\u003c") }} /> : null}
         {settings.breadcrumbs_enabled ? (
