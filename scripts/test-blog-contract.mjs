@@ -55,6 +55,7 @@ const [analyticsEdge, adBannerMigration, siteConfig, socialIcons, socialIconExtr
   read("assets-src/icons/telegram.svg"),
 ]);
 
+const blogChromeCss = await read("src/app/chrome.css");
 const categorySeoMigration = await read("supabase/migrations/20261123130000_add_category_level_seo.sql");
 const categoryTaxonomyMigration = await read("supabase/migrations/20261123200000_add_blog_category_taxonomy_and_advanced_seo.sql");
 const multipleCategoryMigration = await read("supabase/migrations/20261124210000_add_multiple_post_categories.sql");
@@ -293,6 +294,9 @@ assert.ok(listingPage.includes("blog-intro-description") && listingPage.includes
 assert.ok(blogCss.includes(".blog-theme .blog-intro > .blog-intro-description") && blogCss.includes("grid-column:1 / -1") && blogCss.includes("max-width:none"), "homepage description must have a full-width responsive row on mobile and desktop");
 assert.ok(blogLayout.includes("/blog-favicon.svg") && blogLayout.includes('themeColor: "#f4f1e9"'), "blog must use its own favicon and browser theme colour");
 assert.ok(blogLayout.includes('lang={language}') && blogLayout.includes('dir={direction}'), "the blog shell must declare its active language and direction for all nested content");
+assert.ok(publicHeader.includes('className="blog-skip-link" href="#main"') && blogChromeCss.includes(".blog-skip-link:focus-visible"), "blog header must provide keyboard-visible skip navigation");
+assert.ok((listingPage.match(/<main id="main"/g)||[]).length===1 && (articlePage.match(/<main id="main"/g)||[]).length===2 && (categoryPage.match(/<main id="main"/g)||[]).length===2 && contactPage.includes('<main id="main"') && blogNotFound.includes('<main id="main"') && notFoundContent.includes('<main id="main"'), "all public blog routes and blog 404 states must provide a main landmark target");
+assert.ok(listingClient.includes('role="group" aria-label="دسته‌بندی‌ها"'), "category filter controls must expose an accessible group name");
 assert.ok(rootLayout.includes('role="region"') && !rootLayout.includes('role="dialog"'), "the non-modal analytics preferences panel must not claim modal dialog semantics");
 assert.ok(contactPage.includes("BlogHeader") && contactPage.includes("BlogFooter") && contactPage.includes("ContactForm"), "contact page must use the blog editorial shell");
 assert.ok(contactPage.includes('title: "تماس با من | درخواست همکاری و اسپانسری"') && contactPage.includes("<h3>رپورتاژ و محتوای تبلیغاتی</h3>") && contactPage.includes("<h3>اسپانسری دوره‌ای</h3>") && contactPage.includes("<h3>همکاری و پیشنهادهای دیگر</h3>"), "contact page must use the revised title and H3 hierarchy");
