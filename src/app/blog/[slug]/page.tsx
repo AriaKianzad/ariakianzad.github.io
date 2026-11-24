@@ -143,7 +143,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
             </div>
           </div>
         </header>
-        <div className={"blog-article-grid blog-container " + (hasArticleSidebar ? "has-sidebar " : "no-sidebar ") + (toc.length ? "has-toc" : "no-toc") + (adBannerEnabled ? "has-ad " : "") + (post.content_width === "wide" || settings.content_width === "wide" ? "content-wide" : "")}>
+        <div className={"blog-article-grid blog-container " + (hasArticleSidebar ? "has-sidebar " : "no-sidebar ") + (toc.length ? "has-toc " : "no-toc ") + (adBannerEnabled ? "has-ad " : "") + (post.content_width === "wide" || settings.content_width === "wide" ? "content-wide" : "")}>
           {hasArticleSidebar ? (
             <aside className="blog-article-sidebar">
               {toc.length ? (
