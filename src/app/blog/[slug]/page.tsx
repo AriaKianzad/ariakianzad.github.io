@@ -116,7 +116,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
   return (
     <>
       <BlogHeader />
-      <main className="blog-article-main" lang={language} dir={direction} style={articleStyle}>
+      <main id="main" className="blog-article-main" lang={language} dir={direction} style={articleStyle}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
         {faqSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema).replace(/</g, "\\u003c") }} /> : null}
         {settings.breadcrumbs_enabled ? (
