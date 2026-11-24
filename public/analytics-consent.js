@@ -109,7 +109,9 @@
 
     panel.hidden = true;
     updatePreferencesLabel(choice);
-    preferences.hidden = false;
+    // Once analytics is accepted, the floating settings button is no longer needed.
+    // A declined choice keeps it available so the visitor can opt in later.
+    preferences.hidden = blogRoute || choice === "granted";
 
     if (choice === "granted") {
       if (typeof window.gtag === "function") {
@@ -127,6 +129,7 @@
   accept.addEventListener("click", () => saveChoice("granted"));
   reject.addEventListener("click", () => saveChoice("denied"));
   preferences.addEventListener("click", () => {
+    if (blogRoute) return;
     panel.hidden = false;
     preferences.hidden = true;
     accept.focus?.();
@@ -134,12 +137,10 @@
 
   const savedChoice = getSavedChoice();
 
-  // Blog pages suppress the automatic consent overlay, but visitors can still
-  // open privacy settings and change their choice without leaving the article.
+  // The blog never exposes the floating preferences control or the consent panel.
   if (blogRoute) {
     panel.hidden = true;
-    updatePreferencesLabel(savedChoice);
-    preferences.hidden = false;
+    preferences.hidden = true;
     if (savedChoice === "granted") loadGoogleAnalytics();
     return;
   }
@@ -147,7 +148,7 @@
   if (savedChoice === "granted" || savedChoice === "denied") {
     panel.hidden = true;
     updatePreferencesLabel(savedChoice);
-    preferences.hidden = false;
+    preferences.hidden = savedChoice === "granted";
     if (savedChoice === "granted") loadGoogleAnalytics();
   } else {
     panel.hidden = false;

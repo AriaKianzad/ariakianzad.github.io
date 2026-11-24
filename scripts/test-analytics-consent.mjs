@@ -97,7 +97,7 @@ const accept = (page) => get(page, "analytics-consent-accept").click();
 const reject = (page) => get(page, "analytics-consent-reject").click();
 const openPreferences = (page) => get(page, "analytics-preferences").click();
 
-// First visit: analytics stays unloaded until the user explicitly accepts.
+// First visit: the consent panel is visible; the floating control stays hidden.
 {
   const page = createPage("/");
   assert.equal(get(page, "analytics-consent").hidden, false);
@@ -108,22 +108,20 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
 
   assert.equal(page.stored.get("aria-google-analytics-consent-v1"), "granted");
   assert.equal(get(page, "analytics-consent").hidden, true);
-  assert.equal(get(page, "analytics-preferences").hidden, false);
-  assert.equal(get(page, "analytics-preferences").textContent, "Privacy settings · On");
+  assert.equal(get(page, "analytics-preferences").hidden, true, "accepted visitors must not see the floating preferences button");
   assert.equal(page.scripts.length, 1, "GA script should load only after consent");
   assert.equal(page.scripts[0].src, "https://www.googletagmanager.com/gtag/js?id=G-0CKL90M5R2");
 }
 
-// Returning visitor who accepted previously: keep privacy settings available.
+// Returning visitor who accepted previously: keep the button hidden.
 {
   const page = createPage("/", "granted");
   assert.equal(get(page, "analytics-consent").hidden, true);
-  assert.equal(get(page, "analytics-preferences").hidden, false);
-  assert.equal(get(page, "analytics-preferences").textContent, "Privacy settings · On");
+  assert.equal(get(page, "analytics-preferences").hidden, true);
   assert.equal(page.scripts.length, 1, "GA script should load for saved consent");
 }
 
-// Returning visitor who declined previously: show the Off control and allow later acceptance.
+// A declined choice is not approval, so the visitor can still reopen preferences.
 {
   const page = createPage("/", "denied");
   assert.equal(get(page, "analytics-consent").hidden, true);
@@ -136,21 +134,14 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
   assert.equal(get(page, "analytics-preferences").hidden, true);
   accept(page);
   assert.equal(get(page, "analytics-consent").hidden, true);
-  assert.equal(get(page, "analytics-preferences").hidden, false);
-  assert.equal(get(page, "analytics-preferences").textContent, "Privacy settings · On");
+  assert.equal(get(page, "analytics-preferences").hidden, true);
   assert.equal(page.scripts.length, 1);
 }
 
-// The Persian book page also keeps privacy settings reachable after acceptance or refusal.
+// The Persian book page follows the same accepted/declined visibility rule.
 {
   const accepted = createPage("/Mian-e-Ma/", "granted");
-  assert.equal(get(accepted, "analytics-preferences").hidden, false);
-  assert.equal(get(accepted, "analytics-preferences").textContent, "تنظیمات حریم خصوصی · فعال");
-  openPreferences(accepted);
-  assert.equal(get(accepted, "analytics-consent").hidden, false);
-  reject(accepted);
-  assert.equal(get(accepted, "analytics-preferences").hidden, false);
-  assert.equal(get(accepted, "analytics-preferences").textContent, "تنظیمات حریم خصوصی · غیرفعال");
+  assert.equal(get(accepted, "analytics-preferences").hidden, true);
   assert.equal(accepted.scripts.length, 1);
 
   const declined = createPage("/Mian-e-Ma/", "denied");
@@ -159,48 +150,36 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
   assert.equal(declined.scripts.length, 0);
 }
 
-// Blog routes suppress the automatic prompt but keep privacy settings reachable.
+// The floating control and the consent panel are always absent on every blog route.
 {
-  const firstVisit = createPage("/blog/");
-  assert.equal(get(firstVisit, "analytics-consent").hidden, true);
-  assert.equal(get(firstVisit, "analytics-preferences").hidden, false);
-  assert.equal(get(firstVisit, "analytics-preferences").textContent, "تنظیمات حریم خصوصی");
-  assert.equal(firstVisit.scripts.length, 0, "analytics must remain unloaded without prior consent on blog pages");
-
-  openPreferences(firstVisit);
-  assert.equal(get(firstVisit, "analytics-consent").hidden, false);
-  accept(firstVisit);
-  assert.equal(get(firstVisit, "analytics-preferences").hidden, false);
-  assert.equal(get(firstVisit, "analytics-preferences").textContent, "تنظیمات حریم خصوصی · فعال");
-  assert.equal(firstVisit.scripts.length, 1, "first-time blog visitors must be able to opt in");
-
-  const accepted = createPage("/blog/black-friday-history/", "granted");
-  assert.equal(get(accepted, "analytics-consent").hidden, true);
-  assert.equal(get(accepted, "analytics-preferences").hidden, false);
-  assert.equal(accepted.scripts.length, 1, "previously granted consent still permits analytics on blog pages");
-  openPreferences(accepted);
-  reject(accepted);
-  assert.equal(get(accepted, "analytics-preferences").hidden, false);
-  assert.equal(get(accepted, "analytics-preferences").textContent, "تنظیمات حریم خصوصی · غیرفعال");
-
-  const declined = createPage("/blog/category/brand-and-business/", "denied");
-  assert.equal(get(declined, "analytics-consent").hidden, true);
-  assert.equal(get(declined, "analytics-preferences").hidden, false);
-  assert.equal(declined.scripts.length, 0, "previously declined consent must remain denied on blog pages");
-
-  const nested = createPage("/blog/contact/", null);
-  assert.equal(get(nested, "analytics-consent").hidden, true);
-  assert.equal(get(nested, "analytics-preferences").hidden, false);
+  const blogPaths = [
+    "/blog/",
+    "/blog/black-friday-history/",
+    "/blog/category/brand-and-business/",
+    "/blog/contact/",
+  ];
+  for (const pathname of blogPaths) {
+    for (const choice of [null, "granted", "denied"]) {
+      const page = createPage(pathname, choice);
+      assert.equal(get(page, "analytics-consent").hidden, true, pathname + " must not show the consent panel");
+      assert.equal(get(page, "analytics-preferences").hidden, true, pathname + " must never show the floating preferences control");
+      assert.equal(page.scripts.length, choice === "granted" ? 1 : 0, "blog analytics must still respect the saved consent state");
+      openPreferences(page);
+      assert.equal(get(page, "analytics-consent").hidden, true, "the blog preferences control must not open the panel");
+      assert.equal(get(page, "analytics-preferences").hidden, true);
+    }
+  }
 }
 
-// Declining from the initial dialog exposes the Off control and does not load GA.
+// Declining the initial dialog exposes the button, but never loads GA.
 {
   const page = createPage("/");
   reject(page);
+  assert.equal(get(page, "analytics-consent").hidden, true);
   assert.equal(get(page, "analytics-preferences").hidden, false);
   assert.equal(get(page, "analytics-preferences").textContent, "Privacy settings · Off");
   assert.equal(page.stored.get("aria-google-analytics-consent-v1"), "denied");
   assert.equal(page.scripts.length, 0);
 }
 
-console.log("Analytics consent tests passed: preferences remain reachable and stored choices can be changed on every route.");
+console.log("Analytics consent tests passed: the floating control stays hidden after acceptance and on all blog routes.");
