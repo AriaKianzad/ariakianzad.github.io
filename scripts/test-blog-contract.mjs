@@ -45,6 +45,16 @@ const [
   read("public/blog-contact.js"),
 ]);
 
+
+const [analyticsEdge, adBannerMigration, siteConfig, socialIcons, socialIconExtractor, telegramIconSource] = await Promise.all([
+  read("supabase/functions/site-analytics/index.ts"),
+  read("supabase/migrations/20261124233000_add_article_ad_banner.sql"),
+  read("src/lib/site.ts"),
+  read("src/lib/social-icons.json"),
+  read("scripts/extract-social-paths.mjs"),
+  read("assets-src/icons/telegram.svg"),
+]);
+
 const categorySeoMigration = await read("supabase/migrations/20261123130000_add_category_level_seo.sql");
 const categoryTaxonomyMigration = await read("supabase/migrations/20261123200000_add_blog_category_taxonomy_and_advanced_seo.sql");
 const multipleCategoryMigration = await read("supabase/migrations/20261124210000_add_multiple_post_categories.sql");
@@ -347,5 +357,16 @@ assert.ok(adminApp.includes("function selectedEditorCategories()") && adminApp.i
 assert.ok(adminEdge.includes("rawCategories.length > 3") && adminEdge.includes("categories.length > 3") && adminEdge.includes("!categories.includes(primaryCategory)") && adminEdge.includes(".overlaps(\"categories\", removedSlugs)"), "Edge Function must validate the three-category limit, primary selection and protect secondary-category dependencies");
 assert.ok(articlePage.includes("getPostCategorySlugs(post)") && articlePage.includes("getPrimaryCategorySlug(post)") && !articlePage.includes('blog-eyebrow"><span /> {categoryName'), "article page must use primary category and remove the category eyebrow above the title");
 assert.ok(articlePage.includes('className="blog-article-title-highlight"') && articlePage.includes("blog-article-sidebar") && articlePage.includes("blog-ad-slot") && articlePage.includes("post.ad_banner_enabled") && articlePage.includes('rel="sponsored noopener noreferrer"') && blogCss.includes(".blog-article-title-highlight") && blogCss.includes("background:rgba(248,244,232,.97)") && blogCss.includes("box-decoration-break:clone") && blogCss.includes("grid-area:meta") && blogCss.includes("aspect-ratio:1 / 1") && blogCss.includes(".blog-ad-slot"), "article hero must support legible mobile overlays and a square ad directly below the table of contents");
+
+
+assert.ok(dataSource.includes("export function formatBlogDate") && dataSource.includes("fa-IR-u-ca-persian") && listingClient.includes("formatBlogDate(post.published_at") && listingClient.includes("readingTime(post.content") && !listingClient.includes("function readingTime"), "article cards must share the centralized Persian date and reading-time implementation");
+assert.ok(adBannerMigration.includes("add column if not exists ad_banner_enabled boolean not null default false") && adBannerMigration.includes("ad_banner_image_url text not null default") && adBannerMigration.includes("ad_banner_link_must_be_https"), "article ad banner must be disabled and empty by default with server-enforced link constraints");
+assert.ok(adminHtml.includes('data-tab="ads"') && adminHtml.includes('id="post-ad-banner-enabled"') && adminHtml.includes('id="ad-banner-file"') && adminHtml.includes('id="clear-ad-banner"') && adminApp.includes("ad_banner_enabled:false") && adminApp.includes("ad-banner-file"), "CMS must manage the article ad image, destination, alt text and enable state");
+assert.ok(adminEdge.includes("adBannerImageUrl = mediaUrl(input?.ad_banner_image_url)") && adminEdge.includes("ad_banner_enabled: adBannerEnabled") && adminEdge.includes("ad_banner_link_url: current.ad_banner_link_url ||"), "CMS Edge Function must validate and include ad banner settings in published snapshots");
+const articleAnalyticsRoute = analyticsEdge.indexOf("const articles = await getArticleAnalyticsData(google.accessToken)");
+const realtimeAnalyticsRoute = analyticsEdge.indexOf('if (requestMode === "realtime")', articleAnalyticsRoute);
+assert.ok(analyticsEdge.includes("historyReportResult") && analyticsEdge.includes("historyStatus") && articleAnalyticsRoute > analyticsEdge.indexOf("if (!google.configured)") && realtimeAnalyticsRoute > articleAnalyticsRoute, "site analytics must route article reports after Google configuration and include daily page-view history");
+assert.ok(adminHtml.includes('id="article-analytics-chart-wrap"') && adminApp.includes("function renderArticleAnalyticsChart(history)") && adminApp.includes("renderArticleAnalyticsChart(data.history)") && adminCss.includes(".article-analytics-chart-line"), "blog analytics must follow the book dashboard pattern of metric cards, a trend chart and article-level details");
+assert.ok(siteConfig.includes('id: "telegram", label: "Aria Kianzad on Telegram", href: "https://t.me/KianzadAria"') && !siteConfig.includes('id: "medium"') && socialIcons.includes('"telegram":') && !socialIcons.includes('"medium":') && socialIconExtractor.includes('"telegram"') && !socialIconExtractor.includes('"medium"') && telegramIconSource.includes("<title>Telegram</title>") && publicHeader.includes('telegram: "تلگرام"'), "site and blog footers must replace Medium with the Telegram channel icon and destination");
 
 console.log("Personal blog contract passed: secure CMS, rich paste, category SEO, accessible formatting, responsive reading and isolated Persian editorial chrome.");
