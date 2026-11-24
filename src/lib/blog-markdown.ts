@@ -91,11 +91,52 @@ function isTableDivider(line:string,columns:number){
   const cells=tableCells(line);
   return cells.length===columns&&columns>=2&&cells.every((cell)=>/^:?-{3,}:?$/.test(cell));
 }
+type MarkdownListItem={depth:number;type:"ul"|"ol";content:string};
+function parseMarkdownListItem(line:string):MarkdownListItem|null{
+  const match=line.match(/^(\s*)([-*+]|\d+[.)])\s+(.+)$/);
+  if(!match)return null;
+  const indent=match[1].replace(/\t/g,"  ").length;
+  return {depth:Math.floor(indent/2),type:/^\d/.test(match[2])?"ol":"ul",content:match[3]};
+}
 export function renderMarkdown(markdown:string):string{
   const lines=markdown.replace(/\r\n/g,"\n").split("\n"),out:string[]=[];
-  const seen=new Map<string,number>();let paragraph:string[]=[],list:"ul"|"ol"|null=null,code:string[]|null=null,language="";
+  const seen=new Map<string,number>();let paragraph:string[]=[],code:string[]|null=null,language="";
+  const listStack:{type:"ul"|"ol";depth:number;itemOpen:boolean}[]=[];
   const closeP=()=>{if(paragraph.length){out.push("<p>"+inline(paragraph.join(" "))+"</p>");paragraph=[];}};
-  const closeL=()=>{if(list){out.push("</"+list+">");list=null;}};
+  const closeL=(keepDepth=0)=>{
+    while(listStack.length>keepDepth){
+      const current=listStack.pop()!;
+      if(current.itemOpen)out.push("</li>");
+      out.push("</"+current.type+">");
+    }
+  };
+  const appendListItem=(item:MarkdownListItem)=>{
+    let depth=item.depth;
+    if(!listStack.length)depth=0;
+    while(listStack.length&&depth<listStack[listStack.length-1].depth)closeL(listStack.length-1);
+    if(!listStack.length)depth=0;
+    let current=listStack[listStack.length-1];
+    if(!current){
+      out.push("<"+item.type+">");
+      listStack.push({type:item.type,depth,itemOpen:false});
+      current=listStack[listStack.length-1];
+    }else if(depth>current.depth){
+      if(!current.itemOpen){out.push("<li>");current.itemOpen=true;}
+      out.push("<"+item.type+">");
+      listStack.push({type:item.type,depth:current.depth+1,itemOpen:false});
+      current=listStack[listStack.length-1];
+    }else if(current.type!==item.type){
+      closeL(listStack.length-1);
+      out.push("<"+item.type+">");
+      listStack.push({type:item.type,depth,itemOpen:false});
+      current=listStack[listStack.length-1];
+    }else if(current.itemOpen){
+      out.push("</li>");
+      current.itemOpen=false;
+    }
+    out.push("<li>"+inline(item.content));
+    current.itemOpen=true;
+  };
   const heading=(level:number,title:string)=>{
     const actual=Math.max(2,level),base=slugHeading(title),count=seen.get(base)||0;seen.set(base,count+1);
     const id=count?base+"-"+(count+1):base;out.push("<h"+actual+' id="'+esc(id)+'">'+inline(title)+"</h"+actual+">");
@@ -108,7 +149,11 @@ export function renderMarkdown(markdown:string):string{
     }
     const fence=line.match(/^\x60{3}\s*([a-z0-9_-]*)/i);
     if(fence){closeP();closeL();code=[];language=fence[1]||"";continue;}
-    if(!line.trim()){closeP();closeL();continue;}
+    if(!line.trim()){
+      closeP();
+      if(!parseMarkdownListItem(lines[index+1]||""))closeL();
+      continue;
+    }
     const headers=tableCells(line);
     if(index+1<lines.length&&headers.length>=2&&isTableDivider(lines[index+1],headers.length)){
       closeP();closeL();
@@ -139,8 +184,8 @@ export function renderMarkdown(markdown:string):string{
     const h=line.match(/^\s{0,3}(#{1,4})\s+(.+?)\s*#*$/);if(h){closeP();closeL();heading(h[1].length,h[2].trim());continue;}
     if(/^\s*(---+|___+|\*\*\*+)\s*$/.test(line)){closeP();closeL();out.push("<hr>");continue;}
     const quote=line.match(/^\s*>\s?(.*)$/);if(quote){closeP();closeL();out.push("<blockquote><p>"+inline(quote[1])+"</p></blockquote>");continue;}
-    const un=line.match(/^\s*[-*+]\s+(.+)$/),ord=line.match(/^\s*\d+[.)]\s+(.+)$/);
-    const item=un||ord;if(item){closeP();const target=un?"ul":"ol";if(list!==target){closeL();out.push("<"+target+">");list=target;}out.push("<li>"+inline(item[1])+"</li>");continue;}
+    const item=parseMarkdownListItem(line);
+    if(item){closeP();appendListItem(item);continue;}
     closeL();paragraph.push(line.trim());
   }
   closeP();closeL();if(code)out.push("<pre><code>"+esc(code.join("\n"))+"</code></pre>");

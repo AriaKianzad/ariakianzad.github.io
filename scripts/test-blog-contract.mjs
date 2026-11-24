@@ -291,6 +291,7 @@ const markdownCompiled = ts.transpileModule(markdownSource, {
 new Script(markdownCompiled, { filename: "src/lib/blog-markdown.ts" }).runInNewContext({
   exports: markdownRuntime.exports,
   module: { exports: markdownRuntime.exports },
+  URL,
 });
 const sampleTable = [
   "| **نقش** | **تمرکز اصلی** |",
@@ -303,6 +304,85 @@ assert.ok(renderedTable.includes('<div class="blog-table-scroll" role="region" a
 assert.ok(renderedTable.includes('<table class="blog-table"><thead><tr><th><strong>نقش</strong></th><th><strong>تمرکز اصلی</strong></th></tr></thead>'), "Markdown table headers and inline emphasis must be rendered as semantic HTML");
 assert.ok(renderedTable.includes("<tbody><tr><td>استراتژیست برند</td><td>تعیین جهت برند، جایگاه و تمایز</td></tr><tr><td>طراح برند</td><td>تبدیل جهت استراتژیک به سیستم بصری</td></tr></tbody>"), "Markdown table rows must be retained as separate cells in the right column order");
 assert.ok(blogCss.includes(".blog-prose table.blog-table") && blogCss.includes("overflow-x:auto") && blogCss.includes("min-width:560px") && blogCss.includes("min-width:500px"), "article tables must have visible editorial styling and horizontal scrolling on narrow screens");
+
+const publishedListMarkdown = [
+  "- گزارش شناخت کسب‌وکار، مخاطب و فضای رقابتی؛",
+  "",
+  "- گزاره‌ی جایگاه‌یابی و ارزش پیشنهادی؛",
+  "",
+  "- چارچوب پیام، شخصیت و لحن برند؛",
+  "",
+  "- اصول راهنمای هویت بصری و کلامی؛",
+].join("\n");
+const renderedList = markdownRuntime.exports.renderMarkdown(publishedListMarkdown);
+assert.equal((renderedList.match(/<ul>/g) || []).length, 1, "blank lines between Markdown bullets must not split one list into separate unordered lists");
+assert.equal((renderedList.match(/<li>/g) || []).length, 4, "all blank-separated bullet items must remain inside one list");
+const firstBullet = renderedList.indexOf("گزارش شناخت کسب‌وکار، مخاطب و فضای رقابتی؛");
+const secondBullet = renderedList.indexOf("گزاره‌ی جایگاه‌یابی و ارزش پیشنهادی؛");
+assert.ok(firstBullet >= 0 && secondBullet > firstBullet && renderedList.indexOf("</li>", firstBullet) < secondBullet, "the published article's blank-separated bullet text must remain in order as consecutive list items");
+
+const nestedListMarkdown = [
+  "- مورد اصلی",
+  "  - زیرمورد اول",
+  "  - زیرمورد دوم",
+  "- مورد بعدی",
+  "",
+  "1. مرحلۀ اول",
+  "",
+  "2. مرحلۀ دوم",
+].join("\n");
+const renderedLists = markdownRuntime.exports.renderMarkdown(nestedListMarkdown);
+const normalizedLists = renderedLists.replace(/\s+(?=<)/g,"");
+assert.ok(normalizedLists.includes("<ul><li>مورد اصلی<ul><li>زیرمورد اول</li><li>زیرمورد دوم</li></ul></li><li>مورد بعدی</li></ul>"), "nested unordered lists must retain their hierarchy and close correctly: "+normalizedLists);
+assert.ok(normalizedLists.includes("<ol><li>مرحلۀ اول</li><li>مرحلۀ دوم</li></ol>"), "blank-separated numbered items must remain in one ordered list");
+
+const formatMarkdown = [
+  "## تیتر دوم",
+  "### تیتر سوم",
+  "#### تیتر چهارم",
+  "",
+  "پاراگراف با **متن برجسته**، *متن مورب*، ++زیرخط++، ~~متن خط‌خورده~~ و \x60کد درون‌خطی\x60 و [پیوند خارجی](https://example.com).",
+  "",
+  "> این یک نقل‌قول است.",
+  "",
+  "---",
+  "",
+  "\x60\x60\x60js",
+  "const answer = 42;",
+  "\x60\x60\x60",
+  "",
+  "![شرح تصویر](https://example.com/image.png \"عنوان تصویر\")",
+].join("\n");
+const renderedFormats = markdownRuntime.exports.renderMarkdown(formatMarkdown);
+for (const [format, fragment] of [
+  ["heading level 2","<h2"],
+  ["heading level 3","<h3"],
+  ["heading level 4","<h4"],
+  ["paragraph","<p>"],
+  ["bold","<strong>متن برجسته</strong>"],
+  ["italic","<em>متن مورب</em>"],
+  ["underline","<u>زیرخط</u>"],
+  ["strikethrough","<del>متن خط‌خورده</del>"],
+  ["inline code","<code>کد درون‌خطی</code>"],
+  ["external link","href=\"https://example.com\""],
+  ["blockquote","<blockquote><p>این یک نقل‌قول است.</p></blockquote>"],
+  ["horizontal rule","<hr>"],
+  ["fenced code","<pre><code class=\"language-js\">const answer = 42;</code></pre>"],
+  ["inline image","<figure class=\"blog-inline-image\"><img"],
+]) assert.ok(renderedFormats.includes(fragment), format + " must render to semantic HTML");
+
+const inlineSerializer = adminApp.slice(adminApp.indexOf("function inlineToMarkdown"),adminApp.indexOf("function listToMarkdown"));
+const blockSerializer = adminApp.slice(adminApp.indexOf("function blockToMarkdown"),adminApp.indexOf("function editorToMarkdown"));
+assert.ok(["tag===\"strong\"","tag===\"em\"","tag===\"u\"","tag===\"del\"","tag===\"code\"","tag===\"a\"","tag===\"img\""].every((token)=>inlineSerializer.includes(token)), "the editor serializer must preserve emphasis, underline, deletion, code, links and images");
+assert.ok(["tag===\"figure\"","/^h[1-6]$/","tag===\"p\"","tag===\"ul\"","tag===\"ol\"","tag===\"blockquote\"","tag===\"pre\"","tag===\"hr\"","tag===\"table\""].every((token)=>blockSerializer.includes(token)), "the editor serializer must preserve all supported block structures");
+const cmsPreviewRenderer = adminApp.slice(adminApp.indexOf("function renderPreviewMarkdown"),adminApp.indexOf("function inlineToMarkdown"));
+assert.ok(cmsPreviewRenderer.includes("const parseListItem=") && cmsPreviewRenderer.includes("listStack") && cmsPreviewRenderer.includes("if(!parseListItem(") && cmsPreviewRenderer.includes("appendListItem(item)"), "the CMS preview must preserve blank-separated and nested list structure");
+
+assert.ok(blogCss.includes(".blog-prose ul{list-style-type:disc}") && blogCss.includes(".blog-prose ol{list-style-type:decimal}") && blogCss.includes(".blog-prose li::marker"), "public article lists must explicitly restore bullets and numbering after the portfolio-wide list reset");
+assert.ok(["h2","h3","h4","p","strong","em","u","del","a","blockquote","pre","code","img","hr"].every((tag)=>blogCss.includes(".blog-prose "+tag)), "public article CSS must style every semantic text format emitted by the Markdown renderer");
+assert.ok(blogCss.includes(".blog-theme .blog-related .blog-card-copy{padding:26px 28px 22px}") && blogCss.includes("padding-block:72px clamp(48px,6vw,88px)"), "related article cards must keep internal breathing room and remain separated from the footer");
+assert.ok(adminCss.includes(".editor-richtext strong") && adminCss.includes(".editor-richtext em") && adminCss.includes(".editor-richtext u") && adminCss.includes(".editor-richtext del") && adminCss.includes(".editor-richtext ul { list-style:disc; }") && adminCss.includes(".markdown-preview article ol { list-style-type:decimal; }"), "the CMS editing surface and live Markdown preview must both style inline formats and list markers");
+
 assert.ok(siteChrome.includes("usePathname") && siteChrome.includes("isBlog"), "blog routes must not inherit the portfolio chrome");
 assert.ok(listingPage.includes('settings.tagline || "یادداشت‌هایی درباره برند، معنا و ارتباط"'), "blog archive H1 must use the descriptive tagline");
 assert.ok(listingPage.includes('import HeroVisual from "@/components/hero-visual"') && listingPage.includes("<HeroVisual />"), "blog archive must reuse the homepage signal animation");

@@ -121,8 +121,19 @@
 .blog-prose.has-drop-cap .blog-prose-content>p:first-of-type::first-letter{float:right;margin:.08em .05em 0 .12em;color:var(--post-accent,var(--blog-accent));font-size:3.4em;font-weight:800;line-height:.95}
 .blog-prose a{color:var(--blog-accent);text-decoration-thickness:1px;text-underline-offset:4px}
 .blog-prose strong{font-weight:800}
-.blog-prose ul,.blog-prose ol{margin:0 0 1.5em;padding-inline-start:1.5em}
-.blog-prose li{padding-inline-start:.3em;margin:.4em 0}
+.blog-prose ul,.blog-prose ol{margin:0 0 1.5em;padding-inline-start:1.5em;list-style-position:outside}
+.blog-prose ul{list-style-type:disc}
+.blog-prose ol{list-style-type:decimal}
+.blog-prose ul ul{list-style-type:circle}
+.blog-prose ul ul ul{list-style-type:square}
+.blog-prose ol ol{list-style-type:lower-alpha}
+.blog-prose ol ol ol{list-style-type:lower-roman}
+.blog-prose li{display:list-item;padding-inline-start:.3em;margin:.4em 0}
+.blog-prose li::marker{color:var(--blog-accent);font-weight:800}
+.blog-prose li>ul,.blog-prose li>ol{margin-block:.45em .2em}
+.blog-prose em{font-style:italic}
+.blog-prose u{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.18em}
+.blog-prose del{color:var(--blog-muted);text-decoration:line-through;text-decoration-thickness:1px}
 .blog-prose blockquote{margin:2em 0;padding:1.2em 1.5em;border-inline-start:3px solid var(--post-accent,var(--blog-accent));background:var(--blog-deep);color:var(--blog-ink-soft);font-size:1.08em}
 .blog-prose blockquote p:last-child{margin-bottom:0}
 .blog-prose img{width:auto;max-width:100%;height:auto;margin:2em auto;max-height:650px;object-fit:contain}
@@ -167,8 +178,9 @@
 .blog-share{display:flex;align-items:center;flex-wrap:wrap;gap:15px;max-width:820px;margin-top:20px;padding:18px 0;border-block:1px solid var(--blog-line);font-size:11px}
 .blog-share>span{margin-inline-end:auto;color:var(--blog-muted)}
 .blog-share a{color:var(--blog-accent);text-decoration:none}
-.blog-related{padding-top:72px}
+.blog-related{padding-block:72px clamp(48px,6vw,88px)}
 .blog-related .blog-section-heading{margin-bottom:24px}
+.blog-theme .blog-related .blog-card-copy{padding:26px 28px 22px}
 .blog-footer{border-top:1px solid var(--blog-line);background:var(--blog-surface);padding:34px 0 22px}
 .blog-footer-inner{display:grid;grid-template-columns:1fr auto;align-items:center;gap:14px 24px}
 .blog-footer-inner strong{font-size:15px}

@@ -515,16 +515,55 @@
     return value;
   }
   function renderPreviewMarkdown(markdown) {
-    const output=[];let paragraph=[];let list=null;
-    const close=()=>{if(paragraph.length){output.push("<p>"+previewInline(paragraph.join(" "))+"</p>");paragraph=[];}};
-    const closeList=()=>{if(list){output.push("</"+list+">");list=null;}};
+    const output=[],paragraph=[],listStack=[];
+    const close=()=>{if(paragraph.length)output.push("<p>"+previewInline(paragraph.join(" "))+"</p>");paragraph.length=0;};
+    const closeList=(keepDepth=0)=>{
+      while(listStack.length>keepDepth){
+        const current=listStack.pop();
+        if(current.itemOpen)output.push("</li>");
+        output.push("</"+current.type+">");
+      }
+    };
+    const parseListItem=(line)=>{
+      const match=String(line||"").match(/^(\s*)([-*+]|\d+[.)])\s+(.+)$/);
+      if(!match)return null;
+      const indent=match[1].replace(/\t/g,"  ").length;
+      return {depth:Math.floor(indent/2),type:/^\d/.test(match[2])?"ol":"ul",content:match[3]};
+    };
+    const appendListItem=(item)=>{
+      let depth=item.depth;
+      if(!listStack.length)depth=0;
+      while(listStack.length&&depth<listStack[listStack.length-1].depth)closeList(listStack.length-1);
+      if(!listStack.length)depth=0;
+      let current=listStack[listStack.length-1];
+      if(!current){
+        output.push("<"+item.type+">");
+        listStack.push({type:item.type,depth,itemOpen:false});
+        current=listStack[listStack.length-1];
+      }else if(depth>current.depth){
+        if(!current.itemOpen){output.push("<li>");current.itemOpen=true;}
+        output.push("<"+item.type+">");
+        listStack.push({type:item.type,depth:current.depth+1,itemOpen:false});
+        current=listStack[listStack.length-1];
+      }else if(current.type!==item.type){
+        closeList(listStack.length-1);
+        output.push("<"+item.type+">");
+        listStack.push({type:item.type,depth,itemOpen:false});
+        current=listStack[listStack.length-1];
+      }else if(current.itemOpen){
+        output.push("</li>");
+        current.itemOpen=false;
+      }
+      output.push("<li>"+previewInline(item.content));
+      current.itemOpen=true;
+    };
     const lines=String(markdown||"").replace(/\r\n/g,"\n").split("\n");
     for(let index=0;index<lines.length;index++){
       const line=lines[index];
       if(/^\x60{3}/.test(line)){
         close();closeList();
         const code=[];
-        while(index+1<lines.length&&!/^\x60{3}/.test(lines[index+1])){code.push(lines[++index]);}
+        while(index+1<lines.length&&!/^\x60{3}/.test(lines[index+1]))code.push(lines[++index]);
         if(index+1<lines.length)index++;
         output.push("<pre><code>"+escapeHtml(code.join("\n"))+"</code></pre>");
         continue;
@@ -539,7 +578,11 @@
         output.push("<table><thead><tr>"+headers.map((cell)=>"<th>"+previewInline(cell)+"</th>").join("")+"</tr></thead><tbody>"+rows.map((row)=>"<tr>"+row.map((cell)=>"<td>"+previewInline(cell)+"</td>").join("")+"</tr>").join("")+"</tbody></table>");
         continue;
       }
-      if(!line.trim()){close();closeList();continue;}
+      if(!line.trim()){
+        close();
+        if(!parseListItem(lines[index+1]||""))closeList();
+        continue;
+      }
       const image=renderPreviewFigure(line);
       if(image){close();closeList();output.push(image);continue;}
       if(line.trim()&&index+1<lines.length){
@@ -550,14 +593,14 @@
       if(heading){close();closeList();const level=Math.max(2,heading[1].length);output.push("<h"+level+">"+previewInline(heading[2])+"</h"+level+">");continue;}
       const quote=line.match(/^>\s?(.*)$/);
       if(quote){close();closeList();output.push("<blockquote><p>"+previewInline(quote[1])+"</p></blockquote>");continue;}
-      const item=line.match(/^\s*([-*+]|\d+[.)])\s+(.+)$/);
-      if(item){close();const next=/^\d/.test(item[1])?"ol":"ul";if(list!==next){closeList();list=next;output.push("<"+list+">");}output.push("<li>"+previewInline(item[2])+"</li>");continue;}
+      const item=parseListItem(line);
+      if(item){close();appendListItem(item);continue;}
       if(/^\s*(---+|___+|\*\*\*+)\s*$/.test(line)){close();closeList();output.push("<hr>");continue;}
       closeList();paragraph.push(line.trim());
     }
     close();closeList();return output.join("");
   }
-  function inlineToMarkdown(node) {
+    function inlineToMarkdown(node) {
     if(node.nodeType===Node.TEXT_NODE)return node.nodeValue||"";
     if(node.nodeType!==Node.ELEMENT_NODE)return "";
     const element=node,tag=element.tagName.toLowerCase();
