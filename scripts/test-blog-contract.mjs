@@ -291,6 +291,7 @@ const markdownCompiled = ts.transpileModule(markdownSource, {
 new Script(markdownCompiled, { filename: "src/lib/blog-markdown.ts" }).runInNewContext({
   exports: markdownRuntime.exports,
   module: { exports: markdownRuntime.exports },
+  URL,
 });
 const sampleTable = [
   "| **نقش** | **تمرکز اصلی** |",
