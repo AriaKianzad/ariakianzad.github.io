@@ -82,8 +82,8 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
     : [];
   const canonical = post.canonical_url || site.url + "/blog/" + post.slug + "/";
   const categoryName = primaryCategory ? getBlogCategoryName(primaryCategory) : "";
-  const adBannerEnabled = post.ad_banner_enabled === true && Boolean(post.ad_banner_image_url);
-  const hasArticleSidebar = toc.length > 0 || adBannerEnabled;
+  const adBanners = (settings.ad_banners || []).filter((banner) => banner?.enabled === true && Boolean(banner.image_url));
+  const hasArticleSidebar = toc.length > 0 || adBanners.length > 0;
   const schema = {
     "@context": "https://schema.org", "@type": settings.schema_type,
     headline: post.title, description: post.meta_description || post.excerpt,
@@ -136,33 +136,46 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
                 {post.hero_image_caption ? <figcaption>{post.hero_image_caption}</figcaption> : null}
               </figure>
             ) : <div className="blog-article-visual-empty" aria-hidden="true" />}
-            <div className="blog-article-meta">
+            <div className="blog-article-meta" dir={direction}>
               <span>آریا کیانزاد</span>
               <time dateTime={post.published_at || ""} dir={direction}>{formatBlogDate(post.published_at, post.language)}</time>
               {settings.show_reading_time ? <span className="blog-reading-time" dir={direction}><bdi>{readingTime(post.content, post.language).toLocaleString(language === "fa" ? "fa-IR" : "en-US")}</bdi> {language === "fa" ? "دقیقه مطالعه" : "min read"}</span> : null}
             </div>
           </div>
         </header>
-        <div className={"blog-article-grid blog-container " + (hasArticleSidebar ? "has-sidebar " : "no-sidebar ") + (toc.length ? "has-toc " : "no-toc ") + (adBannerEnabled ? "has-ad " : "") + (post.content_width === "wide" || settings.content_width === "wide" ? "content-wide" : "")}>
+        <div className={"blog-article-grid blog-container " + (hasArticleSidebar ? "has-sidebar " : "no-sidebar ") + (toc.length ? "has-toc " : "no-toc ") + (adBanners.length ? "has-ads " : "") + (post.content_width === "wide" || settings.content_width === "wide" ? "content-wide" : "")}>
           {hasArticleSidebar ? (
             <aside className="blog-article-sidebar">
               {toc.length ? (
-                <nav className="blog-toc" aria-label="فهرست مقاله">
-                  <strong>فهرست مقاله</strong>
-                  <ol>{toc.map((item) => <li key={item.id} className={item.level === 3 ? "toc-sub" : ""}><a href={"#" + item.id}>{item.title}</a></li>)}</ol>
-                </nav>
+                <>
+                  <nav className="blog-toc blog-toc-desktop" aria-label="فهرست مقاله">
+                    <strong>فهرست مقاله</strong>
+                    <ol>{toc.map((item) => <li key={item.id} className={item.level === 3 ? "toc-sub" : ""}><a href={"#" + item.id}>{item.title}</a></li>)}</ol>
+                  </nav>
+                  <details className="blog-toc-mobile">
+                    <summary>فهرست مقاله <span aria-hidden="true">⌄</span></summary>
+                    <ol>{toc.map((item) => <li key={item.id} className={item.level === 3 ? "toc-sub" : ""}><a href={"#" + item.id}>{item.title}</a></li>)}</ol>
+                  </details>
+                </>
               ) : null}
-              {adBannerEnabled ? (
-                <div className="blog-ad-slot">
-                  {post.ad_banner_link_url ? (
-                    <a href={post.ad_banner_link_url} target="_blank" rel="sponsored noopener noreferrer" aria-label={post.ad_banner_alt || "مشاهدۀ بنر تبلیغاتی"}>
-                      <img src={post.ad_banner_image_url || ""} alt={post.ad_banner_alt || "بنر تبلیغاتی"} loading="lazy" decoding="async" />
-                    </a>
-                  ) : (
-                    <img src={post.ad_banner_image_url || ""} alt={post.ad_banner_alt || "بنر تبلیغاتی"} loading="lazy" decoding="async" />
-                  )}
-                </div>
-              ) : null}
+              {adBanners.map((banner) => {
+                const allowedRel = ["follow","nofollow","sponsored","ugc","nofollow sponsored","nofollow ugc","nofollow sponsored ugc"];
+                const relToken = allowedRel.includes(banner.link_rel) && banner.link_rel !== "follow" ? banner.link_rel : "";
+                const relValue = [relToken,"noopener","noreferrer"].filter(Boolean).join(" ");
+                const image = <img src={banner.image_url} alt={banner.alt || ""} loading="lazy" decoding="async" />;
+                return (
+                  <div className="blog-ad-card" key={banner.id}>
+                    {banner.label?.trim() ? <span className="blog-ad-label">{banner.label}</span> : null}
+                    <div className="blog-ad-slot">
+                      {banner.link_url ? (
+                        <a href={banner.link_url} target="_blank" rel={relValue} aria-label={banner.alt || "مشاهدۀ بنر"}>
+                          {image}
+                        </a>
+                      ) : image}
+                    </div>
+                  </div>
+                );
+              })}
             </aside>
           ) : null}
           <article className={"blog-prose" + (post.drop_cap ? " has-drop-cap" : "")} dangerouslySetInnerHTML={{ __html: html }} />
