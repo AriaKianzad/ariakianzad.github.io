@@ -9,7 +9,9 @@ export default function NotFoundContent() {
 
   if (blogRoute) {
     return (
-      <main className="not-found-page not-found-blog" dir="rtl">
+      <>
+        <a className="not-found-blog-skip" href="#main">رفتن به محتوای اصلی</a>
+        <main id="main" className="not-found-page not-found-blog" dir="rtl">
         <div className="not-found-topline">
           <a className="not-found-brand" href="/blog/">
             <span className="not-found-mark">آ</span>
@@ -30,12 +32,13 @@ export default function NotFoundContent() {
           </div>
         </section>
         <footer className="not-found-footer"><span>آریا کیانزاد</span><span>یادداشت‌هایی درباره برند، معنا و ارتباط</span></footer>
-      </main>
+        </main>
+      </>
     );
   }
 
   return (
-    <main className="not-found-page not-found-main" dir="ltr">
+    <div className="not-found-page not-found-main" dir="ltr">
       <div className="not-found-number" aria-hidden="true">404</div>
       <section className="not-found-content" aria-labelledby="not-found-title">
         <p className="not-found-eyebrow">PAGE NOT FOUND</p>
@@ -46,6 +49,6 @@ export default function NotFoundContent() {
           <a className="not-found-secondary" href="/blog/">Visit the blog</a>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
