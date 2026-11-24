@@ -229,7 +229,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
         {related.length ? (
           <section className="blog-related blog-container">
             <div className="blog-section-heading"><div><span className="blog-section-label"><span>۰۳</span> مرتبط</span><h2>نوشته‌های مرتبط</h2></div></div>
-            <div className="blog-card-grid">{related.map((item) => <BlogPostCard key={item.slug} post={item} categoryName={item.category ? getBlogCategoryName(item.category) : ""} showReadingTime={settings.show_reading_time} />)}</div>
+            <div className="blog-card-grid">{related.map((item) => <BlogPostCard key={item.slug} post={item} categoryName={item.category ? getBlogCategoryName(item.category) : ""} showReadingTime={settings.show_reading_time} headingLevel="h3" />)}</div>
           </section>
         ) : null}
       </main>
