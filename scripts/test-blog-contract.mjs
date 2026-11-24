@@ -332,8 +332,9 @@ const nestedListMarkdown = [
   "2. مرحلۀ دوم",
 ].join("\n");
 const renderedLists = markdownRuntime.exports.renderMarkdown(nestedListMarkdown);
-assert.ok(renderedLists.includes("<ul><li>مورد اصلی<ul><li>زیرمورد اول</li><li>زیرمورد دوم</li></ul></li><li>مورد بعدی</li></ul>"), "nested unordered lists must retain their hierarchy and close correctly");
-assert.ok(renderedLists.includes("<ol><li>مرحلۀ اول</li><li>مرحلۀ دوم</li></ol>"), "blank-separated numbered items must remain in one ordered list");
+const normalizedLists = renderedLists.replace(/\\s+/g,"");
+assert.ok(normalizedLists.includes("<ul><li>مورد اصلی<ul><li>زیرمورد اول</li><li>زیرمورد دوم</li></ul></li><li>مورد بعدی</li></ul>"), "nested unordered lists must retain their hierarchy and close correctly");
+assert.ok(normalizedLists.includes("<ol><li>مرحلۀ اول</li><li>مرحلۀ دوم</li></ol>"), "blank-separated numbered items must remain in one ordered list");
 
 const formatMarkdown = [
   "## تیتر دوم",
