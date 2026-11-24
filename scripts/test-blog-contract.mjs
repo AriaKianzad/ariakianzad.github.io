@@ -204,7 +204,7 @@ assert.ok(!publicHeader.includes("/author/"), "no separate author archive should
 assert.ok(markdownSource.includes("function esc(") && markdownSource.includes("function allowedUrl("), "Markdown rendering must escape HTML and validate links");
 assert.ok(markdownSource.includes('new URL(candidate)') && markdownSource.includes('url.username') && markdownSource.includes('url.password'), "Markdown links must reject credential-bearing and unsupported URL schemes");
 assert.ok(adminApp.includes('new URL(value)') && adminApp.includes('url.username') && adminApp.includes('url.password'), "CMS preview and clipboard URLs must use the same explicit safe-protocol checks");
-assert.ok(markdownSource.includes("https?:") && markdownSource.includes("mailto:"), "Markdown links must use an explicit safe URL allowlist");
+assert.ok(markdownSource.includes('"http:","https:","mailto:"') && markdownSource.includes("new URL(candidate)"), "Markdown links must use an explicit safe URL allowlist");
 assert.ok(markdownSource.includes("extractToc"), "Markdown headings must provide TOC data");
 
 assert.ok(blogCss.includes("Estedad") && blogCss.includes("theme-white") && blogCss.includes("theme-warm"), "the public blog must use Estedad and the light theme variants");
