@@ -36,8 +36,14 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
     description,
     alternates: { canonical },
     robots: { index, follow },
-    openGraph: settings.open_graph_enabled ? { type: "website", url: canonical, siteName: "Aria Kianzad", title: ogTitle, description: ogDescription } : undefined,
-    twitter: { card: settings.twitter_card_type, title: ogTitle, description: ogDescription },
+    openGraph: settings.open_graph_enabled ? {
+      type: "website", url: canonical, siteName: "Aria Kianzad", title: ogTitle, description: ogDescription,
+      images: [{ url: settings.default_og_image || site.url + "/og/og.jpg", width: 1200, height: 630 }],
+    } : undefined,
+    twitter: {
+      card: settings.twitter_card_type, title: ogTitle, description: ogDescription,
+      images: [settings.default_og_image || site.url + "/og/og.jpg"],
+    },
   };
 }
 
