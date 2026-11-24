@@ -1568,3 +1568,25 @@ body:has(.blog-theme) > main#main { display:contents; }
     min-width:0;
   }
 }
+
+
+/* Render Persian date parts as separate bidi-isolated flex items.
+   In RTL flow, the day stays on the right, followed by month and year. */
+.blog-theme .blog-article-meta .blog-published-date {
+  direction:rtl !important;
+  unicode-bidi:isolate;
+  flex-direction:row;
+  align-items:center;
+  justify-content:flex-start;
+  gap:.28em;
+  white-space:nowrap;
+}
+.blog-theme .blog-article-meta .blog-published-date>bdi {
+  direction:ltr;
+  unicode-bidi:isolate;
+  font-variant-numeric:tabular-nums;
+}
+.blog-theme .blog-article-meta .blog-published-date>span {
+  direction:rtl;
+  unicode-bidi:isolate;
+}

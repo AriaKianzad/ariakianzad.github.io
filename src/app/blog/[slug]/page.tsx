@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { site } from "@/lib/site";
-import { getBlogPost, getBlogPosts, getBlogSettings, readingTime, formatBlogDate, getBlogCategoryName, getPostCategorySlugs, getPrimaryCategorySlug } from "@/lib/blog-data";
+import { getBlogPost, getBlogPosts, getBlogSettings, readingTime, formatBlogDate, formatBlogDateParts, getBlogCategoryName, getPostCategorySlugs, getPrimaryCategorySlug } from "@/lib/blog-data";
 import { extractToc, extractMarkdownImageUrls, renderMarkdown } from "@/lib/blog-markdown";
 import { BlogHeader, BlogFooter } from "../BlogHeader";
 import { CopyLinkButton } from "../CopyLinkButton";
@@ -104,6 +104,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
   } : null;
   const language = post.language === "fa" ? "fa" : "en";
   const direction = post.language === "fa" ? "rtl" : "ltr";
+  const publishedDateParts = formatBlogDateParts(post.published_at, post.language);
   const articleLineHeight = post.language === "fa" ? (settings.body_line_height || 1.95) : 1.7;
   const articleParagraphGap = post.language === "fa" ? articleLineHeight * 1.05 : 1.45;
   const articleStyle = {
@@ -138,7 +139,15 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
             ) : <div className="blog-article-visual-empty" aria-hidden="true" />}
             <div className="blog-article-meta" dir={direction} style={{ direction }}>
               <span>آریا کیانزاد</span>
-              <time dateTime={post.published_at || ""} dir={direction}>{formatBlogDate(post.published_at, post.language)}</time>
+              <time dateTime={post.published_at || ""} dir={language === "fa" ? "rtl" : "ltr"} lang={language === "fa" ? "fa-IR" : "en"} className="blog-published-date">
+                {publishedDateParts ? (
+                  <>
+                    <bdi dir="ltr">{publishedDateParts.day}</bdi>
+                    <span>{publishedDateParts.month}</span>
+                    <bdi dir="ltr">{publishedDateParts.year}</bdi>
+                  </>
+                ) : formatBlogDate(post.published_at, post.language)}
+              </time>
               {settings.show_reading_time ? <span className="blog-reading-time" dir={direction}><bdi>{readingTime(post.content, post.language).toLocaleString(language === "fa" ? "fa-IR" : "en-US")}</bdi> {language === "fa" ? "دقیقه مطالعه" : "min read"}</span> : null}
             </div>
           </div>
