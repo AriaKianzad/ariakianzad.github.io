@@ -116,6 +116,17 @@ export function readingTime(content:string,language:"fa"|"en"="fa"){
   const words=readable.match(/[\p{L}\p{N}]+(?:[\p{M}\u200c'’.-]*[\p{L}\p{N}]+)*/gu)?.length||0;
   return Math.max(1,Math.ceil(words/(language==="fa"?180:220)));
 }
+export function formatBlogDateParts(value:string|Date|null|undefined,language:"fa"|"en"="fa"){
+  if(language!=="fa"||!value)return null;
+  const date=value instanceof Date?value:new Date(value);
+  if(!Number.isFinite(date.getTime()))return null;
+  const parts=new Intl.DateTimeFormat("fa-IR-u-ca-persian",{
+    year:"numeric",month:"short",day:"numeric",timeZone:"Asia/Tehran",
+  }).formatToParts(date);
+  const values=Object.fromEntries(parts.filter((part)=>part.type!=="literal").map((part)=>[part.type,part.value]));
+  if(!values.day||!values.month||!values.year)return null;
+  return {day:values.day,month:values.month,year:values.year};
+}
 export function formatBlogDate(value:string|Date|null|undefined,language:"fa"|"en"="fa"){
   if(!value)return "—";
   const date=value instanceof Date?value:new Date(value);
