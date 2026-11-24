@@ -314,6 +314,7 @@
   const newPost=()=>({
     id:"",slug:"",title:"",excerpt:"",content:"",language:"fa",category:"",categories:[],primary_category:"",tags:[],
     hero_image_url:"",hero_image_alt:"",hero_image_caption:"",og_image_url:"",
+    ad_banner_enabled:false,ad_banner_image_url:"",ad_banner_alt:"",ad_banner_link_url:"",
     seo_title:"",meta_description:"",focus_keyword:"",canonical_url:"",og_title:"",og_description:"",
     robots_index:true,robots_follow:true,featured:false,toc_enabled:true,drop_cap:false,
     content_width:"reading",accent_color:"#a86f54",faqs:[],status:"draft",has_unpublished_changes:false,
@@ -334,6 +335,8 @@
       "#post-title":"title","#post-slug":"slug","#post-excerpt":"excerpt","#post-language":"language",
       "#post-hero-url":"hero_image_url",
       "#post-hero-alt":"hero_image_alt","#post-hero-caption":"hero_image_caption","#post-og-url":"og_image_url",
+      "#post-ad-banner-url":"ad_banner_image_url","#post-ad-banner-alt":"ad_banner_alt",
+      "#post-ad-banner-link":"ad_banner_link_url","#post-ad-banner-enabled":"ad_banner_enabled",
       "#post-seo-title":"seo_title","#post-meta-description":"meta_description","#post-focus-keyword":"focus_keyword",
       "#post-canonical":"canonical_url","#post-og-title":"og_title","#post-og-description":"og_description",
       "#post-robots-index":"robots_index","#post-featured":"featured",
@@ -346,6 +349,7 @@
     $("#post-faqs").value=(post.faqs||[]).map((faq)=>"پرسش: "+faq.question+"\nپاسخ: "+faq.answer).join("\n\n");
     updateImagePreview("hero-image-preview",post.hero_image_url,post.hero_image_alt);
     updateImagePreview("og-image-preview",post.og_image_url,post.og_title||post.title);
+    updateImagePreview("ad-banner-preview",post.ad_banner_image_url,post.ad_banner_alt);
   }
   function updateImagePreview(id,url,alt) {
     const box=$("#"+id);box.replaceChildren();
@@ -1322,6 +1326,11 @@
     $("#archive-post").addEventListener("click",()=>void changeStatus("archive_post").catch((e)=>toast(e.message,true)));
     $("#hero-image-file").addEventListener("change",()=>void handleImage("hero-image-file","post-hero-url","hero-image-preview","#post-hero-alt"));
     $("#og-image-file").addEventListener("change",()=>void handleImage("og-image-file","post-og-url","og-image-preview","#post-og-title"));
+    $("#ad-banner-file").addEventListener("change",()=>void handleImage("ad-banner-file","post-ad-banner-url","ad-banner-preview","#post-ad-banner-alt"));
+    $("#clear-ad-banner").addEventListener("click",()=>{
+      $("#post-ad-banner-url").value="";$("#post-ad-banner-alt").value="";$("#post-ad-banner-link").value="";$("#post-ad-banner-enabled").checked=false;
+      updateImagePreview("ad-banner-preview","","");toast("تصویر و تنظیمات بنر پاک شد.");
+    });
     $("#setting-og-file").addEventListener("change",async(event)=>{
       const file=event.target.files?.[0];if(!file)return;
       try{
