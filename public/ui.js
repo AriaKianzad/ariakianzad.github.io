@@ -32,7 +32,7 @@
      ------------------------------------------------------------------ */
   const nav = doc.querySelector("[data-nav]");
   const btn = doc.querySelector("[data-menu-btn]");
-  const desktop = window.matchMedia("(min-width: 900px)");
+  const desktop = window.matchMedia("(min-width: 781px)");
 
   const closeMenu = () => {
     if (!nav || !btn) return;
@@ -61,6 +61,12 @@
     nav.addEventListener("click", (event) => {
       const target = event.target;
       if (target instanceof Element && target.closest("a")) closeMenu();
+    });
+    doc.addEventListener("click", (event) => {
+      const target = event.target;
+      if (nav.hasAttribute("data-open") && target instanceof Node && !nav.contains(target)) {
+        closeMenu();
+      }
     });
     const onDesktop = () => { if (desktop.matches) closeMenu(); };
     if (typeof desktop.addEventListener === "function") desktop.addEventListener("change", onDesktop);
@@ -178,4 +184,8 @@
       window.setTimeout(() => button.classList.remove("is-copied"), 1800);
     });
   }
+
+  // Mark the enhancement layer ready only after all essential handlers exist.
+  doc.documentElement.setAttribute("data-ui-ready", "");
+  doc.documentElement.setAttribute("data-js", "");
 })();
