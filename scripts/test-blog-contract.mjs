@@ -202,6 +202,11 @@ assert.ok(categoryPage.includes("generateStaticParams"), "category archives must
 assert.ok(categoryPage.includes("settings.category_seo") && categoryPage.includes("meta_description"), "category archives must support separate metadata per category");
 assert.ok(categoryPage.includes('{ category: "__empty__" }') && categoryPage.includes("robots: { index: false, follow: false }"), "empty category fallback must remain noindex");
 assert.ok(rssRoute.includes("application/rss+xml"), "the blog must publish an RSS feed");
+assert.ok(rssRoute.includes("post.canonical_url || site.url + \"/blog/\" + post.slug + \"/\"") && rssRoute.includes("settings.canonical_url || site.url + \"/blog/\""), "RSS item and channel links must stay aligned with the canonical blog URLs");
+assert.ok(blogCss.includes("@media(prefers-reduced-motion:reduce)") && blogCss.includes("animation-duration:.01ms") && blogCss.includes("transition-duration:.01ms"), "the public blog must honour reduced-motion preferences");
+assert.ok(adminCss.includes("@media(prefers-reduced-motion:reduce)") && adminCss.includes("animation-duration:.01ms") && adminCss.includes("transition-duration:.01ms"), "the blog CMS must honour reduced-motion preferences");
+const verifyExport = await read("scripts/verify-export.mjs");
+assert.ok(verifyExport.includes(".cache/blog-content.json") && verifyExport.includes("published article is missing") && verifyExport.includes("published article link is missing"), "post-build verification must compare the generated sitemap and RSS against every current published article");
 assert.ok(sitemap.includes("getBlogPosts()") && sitemap.includes("/blog/"), "sitemap must include published articles and blog archive");
 assert.ok(sitemap.includes("/blog/contact/"), "sitemap must include the public contact page");
 assert.ok(robots.includes('disallow: ["/admin/", "/admin/blog/"]'), "robots.txt must disallow both admin areas");
