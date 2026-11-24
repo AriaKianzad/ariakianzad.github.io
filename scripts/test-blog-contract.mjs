@@ -164,6 +164,10 @@ assert.equal(copyFeedback.textContent, "لینک کپی شد", "successful copy 
 assert.equal(copyFeedback.hidden, false, "successful copy toast must become visible");
 const analyticsConsent = await read("public/analytics-consent.js");
 const notFoundContent = await read("src/app/NotFoundContent.tsx");
+
+const rootNotFoundSource = await read("src/app/not-found.tsx");
+const exportVerifier = await read("scripts/verify-export.mjs");
+
 const notFoundCss = await read("src/app/not-found.css");
 const blogNotFound = await read("src/app/blog/not-found.tsx");
 const legacyCategoryMigration = await read("supabase/migrations/20261123235500_cleanup_legacy_persian_blog_category.sql");
@@ -379,6 +383,13 @@ assert.ok(adminHtml.includes('data-view="ads"') && adminHtml.includes('id="view-
 assert.ok(adminApp.includes("function renderAdBannerSettings()") && adminApp.includes("function collectAdBannersFromForm()") && adminApp.includes('api("save_ad_banners"') && adminApp.includes('accept="image/jpeg,image/png,image/webp,image/gif"'), "workspace must manage multiple ad slots, their labels, images, destinations and link types");
 assert.ok(adminApp.includes("if(file.type===\"image/gif\")") && adminApp.includes("blob=file") && adminApp.includes("window.setInterval") && adminApp.includes("60*60*1000") && adminApp.includes("loadArticleAnalytics(true,true)"), "animated GIF uploads must remain unconverted and the article analytics report must refresh hourly while the admin session is active");
 assert.ok(blogCss.includes(".blog-article-meta {\n    display:flex !important;") && blogCss.includes("direction:inherit;") && articlePage.includes('style={{ direction }}'), "desktop article metadata must use the article language direction and a stable flex layout");
+
+
+assert.ok(blogLayout.includes("<style>{themeCss}</style>") && !blogLayout.includes("style={style}") && blogLayout.includes("lang={language}"), "global blog theme tokens must be emitted through CSP-hashable style blocks and declare the content language");
+assert.ok(articlePage.includes("<style>{articleThemeCss}</style>") && !articlePage.includes("style={articleStyle}"), "article-specific accent and typography tokens must use a CSP-hashable style block rather than inline style attributes");
+assert.ok(exportVerifier.includes("inline style attribute is blocked by style-src") && exportVerifier.includes("hashed <style> block"), "the static export verifier must reject style attributes that would be blocked by the strict CSP");
+assert.ok(rootNotFoundSource.includes("robots: { index: false, follow: false") && blogNotFound.includes("robots: { index: false, follow: false"), "both root and blog not-found routes must be explicitly noindex");
+assert.ok(notFoundContent.includes('className="not-found-page not-found-blog" lang="fa" dir="rtl"'), "the blog-specific not-found surface must declare Persian as its language");
 
 console.log("Personal blog contract passed: secure CMS, rich paste, category SEO, accessible formatting, responsive reading and isolated Persian editorial chrome.");
 
