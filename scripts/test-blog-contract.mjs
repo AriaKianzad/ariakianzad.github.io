@@ -191,6 +191,8 @@ assert.ok(articlePage.includes('"@context": "https://schema.org"') && articlePag
 assert.ok(articlePage.includes('"@type": "FAQPage"'), "FAQ schema must be available");
 assert.ok(articlePage.includes("canonical") && articlePage.includes("robots_index"), "article SEO must support canonical and robots directives");
 assert.ok(articlePage.includes("openGraph:") && articlePage.includes("twitter:"), "article metadata must include OG and X cards");
+assert.ok(articlePage.includes('const image = site.url + "/og/blog/" + post.slug + ".jpg"'), "article OG and X metadata must use the normalized 1200x630 build asset rather than the raw uploaded image");
+assert.ok(contactPage.includes('images: [{ url: site.url + "/og/og.jpg", width: 1200, height: 630 }]') && contactPage.includes('card: "summary_large_image"'), "blog contact metadata must include a large social preview image");
 assert.ok(articlePage.includes("extractToc"), "articles must support a table of contents");
 assert.ok(categoryPage.includes("generateStaticParams"), "category archives must be static pages");
 assert.ok(categoryPage.includes("settings.category_seo") && categoryPage.includes("meta_description"), "category archives must support separate metadata per category");
