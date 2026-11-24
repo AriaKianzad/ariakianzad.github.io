@@ -504,7 +504,7 @@
     value=value.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>'<img src="'+escapeHtml(safeHref(url.replace(/&amp;/g,"&")))+'" alt="'+alt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">');
     value=value.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
       const href=safeHref(url.replace(/&amp;/g,"&")),external=/^https?:\/\//i.test(href);
-      const relation=(String(options||"").match(/rel=(follow|nofollow|sponsored|ugc)/i)||[])[1]||"follow";
+      const relation=(String(options||"").match(/rel=(follow|nofollow|sponsored|ugc)/i)||[])[1]||(external?"nofollow":"follow");
       const target=(String(options||"").match(/target=(_blank|_self)/i)||[])[1]||(external?"_blank":"_self");
       const rel=[...(relation!=="follow"?[relation]:[]),...(target==="_blank"?["noopener","noreferrer"]:[])].join(" ");
       return '<a href="'+escapeHtml(href)+'"'+(title?' title="'+escapeHtml(title)+'"':"")+' target="'+target+'" data-link-rel="'+relation+'" data-link-target="'+target+'"'+(rel?' rel="'+rel+'"':"")+">"+label+"</a>";
@@ -579,7 +579,7 @@
       const href=safeHref(element.getAttribute("href"));
       if(href==="#")return inner;
       const external=/^https?:\/\//i.test(href);
-      const relation=element.dataset.linkRel||((element.getAttribute("rel")||"").split(/\s+/).find((v)=>["nofollow","sponsored","ugc"].includes(v))||"follow");
+      const relation=element.dataset.linkRel||((element.getAttribute("rel")||"").split(/\s+/).find((v)=>["nofollow","sponsored","ugc"].includes(v))||(external?"nofollow":"follow"));
       const target=element.dataset.linkTarget||element.getAttribute("target")||(external?"_blank":"_self");
       const options=[];
       if(relation!=="follow")options.push("rel="+relation);
@@ -653,20 +653,17 @@
     if(/mso(title|heading1)|heading[_ -]?1|title[_ -]?1/.test(classes))return 2;
     if(/mso(subtitle|heading2)|heading[_ -]?2|subtitle/.test(classes))return 3;
     if(/heading[_ -]?3/.test(classes))return 4;
-    const styleNodes=[source,...Array.from(source.querySelectorAll?.("[style]")||[])];
-    let largest=0,bold=false;
-    styleNodes.forEach((element)=>{
-      const style=(element.getAttribute("style")||"").toLowerCase();
-      const size=(style.match(/font-size\s*:\s*([0-9.]+)(px|pt|em|rem)?/)||[]);
-      if(size[1]){
-        let value=Number(size[1]),unit=size[2]||"px";
-        if(unit==="pt")value*=4/3;
-        if(unit==="em"||unit==="rem")value*=16;
-        largest=Math.max(largest,value);
-      }
-      if(/font-weight\s*:\s*(bold|[6-9]00)/.test(style))bold=true;
-      if(["b","strong"].includes(element.tagName?.toLowerCase()))bold=true;
-    });
+    // Only inspect styles declared on this block. Inline bold runs stay inline.
+    const style=(source.getAttribute("style")||"").toLowerCase();
+    const size=(style.match(/font-size\s*:\s*([0-9.]+)(px|pt|em|rem)?/)||[]);
+    let largest=0;
+    if(size[1]){
+      let value=Number(size[1]),unit=size[2]||"px";
+      if(unit==="pt")value*=4/3;
+      if(unit==="em"||unit==="rem")value*=16;
+      largest=value;
+    }
+    const bold=/font-weight\s*:\s*(bold|[6-9]00)/.test(style);
     if(!bold)return 0;
     if(largest>=30)return 2;
     if(largest>=25)return 3;
@@ -718,8 +715,9 @@
       const href=safeHref(source.getAttribute("href"));
       if(href==="#"){const fragment=document.createDocumentFragment();children().forEach((child)=>fragment.appendChild(child));return fragment;}
       clean.setAttribute("href",href);
-      const rel=(source.getAttribute("rel")||"").split(/\s+/).find((value)=>["nofollow","sponsored","ugc"].includes(value))||"follow";
-      const target=source.getAttribute("target")==="_self"?"_self":source.getAttribute("target")==="_blank"?"_blank":(/^https?:\/\//i.test(href)?"_blank":"_self");
+      const external=/^https?:\/\//i.test(href);
+      const rel=(source.getAttribute("rel")||"").split(/\s+/).find((value)=>["nofollow","sponsored","ugc"].includes(value))||(external?"nofollow":"follow");
+      const target=source.getAttribute("target")==="_self"?"_self":source.getAttribute("target")==="_blank"?"_blank":(external?"_blank":"_self");
       clean.dataset.linkRel=rel;clean.dataset.linkTarget=target;clean.setAttribute("target",target);
       if(target==="_blank")clean.setAttribute("rel",([rel==="follow"?[]:[rel],"noopener","noreferrer"].flat()).join(" "));
       else if(rel!=="follow")clean.setAttribute("rel",rel);
@@ -772,8 +770,8 @@
       const relationLabel=document.createElement("label");relationLabel.textContent="نوع لینک";
       const relation=document.createElement("select");relation.setAttribute("aria-label","نوع لینک برای "+(anchor.textContent||"پیوند "+(index+1)));
       [["follow","عادی · دنبال‌شونده"],["nofollow","دنبال‌نشونده"],["sponsored","تبلیغاتی"],["ugc","محتوای کاربر"]].forEach(([value,title])=>{const option=document.createElement("option");option.value=value;option.textContent=title;relation.appendChild(option);});
-      relation.value=anchor.dataset.linkRel||((anchor.rel||"").split(/\s+/).find((v)=>["nofollow","sponsored","ugc"].includes(v))||"follow");
-      relation.addEventListener("change",()=>{anchor.dataset.linkRel=relation.value;if(relation.value==="follow")anchor.removeAttribute("data-link-rel");anchor.rel=[...(relation.value==="follow"?[]:[relation.value]),...(anchor.target==="_blank"?["noopener","noreferrer"]:[])].join(" ");updatePreview();updateSeo();});
+      relation.value=anchor.dataset.linkRel||((anchor.rel||"").split(/\s+/).find((v)=>["nofollow","sponsored","ugc"].includes(v))||(/^https?:\/\//i.test(anchor.href)?"nofollow":"follow"));
+      relation.addEventListener("change",()=>{anchor.dataset.linkRel=relation.value;anchor.rel=[...(relation.value==="follow"?[]:[relation.value]),...(anchor.target==="_blank"?["noopener","noreferrer"]:[])].join(" ");updatePreview();updateSeo();});
       const targetLabel=document.createElement("label");targetLabel.textContent="بازشدن";
       const target=document.createElement("select");target.setAttribute("aria-label","نحوۀ بازشدن "+(anchor.textContent||"پیوند "+(index+1)));
       [["auto","پیش‌فرض"],["_self","همین زبانه"],["_blank","زبانه جدید"]].forEach(([value,title])=>{const option=document.createElement("option");option.value=value;option.textContent=title;target.appendChild(option);});
@@ -790,16 +788,21 @@
     if(!raw)return;
     const href=safeHref(raw);
     if(href==="#"){toast("این نوع آدرس برای پیوند مجاز نیست.",true);return;}
+    const external=/^https?:\/\//i.test(href),relation=external?"nofollow":"follow",target=external?"_blank":"_self";
     if(selected){document.execCommand("createLink",false,href);}
     else{
       const label=window.prompt("متن نمایشی پیوند را وارد کن:","مشاهدۀ منبع");
       if(!label)return;
-      insertHtmlAtCaret('<a href="'+escapeHtml(href)+'" target="'+(/^https?:\/\//i.test(href)?"_blank":"_self")+'" data-link-rel="follow" data-link-target="'+(/^https?:\/\//i.test(href)?"_blank":"_self")+'">'+escapeHtml(label)+"</a>");
+      insertHtmlAtCaret('<a href="'+escapeHtml(href)+'" target="'+target+'" data-link-rel="'+relation+'" data-link-target="'+target+'"'+(external?' rel="nofollow noopener noreferrer"':'')+'>'+escapeHtml(label)+"</a>");
       return;
     }
     const selection=window.getSelection(),node=selection?.anchorNode;
     const anchor=node instanceof Element?node.closest("a"):node?.parentElement?.closest("a");
-    if(anchor){anchor.dataset.linkRel="follow";anchor.dataset.linkTarget=/^https?:\/\//i.test(href)?"_blank":"_self";if(anchor.target==="_blank")anchor.rel="noopener noreferrer";}
+    if(anchor){
+      anchor.dataset.linkRel=relation;anchor.dataset.linkTarget=target;
+      anchor.setAttribute("target",target);
+      anchor.rel=[...(relation==="follow"?[]:[relation]),...(target==="_blank"?["noopener","noreferrer"]:[])].join(" ");
+    }
     updatePreview();updateSeo();refreshLinkManager();
   }
   function currentEditorBlock() {
@@ -1316,10 +1319,28 @@
     updateImagePreview("setting-og-preview",settings.default_og_image,"تصویر پیش‌فرض وبلاگ");
   }
   function defaultAdBanners() {
-    return [makeDefaultAdBanner(1),makeDefaultAdBanner(2)];
+    return [makeDefaultAdBanner(1),makeDefaultAdBanner(2),makeDefaultAdBanner(3)];
   }
   function makeDefaultAdBanner(index) {
-    return {id:"banner-"+index,enabled:false,label:"",image_url:"",alt:"",link_url:"",link_rel:"follow"};
+    return {id:"banner-"+index,enabled:false,label:"",image_url:"",alt:"",link_url:"",link_rel:"follow",show_on_mobile:true};
+  }
+  function normalizeAdBanners(value) {
+    const entries=Array.isArray(value)?value.filter((item)=>item&&typeof item==="object"&&!Array.isArray(item)):[];
+    const byId=new Map(entries.map((item)=>[String(item.id||""),item]));
+    const core=[1,2,3].map((index)=>{
+      const saved=byId.get("banner-"+index);
+      return {...makeDefaultAdBanner(index),...(saved||{}),id:"banner-"+index,show_on_mobile:saved?.show_on_mobile!==false};
+    });
+    const extras=entries.filter((item)=>!/^banner-[123]$/.test(String(item.id||""))).map((item)=>({
+      enabled:false,label:"",image_url:"",alt:"",link_url:"",link_rel:"follow",show_on_mobile:true,
+      ...item,show_on_mobile:item.show_on_mobile!==false,
+    }));
+    return [...core,...extras].slice(0,8);
+  }
+  function nextAdBannerIndex() {
+    let index=4;
+    while(state.adBanners.some((banner)=>banner.id==="banner-"+index))index++;
+    return index;
   }
   function collectAdBannersFromForm() {
     const root=$("#ad-banners-list");
@@ -1332,13 +1353,13 @@
       alt:card.querySelector('[data-ad-field="alt"]')?.value.trim()||"",
       link_url:card.querySelector('[data-ad-field="link_url"]')?.value.trim()||"",
       link_rel:card.querySelector('[data-ad-field="link_rel"]')?.value||"follow",
+      show_on_mobile:Boolean(card.querySelector('[data-ad-field="show_on_mobile"]')?.checked),
     }));
   }
   function renderAdBannerSettings() {
     const root=$("#ad-banners-list");
     if(!root)return;
-    if(!Array.isArray(state.adBanners)||state.adBanners.length<2)state.adBanners=defaultAdBanners();
-    state.adBanners=state.adBanners.slice(0,8);
+    state.adBanners=normalizeAdBanners(state.adBanners);
     const relOptions=[
       ["follow","دوفالو (Follow)"],
       ["nofollow","نوفالو (Nofollow)"],
@@ -1350,18 +1371,20 @@
     ];
     root.innerHTML=state.adBanners.map((banner,index)=>{
       const id=escapeHtml(banner.id||("banner-"+(index+1)));
-      const image=banner.image_url?'<img src="'+escapeHtml(banner.image_url)+'" alt="">':'<span class="ad-preview-placeholder">پیش‌نمایش تصویر ۱:۱</span>';
+      const isArticleEnd=banner.id==="banner-3";
+      const placementLabel=isArticleEnd?"انتهای متن مقاله":"کنار فهرست مقاله";
+      const image=banner.image_url?'<img src="'+escapeHtml(banner.image_url)+'" alt="">':'<span class="ad-preview-placeholder">'+(isArticleEnd?"پیش‌نمایش بنر افقی ۸٫۵:۱":"پیش‌نمایش تصویر ۱:۱")+'</span>';
       const options=relOptions.map(([value,label])=>'<option value="'+value+'" '+((banner.link_rel||"follow")===value?"selected":"")+'>'+label+'</option>').join("");
-      const remove=index>=2?'<button class="text-button danger-text" type="button" data-remove-ad="'+id+'">حذف این جایگاه</button>':"";
+      const remove=index>=3?'<button class="text-button danger-text" type="button" data-remove-ad="'+id+'">حذف این جایگاه</button>':"";
       return `
         <article class="ad-management-card" data-ad-card="${id}">
           <header class="ad-management-heading">
-            <div><span class="kicker">جایگاه / ${String(index+1).padStart(2,"0")}</span><h2>جایگاه تبلیغاتی ${index+1}</h2></div>
+            <div><span class="kicker">جایگاه / ${String(index+1).padStart(2,"0")}</span><h2>جایگاه تبلیغاتی ${index+1}</h2><small>${placementLabel}</small></div>
             <label class="ad-enabled-toggle"><input type="checkbox" data-ad-field="enabled" ${banner.enabled?"checked":""}> فعال‌سازی</label>
           </header>
           <div class="ad-management-layout">
             <div class="ad-management-media">
-              <div class="ad-management-preview">${image}</div>
+              <div class="ad-management-preview${isArticleEnd?" is-article-end":""}">${image}</div>
               <label class="file-button ad-file-button">انتخاب تصویر<input type="file" data-ad-file accept="image/jpeg,image/png,image/webp,image/gif"></label>
               <small>JPG، PNG، WebP یا GIF متحرک؛ حداکثر ۳ مگابایت</small>
               <input type="hidden" data-ad-field="image_url" value="${escapeHtml(banner.image_url||"")}">
@@ -1371,10 +1394,11 @@
               <label class="field-label">متن جایگزین تصویر<input data-ad-field="alt" maxlength="240" value="${escapeHtml(banner.alt||"")}" placeholder="شرح تصویر برای دسترس‌پذیری"></label>
               <label class="field-label">پیوند مقصد<input data-ad-field="link_url" type="url" inputmode="url" maxlength="800" dir="ltr" value="${escapeHtml(banner.link_url||"")}" placeholder="https://example.com/"></label>
               <label class="field-label">نوع لینک<select data-ad-field="link_rel">${options}</select></label>
-              <p class="help-text">اگر نوع بنر خالی باشه، نشانگر بالای تصویر نمایش داده نمی‌شه. لینک فقط با HTTPS ذخیره می‌شه. «دوفالو» یعنی relهای nofollow، sponsored و ugc روی لینک اعمال نمی‌شن.</p>
+              <label class="ad-mobile-toggle"><input type="checkbox" data-ad-field="show_on_mobile" ${banner.show_on_mobile!==false?"checked":""}> نمایش در نسخۀ موبایل</label>
+              <p class="help-text">اگر نوع بنر خالی باشه، نشانگر بالای تصویر نمایش داده نمی‌شه. لینک فقط با HTTPS ذخیره می‌شه. برای جایگاه سوم، فایل افقی با نسبت حدود ۸٫۵:۱ انتخاب کن.</p>
             </div>
           </div>
-          <footer class="ad-management-footer"><span>${banner.enabled?"نمایش در همۀ مقاله‌ها فعال است.":"این جایگاه در سایت عمومی نمایش داده نمی‌شه."}</span>${remove}</footer>
+          <footer class="ad-management-footer"><span>${banner.enabled?"نمایش "+placementLabel+" در مقاله‌ها فعال است.":"این جایگاه در سایت عمومی نمایش داده نمی‌شه."}</span>${remove}</footer>
         </article>`;
     }).join("");
   }
@@ -1387,7 +1411,7 @@
     try{
       const result=await api("save_ad_banners",{banners:state.adBanners});
       state.settings={...(state.settings||{}),...(result.settings||{})};
-      state.adBanners=Array.isArray(result.settings?.ad_banners)?result.settings.ad_banners:state.adBanners;
+      state.adBanners=normalizeAdBanners(result.settings?.ad_banners||state.adBanners);
       renderAdBannerSettings();
       $("#ad-banners-message").textContent="تنظیمات ذخیره شد و ساخت نسخۀ عمومی آغاز شد.";
       toast("بنرها ذخیره شدن؛ بعد از Build در همۀ مقاله‌ها به‌روزرسانی می‌شن.");
@@ -1398,7 +1422,7 @@
   }
   async function loadSettings() {
     const result=await api("get_settings");fillSettings(result.settings||{});
-    state.adBanners=Array.isArray(result.settings?.ad_banners)?result.settings.ad_banners:defaultAdBanners();
+    state.adBanners=normalizeAdBanners(result.settings?.ad_banners);
   }
   async function saveSettings(event) {
     event.preventDefault();
@@ -1420,7 +1444,7 @@
     const results=await Promise.all([api("list_posts"),api("get_settings")]);
     state.posts=Array.isArray(results[0].posts)?results[0].posts:[];
     state.settings=results[1].settings||{};
-    state.adBanners=Array.isArray(state.settings.ad_banners)?state.settings.ad_banners:defaultAdBanners();
+    state.adBanners=normalizeAdBanners(state.settings.ad_banners);
     renderOverview();renderPosts();fillSettings(state.settings);
   }
   function bindEvents() {
@@ -1517,14 +1541,14 @@
       const button=event.target.closest("[data-remove-ad]");
       if(!button)return;
       const current=collectAdBannersFromForm();
-      if(current.length<=2){toast("دو جایگاه اول به‌صورت پیش‌فرض نگه داشته می‌شن.",true);return;}
+      if(current.length<=3){toast("سه جایگاه اصلی قابل حذف نیستن.",true);return;}
       state.adBanners=current.filter((item)=>item.id!==button.dataset.removeAd);
       renderAdBannerSettings();
     });
     $("#add-ad-banner").addEventListener("click",()=>{
       state.adBanners=collectAdBannersFromForm();
       if(state.adBanners.length>=8){toast("حداکثر هشت جایگاه تبلیغاتی مجازه.",true);return;}
-      state.adBanners.push(makeDefaultAdBanner(state.adBanners.length+1));
+      state.adBanners.push(makeDefaultAdBanner(nextAdBannerIndex()));
       renderAdBannerSettings();
     });
     $("#ad-banners-form").addEventListener("submit",(event)=>void saveAdBanners(event));
