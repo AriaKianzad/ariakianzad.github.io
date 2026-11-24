@@ -277,6 +277,8 @@ assert.ok(globals.includes("opacity 900ms var(--ease-out)") &&
   "in-section reveal motion should be more pronounced without changing the hero renderer");
 assert.ok(ui.includes('querySelectorAll("[data-reveal]")'), "existing progressive reveal controller should remain active");
 
+const bootScript = await read("public/boot.js");
+
 // Metadata and AI-readable site information must match the new positioning.
 for (const schemaType of ["WebSite", "ProfilePage", "Person", "Organization"]) {
   assert.ok(layout.includes(`"@type": "${schemaType}"`), `JSON-LD ${schemaType} missing`);
@@ -293,5 +295,10 @@ assert.ok(llms.includes("creative agency"), "llms.txt must describe Rexo as an a
 assert.ok(layout.includes("Content-Security-Policy"), "CSP meta policy must remain in the root layout");
 assert.ok(!/unsafe-inline|unsafe-eval/.test(layout), "CSP must not allow unsafe inline code or eval");
 assert.ok(!/eval\s*\(|new Function\s*\(/.test(heroScene), "3D scene must not use dynamic code execution");
+
+
+assert.ok(page.includes('<ol className="hero__signal-list"') && page.includes('<li className="hero-signal"'), "the three-step hero process must use semantic ordered-list markup");
+assert.ok(bootScript.includes('setAttribute("data-js"') && bootScript.includes("data-ui-ready") && bootScript.includes('removeAttribute("data-js")'), "the boot layer must fail open if the deferred UI enhancer never becomes ready");
+assert.ok(ui.includes('(min-width: 781px)') && ui.includes('!nav.contains(target)'), "the responsive menu breakpoint must match the CSS and close when a click occurs outside the open nav");
 
 console.log("Homepage redesign contract passed: semantic SEO, AI-readable copy, 3D hero, responsive and reduced-motion fallbacks, CSP, and no-JavaScript navigation.");
