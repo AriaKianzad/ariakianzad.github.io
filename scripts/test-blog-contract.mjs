@@ -297,7 +297,7 @@ const sampleTable = [
   "| --- | --- |",
   "| استراتژیست برند | تعیین جهت برند، جایگاه و تمایز |",
   "| طراح برند | تبدیل جهت استراتژیک به سیستم بصری |",
-].join("\\n");
+].join("\n");
 const renderedTable = markdownRuntime.exports.renderMarkdown(sampleTable);
 assert.ok(renderedTable.includes('<div class="blog-table-scroll" role="region" aria-label="جدول مقاله" tabindex="0">'), "Markdown tables must be wrapped in a keyboard-focusable responsive region");
 assert.ok(renderedTable.includes('<table class="blog-table"><thead><tr><th><strong>نقش</strong></th><th><strong>تمرکز اصلی</strong></th></tr></thead>'), "Markdown table headers and inline emphasis must be rendered as semantic HTML");

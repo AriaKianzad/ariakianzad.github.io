@@ -80,7 +80,7 @@ function tableCells(line:string){
   for(let index=0;index<value.length;index++){
     const char=value[index];
     if(char==="\\"&&value[index+1]==="|"){cell+="|";index++;continue;}
-    if(char="`")inCode=!inCode;
+    if(char==="`")inCode=!inCode;
     if(char==="|"&&!inCode){cells.push(cell.trim());cell="";continue;}
     cell+=char;
   }
