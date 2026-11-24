@@ -2,7 +2,7 @@
   "name": "aria-kianzad-site",
   "version": "1.0.0",
   "private": true,
-  "description": "Aria Kianzad's personal website and Persian book microsite, built as a static export.",
+  "description": "Aria Kianzad's personal website, Persian blog and CMS, analytics dashboards, and book microsite, built as a static export.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
