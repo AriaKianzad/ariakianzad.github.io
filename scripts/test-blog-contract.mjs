@@ -61,6 +61,7 @@ const categoryTaxonomyMigration = await read("supabase/migrations/20261123200000
 const multipleCategoryMigration = await read("supabase/migrations/20261124210000_add_multiple_post_categories.sql");
 const snapshotCategorySyncMigration = await read("supabase/migrations/20261124220000_sync_multi_category_published_snapshots.sql");
 const canonicalMigration = await read("supabase/migrations/20261124230000_add_blog_default_canonical_url.sql");
+const responsiveAdMigration = await read("supabase/migrations/20261124235900_responsive_article_advertising.sql");
 const categoryUtils = await read("src/lib/blog-category-utils.ts");
 const listingClient = await read("src/app/blog/BlogListingClient.tsx");
 const listingScript = await read("public/blog-listing.js");
@@ -399,4 +400,16 @@ assert.ok(blogCss.includes(".blog-article-meta {\n    display:flex !important;")
 
 console.log("Personal blog contract passed: secure CMS, rich paste, category SEO, accessible formatting, responsive reading and isolated Persian editorial chrome.");
 
-assert.ok(blogCss.includes(".blog-theme .blog-article-sidebar {\n  position:sticky;") && blogCss.includes(".blog-theme .blog-article-sidebar .blog-toc {\n  position:static;") && blogCss.includes("@media(max-width:700px) {\n  .blog-theme .blog-article-sidebar {\n    position:static;") && articlePage.includes("adBanners.map"), "desktop TOC and ad cards must share one sticky sidebar while mobile sidebar stays in document flow");
+assert.ok(blogCss.includes(".blog-theme .blog-article-sidebar {\n  position:sticky;") && blogCss.includes(".blog-theme .blog-article-sidebar .blog-toc {\n  position:static;") && blogCss.includes("@media(max-width:700px) {\n  .blog-theme .blog-article-sidebar {\n    position:static;") && articlePage.includes("sidebarAdBanners.map"), "desktop TOC and ad cards must share one sticky sidebar while mobile sidebar stays in document flow");
+
+
+assert.ok(contactPage.includes("اسپانسری دوره‌ای و بنرهای تبلیغاتی") && contactPage.includes("جایگاه‌های مشخص صفحه‌های مقاله"), "the contact page must describe periodic sponsorship and article banner placements");
+assert.ok(adminApp.includes('function normalizeAdBanners(value)') && adminApp.includes('makeDefaultAdBanner(3)') && adminApp.includes('data-ad-field="show_on_mobile"') && adminApp.includes('banner.show_on_mobile!==false'), "the CMS must keep three core placements and expose per-banner mobile visibility");
+assert.ok(adminEdge.includes("input.length < 3") && adminEdge.includes("show_on_mobile: item.show_on_mobile !== false") && adminEdge.includes('banner.id === "banner-3"'), "the admin API must persist mobile visibility and retain the article-end placement");
+assert.ok(dataSource.includes("show_on_mobile:boolean") && dataSource.includes('id:"banner-3"') && fetchScript.includes("show_on_mobile:banner.show_on_mobile!==false"), "the public build payload must normalize mobile visibility and include the third slot");
+assert.ok(articlePage.includes('banner.id !== "banner-3"') && articlePage.includes('banner.id === "banner-3"') && articlePage.includes("blog-in-article-ad-slot") && articlePage.includes("blog-prose-content"), "the third ad must render after the article HTML inside the article column, not in the sidebar");
+assert.ok(blogCss.includes("aspect-ratio:8.5 / 1") && blogCss.includes("object-fit:contain") && blogCss.includes(".blog-in-article-ad.is-desktop-only"), "the article-end banner must preserve its full artwork and hide on mobile only when configured");
+assert.ok(adminCss.includes(".ad-management-preview.is-article-end {aspect-ratio:8.5 / 1}") && adminCss.includes(".ad-mobile-toggle"), "the CMS must preview the horizontal banner ratio and expose the mobile toggle");
+assert.ok(responsiveAdMigration.includes('"banner-3"') && responsiveAdMigration.includes("'show_on_mobile'") && responsiveAdMigration.includes("between 3 and 8"), "the migration must seed the third slot and backfill mobile visibility without overwriting configured banners");
+assert.ok(adminApp.includes('relation=external?"nofollow":"follow"') && adminApp.includes('anchor.dataset.linkRel=relation'), "new external links must default to nofollow while explicit follow choices remain persistent");
+assert.ok(!adminApp.slice(adminApp.indexOf("function clipboardHeadingLevel"),adminApp.indexOf("function cleanClipboardNode")).includes('querySelectorAll?.("[style]")'), "Google Docs heading detection must not promote an entire paragraph based on a single styled child run");

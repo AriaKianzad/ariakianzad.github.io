@@ -84,7 +84,9 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
   const canonical = post.canonical_url || site.url + "/blog/" + post.slug + "/";
   const categoryName = primaryCategory ? getBlogCategoryName(primaryCategory) : "";
   const adBanners = (settings.ad_banners || []).filter((banner) => banner?.enabled === true && Boolean(banner.image_url));
-  const hasArticleSidebar = toc.length > 0 || adBanners.length > 0;
+  const sidebarAdBanners = adBanners.filter((banner) => banner.id !== "banner-3");
+  const articleEndBanner = adBanners.find((banner) => banner.id === "banner-3");
+  const hasArticleSidebar = toc.length > 0 || sidebarAdBanners.length > 0;
   const schema = {
     "@context": "https://schema.org", "@type": settings.schema_type,
     headline: post.title, description: post.meta_description || post.excerpt,
@@ -168,13 +170,13 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
                   </details>
                 </>
               ) : null}
-              {adBanners.map((banner) => {
+              {sidebarAdBanners.map((banner) => {
                 const allowedRel = ["follow","nofollow","sponsored","ugc","nofollow sponsored","nofollow ugc","nofollow sponsored ugc"];
                 const relToken = allowedRel.includes(banner.link_rel) && banner.link_rel !== "follow" ? banner.link_rel : "";
                 const relValue = [relToken,"noopener","noreferrer"].filter(Boolean).join(" ");
                 const image = <img src={banner.image_url} alt={banner.alt || ""} loading="lazy" decoding="async" />;
                 return (
-                  <div className="blog-ad-card" key={banner.id}>
+                  <div className={"blog-ad-card" + (banner.show_on_mobile === false ? " is-desktop-only" : "")} key={banner.id}>
                     {banner.label?.trim() ? <span className="blog-ad-label">{banner.label}</span> : null}
                     <div className="blog-ad-slot">
                       {banner.link_url ? (
@@ -188,7 +190,26 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
               })}
             </aside>
           ) : null}
-          <article className={"blog-prose" + (post.drop_cap ? " has-drop-cap" : "")} dangerouslySetInnerHTML={{ __html: html }} />
+          <article className={"blog-prose" + (post.drop_cap ? " has-drop-cap" : "")}>
+            <div className="blog-prose-content" dangerouslySetInnerHTML={{ __html: html }} />
+            {articleEndBanner ? (
+              <div className={"blog-in-article-ad" + (articleEndBanner.show_on_mobile === false ? " is-desktop-only" : "")}>
+                {articleEndBanner.label?.trim() ? <span className="blog-ad-label">{articleEndBanner.label}</span> : null}
+                <div className="blog-in-article-ad-slot">
+                  {articleEndBanner.link_url ? (
+                    <a href={articleEndBanner.link_url} target="_blank" rel={[
+                      ["follow","nofollow","sponsored","ugc","nofollow sponsored","nofollow ugc","nofollow sponsored ugc"].includes(articleEndBanner.link_rel) && articleEndBanner.link_rel !== "follow" ? articleEndBanner.link_rel : "",
+                      "noopener","noreferrer",
+                    ].filter(Boolean).join(" ")} aria-label={articleEndBanner.alt || "مشاهدۀ بنر"}>
+                      <img src={articleEndBanner.image_url} alt={articleEndBanner.alt || ""} loading="lazy" decoding="async" />
+                    </a>
+                  ) : (
+                    <img src={articleEndBanner.image_url} alt={articleEndBanner.alt || ""} loading="lazy" decoding="async" />
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </article>
         </div>
         {post.faqs?.length ? (
           <section className="blog-faq blog-container">

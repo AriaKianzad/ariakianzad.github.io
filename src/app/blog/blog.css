@@ -111,14 +111,14 @@
 .blog-toc a{text-decoration:none}
 .blog-toc a:hover{color:var(--blog-accent)}
 .blog-prose{grid-column:1;grid-row:1;min-width:0;color:var(--blog-ink);font-size:16px;line-height:var(--blog-line-height,1.95);text-align:start;letter-spacing:normal;overflow-wrap:anywhere}
-.blog-prose>*:first-child{margin-top:0}
+.blog-prose-content>*:first-child{margin-top:0}
 .blog-prose h2,.blog-prose h3,.blog-prose h4{margin:2.3em 0 .65em;font-weight:800;line-height:1.65;scroll-margin-top:28px}
 .blog-prose h2{font-size:1.65em}
 .blog-prose h3{font-size:1.3em}
 .blog-prose h4{font-size:1.1em}
 .blog-prose p{margin:0;margin-block-end:var(--blog-paragraph-gap,2.05em)}
 .blog-prose p:first-of-type{color:var(--blog-ink-soft)}
-.blog-prose.has-drop-cap>p:first-of-type::first-letter{float:right;margin:.08em .05em 0 .12em;color:var(--post-accent,var(--blog-accent));font-size:3.4em;font-weight:800;line-height:.95}
+.blog-prose.has-drop-cap .blog-prose-content>p:first-of-type::first-letter{float:right;margin:.08em .05em 0 .12em;color:var(--post-accent,var(--blog-accent));font-size:3.4em;font-weight:800;line-height:.95}
 .blog-prose a{color:var(--blog-accent);text-decoration-thickness:1px;text-underline-offset:4px}
 .blog-prose strong{font-weight:800}
 .blog-prose ul,.blog-prose ol{margin:0 0 1.5em;padding-inline-start:1.5em}
@@ -180,7 +180,7 @@
   .blog-article-grid,.blog-article-grid.content-wide,.blog-article-grid.no-toc,.blog-article-grid.content-wide.no-toc{display:block;width:min(100% - 32px,680px);max-width:680px;margin:0 auto}
   .blog-toc{display:none}
   .blog-prose{width:100%;font-size:16px;line-height:var(--blog-line-height,1.95);text-align:start;letter-spacing:normal}
-  .blog-prose>*:first-child{margin-top:0}
+  .blog-prose-content>*:first-child{margin-top:0}
 
   .blog-prose h2{font-size:1.5em}
   .blog-footer-inner{grid-template-columns:1fr;gap:16px}
@@ -1752,4 +1752,44 @@ body:has(.blog-theme) .analytics-preferences:hover {
   border-color: #a86f54;
   background: #fbf9f4;
   color: #a86f54;
+}
+
+
+/* The third banner sits inside the article column after the final content block.
+   Its wide ratio is fluid and object-fit:contain guarantees that artwork is never cropped. */
+.blog-theme .blog-in-article-ad {
+  display:grid;
+  gap:7px;
+  width:100%;
+  min-width:0;
+  margin-block:28px 8px;
+}
+.blog-theme .blog-in-article-ad-slot {
+  width:100%;
+  min-width:0;
+  aspect-ratio:8.5 / 1;
+  overflow:hidden;
+  border:1px solid var(--blog-line);
+  border-radius:3px;
+  background:var(--blog-surface);
+}
+.blog-theme .blog-in-article-ad-slot>a,
+.blog-theme .blog-in-article-ad-slot>img {
+  display:block;
+  width:100%;
+  height:100%;
+}
+.blog-theme .blog-in-article-ad-slot img {
+  display:block;
+  width:100%;
+  height:100%;
+  margin:0;
+  object-fit:contain;
+  object-position:center;
+}
+@media(max-width:700px) {
+  .blog-theme .blog-ad-card.is-desktop-only,
+  .blog-theme .blog-in-article-ad.is-desktop-only {
+    display:none !important;
+  }
 }

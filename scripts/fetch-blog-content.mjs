@@ -39,7 +39,9 @@ const result = {
     breadcrumbs_enabled:s.breadcrumbs_enabled!==false,breadcrumb_home_label:s.breadcrumb_home_label||"خانه",
     open_graph_enabled:s.open_graph_enabled!==false,
     twitter_card_type:s.twitter_card_type==="summary"?"summary":"summary_large_image",
-    ad_banners:Array.isArray(s.ad_banners)?s.ad_banners:[],
+    ad_banners:Array.isArray(s.ad_banners)
+      ?s.ad_banners.filter((banner)=>banner&&typeof banner==="object"&&!Array.isArray(banner)).map((banner)=>({...banner,show_on_mobile:banner.show_on_mobile!==false}))
+      :[],
   },
   posts:payload.posts.filter((p)=>p&&typeof p.slug==="string"&&/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(p.slug)&&typeof p.content==="string"),
   fetchedAt:new Date().toISOString(),
