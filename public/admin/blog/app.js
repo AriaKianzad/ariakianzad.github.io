@@ -579,10 +579,11 @@
       const href=safeHref(element.getAttribute("href"));
       if(href==="#")return inner;
       const external=/^https?:\/\//i.test(href);
-      const relation=element.dataset.linkRel||((element.getAttribute("rel")||"").split(/\s+/).find((v)=>["nofollow","sponsored","ugc"].includes(v))||(external?"nofollow":"follow"));
+      const explicitRelation=element.dataset.linkRel;
+      const relation=explicitRelation||((element.getAttribute("rel")||"").split(/\s+/).find((v)=>["nofollow","sponsored","ugc"].includes(v))||(external?"nofollow":"follow"));
       const target=element.dataset.linkTarget||element.getAttribute("target")||(external?"_blank":"_self");
       const options=[];
-      if(relation!=="follow")options.push("rel="+relation);
+      if(relation!=="follow"||explicitRelation==="follow")options.push("rel="+relation);
       if((external&&target!=="_blank")||(!external&&target==="_blank"))options.push("target="+target);
       return "["+inner+"]("+href+")"+(options.length?"{"+options.join(" ")+"}":"");
     }
@@ -716,7 +717,7 @@
       if(href==="#"){const fragment=document.createDocumentFragment();children().forEach((child)=>fragment.appendChild(child));return fragment;}
       clean.setAttribute("href",href);
       const external=/^https?:\/\//i.test(href);
-      const rel=(source.getAttribute("rel")||"").split(/\s+/).find((value)=>["nofollow","sponsored","ugc"].includes(value))||(external?"nofollow":"follow");
+      const rel=(source.getAttribute("rel")||"").split(/\s+/).find((value)=>["follow","nofollow","sponsored","ugc"].includes(value))||(external?"nofollow":"follow");
       const target=source.getAttribute("target")==="_self"?"_self":source.getAttribute("target")==="_blank"?"_blank":(external?"_blank":"_self");
       clean.dataset.linkRel=rel;clean.dataset.linkTarget=target;clean.setAttribute("target",target);
       if(target==="_blank")clean.setAttribute("rel",([rel==="follow"?[]:[rel],"noopener","noreferrer"].flat()).join(" "));

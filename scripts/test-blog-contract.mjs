@@ -280,7 +280,7 @@ assert.ok(adminHtml.includes('contenteditable="true"'), "CMS must use a rich tex
 assert.ok(adminHtml.includes('id="link-settings-toggle"') && adminHtml.includes('id="link-settings-list"'), "CMS must expose per-link controls");
 assert.ok(adminApp.includes("sanitizeClipboardHtml") && adminApp.includes("handleEditorPaste"), "CMS must sanitize and preserve rich clipboard HTML");
 assert.ok(adminApp.includes("editorToMarkdown") && adminApp.includes("refreshLinkManager"), "CMS must serialize rich text and expose per-link settings");
-assert.ok(markdownSource.includes("rel=(follow|nofollow|sponsored|ugc)") && markdownSource.includes("target=(_blank|_self)"), "public Markdown renderer must preserve link relationship and target settings");
+assert.ok(markdownSource.includes("rel=(follow|nofollow|sponsored|ugc)") && markdownSource.includes("target=(_blank|_self)") && markdownSource.includes('(external?"nofollow":"follow")'), "public Markdown renderer must preserve link relationship and target settings while defaulting external links to nofollow");
 assert.ok(markdownSource.includes("<table>") && markdownSource.includes("<u>"), "public Markdown renderer must support pasted tables and underline");
 assert.ok(siteChrome.includes("usePathname") && siteChrome.includes("isBlog"), "blog routes must not inherit the portfolio chrome");
 assert.ok(listingPage.includes('settings.tagline || "یادداشت‌هایی درباره برند، معنا و ارتباط"'), "blog archive H1 must use the descriptive tagline");
@@ -413,3 +413,6 @@ assert.ok(adminCss.includes(".ad-management-preview.is-article-end {aspect-ratio
 assert.ok(responsiveAdMigration.includes('"banner-3"') && responsiveAdMigration.includes("'show_on_mobile'") && responsiveAdMigration.includes("between 3 and 8"), "the migration must seed the third slot and backfill mobile visibility without overwriting configured banners");
 assert.ok(adminApp.includes('relation=external?"nofollow":"follow"') && adminApp.includes('anchor.dataset.linkRel=relation'), "new external links must default to nofollow while explicit follow choices remain persistent");
 assert.ok(!adminApp.slice(adminApp.indexOf("function clipboardHeadingLevel"),adminApp.indexOf("function cleanClipboardNode")).includes('querySelectorAll?.("[style]")'), "Google Docs heading detection must not promote an entire paragraph based on a single styled child run");
+
+assert.ok(adminApp.includes('explicitRelation==="follow"') && adminApp.includes('if(relation!=="follow"||explicitRelation==="follow")'), "an explicitly selected follow relation must survive Markdown serialization and subsequent editing");
+assert.ok(adminApp.includes('["follow","nofollow","sponsored","ugc"].includes(value)') && adminApp.includes('const external=/^https?:\\/\\//i.test(href)'), "clipboard sanitization must preserve explicit follow while defaulting pasted external links to nofollow");
