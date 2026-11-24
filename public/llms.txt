@@ -23,8 +23,18 @@ Core areas of work:
 - Expertise: research and insight, positioning and identity, content and communication.
 - Method: listen, investigate, position and express.
 - Rexo: an independent creative agency founded by Aria Kianzad in 2024, connecting brand strategy with creative execution.
-- Writing: links to RexoMag and Aria's Medium profile.
+- Writing: Aria's first-party Persian/English editorial blog, plus selected external publications.
 - About and contact: professional background and direct contact.
+
+## Personal blog
+
+The personal blog is the primary home for Aria's long-form writing on brand strategy, positioning, identity, communication and personal branding. Articles are published as static, crawlable pages in Persian and English.
+
+- Blog archive: https://ariakianzad.github.io/blog/
+- RSS feed: https://ariakianzad.github.io/blog/feed.xml
+- Collaboration and editorial enquiries: https://ariakianzad.github.io/blog/contact/
+
+The blog has its own editorial category pages, article metadata, canonical URLs, Open Graph and X cards, Article/BlogPosting structured data, and a sitemap containing indexable published pages. Only published snapshots are included in the public static build.
 
 ## Related projects
 
