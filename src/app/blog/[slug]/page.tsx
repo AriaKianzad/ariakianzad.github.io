@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import type { CSSProperties } from "react";
 import Link from "next/link";
 import { site } from "@/lib/site";
 import { getBlogPost, getBlogPosts, getBlogSettings, readingTime, formatBlogDate, formatBlogDateParts, getBlogCategoryName, getPostCategorySlugs, getPrimaryCategorySlug } from "@/lib/blog-data";
@@ -107,15 +106,20 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
   const publishedDateParts = formatBlogDateParts(post.published_at, post.language);
   const articleLineHeight = post.language === "fa" ? (settings.body_line_height || 1.95) : 1.7;
   const articleParagraphGap = post.language === "fa" ? articleLineHeight * 1.05 : 1.45;
-  const articleStyle = {
-    "--post-accent": post.accent_color || settings.accent_color,
-    "--blog-line-height": articleLineHeight,
-    "--blog-paragraph-gap": articleParagraphGap + "em",
-  } as CSSProperties;
+  const requestedAccent = post.accent_color || settings.accent_color || "#a86f54";
+  const articleAccent = /^#[0-9a-f]{6}$/i.test(requestedAccent) ? requestedAccent : "#a86f54";
+  const articleThemeCss = [
+    ".blog-article-main {",
+    "  --post-accent: " + articleAccent + ";",
+    "  --blog-line-height: " + articleLineHeight + ";",
+    "  --blog-paragraph-gap: " + articleParagraphGap + "em;",
+    "}",
+  ].join("\n");
   return (
     <>
       <BlogHeader />
-      <main className="blog-article-main" lang={language} dir={direction} style={articleStyle}>
+      <main className="blog-article-main" lang={language} dir={direction}>
+        <style>{articleThemeCss}</style>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
         {faqSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema).replace(/</g, "\\u003c") }} /> : null}
         {settings.breadcrumbs_enabled ? (
