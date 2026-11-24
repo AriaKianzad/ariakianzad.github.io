@@ -16,7 +16,8 @@
 
   if (!panel || !preferences || !title || !description || !accept || !reject) return;
 
-  const persian = window.location.pathname.startsWith("/Mian-e-Ma/");
+  const blogRoute = window.location.pathname === "/blog" || window.location.pathname.startsWith("/blog/");
+  const persian = window.location.pathname.startsWith("/Mian-e-Ma/") || blogRoute;
   const copy = persian
     ? {
         title: "تنظیمات آمار بازدید",
@@ -131,7 +132,6 @@
     accept.focus?.();
   });
 
-  const blogRoute = window.location.pathname === "/blog" || window.location.pathname.startsWith("/blog/");
   const savedChoice = getSavedChoice();
 
   // Blog pages suppress the automatic consent overlay, but visitors can still
