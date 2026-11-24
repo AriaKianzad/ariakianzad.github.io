@@ -720,6 +720,10 @@
     const source=node,tag=source.tagName.toLowerCase();
     if(["script","style","iframe","object","embed","svg","meta","link"].includes(tag))return null;
     const children=()=>Array.from(source.childNodes).map(cleanClipboardNode).filter(Boolean);
+    const style=(source.getAttribute("style")||"").toLowerCase();
+    if((tag==="b"||tag==="strong")&&/font-weight\s*:\s*(normal|[1-5]00)\b/.test(style)){
+      const fragment=document.createDocumentFragment();children().forEach((child)=>fragment.appendChild(child));return fragment;
+    }
     if(["p","div"].includes(tag)){
       const level=clipboardHeadingLevel(source);
       if(level){
@@ -730,7 +734,6 @@
     }
     if(tag==="span"||tag==="font"){
       let fragment=document.createDocumentFragment();children().forEach((child)=>fragment.appendChild(child));
-      const style=(source.getAttribute("style")||"").toLowerCase();
       if(/font-weight\s*:\s*(bold|[6-9]00)/.test(style)){const strong=document.createElement("strong");strong.append(fragment);fragment=strong;}
       if(/font-style\s*:\s*italic/.test(style)){const em=document.createElement("em");em.append(fragment);fragment=em;}
       if(/text-decoration[^;]*underline/.test(style)){const underline=document.createElement("u");underline.append(fragment);fragment=underline;}
