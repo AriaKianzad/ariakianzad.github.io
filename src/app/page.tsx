@@ -45,15 +45,15 @@ export default function HomePage() {
             <HeroVisual />
           </div>
 
-          <div className="hero__signal-list" aria-label="The strategic process">
+          <ol className="hero__signal-list" aria-label="The strategic process">
             {hero.signals.map((item) => (
-              <div className="hero-signal" key={item.number}>
+              <li className="hero-signal" key={item.number}>
                 <span className="hero-signal__number">{item.number}</span>
                 <span className="hero-signal__label">{item.label}</span>
                 <span className="hero-signal__note">{item.note}</span>
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
           <a className="hero__scroll-cue" href="#perspective">
             <span>Scroll to explore</span>
             <span className="hero__scroll-line" aria-hidden="true" />
