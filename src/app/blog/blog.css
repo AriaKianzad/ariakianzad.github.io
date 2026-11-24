@@ -1365,9 +1365,14 @@ body:has(.blog-theme) > main#main { display:contents; }
   gap:16px;
   min-width:0;
 }
-.blog-article-sidebar .blog-toc {
+.blog-article-sidebar {
   position:sticky;
   top:26px;
+  align-self:start;
+}
+.blog-article-sidebar .blog-toc {
+  position:static;
+  top:auto;
   grid-column:auto;
   grid-row:auto;
   min-width:0;
@@ -1515,6 +1520,8 @@ body:has(.blog-theme) > main#main { display:contents; }
     margin:0 auto;
   }
   .blog-theme .blog-article-sidebar {
+    position:static;
+    top:auto;
     display:grid;
     grid-column:1;
     grid-row:1;
@@ -1612,4 +1619,50 @@ body:has(.blog-theme) > main#main { display:contents; }
 .blog-theme .blog-reading-time>span {
   unicode-bidi:isolate;
   flex:0 0 auto;
+}
+
+
+/* The complete desktop sidebar is sticky as one unit. Keeping the TOC and
+   ad cards in the same sticky container prevents the ads from sliding under
+   a separately pinned table of contents. */
+.blog-theme .blog-article-sidebar {
+  position:sticky;
+  top:26px;
+  align-self:start;
+}
+.blog-theme .blog-article-sidebar .blog-toc {
+  position:static;
+  top:auto;
+}
+
+/* Put the complete reading-time phrase in one isolated directional run.
+   No pseudo-label is injected, so Persian word order cannot be split/reversed. */
+.blog-theme .blog-article-meta .blog-reading-time {
+  display:inline-flex !important;
+  direction:rtl !important;
+  unicode-bidi:isolate;
+  flex-direction:row;
+  align-items:center;
+  justify-content:flex-start;
+  white-space:nowrap;
+  text-align:start;
+}
+.blog-theme .blog-article-meta .blog-reading-time::before {
+  content:none !important;
+  display:none !important;
+}
+.blog-theme .blog-reading-time>bdi {
+  display:inline-block;
+  direction:inherit;
+  unicode-bidi:isolate;
+  white-space:nowrap;
+}
+@media(max-width:700px) {
+  .blog-theme .blog-article-sidebar {
+    position:static;
+    top:auto;
+  }
+  .blog-theme .blog-article-meta .blog-reading-time {
+    direction:rtl !important;
+  }
 }
