@@ -11,7 +11,7 @@ export default function NotFoundContent() {
     return (
       <>
         <a className="not-found-blog-skip" href="#main">رفتن به محتوای اصلی</a>
-        <main id="main" className="not-found-page not-found-blog" dir="rtl">
+        <main id="main" tabIndex={-1} className="not-found-page not-found-blog" dir="rtl">
         <div className="not-found-topline">
           <a className="not-found-brand" href="/blog/">
             <span className="not-found-mark">آ</span>
