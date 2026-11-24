@@ -188,6 +188,17 @@ function normalizePost(input: Record<string, unknown>) {
   }
   const language = input?.language === "en" ? "en" : "fa";
   const canonical = textValue(input?.canonical_url, 500, "Canonical URL");
+  const adBannerEnabled = input?.ad_banner_enabled === true;
+  const adBannerImageUrl = mediaUrl(input?.ad_banner_image_url) || "";
+  const adBannerAlt = textValue(input?.ad_banner_alt, 240, "متن جایگزین بنر");
+  const adBannerLinkUrl = textValue(input?.ad_banner_link_url, 800, "پیوند بنر");
+  if (adBannerEnabled && !adBannerImageUrl) throw new Error("برای فعال‌کردن بنر، ابتدا تصویرش رو بارگذاری کن.");
+  if (adBannerEnabled && !adBannerAlt) throw new Error("برای فعال‌کردن بنر، متن جایگزین تصویر رو هم وارد کن.");
+  if (adBannerLinkUrl) {
+    let link: URL;
+    try { link = new URL(adBannerLinkUrl); } catch { throw new Error("پیوند بنر معتبر نیست."); }
+    if (link.protocol !== "https:" || link.username || link.password) throw new Error("پیوند بنر باید یک نشانی HTTPS معتبر باشه.");
+  }
   if (canonical) {
     let url: URL;
     try { url = new URL(canonical); } catch { throw new Error("Canonical URL معتبر نیست."); }
@@ -226,6 +237,10 @@ function normalizePost(input: Record<string, unknown>) {
     hero_image_url: mediaUrl(input?.hero_image_url),
     hero_image_alt: textValue(input?.hero_image_alt, 240, "متن جایگزین تصویر"),
     hero_image_caption: textValue(input?.hero_image_caption, 400, "زیرنویس تصویر"),
+    ad_banner_enabled: adBannerEnabled,
+    ad_banner_image_url: adBannerImageUrl,
+    ad_banner_alt: adBannerAlt,
+    ad_banner_link_url: adBannerLinkUrl,
     og_image_url: mediaUrl(input?.og_image_url),
     seo_title: textValue(input?.seo_title, 75, "عنوان SEO"),
     meta_description: textValue(input?.meta_description, 320, "توضیحات متا"),
@@ -412,7 +427,12 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
       slug: current.slug, title: current.title, excerpt: current.excerpt, content: current.content,
       language: current.language, category: current.primary_category || current.category, categories: current.categories || (current.category ? [current.category] : []), primary_category: current.primary_category || current.category, tags: current.tags,
       hero_image_url: current.hero_image_url, hero_image_alt: current.hero_image_alt,
-      hero_image_caption: current.hero_image_caption, og_image_url: current.og_image_url,
+      hero_image_caption: current.hero_image_caption,
+      ad_banner_enabled: current.ad_banner_enabled === true,
+      ad_banner_image_url: current.ad_banner_image_url || "",
+      ad_banner_alt: current.ad_banner_alt || "",
+      ad_banner_link_url: current.ad_banner_link_url || "",
+      og_image_url: current.og_image_url,
       seo_title: current.seo_title, meta_description: current.meta_description,
       focus_keyword: current.focus_keyword, canonical_url: current.canonical_url,
       og_title: current.og_title, og_description: current.og_description,
