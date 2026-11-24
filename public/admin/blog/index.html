@@ -247,6 +247,19 @@
 <p id="article-analytics-status" role="status" aria-live="polite">برای دریافت گزارش، روی «به‌روزرسانی آمار» بزن.</p>
 </div>
 <div id="article-analytics-summary" class="article-analytics-summary"></div>
+<section class="article-analytics-chart-panel" aria-labelledby="article-analytics-chart-title">
+  <div class="panel-heading"><div><span class="kicker">GA4 / PAGE VIEWS</span><h2 id="article-analytics-chart-title">روند بازدید مقاله‌ها</h2><p class="help-text">بازدید صفحه‌های مقاله در ۳۰ روز اخیر</p></div></div>
+  <div id="article-analytics-chart-wrap" class="article-analytics-chart-wrap" hidden>
+    <svg id="article-analytics-chart" viewBox="0 0 900 220" role="img" aria-label="نمودار بازدید روزانۀ مقاله‌ها">
+      <g id="article-analytics-chart-grid" class="article-analytics-chart-grid"></g>
+      <path id="article-analytics-chart-area" class="article-analytics-chart-area"></path>
+      <path id="article-analytics-chart-line" class="article-analytics-chart-line"></path>
+      <g id="article-analytics-chart-points"></g>
+    </svg>
+    <div id="article-analytics-chart-labels" class="article-analytics-chart-labels"></div>
+  </div>
+  <p id="article-analytics-chart-empty" class="article-analytics-chart-empty" role="status">برای نمایش نمودار، آمار رو دریافت کن.</p>
+</section>
 <div id="article-analytics-results" class="article-analytics-list"></div>
 <div id="article-analytics-empty" class="empty-state" hidden>برای این جست‌وجو مقاله‌ای پیدا نشد.</div>
 </section>
