@@ -1,5 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { BlogHeader, BlogFooter } from "./BlogHeader";
+
+export const metadata: Metadata = {
+  title: "صفحه پیدا نشد | وبلاگ آریا کیانزاد",
+  description: "نشانی درخواستی به مقاله‌ای در وبلاگ نمی‌رسه.",
+  robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
+  alternates: { canonical: null },
+};
 
 export default function BlogNotFound() {
   return (
