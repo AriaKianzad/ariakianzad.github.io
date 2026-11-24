@@ -275,6 +275,24 @@ if (!existsSync(heroChunksDir) || !statSync(heroChunksDir).isDirectory()) {
   }
 }
 
+const blogPayloadPath = join(process.cwd(), ".cache", "blog-content.json");
+let blogPayload = null;
+if (existsSync(blogPayloadPath)) {
+  try {
+    blogPayload = JSON.parse(readFileSync(blogPayloadPath, "utf8"));
+    if (!blogPayload || !Array.isArray(blogPayload.posts) || !blogPayload.settings) {
+      problems.push(".cache/blog-content.json: unexpected published blog payload");
+      blogPayload = null;
+    }
+  } catch (error) {
+    problems.push(".cache/blog-content.json: invalid JSON (" + error.message + ")");
+  }
+} else {
+  problems.push(".cache/blog-content.json: published payload is missing from the build");
+}
+const xmlEscape = (value) => String(value).replace(/[&<>"']/g, (character) => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;",
+})[character]);
 const sitemapPath = join(outDir, "sitemap.xml");
 if (existsSync(sitemapPath)) {
   const sitemap = readFileSync(sitemapPath, "utf8");
@@ -282,12 +300,66 @@ if (existsSync(sitemapPath)) {
   if (!sitemap.includes("<urlset") || !sitemap.includes("</urlset>")) {
     problems.push("sitemap.xml: invalid or incomplete urlset");
   }
-  if (bookUrl && !sitemap.includes(bookUrl)) {
+  const locations = new Set([...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]));
+  const hasLocation = (url) => locations.has(xmlEscape(url));
+  if (bookUrl && !hasLocation(bookUrl)) {
     problems.push("sitemap.xml: the Persian book page is missing");
   }
-  const blogUrl = siteOrigin ? siteOrigin + "/blog/" : null;
-  if (blogUrl && !sitemap.includes(blogUrl)) {
-    problems.push("sitemap.xml: the blog archive is missing");
+  if (blogPayload && siteOrigin) {
+    const settings = blogPayload.settings;
+    if (settings.default_robots_index !== false) {
+      const blogUrl = settings.canonical_url || siteOrigin + "/blog/";
+      if (!hasLocation(blogUrl)) problems.push("sitemap.xml: the canonical blog archive is missing");
+    }
+    if (settings.sitemap_include_articles !== false && settings.default_robots_index !== false) {
+      for (const post of blogPayload.posts) {
+        if (!post?.slug || post.robots_index === false) continue;
+        const url = post.canonical_url || siteOrigin + "/blog/" + post.slug + "/";
+        if (!hasLocation(url)) problems.push("sitemap.xml: published article is missing: " + post.slug);
+      }
+    }
+    if (settings.sitemap_include_categories !== false && settings.default_robots_index !== false) {
+      const categoryCounts = new Map();
+      for (const post of blogPayload.posts) {
+        const slugs = Array.isArray(post.categories) && post.categories.length
+          ? post.categories
+          : [post.primary_category || post.category].filter(Boolean);
+        for (const slug of slugs) categoryCounts.set(slug, (categoryCounts.get(slug) || 0) + 1);
+      }
+      const categories = new Map();
+      for (const category of settings.categories || []) {
+        if (category?.slug) categories.set(category.slug, category);
+      }
+      for (const slug of categoryCounts.keys()) {
+        if (!categories.has(slug)) categories.set(slug, { slug });
+      }
+      for (const [slug] of categories) {
+        const count = categoryCounts.get(slug) || 0;
+        const seo = settings.category_seo?.[slug] || {};
+        if (seo.robots_index === false || (settings.noindex_empty_categories !== false && count === 0)) continue;
+        const url = seo.canonical_url || siteOrigin + "/blog/category/" + encodeURIComponent(slug) + "/";
+        if (!hasLocation(url)) problems.push("sitemap.xml: indexable category is missing: " + slug);
+      }
+    }
+  }
+}
+const rssPath = join(outDir, "blog", "feed.xml");
+if (!existsSync(rssPath)) {
+  problems.push("blog/feed.xml: RSS feed is missing from the export");
+} else if (blogPayload && blogPayload.settings.enable_rss !== false) {
+  const rss = readFileSync(rssPath, "utf8");
+  if (!rss.includes("<rss") || !rss.includes("</rss>")) {
+    problems.push("blog/feed.xml: RSS document is incomplete");
+  }
+  for (const post of blogPayload.posts) {
+    if (!post?.slug) continue;
+    const url = post.canonical_url || (siteOrigin || "https://ariakianzad.github.io") + "/blog/" + post.slug + "/";
+    if (!rss.includes("<link>" + xmlEscape(url) + "</link>")) {
+      problems.push("blog/feed.xml: published article link is missing: " + post.slug);
+    }
+    if (!rss.includes("<title>" + xmlEscape(post.title || "") + "</title>")) {
+      problems.push("blog/feed.xml: published article title is missing: " + post.slug);
+    }
   }
 }
 
