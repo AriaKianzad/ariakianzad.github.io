@@ -1,40 +1,45 @@
-# Mian-e-Ma analytics backend
+# Website, blog CMS and analytics backend
 
-The private dashboard frontend is hosted at https://ariakianzad.github.io/admin/. Its HTML, CSS, JavaScript and public client configuration are visible to everyone. Supabase is responsible for authentication, authorization and access to analytics data.
+The public site is hosted at https://ariakianzad.github.io/. The analytics dashboard is at /admin/ and the editorial CMS is at /admin/blog/. All frontends, HTML, CSS, JavaScript and publishable client configuration are public static files. Supabase enforces authentication, CMS operations, publication access, contact-form rate limiting and analytics data access.
 
 ## Project
 
 - Supabase project: mian-e-ma-analytics
 - Project ref: bkohdqwecnvbmeaiuyyx
 - Region: eu-central-1
-- Edge Functions: download-stats, site-analytics
-- Database schema: public plus a private schema for the scheduled snapshot function
+- Edge Functions: download-stats, site-analytics, blog-admin, blog-contact
+- Database schemas: public and private; the private schema contains snapshot, published-payload and contact-rate-limit helpers
+- Storage bucket: blog-media (public read, authenticated CMS upload)
 
-The source for both deployed Edge Functions is tracked in this repository:
+All four Edge Function sources are tracked in this repository:
 
 - supabase/functions/download-stats/index.ts
 - supabase/functions/site-analytics/index.ts
+- supabase/functions/blog-admin/index.ts
+- supabase/functions/blog-contact/index.ts
+- integrations/google-apps-script/blog-contact.gs (Gmail relay)
 
 The repository source is the version-controlled reference for deployments. Edge Function deployments are independent from the GitHub Pages site deployment: publishing the website does not update Supabase functions. After a function deployment, verify its active version and deployed source against the corresponding file and deno.json in this repository; do not assume the GitHub Pages workflow updates Supabase.
 
 ## Security and authorization model
 
-1. The browser signs in through Supabase Auth using the public publishable key in public/admin/config.js.
-2. The browser sends its Supabase access token to the Edge Function.
-3. Each function verifies the token with Supabase Auth using auth.getUser(token); it does not trust an unverified JWT payload.
-4. The user must have a confirmed email and an active matching lowercase email in public.dashboard_admins.
-5. Only after these checks does the function use server-side Supabase credentials to read/write dashboard data or request Google reports.
-6. Both public.dashboard_admins and public.download_snapshots have RLS enabled. Browser roles anon and authenticated have no table privileges; the functions access the tables with server-side credentials.
+1. The browser signs in through Supabase Auth using the publishable key in public/admin/config.js.
+2. The browser sends its access token to the protected functions: download-stats, site-analytics and blog-admin.
+3. Each protected function verifies the token with Auth using auth.getUser(token), requires a confirmed email and checks the active lowercase email against public.dashboard_admins.
+4. Only after authorization do the protected functions use server-side Supabase credentials to read/write private records, upload media or request Google reports.
+5. The public blog frontend never queries blog_posts or blog_settings directly. Its build calls get_public_blog_payload, which returns published snapshots and approved settings only.
+6. anon and authenticated have no direct table privileges on dashboard_admins, download_snapshots, blog_posts or blog_settings. The blog-media Storage bucket is public-read for rendering published images, but uploads are handled by the authenticated blog-admin function.
+7. blog-contact is intentionally public: it checks the expected Origin, accepts POST JSON only, caps the request body at 12 KB, validates the fields, ignores a filled honeypot and permits at most three submissions per client-IP fingerprint per hour. It does not store raw IP addresses. Email is forwarded using a server-only token to a Google Apps Script relay.
 
 Each function's deno.json pins the direct @supabase/supabase-js dependency to an exact version and maps the package to its source import. The current pin is 2.119.2. There is not yet a committed deno.lock, so transitive Deno dependency resolution is not completely frozen; generate and commit per-function lockfiles before treating builds as fully reproducible.
 
-The two functions have verify_jwt = false in supabase/config.toml because they implement their own explicit access-token validation and allowlist check. Each handler calls auth.getUser(token), requires a confirmed email and checks the active allowlist. This is intentional. Do not remove the checks in the function handlers or change verify_jwt without reviewing the complete authentication flow.
+The three protected functions have verify_jwt = false in supabase/config.toml because they implement their own explicit access-token validation and allowlist check. Each protected handler calls auth.getUser(token), requires a confirmed email and checks the active allowlist. This is intentional. blog-contact is the public exception and does not require a user login; it uses its own input validation, origin check, rate limiter and server-only relay token. Do not remove the protected handlers' checks or change verify_jwt without reviewing the complete authentication flow.
 
 The client configuration contains only the Supabase project URL and an sb_publishable_ key. Publishable keys are intended for browser use. Never put a Supabase secret key, legacy service-role key, GitHub token or Google private key in public/admin/config.js, any other browser asset or Git history.
 
 ## Leaked-password protection and Free-plan fallback
 
-The current Supabase organization is on the **Free** plan. Supabase's hosted leaked-password protection (the Have I Been Pwned Pwned Passwords check) is available on **Pro and above**. It cannot be enabled through SQL migrations or a client-side check. No plan upgrade or billing change has been made.
+The live Supabase Security Advisor reported `auth_leaked_password_protection` as disabled on **2026-11-24**. Confirm the current plan's feature availability in the dashboard and enable the hosted breached-password check when available. This setting cannot be enabled through SQL migrations or a client-side check. No plan upgrade or billing change has been made.
 
 For the current Free plan, use the available password-strength controls in **Authentication → Sign In / Providers → Email**:
 
@@ -54,6 +59,28 @@ These are fallback controls; they do **not** provide the breached-password datab
 5. Open https://ariakianzad.github.io/admin/ and sign in.
 
 The dashboard's **«مرا به خاطر بسپار»** option is off by default. Only when a user explicitly enables it does the browser store the rotating Supabase refresh token in localStorage; the password and access token are not stored there. Same-origin JavaScript can nevertheless read local storage, so leave it disabled and use **خروج** on shared or public devices. Logout also requests local-session revocation from Supabase.
+
+## Blog CMS and public contact form
+
+The CMS uses public.blog_posts and public.blog_settings. Both tables have RLS enabled and direct privileges revoked from anon and authenticated. Drafts and the current working copy remain private. Publishing writes an immutable published_snapshot; the public build reads that snapshot through get_public_blog_payload. The public RPC returns only published posts and approved settings. It does not expose draft content or direct table access. The fetched payload is written to the ignored .cache/blog-content.json build cache and rendered into static article, category, RSS and sitemap outputs.
+
+The blog-media Storage bucket is public-read because published article pages need to render images. Uploads are handled only by the authenticated blog-admin function. The function caps uploads at 3 MB, validates the declared MIME type against the file signature and uses a random storage path. The bucket permits WebP, JPEG, PNG and GIF.
+
+The public blog-contact endpoint is unauthenticated by design. It checks the expected site Origin, accepts only POST JSON, caps the body at 12 KB, validates fields, ignores a filled honeypot and rate-limits to three accepted attempts per client-IP fingerprint per hour. The current source trusts only the Cloudflare `cf-connecting-ip` header and deliberately does not fall back to `x-real-ip` or `x-forwarded-for`. It stores an HMAC-SHA-256 fingerprint rather than the raw IP. If the Cloudflare header is absent or malformed, the request shares an `unknown` fingerprint bucket; check the deployed ingress header behaviour if this causes false rate limits.
+
+The function forwards messages to integrations/google-apps-script/blog-contact.gs using GOOGLE_APPS_SCRIPT_URL and GOOGLE_APPS_SCRIPT_TOKEN. The Apps Script stores its matching BLOG_CONTACT_TOKEN and destination BLOG_CONTACT_TO_EMAIL in Script Properties. The token is never sent to the browser. The script uses a lock and a short duplicate-submission cache and checks Google's daily email quota.
+
+### Contact rate-limit table: live security finding
+
+The live Security Advisor reported RLS disabled on `private.blog_contact_rate_limits` as a critical finding on 2026-11-24. Direct privilege inspection on the same date found that anon and authenticated have no SELECT or INSERT table grants; the SECURITY DEFINER rate-limit helper is owned by postgres and has a fixed `search_path = pg_catalog, private`. This means the current table is not directly queryable through the client roles based on the grants inspected, but RLS is still a worthwhile defense-in-depth control.
+
+The safe hardening candidate is:
+
+    ALTER TABLE private.blog_contact_rate_limits ENABLE ROW LEVEL SECURITY;
+
+This SQL has **not** been applied. Do not add public client policies. Review the function owner, function grants and behaviour first; the SECURITY DEFINER function should continue to run as postgres, which bypasses RLS unless FORCE ROW LEVEL SECURITY is enabled. Do not enable FORCE RLS without re-testing the function.
+
+The Advisor also reports `rls_enabled_no_policy` informational notices for public.dashboard_admins and public.download_snapshots. Those are intentional: RLS is enabled and browser roles have no direct table privileges. Do not add broad policies merely to clear these notices.
 
 ## Data and scheduled download snapshots
 
@@ -116,5 +143,11 @@ To deploy a changed Edge Function with the Supabase CLI:
     supabase link --project-ref bkohdqwecnvbmeaiuyyx
     supabase functions deploy download-stats
     supabase functions deploy site-analytics
+    supabase functions deploy blog-admin
+    supabase functions deploy blog-contact
 
-The CLI reads verify_jwt = false from supabase/config.toml. Function deployment replaces the live function version. Review the full source, exact dependency pin and authentication checks first, then verify the deployed function version after deployment. Database migrations are a separate operation. The GitHub Pages workflow does not deploy Supabase Edge Functions or modify production database migrations.
+The CLI reads the verify_jwt settings from supabase/config.toml. Function deployment replaces the live function version. Review the full source, dependency pin and authentication boundary first, then verify the deployed source and function version. Database migrations are a separate operation. The GitHub Pages workflow does not deploy Supabase Edge Functions or modify production database migrations.
+
+### Migration history reconciliation
+
+The production migration list was checked on 2026-11-24. Several applied migration versions differ from the timestamp prefixes of their corresponding files currently checked into supabase/migrations/. Do not run `supabase db push` or assume the local migration set is a direct one-to-one match until the history is reconciled with `supabase migration list`. Do not rename or edit already-applied production migrations. Record the matching applied versions and use a new migration version for future changes.
