@@ -23,7 +23,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!post) return { title: "مقاله پیدا نشد | آریا کیانزاد", robots: { index: false, follow: false } };
   const settings = getBlogSettings();
   const canonical = post.canonical_url || site.url + "/blog/" + post.slug + "/";
-  const image = post.og_image_url || site.url + "/og/blog/" + post.slug + ".jpg";
+  // The build normalizes an uploaded OG image or hero image to this 1200×630 JPEG.
+  const image = site.url + "/og/blog/" + post.slug + ".jpg";
   const description = post.meta_description || post.excerpt || settings.default_meta_description;
   const robotsIndex = post.robots_index !== false && settings.default_robots_index !== false;
   const robotsFollow = post.robots_follow !== false && settings.default_robots_follow !== false;
