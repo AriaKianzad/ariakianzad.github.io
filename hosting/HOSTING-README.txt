@@ -2,8 +2,9 @@ HOSTING BUNDLE - ariakianzad.ir
 ===============================
 
 This archive contains the complete production build of my personal website
-at https://ariakianzad.ir, including the standalone Persian book page for
-«میانِ ما» and an Apache configuration for shared cPanel hosting. It is
+at https://ariakianzad.ir, including the Persian blog and public contact page,
+the two admin frontends, the standalone book page for «میانِ ما» and an
+Apache configuration for shared cPanel hosting. It is
 self-contained: no Node.js, build step or PHP execution is required on the server.
 
 WHAT PHP DOES HERE: nothing. The site is completely static. PHP 8.5 can
@@ -13,7 +14,9 @@ are needed for this site to work.
 
 PACKAGE CONTENTS
 ----------------
-index.html              the personal homepage (single page)
+index.html              the personal homepage
+blog/                   Persian archive, categories, articles, RSS and contact page
+admin/                  static download/site dashboard and blog CMS frontends
 Mian-e-Ma/              standalone Persian book landing page
                         with its own HTML, CSS, cover artwork, line art,
                         Estedad font and direct PDF download
@@ -31,8 +34,9 @@ _next/static/           hashed CSS and font assets (keep the folder names)
 _hero/                  hero ESM entrypoint plus hashed Three.js chunk
 boot.js, ui.js          site scripts (progressive enhancement)
 icon.png, apple-icon.png, og/og.png     favicon icons and social image
-robots.txt, sitemap.xml, llms.txt       SEO files; sitemap includes both
-                        the homepage and the Persian book page
+robots.txt, sitemap.xml, llms.txt       SEO files; sitemap includes
+                        homepage, book, blog archive, contact, categories
+                        and published articles
 licenses/               open-source font licenses (SIL OFL 1.1:
                         OFL-Estedad.txt, OFL-GeistMono.txt)
 HOSTING-README.txt      this file
@@ -109,12 +113,12 @@ DEPLOYMENT THROUGH cPANEL FILE MANAGER
    - Homepage: https://ariakianzad.ir/ shows the large hero heading.
    - Navigation: Disciplines / Approach / Rexo / About scroll to sections.
      In a phone-sized window a Menu button appears and opens a fullscreen
-     list (Escape or a link tap closes it).
+     list (Escape, a link tap or clicking outside the nav closes it).
    - Font: headings and body use the Estedad variable font. In the
      browser's Network tab, filter by "Font" - the Estedad woff2 must load
      with status 200 (or simply compare with the design: the display
      typeface is a quiet, wide grotesque).
-   - Social links: YouTube, Instagram, LinkedIn, X, Unsplash, and Medium
+   - Social links: YouTube, Instagram, LinkedIn, X, Unsplash, and Telegram
      icons open the correct profiles; the Rexo section links to
      https://rexo.agency/.
    - Email: the "COPY ADDRESS" button copies kianzadaria@gmail.com and
@@ -123,7 +127,7 @@ DEPLOYMENT THROUGH cPANEL FILE MANAGER
    - Error page: visit /does-not-exist - the styled 404 page must appear.
    - SEO files: /robots.txt, /sitemap.xml, and /llms.txt respond with
      content (status 200).
-   - Security headers: run `curl -I https://ariakianzad.ir/` (any
+   - Security headers on Apache: run `curl -I https://ariakianzad.ir/` (any
      terminal) or check the site on securityheaders.com. Expect:
      Content-Security-Policy, X-Content-Type-Options: nosniff,
      X-Frame-Options: DENY, Referrer-Policy:
