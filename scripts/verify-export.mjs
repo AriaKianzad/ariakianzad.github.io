@@ -157,6 +157,25 @@ for (const file of files) {
   const html = readFileSync(file, "utf8");
   const rel = file.slice(outDir.length + 1);
 
+  // Inline style attributes fall back to style-src and are blocked by the
+  // production CSP. Use hashable <style> blocks or external CSS instead.
+  for (const tag of html.matchAll(/<[a-z][^<>]*>/gi)) {
+    if (/\sstyle\s*=/i.test(tag[0])) {
+      problems.push(rel + ": inline style attribute is blocked by style-src; use a hashed <style> block or external stylesheet");
+    }
+  }
+
+  const blogThemeTag = html.match(/<div\b[^>]*class="[^"]*\bblog-theme\b[^"]*"[^>]*>/i)?.[0] || "";
+  if (blogThemeTag && !/\blang="(?:fa|en)"/i.test(blogThemeTag)) {
+    problems.push(rel + ": blog theme wrapper must declare the content language");
+  }
+
+  if (rel === "404.html" || rel === "404/index.html") {
+    if (!/name="robots"[^>]*content="[^"]*noindex/i.test(html)) {
+      problems.push(rel + ": not-found output must include noindex robots metadata");
+    }
+  }
+
   if (rel === "Mian-e-Ma/index.html") {
     const policies = [...html.matchAll(/<meta\b(?=[^>]*\bhttp-equiv=["']Content-Security-Policy["'])[^>]*>/gi)];
     if (policies.length !== 1) {
