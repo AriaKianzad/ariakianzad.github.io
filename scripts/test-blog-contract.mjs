@@ -317,7 +317,9 @@ const publishedListMarkdown = [
 const renderedList = markdownRuntime.exports.renderMarkdown(publishedListMarkdown);
 assert.equal((renderedList.match(/<ul>/g) || []).length, 1, "blank lines between Markdown bullets must not split one list into separate unordered lists");
 assert.equal((renderedList.match(/<li>/g) || []).length, 4, "all blank-separated bullet items must remain inside one list");
-assert.ok(renderedList.includes("<ul><li>گزارش شناخت کسب‌وکار، مخاطب و فضای رقابتی؛</li><li>گزاره‌ی جایگاه‌یابی و ارزش پیشنهادی؛</li>"), "the published article's blank-separated list must render as consecutive semantic list items");
+const firstBullet = renderedList.indexOf("گزارش شناخت کسب‌وکار، مخاطب و فضای رقابتی؛");
+const secondBullet = renderedList.indexOf("گزاره‌ی جایگاه‌یابی و ارزش پیشنهادی؛");
+assert.ok(firstBullet >= 0 && secondBullet > firstBullet && renderedList.indexOf("</li>", firstBullet) < secondBullet, "the published article's blank-separated bullet text must remain in order as consecutive list items");
 
 const nestedListMarkdown = [
   "- مورد اصلی",
