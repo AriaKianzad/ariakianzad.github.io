@@ -196,6 +196,59 @@
     if(detail){const note=document.createElement("small");note.textContent=detail;item.appendChild(note);}
     return item;
   }
+  function renderArticleAnalyticsChart(history) {
+    const wrap=$("#article-analytics-chart-wrap");
+    const empty=$("#article-analytics-chart-empty");
+    const grid=$("#article-analytics-chart-grid");
+    const area=$("#article-analytics-chart-area");
+    const line=$("#article-analytics-chart-line");
+    const points=$("#article-analytics-chart-points");
+    const labels=$("#article-analytics-chart-labels");
+    if(!wrap||!empty||!grid||!area||!line||!points||!labels)return;
+    const rows=(Array.isArray(history)?history:[])
+      .filter((item)=>/^\d{4}-\d{2}-\d{2}$/.test(String(item.date||"")))
+      .map((item)=>({date:String(item.date),pageViews:Math.max(0,Number(item.pageViews)||0)}))
+      .sort((a,b)=>a.date.localeCompare(b.date));
+    grid.replaceChildren();points.replaceChildren();labels.replaceChildren();
+    if(!rows.length){
+      wrap.hidden=true;empty.hidden=false;
+      empty.textContent="در این بازه هنوز دادهٔ روزانه‌ای برای نمایش نمودار برنگشته."; 
+      area.setAttribute("d","");line.setAttribute("d","");
+      return;
+    }
+    wrap.hidden=false;empty.hidden=true;
+    const width=900,height=220,left=12,right=12,top=16,bottom=28;
+    const plotWidth=width-left-right,plotHeight=height-top-bottom;
+    const maxValue=Math.max(1,...rows.map((r)=>r.pageViews));
+    const xAt=(i)=>rows.length===1?left+plotWidth/2:left+i*plotWidth/(rows.length-1);
+    const yAt=(value)=>top+plotHeight-(value/maxValue)*plotHeight;
+    [0,.5,1].forEach((fraction)=>{
+      const y=top+plotHeight*fraction;
+      const rule=document.createElementNS("http://www.w3.org/2000/svg","line");
+      rule.setAttribute("x1",String(left));rule.setAttribute("x2",String(width-right));
+      rule.setAttribute("y1",String(y));rule.setAttribute("y2",String(y));
+      grid.appendChild(rule);
+    });
+    const linePath=rows.map((r,i)=>(i?"L":"M")+xAt(i).toFixed(2)+" "+yAt(r.pageViews).toFixed(2)).join(" ");
+    const baseline=top+plotHeight;
+    const areaPath=linePath+" L "+xAt(rows.length-1).toFixed(2)+" "+baseline+" L "+xAt(0).toFixed(2)+" "+baseline+" Z";
+    line.setAttribute("d",linePath);area.setAttribute("d",areaPath);
+    rows.forEach((r,i)=>{
+      const point=document.createElementNS("http://www.w3.org/2000/svg","circle");
+      point.setAttribute("cx",String(xAt(i)));point.setAttribute("cy",String(yAt(r.pageViews)));point.setAttribute("r",rows.length>20?"3":"4.5");
+      point.setAttribute("class","article-analytics-chart-point");
+      point.setAttribute("aria-label",r.date+": "+formatMetric(r.pageViews));
+      points.appendChild(point);
+    });
+    const labelIndexes=[...new Set([0,Math.floor((rows.length-1)/2),rows.length-1])];
+    labelIndexes.forEach((index)=>{
+      const span=document.createElement("span");
+      const date=new Date(rows[index].date+"T12:00:00Z");
+      span.textContent=Number.isNaN(date.getTime())?rows[index].date:
+        new Intl.DateTimeFormat("fa-IR-u-ca-persian",{day:"numeric",month:"short",timeZone:"Asia/Tehran"}).format(date);
+      labels.appendChild(span);
+    });
+  }
   function renderArticleAnalytics() {
     const data=state.articleAnalytics;
     const list=$("#article-analytics-results");
@@ -203,7 +256,9 @@
     if(!list||!summary)return;
     list.replaceChildren();summary.replaceChildren();
     if(!data||!Array.isArray(data.articles)){
-      $("#article-analytics-empty").hidden=true;
+      $("#article-analytics-empty").hidden=false;
+      $("#article-analytics-empty").textContent=data?.message||"ساختار گزارش از سرور دریافت نشد.";
+      renderArticleAnalyticsChart([]);
       return;
     }
     const articles=data.articles;
@@ -225,11 +280,17 @@
     const states=[];
     states.push(ga4Ok?"GA4 متصل":"GA4: "+(data.ga4?.message||"گزارش در دسترس نیست"));
     states.push(gscOk?"Search Console متصل":(data.searchConsole?.message||"Search Console داده‌ای برنگردوند."));
-    note.textContent=reportPeriod+" · "+states.join(" · ")+" · آخرین دریافت: "+
+    if(data.historyStatus==="error")states.push("نمودار: "+(data.historyMessage||"در دسترس نیست"));
+    else if(data.historyStatus==="no_data")states.push("برای نمودار داده‌ای نیست");
+    note.textContent=(data.message?data.message+" · ":"")+reportPeriod+" · "+states.join(" · ")+" · آخرین دریافت: "+
       new Intl.DateTimeFormat("fa-IR-u-ca-persian",{dateStyle:"short",timeStyle:"short",timeZone:"Asia/Tehran"}).format(new Date(data.generatedAt||Date.now()));
+    renderArticleAnalyticsChart(data.history);
     const needle=($("#article-analytics-search")?.value||"").trim().toLocaleLowerCase();
     const filtered=articles.filter((article)=>!needle||[article.title,article.slug].join(" ").toLocaleLowerCase().includes(needle));
     $("#article-analytics-empty").hidden=filtered.length>0;
+    if(!filtered.length){
+      $("#article-analytics-empty").textContent=needle?"برای این جست‌وجو مقاله‌ای پیدا نشد.":(data.message||"در این بازه مقاله‌ای برای نمایش وجود نداره.");
+    }
     filtered.forEach((article)=>{
       const card=document.createElement("article");card.className="article-analytics-card";
       const heading=document.createElement("div");heading.className="article-analytics-heading";
