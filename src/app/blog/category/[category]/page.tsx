@@ -56,7 +56,7 @@ export default async function BlogCategoryPage({ params }: { params: Promise<{ c
     return (
       <>
         <BlogHeader />
-        <main id="main" className="blog-main" dir="rtl">
+        <main id="main" tabIndex={-1} className="blog-main" dir="rtl">
           <section className="blog-container blog-category-heading">
             <h1>هنوز دسته‌بندی‌ای برای نمایش وجود نداره.</h1>
             <p>بعد از انتشار اولین مقاله، دسته‌بندی‌ها اینجا نمایش داده می‌شن.</p>
@@ -73,7 +73,7 @@ export default async function BlogCategoryPage({ params }: { params: Promise<{ c
   return (
     <>
       <BlogHeader />
-      <main id="main" className="blog-main" dir="rtl">
+      <main id="main" tabIndex={-1} className="blog-main" dir="rtl">
         <section className="blog-container blog-category-heading">
           {settings.breadcrumbs_enabled ? <nav className="blog-breadcrumbs blog-category-breadcrumbs" aria-label="مسیر راهنما"><Link href="/blog/">{settings.breadcrumb_home_label || "خانه"}</Link><span aria-hidden="true">/</span><span>{item.name}</span></nav> : null}
           <h1>{item.name}</h1>
