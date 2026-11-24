@@ -188,17 +188,6 @@ function normalizePost(input: Record<string, unknown>) {
   }
   const language = input?.language === "en" ? "en" : "fa";
   const canonical = textValue(input?.canonical_url, 500, "Canonical URL");
-  const adBannerEnabled = input?.ad_banner_enabled === true;
-  const adBannerImageUrl = mediaUrl(input?.ad_banner_image_url) || "";
-  const adBannerAlt = textValue(input?.ad_banner_alt, 240, "متن جایگزین بنر");
-  const adBannerLinkUrl = textValue(input?.ad_banner_link_url, 800, "پیوند بنر");
-  if (adBannerEnabled && !adBannerImageUrl) throw new Error("برای فعال‌کردن بنر، ابتدا تصویرش رو بارگذاری کن.");
-  if (adBannerEnabled && !adBannerAlt) throw new Error("برای فعال‌کردن بنر، متن جایگزین تصویر رو هم وارد کن.");
-  if (adBannerLinkUrl) {
-    let link: URL;
-    try { link = new URL(adBannerLinkUrl); } catch { throw new Error("پیوند بنر معتبر نیست."); }
-    if (link.protocol !== "https:" || link.username || link.password) throw new Error("پیوند بنر باید یک نشانی HTTPS معتبر باشه.");
-  }
   if (canonical) {
     let url: URL;
     try { url = new URL(canonical); } catch { throw new Error("Canonical URL معتبر نیست."); }
@@ -237,10 +226,6 @@ function normalizePost(input: Record<string, unknown>) {
     hero_image_url: mediaUrl(input?.hero_image_url),
     hero_image_alt: textValue(input?.hero_image_alt, 240, "متن جایگزین تصویر"),
     hero_image_caption: textValue(input?.hero_image_caption, 400, "زیرنویس تصویر"),
-    ad_banner_enabled: adBannerEnabled,
-    ad_banner_image_url: adBannerImageUrl,
-    ad_banner_alt: adBannerAlt,
-    ad_banner_link_url: adBannerLinkUrl,
     og_image_url: mediaUrl(input?.og_image_url),
     seo_title: textValue(input?.seo_title, 75, "عنوان SEO"),
     meta_description: textValue(input?.meta_description, 320, "توضیحات متا"),
@@ -302,6 +287,10 @@ function hasMagicBytes(bytes: Uint8Array, mime: string): boolean {
       String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" &&
       String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
   }
+  if (mime === "image/gif") {
+    const signature = String.fromCharCode(...bytes.slice(0, 6));
+    return bytes.length >= 13 && (signature === "GIF87a" || signature === "GIF89a");
+  }
   if (mime === "image/jpeg") {
     return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
   }
@@ -318,12 +307,12 @@ async function uploadImage(request: Request, client: SupabaseClient) {
   if (!(file instanceof File)) throw new Error("فایلی برای بارگذاری انتخاب نشده.");
   if (file.size <= 0 || file.size > MAX_IMAGE_BYTES) throw new Error("حجم تصویر باید کمتر از ۳ مگابایت باشه.");
   const mime = file.type.toLowerCase();
-  if (!["image/webp", "image/jpeg", "image/png"].includes(mime)) {
-    throw new Error("فرمت تصویر پشتیبانی نمی‌شه. WebP پیشنهاد می‌شه.");
+  if (!["image/webp", "image/jpeg", "image/png", "image/gif"].includes(mime)) {
+    throw new Error("فرمت تصویر پشتیبانی نمی‌شه. WebP یا GIF مجازه.");
   }
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (!hasMagicBytes(bytes, mime)) throw new Error("محتوای فایل با فرمت اعلام‌شده مطابقت نداره.");
-  const extension = mime === "image/webp" ? "webp" : mime === "image/png" ? "png" : "jpg";
+  const extension = mime === "image/gif" ? "gif" : mime === "image/webp" ? "webp" : mime === "image/png" ? "png" : "jpg";
   const path = "uploads/" + crypto.randomUUID() + "." + extension;
   const { error } = await client.storage.from(BLOG_BUCKET).upload(path, bytes, {
     contentType: mime,
@@ -428,10 +417,6 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
       language: current.language, category: current.primary_category || current.category, categories: current.categories || (current.category ? [current.category] : []), primary_category: current.primary_category || current.category, tags: current.tags,
       hero_image_url: current.hero_image_url, hero_image_alt: current.hero_image_alt,
       hero_image_caption: current.hero_image_caption,
-      ad_banner_enabled: current.ad_banner_enabled === true,
-      ad_banner_image_url: current.ad_banner_image_url || "",
-      ad_banner_alt: current.ad_banner_alt || "",
-      ad_banner_link_url: current.ad_banner_link_url || "",
       og_image_url: current.og_image_url,
       seo_title: current.seo_title, meta_description: current.meta_description,
       focus_keyword: current.focus_keyword, canonical_url: current.canonical_url,
@@ -472,6 +457,41 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
     const { error } = await client.from("blog_posts").delete().eq("id", id);
     if (error) throw new Error("حذف مقاله ناموفق بود.");
     return { deleted: true };
+  }
+
+  if (action === "save_ad_banners") {
+    const input = Array.isArray(body.banners) ? body.banners : [];
+    if (input.length < 2 || input.length > 8) throw new Error("حداقل دو و حداکثر هشت جایگاه تبلیغاتی می‌تونی داشته باشی.");
+    const allowedRel = ["follow", "nofollow", "sponsored", "ugc", "nofollow sponsored", "nofollow ugc", "nofollow sponsored ugc"];
+    const seen = new Set<string>();
+    const banners = input.map((entry: unknown, index: number) => {
+      const item = asRecord(entry);
+      const id = textValue(item.id, 80, "شناسه جایگاه", true);
+      if (!/^[a-zA-Z0-9_-]+$/.test(id) || seen.has(id)) throw new Error("شناسه جایگاه تبلیغاتی معتبر یا یکتا نیست.");
+      seen.add(id);
+      const enabled = item.enabled === true;
+      const imageUrl = mediaUrl(item.image_url) || "";
+      const alt = textValue(item.alt, 240, "متن جایگزین بنر");
+      const label = textValue(item.label, 48, "نوع بنر");
+      const linkUrl = textValue(item.link_url, 800, "پیوند مقصد بنر");
+      const linkRelValue = typeof item.link_rel === "string" ? item.link_rel : "follow";
+      const linkRel = allowedRel.includes(linkRelValue) ? linkRelValue : "follow";
+      if (enabled && !imageUrl) throw new Error("برای فعال‌کردن جایگاه " + (index + 1) + "، ابتدا تصویرش رو بارگذاری کن.");
+      if (enabled && !alt) throw new Error("برای فعال‌کردن جایگاه " + (index + 1) + "، متن جایگزین تصویر رو هم وارد کن.");
+      if (linkUrl) {
+        let link: URL;
+        try { link = new URL(linkUrl); } catch { throw new Error("پیوند مقصد یکی از بنرها معتبر نیست."); }
+        if (link.protocol !== "https:" || link.username || link.password) throw new Error("پیوند بنر باید یک نشانی HTTPS معتبر باشه.");
+      }
+      if (linkUrl && !imageUrl) throw new Error("برای تنظیم پیوند مقصد، ابتدا تصویر بنر رو انتخاب کن.");
+      return { id, enabled, label, image_url: imageUrl, alt, link_url: linkUrl, link_rel: linkRel };
+    });
+    const { data, error } = await client.from("blog_settings")
+      .update({ ad_banners: banners, updated_at: new Date().toISOString() })
+      .eq("id", 1).select("*").single();
+    if (error || !data) throw new Error("ذخیرۀ تنظیمات بنرهای تبلیغاتی ناموفق بود.");
+    await dispatchAfterWrite("save_ad_banners");
+    return { settings: data, buildDispatched: true };
   }
 
   if (action === "save_settings") {

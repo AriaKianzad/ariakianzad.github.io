@@ -1253,7 +1253,7 @@ body:has(.blog-theme) > main#main { display:contents; }
     width:100%;
     padding:clamp(16px,4.5vw,24px);
     border-radius:16px;
-    background:linear-gradient(180deg,rgba(19,31,29,.04) 0%,rgba(19,31,29,.16) 36%,rgba(19,31,29,.76) 100%);
+    background:linear-gradient(180deg,rgba(19,31,29,.04) 0%,rgba(19,31,29,.16) 36%,rgba(19,31,29,.52) 100%);
     pointer-events:none;
   }
   .blog-theme .blog-article-copy h1 {
@@ -1271,10 +1271,10 @@ body:has(.blog-theme) > main#main { display:contents; }
   .blog-theme .blog-article-title-highlight {
     padding:.045em .16em .09em;
     color:#173b37;
-    background:rgba(248,244,232,.97);
+    background:rgba(248,244,232,.82);
     -webkit-box-decoration-break:clone;
     box-decoration-break:clone;
-    box-shadow:.13em 0 0 rgba(248,244,232,.97),-.13em 0 0 rgba(248,244,232,.97);
+    box-shadow:.13em 0 0 rgba(248,244,232,.82),-.13em 0 0 rgba(248,244,232,.82);
   }
   .blog-theme .blog-article-excerpt {display:none}
   .blog-theme .blog-hero-image,
@@ -1302,7 +1302,7 @@ body:has(.blog-theme) > main#main { display:contents; }
     object-fit:cover;
     object-position:center;
     border-radius:16px;
-    filter:brightness(.72) saturate(.84);
+    filter:brightness(.83) saturate(.9);
     box-shadow:0 10px 24px rgba(29,52,50,.16);
   }
   .blog-theme .blog-hero-image figcaption {display:none}
@@ -1408,4 +1408,163 @@ body:has(.blog-theme) > main#main { display:contents; }
   }
   .blog-article-sidebar {display:none}
   .blog-prose {grid-column:auto;grid-row:auto}
+}
+
+
+/* Desktop article metadata is explicitly RTL for Persian, independent of the
+   LTR grid direction used to place the copy and featured image. */
+@media(min-width:701px) {
+  .blog-theme .blog-article-meta {
+    display:flex !important;
+    grid-area:meta;
+    direction:inherit;
+    align-items:center;
+    justify-content:flex-start;
+    flex-direction:row;
+    flex-wrap:wrap;
+    width:100%;
+    min-width:0;
+    margin:8px 0 0;
+    padding:0;
+    gap:8px 14px;
+    text-align:start;
+    font-size:12px;
+    line-height:1.9;
+    color:var(--blog-muted);
+  }
+  .blog-theme .blog-article-meta>* {
+    direction:inherit;
+    unicode-bidi:isolate;
+    white-space:nowrap;
+  }
+  .blog-theme .blog-article-meta time,
+  .blog-theme .blog-article-meta .blog-reading-time {
+    display:inline-flex;
+    align-items:center;
+    min-height:29px;
+    padding:3px 10px;
+    border:1px solid var(--blog-line);
+    border-radius:999px;
+    background:var(--blog-surface);
+    font-variant-numeric:tabular-nums;
+  }
+  .blog-theme .blog-article-meta>span:first-child {
+    font-weight:700;
+    color:var(--blog-ink);
+  }
+}
+
+/* Global advertising placements. Each artwork keeps a strict 1:1 canvas;
+   the optional label lives outside the artwork and never obscures it. */
+.blog-article-sidebar .blog-ad-card {
+  display:grid;
+  gap:7px;
+  width:100%;
+  min-width:0;
+}
+.blog-ad-label {
+  justify-self:start;
+  max-width:100%;
+  padding:2px 9px;
+  border:1px solid var(--blog-line);
+  border-radius:999px;
+  background:var(--blog-surface);
+  color:var(--blog-muted);
+  font-size:10px;
+  line-height:1.7;
+  overflow-wrap:anywhere;
+}
+.blog-ad-slot {
+  width:100%;
+  aspect-ratio:1 / 1;
+  min-width:0;
+  overflow:hidden;
+  border:1px solid var(--blog-line);
+  border-radius:3px;
+  background:var(--blog-surface);
+}
+.blog-ad-slot>a,
+.blog-ad-slot>img {
+  display:block;
+  width:100%;
+  height:100%;
+}
+.blog-ad-slot img {
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.blog-toc-mobile {display:none}
+
+@media(max-width:700px) {
+  .blog-theme .blog-article-grid.has-sidebar {
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto auto;
+    gap:18px;
+    width:min(100% - 32px,680px);
+    max-width:680px;
+    margin:0 auto;
+  }
+  .blog-theme .blog-article-grid.no-sidebar,
+  .blog-theme .blog-article-grid.no-sidebar.content-wide {
+    display:block;
+    width:min(100% - 32px,680px);
+    max-width:680px;
+    margin:0 auto;
+  }
+  .blog-theme .blog-article-sidebar {
+    display:grid;
+    grid-column:1;
+    grid-row:1;
+    gap:14px;
+    width:100%;
+    min-width:0;
+    position:static;
+  }
+  .blog-theme .blog-toc-desktop {display:none}
+  .blog-theme .blog-toc-mobile {
+    display:block;
+    width:100%;
+    border:1px solid var(--blog-line);
+    border-radius:8px;
+    background:var(--blog-surface);
+    color:var(--blog-ink);
+  }
+  .blog-theme .blog-toc-mobile summary {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    min-height:48px;
+    padding:10px 14px;
+    font-size:13px;
+    font-weight:750;
+    line-height:1.8;
+    cursor:pointer;
+    list-style:none;
+  }
+  .blog-theme .blog-toc-mobile summary::-webkit-details-marker {display:none}
+  .blog-theme .blog-toc-mobile summary>span {
+    color:var(--blog-accent);
+    font-size:18px;
+    transition:transform .18s ease;
+  }
+  .blog-theme .blog-toc-mobile[open] summary>span {transform:rotate(180deg)}
+  .blog-theme .blog-toc-mobile ol {
+    display:grid;
+    gap:7px;
+    margin:0;
+    padding:0 14px 14px 34px;
+    font-size:12px;
+    line-height:1.9;
+  }
+  .blog-theme .blog-toc-mobile li {padding-inline-start:2px}
+  .blog-theme .blog-article-sidebar .blog-ad-card {max-width:100%}
+  .blog-theme .blog-prose {
+    grid-column:1;
+    grid-row:2;
+    min-width:0;
+  }
 }

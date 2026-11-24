@@ -9,6 +9,10 @@ export type BlogCategorySeo={
   canonical_url:string;robots_index:boolean;robots_follow:boolean;
 };
 export type BlogFaq={question:string;answer:string};
+export type BlogAdBanner={
+  id:string;enabled:boolean;label:string;image_url:string;alt:string;link_url:string;
+  link_rel:"follow"|"nofollow"|"sponsored"|"ugc"|"nofollow sponsored"|"nofollow ugc"|"nofollow sponsored ugc";
+};
 export type BlogPost={
   id:string;slug:string;title:string;excerpt:string;content:string;language:"fa"|"en";
   category:string;categories?:string[];primary_category?:string;tags:string[];hero_image_url?:string|null;hero_image_alt:string;hero_image_caption:string;
@@ -16,7 +20,6 @@ export type BlogPost={
   canonical_url:string;og_title:string;og_description:string;robots_index:boolean;robots_follow:boolean;
   featured:boolean;toc_enabled:boolean;drop_cap:boolean;content_width:"reading"|"wide";accent_color:string;
   faqs:BlogFaq[];published_at:string;updated_at:string;
-  ad_banner_enabled?:boolean;ad_banner_image_url?:string;ad_banner_alt?:string;ad_banner_link_url?:string;
 };
 export type BlogSettings={
   title:string;tagline:string;description:string;canonical_url:string;background_theme:string;accent_color:string;card_style:string;
@@ -29,7 +32,7 @@ export type BlogSettings={
   default_og_title:string;default_og_description:string;default_robots_index:boolean;default_robots_follow:boolean;
   noindex_empty_categories:boolean;sitemap_include_categories:boolean;sitemap_include_articles:boolean;
   schema_type:"Article"|"BlogPosting";breadcrumbs_enabled:boolean;breadcrumb_home_label:string;
-  open_graph_enabled:boolean;twitter_card_type:"summary"|"summary_large_image";
+  open_graph_enabled:boolean;twitter_card_type:"summary"|"summary_large_image";ad_banners:BlogAdBanner[];
 };
 const defaults:BlogSettings={
   title:"نوشته‌ها",tagline:"یادداشت‌هایی درباره برند، معنا و ارتباط",
@@ -45,6 +48,10 @@ const defaults:BlogSettings={
   noindex_empty_categories:true,sitemap_include_categories:true,sitemap_include_articles:true,
   schema_type:"Article",breadcrumbs_enabled:true,breadcrumb_home_label:"خانه",
   open_graph_enabled:true,twitter_card_type:"summary_large_image",
+  ad_banners:[
+    {id:"banner-1",enabled:false,label:"",image_url:"",alt:"",link_url:"",link_rel:"follow"},
+    {id:"banner-2",enabled:false,label:"",image_url:"",alt:"",link_url:"",link_rel:"follow"},
+  ],
 };
 type Payload={settings:BlogSettings;posts:BlogPost[]};
 let cache:Payload|null=null;
@@ -56,6 +63,7 @@ function load():Payload{
       settings:{...defaults,...(parsed.settings||{}),
         categories:Array.isArray(parsed.settings?.categories)?parsed.settings.categories:defaults.categories,
         category_seo:parsed.settings?.category_seo||{},
+        ad_banners:Array.isArray(parsed.settings?.ad_banners)?parsed.settings.ad_banners:defaults.ad_banners,
       },
       posts:Array.isArray(parsed.posts)?parsed.posts:[],
     };

@@ -4,7 +4,7 @@
   const supabaseUrl = typeof config.supabaseUrl === "string" ? config.supabaseUrl.replace(/\/+$/,"") : "";
   const anonKey = typeof config.supabaseAnonKey === "string" ? config.supabaseAnonKey : "";
   const $ = (selector) => document.querySelector(selector);
-  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0 };
+  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0, analyticsVisited:false, analyticsLastFetchedAt:0, adBanners:[] };
   const statusLabels = { draft:"پیش‌نویس", published:"منتشرشده", archived:"بایگانی" };
   const validConfig = supabaseUrl === "https://bkohdqwecnvbmeaiuyyx.supabase.co" && anonKey.startsWith("sb_publishable_");
 
@@ -48,7 +48,7 @@
     }catch{return false;}
   }
   async function finishSignIn(email,password,remember,quiet) {
-    state.analyticsEpoch+=1;state.articleAnalytics=null;state.analyticsBusy=false;
+    state.analyticsEpoch+=1;state.articleAnalytics=null;state.analyticsBusy=false;state.analyticsVisited=false;state.analyticsLastFetchedAt=0;
     await signIn(email,password);
     const user=await fetch(supabaseUrl+"/auth/v1/user",{headers:{apikey:anonKey,Authorization:"Bearer "+state.accessToken}});
     const userData=await parseResponse(user);window.blogAdminEmail=userData.email||"مدیر";
@@ -128,8 +128,8 @@
   async function logout(revoke) {
     const token=state.accessToken;
     if(navigator.credentials?.preventSilentAccess)navigator.credentials.preventSilentAccess().catch(()=>{});
-    state.analyticsEpoch+=1;state.articleAnalytics=null;state.analyticsBusy=false;
-    state.accessToken="";state.refreshToken="";state.posts=[];state.currentPost=null;state.settings=null;
+    state.analyticsEpoch+=1;state.articleAnalytics=null;state.analyticsBusy=false;state.analyticsVisited=false;state.analyticsLastFetchedAt=0;
+    state.accessToken="";state.refreshToken="";state.posts=[];state.currentPost=null;state.settings=null;state.adBanners=[];
     if(revoke!==false&&token&&validConfig){
       fetch(supabaseUrl+"/auth/v1/logout?scope=local",{method:"POST",headers:{apikey:anonKey,Authorization:"Bearer "+token}}).catch(()=>{});
     }
@@ -347,35 +347,43 @@
       list.appendChild(card);
     });
   }
-  async function loadArticleAnalytics(force) {
+  async function loadArticleAnalytics(force,silent=false) {
+    const refreshInterval=60*60*1000;
     if(state.analyticsBusy)return;
-    if(state.articleAnalytics&&!force){renderArticleAnalytics();return;}
+    if(state.articleAnalytics&&!force){
+      renderArticleAnalytics();
+      if(Date.now()-state.analyticsLastFetchedAt>=refreshInterval)void loadArticleAnalytics(true,true);
+      return;
+    }
     state.analyticsBusy=true;
     const requestEpoch=state.analyticsEpoch;
     const button=$("#refresh-article-analytics");
-    setButton(button,true,"در حال دریافت…");
-    $("#article-analytics-status").textContent="در حال دریافت و تطبیق گزارش‌های GA4 و Search Console…";
+    if(!silent){
+      setButton(button,true,"در حال دریافت…");
+      $("#article-analytics-status").textContent="در حال دریافت و تطبیق گزارش‌های GA4 و Search Console…";
+    }
     try{
       const report=await siteAnalytics("articles");
       if(requestEpoch!==state.analyticsEpoch)return;
       state.articleAnalytics=report;
+      state.analyticsLastFetchedAt=Date.now();
       renderArticleAnalytics();
-      if(state.articleAnalytics.status==="error")toast("بخشی از گزارش‌های آمار مقاله‌ها در دسترس نیست.",true);
+      if(!silent&&state.articleAnalytics.status==="error")toast("بخشی از گزارش‌های آمار مقاله‌ها در دسترس نیست.",true);
     }catch(error){
       if(requestEpoch!==state.analyticsEpoch)return;
+      state.analyticsLastFetchedAt=Date.now();
       $("#article-analytics-status").textContent=error.message;
-      toast(error.message,true);
+      if(!silent)toast(error.message,true);
     }finally{
       if(requestEpoch===state.analyticsEpoch){
         state.analyticsBusy=false;
-        setButton(button,false);
+        if(!silent)setButton(button,false);
       }
     }
   }
   const newPost=()=>({
     id:"",slug:"",title:"",excerpt:"",content:"",language:"fa",category:"",categories:[],primary_category:"",tags:[],
     hero_image_url:"",hero_image_alt:"",hero_image_caption:"",og_image_url:"",
-    ad_banner_enabled:false,ad_banner_image_url:"",ad_banner_alt:"",ad_banner_link_url:"",
     seo_title:"",meta_description:"",focus_keyword:"",canonical_url:"",og_title:"",og_description:"",
     robots_index:true,robots_follow:true,featured:false,toc_enabled:true,drop_cap:false,
     content_width:"reading",accent_color:"#a86f54",faqs:[],status:"draft",has_unpublished_changes:false,
@@ -396,8 +404,6 @@
       "#post-title":"title","#post-slug":"slug","#post-excerpt":"excerpt","#post-language":"language",
       "#post-hero-url":"hero_image_url",
       "#post-hero-alt":"hero_image_alt","#post-hero-caption":"hero_image_caption","#post-og-url":"og_image_url",
-      "#post-ad-banner-url":"ad_banner_image_url","#post-ad-banner-alt":"ad_banner_alt",
-      "#post-ad-banner-link":"ad_banner_link_url","#post-ad-banner-enabled":"ad_banner_enabled",
       "#post-seo-title":"seo_title","#post-meta-description":"meta_description","#post-focus-keyword":"focus_keyword",
       "#post-canonical":"canonical_url","#post-og-title":"og_title","#post-og-description":"og_description",
       "#post-robots-index":"robots_index","#post-featured":"featured",
@@ -410,7 +416,6 @@
     $("#post-faqs").value=(post.faqs||[]).map((faq)=>"پرسش: "+faq.question+"\nپاسخ: "+faq.answer).join("\n\n");
     updateImagePreview("hero-image-preview",post.hero_image_url,post.hero_image_alt);
     updateImagePreview("og-image-preview",post.og_image_url,post.og_title||post.title);
-    updateImagePreview("ad-banner-preview",post.ad_banner_image_url,post.ad_banner_alt);
   }
   function updateImagePreview(id,url,alt) {
     const box=$("#"+id);box.replaceChildren();
@@ -899,7 +904,7 @@
     return new Promise((resolve,reject)=>canvas.toBlob((blob)=>blob?resolve(blob):reject(new Error("تبدیل تصویر ناموفق بود.")),type,quality));
   }
   async function compressImage(file) {
-    if(!["image/jpeg","image/png","image/webp"].includes(file.type))throw new Error("فقط تصویر JPG، PNG یا WebP پذیرفته می‌شه.");
+    if(!["image/jpeg","image/png","image/webp"].includes(file.type))throw new Error("فقط تصویر JPG، PNG یا WebP قابل فشرده‌سازی است.");
     const bitmap=await createImageBitmap(file);
     const canvas=document.createElement("canvas");
     // Keep the original pixel dimensions and aspect ratio; only change encoding quality.
@@ -919,9 +924,18 @@
     return blob;
   }
   async function uploadImage(file) {
-    toast("در حال بهینه‌سازی تصویر…");
-    const blob=await compressImage(file);
-    const form=new FormData();form.append("action","upload_image");form.append("file",blob,"blog-image.webp");
+    let blob,filename;
+    if(file.type==="image/gif"){
+      if(file.size<=0||file.size>3*1024*1024)throw new Error("برای حفظ انیمیشن GIF، حجم فایل باید حداکثر ۳ مگابایت باشه.");
+      blob=file;
+      filename=(file.name||"animated-banner.gif").toLowerCase().endsWith(".gif")?file.name:"animated-banner.gif";
+      toast("در حال بارگذاری GIF متحرک…");
+    }else{
+      toast("در حال بهینه‌سازی تصویر…");
+      blob=await compressImage(file);
+      filename="blog-image.webp";
+    }
+    const form=new FormData();form.append("action","upload_image");form.append("file",blob,filename);
     const result=await uploadRequest(form,false);
     return result.url;
   }
@@ -1294,8 +1308,90 @@
     renderCategorySeoEditor(settings);
     updateImagePreview("setting-og-preview",settings.default_og_image,"تصویر پیش‌فرض وبلاگ");
   }
+  function defaultAdBanners() {
+    return [makeDefaultAdBanner(1),makeDefaultAdBanner(2)];
+  }
+  function makeDefaultAdBanner(index) {
+    return {id:"banner-"+index,enabled:false,label:"",image_url:"",alt:"",link_url:"",link_rel:"follow"};
+  }
+  function collectAdBannersFromForm() {
+    const root=$("#ad-banners-list");
+    if(!root)return state.adBanners||defaultAdBanners();
+    return [...root.querySelectorAll("[data-ad-card]")].map((card)=>({
+      id:card.dataset.adCard||"",
+      enabled:Boolean(card.querySelector('[data-ad-field="enabled"]')?.checked),
+      label:card.querySelector('[data-ad-field="label"]')?.value.trim()||"",
+      image_url:card.querySelector('[data-ad-field="image_url"]')?.value.trim()||"",
+      alt:card.querySelector('[data-ad-field="alt"]')?.value.trim()||"",
+      link_url:card.querySelector('[data-ad-field="link_url"]')?.value.trim()||"",
+      link_rel:card.querySelector('[data-ad-field="link_rel"]')?.value||"follow",
+    }));
+  }
+  function renderAdBannerSettings() {
+    const root=$("#ad-banners-list");
+    if(!root)return;
+    if(!Array.isArray(state.adBanners)||state.adBanners.length<2)state.adBanners=defaultAdBanners();
+    state.adBanners=state.adBanners.slice(0,8);
+    const relOptions=[
+      ["follow","دوفالو (Follow)"],
+      ["nofollow","نوفالو (Nofollow)"],
+      ["sponsored","اسپانسر (Sponsored)"],
+      ["ugc","محتوای کاربر (UGC)"],
+      ["nofollow sponsored","نوفالو + اسپانسر"],
+      ["nofollow ugc","نوفالو + UGC"],
+      ["nofollow sponsored ugc","نوفالو + اسپانسر + UGC"],
+    ];
+    root.innerHTML=state.adBanners.map((banner,index)=>{
+      const id=escapeHtml(banner.id||("banner-"+(index+1)));
+      const image=banner.image_url?'<img src="'+escapeHtml(banner.image_url)+'" alt="">':'<span class="ad-preview-placeholder">پیش‌نمایش تصویر ۱:۱</span>';
+      const options=relOptions.map(([value,label])=>'<option value="'+value+'" '+((banner.link_rel||"follow")===value?"selected":"")+'>'+label+'</option>').join("");
+      const remove=index>=2?'<button class="text-button danger-text" type="button" data-remove-ad="'+id+'">حذف این جایگاه</button>':"";
+      return `
+        <article class="ad-management-card" data-ad-card="${id}">
+          <header class="ad-management-heading">
+            <div><span class="kicker">جایگاه / ${String(index+1).padStart(2,"0")}</span><h2>جایگاه تبلیغاتی ${index+1}</h2></div>
+            <label class="ad-enabled-toggle"><input type="checkbox" data-ad-field="enabled" ${banner.enabled?"checked":""}> فعال‌سازی</label>
+          </header>
+          <div class="ad-management-layout">
+            <div class="ad-management-media">
+              <div class="ad-management-preview">${image}</div>
+              <label class="file-button ad-file-button">انتخاب تصویر<input type="file" data-ad-file accept="image/jpeg,image/png,image/webp,image/gif"></label>
+              <small>JPG، PNG، WebP یا GIF متحرک؛ حداکثر ۳ مگابایت</small>
+              <input type="hidden" data-ad-field="image_url" value="${escapeHtml(banner.image_url||"")}">
+            </div>
+            <div class="ad-management-fields">
+              <label class="field-label">نوع بنر (اختیاری)<input data-ad-field="label" maxlength="48" value="${escapeHtml(banner.label||"")}" placeholder="مثلاً تبلیغات یا اسپانسر"></label>
+              <label class="field-label">متن جایگزین تصویر<input data-ad-field="alt" maxlength="240" value="${escapeHtml(banner.alt||"")}" placeholder="شرح تصویر برای دسترس‌پذیری"></label>
+              <label class="field-label">پیوند مقصد<input data-ad-field="link_url" type="url" inputmode="url" maxlength="800" dir="ltr" value="${escapeHtml(banner.link_url||"")}" placeholder="https://example.com/"></label>
+              <label class="field-label">نوع لینک<select data-ad-field="link_rel">${options}</select></label>
+              <p class="help-text">اگر نوع بنر خالی باشه، نشانگر بالای تصویر نمایش داده نمی‌شه. لینک فقط با HTTPS ذخیره می‌شه. «دوفالو» یعنی relهای nofollow، sponsored و ugc روی لینک اعمال نمی‌شن.</p>
+            </div>
+          </div>
+          <footer class="ad-management-footer"><span>${banner.enabled?"نمایش در همۀ مقاله‌ها فعال است.":"این جایگاه در سایت عمومی نمایش داده نمی‌شه."}</span>${remove}</footer>
+        </article>`;
+    }).join("");
+  }
+  async function saveAdBanners(event) {
+    event.preventDefault();
+    const button=$("#save-ad-banners");
+    state.adBanners=collectAdBannersFromForm();
+    setButton(button,true,"در حال ذخیره…");
+    $("#ad-banners-message").textContent="در حال اعتبارسنجی تنظیمات و آماده‌سازی انتشار…";
+    try{
+      const result=await api("save_ad_banners",{banners:state.adBanners});
+      state.settings={...(state.settings||{}),...(result.settings||{})};
+      state.adBanners=Array.isArray(result.settings?.ad_banners)?result.settings.ad_banners:state.adBanners;
+      renderAdBannerSettings();
+      $("#ad-banners-message").textContent="تنظیمات ذخیره شد و ساخت نسخۀ عمومی آغاز شد.";
+      toast("بنرها ذخیره شدن؛ بعد از Build در همۀ مقاله‌ها به‌روزرسانی می‌شن.");
+    }catch(error){
+      $("#ad-banners-message").textContent=error.message;
+      toast(error.message,true);
+    }finally{setButton(button,false);}
+  }
   async function loadSettings() {
     const result=await api("get_settings");fillSettings(result.settings||{});
+    state.adBanners=Array.isArray(result.settings?.ad_banners)?result.settings.ad_banners:defaultAdBanners();
   }
   async function saveSettings(event) {
     event.preventDefault();
@@ -1317,12 +1413,14 @@
     const results=await Promise.all([api("list_posts"),api("get_settings")]);
     state.posts=Array.isArray(results[0].posts)?results[0].posts:[];
     state.settings=results[1].settings||{};
+    state.adBanners=Array.isArray(state.settings.ad_banners)?state.settings.ad_banners:defaultAdBanners();
     renderOverview();renderPosts();fillSettings(state.settings);
   }
   function bindEvents() {
     document.querySelectorAll("[data-view]").forEach((button)=>button.addEventListener("click",()=>{
       const name=button.dataset.view;showView(name);if(name==="settings")void loadSettings().catch((e)=>toast(e.message,true));
-      if(name==="analytics")void loadArticleAnalytics(false);
+      if(name==="ads")renderAdBannerSettings();
+      if(name==="analytics"){state.analyticsVisited=true;void loadArticleAnalytics(false);}
     }));
     document.querySelectorAll("[data-new-post]").forEach((button)=>button.addEventListener("click",newArticle));
     $("#back-to-posts").addEventListener("click",()=>showView("posts"));
@@ -1387,11 +1485,42 @@
     $("#archive-post").addEventListener("click",()=>void changeStatus("archive_post").catch((e)=>toast(e.message,true)));
     $("#hero-image-file").addEventListener("change",()=>void handleImage("hero-image-file","post-hero-url","hero-image-preview","#post-hero-alt"));
     $("#og-image-file").addEventListener("change",()=>void handleImage("og-image-file","post-og-url","og-image-preview","#post-og-title"));
-    $("#ad-banner-file").addEventListener("change",()=>void handleImage("ad-banner-file","post-ad-banner-url","ad-banner-preview","#post-ad-banner-alt"));
-    $("#clear-ad-banner").addEventListener("click",()=>{
-      $("#post-ad-banner-url").value="";$("#post-ad-banner-alt").value="";$("#post-ad-banner-link").value="";$("#post-ad-banner-enabled").checked=false;
-      updateImagePreview("ad-banner-preview","","");toast("تصویر و تنظیمات بنر پاک شد.");
+    $("#ad-banners-list").addEventListener("input",()=>{
+      state.adBanners=collectAdBannersFromForm();
     });
+    $("#ad-banners-list").addEventListener("change",async(event)=>{
+      const input=event.target.closest("[data-ad-file]");
+      if(!input)return;
+      const card=input.closest("[data-ad-card]"),file=input.files?.[0];
+      if(!card||!file)return;
+      const id=card.dataset.adCard;
+      try{
+        input.disabled=true;
+        const url=await uploadImage(file);
+        const next=collectAdBannersFromForm();
+        const banner=next.find((item)=>item.id===id);
+        if(banner)banner.image_url=url;
+        state.adBanners=next;
+        renderAdBannerSettings();
+        toast(file.type==="image/gif"?"GIF متحرک بارگذاری شد.":"تصویر بنر بارگذاری شد.");
+      }catch(error){toast(error.message,true);}
+      finally{input.disabled=false;input.value="";}
+    });
+    $("#ad-banners-list").addEventListener("click",(event)=>{
+      const button=event.target.closest("[data-remove-ad]");
+      if(!button)return;
+      const current=collectAdBannersFromForm();
+      if(current.length<=2){toast("دو جایگاه اول به‌صورت پیش‌فرض نگه داشته می‌شن.",true);return;}
+      state.adBanners=current.filter((item)=>item.id!==button.dataset.removeAd);
+      renderAdBannerSettings();
+    });
+    $("#add-ad-banner").addEventListener("click",()=>{
+      state.adBanners=collectAdBannersFromForm();
+      if(state.adBanners.length>=8){toast("حداکثر هشت جایگاه تبلیغاتی مجازه.",true);return;}
+      state.adBanners.push(makeDefaultAdBanner(state.adBanners.length+1));
+      renderAdBannerSettings();
+    });
+    $("#ad-banners-form").addEventListener("submit",(event)=>void saveAdBanners(event));
     $("#setting-og-file").addEventListener("change",async(event)=>{
       const file=event.target.files?.[0];if(!file)return;
       try{
@@ -1437,7 +1566,7 @@
   function showView(name) {
     document.querySelectorAll(".view").forEach((view)=>{view.hidden=view.id!=="view-"+name;view.classList.toggle("active",view.id==="view-"+name);});
     document.querySelectorAll(".side-link").forEach((button)=>button.classList.toggle("active",button.dataset.view===name));
-    $("#workspace-title").textContent=({overview:"نمای کلی",posts:"مقاله‌ها",editor:"ویرایش مقاله",settings:"تنظیمات بلاگ",analytics:"آمار بازدید"})[name]||"مدیریت";
+    $("#workspace-title").textContent=({overview:"نمای کلی",posts:"مقاله‌ها",editor:"ویرایش مقاله",settings:"تنظیمات بلاگ",analytics:"آمار بازدید",ads:"بنرهای تبلیغاتی"})[name]||"مدیریت";
     if(name==="posts")renderPosts();
   }
   $("#login-form").addEventListener("submit",async(event)=>{
@@ -1449,6 +1578,12 @@
     finally{setButton(button,false);}
   });
   bindEvents();
+  window.setInterval(()=>{
+    const refreshInterval=60*60*1000;
+    if(state.accessToken&&state.analyticsVisited&&!state.analyticsBusy&&Date.now()-state.analyticsLastFetchedAt>=refreshInterval){
+      void loadArticleAnalytics(true,true);
+    }
+  },60*1000);
   if(!validConfig){$("#login-submit").disabled=true;$("#login-message").textContent="اتصال امن داشبورد پیکربندی نشده.";}
   else void restoreRememberedCredential();
 })();
