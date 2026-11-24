@@ -289,6 +289,7 @@ assert.ok(site.includes("Personal Branding Consultant"), "Person job title must 
 assert.ok(llms.includes("Personal branding"), "llms.txt must describe personal branding");
 assert.ok(llms.includes("research and insight"), "llms.txt must describe research-led strategy");
 assert.ok(llms.includes("RexoMag"), "llms.txt must expose the editorial platform");
+assert.ok(llms.includes("## Personal blog") && llms.includes("https://ariakianzad.github.io/blog/") && llms.includes("https://ariakianzad.github.io/blog/feed.xml"), "llms.txt must identify the first-party blog and its RSS feed");
 assert.ok(llms.includes("creative agency"), "llms.txt must describe Rexo as an agency");
 
 // Security invariants: no new external runtime origin, unsafe inline JS or eval.
