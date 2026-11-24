@@ -13,11 +13,13 @@ export const metadata: Metadata = {
     siteName: "Aria Kianzad",
     title: "تماس با من",
     description: "درخواست همکاری، رپورتاژ و اسپانسری وبلاگ آریا کیانزاد.",
+    images: [{ url: site.url + "/og/og.jpg", width: 1200, height: 630 }],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "تماس با من",
     description: "درخواست همکاری، رپورتاژ و اسپانسری وبلاگ آریا کیانزاد.",
+    images: [site.url + "/og/og.jpg"],
   },
 };
 
