@@ -237,8 +237,10 @@ assert.ok(markdownSource.includes("parseImageLine") && markdownSource.includes("
 assert.ok(copyLinkButton.includes("data-copy-link") && copyLinkButton.includes("data-copy-url") && blogCopyScript.includes("navigator.clipboard.writeText") && blogCopyScript.includes("لینک کپی شد"), "article copy-link button must delegate clipboard behavior and visible feedback to the standalone static script");
 assert.ok(articlePage.includes("CopyLinkButton") && articlePage.includes("<CopyLinkButton url={canonical} />"), "article share section must render the copy-link control");
 assert.ok(articlePage.includes("blog-article-header-grid") && articlePage.includes("blog-article-copy" ) && articlePage.includes("extractMarkdownImageUrls"), "article page must use a two-column editorial hero and include body images in article metadata");
-const lastFeaturedImageRule = [...blogCss.matchAll(/\.blog-hero-image img\s*\{([^}]*)\}/g)].at(-1)?.[1] || "";
-assert.ok(lastFeaturedImageRule.includes("object-fit:contain") && lastFeaturedImageRule.includes("height:auto") && lastFeaturedImageRule.includes("max-height:none"), "featured article images must preserve their full source dimensions on desktop and mobile");
+const featuredImageRules = [...blogCss.matchAll(/\.blog-hero-image img\s*\{([^}]*)\}/g)].map((match)=>match[1]);
+const desktopFeaturedImageRule = featuredImageRules.find((rule)=>rule.includes("object-fit:contain")) || "";
+const mobileFeaturedImageRule = featuredImageRules.at(-1) || "";
+assert.ok(desktopFeaturedImageRule.includes("height:auto") && desktopFeaturedImageRule.includes("max-height:none") && mobileFeaturedImageRule.includes("object-fit:cover") && mobileFeaturedImageRule.includes("min-height:250px"), "featured article images must preserve their full desktop dimensions and use a cover crop only in the mobile hero");
 assert.ok(blogCss.includes(".blog-inline-image>img") && blogCss.includes(".blog-article-header-grid"), "public inline images and the editorial hero must have dedicated layouts");
 
 assert.ok(adminApp.includes("previewInline"), "Markdown preview must use an escaped renderer");
