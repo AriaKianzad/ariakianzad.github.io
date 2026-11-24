@@ -508,3 +508,11 @@ body, body * { font-family: Estedad, Tahoma, sans-serif !important; }
   .ad-banners-buttons {display:grid;grid-template-columns:minmax(0,1fr)}
   .ad-banners-buttons .button {width:100%}
 }
+
+
+@media(max-width:560px) {
+  .sidebar {min-width:0;overflow:hidden}
+  .side-nav {min-width:0;max-width:calc(100vw - 82px);flex:1 1 0;justify-content:flex-start;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+  .side-nav::-webkit-scrollbar {display:none}
+  .side-link {flex:0 0 auto;white-space:nowrap}
+}
