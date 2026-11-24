@@ -1308,6 +1308,87 @@
     renderCategorySeoEditor(settings);
     updateImagePreview("setting-og-preview",settings.default_og_image,"تصویر پیش‌فرض وبلاگ");
   }
+  function defaultAdBanners() {
+    return [makeDefaultAdBanner(1),makeDefaultAdBanner(2)];
+  }
+  function makeDefaultAdBanner(index) {
+    return {id:"banner-"+index,enabled:false,label:"",image_url:"",alt:"",link_url:"",link_rel:"follow"};
+  }
+  function collectAdBannersFromForm() {
+    const root=$("#ad-banners-list");
+    if(!root)return state.adBanners||defaultAdBanners();
+    return [...root.querySelectorAll("[data-ad-card]")].map((card)=>({
+      id:card.dataset.adCard||"",
+      enabled:Boolean(card.querySelector('[data-ad-field="enabled"]')?.checked),
+      label:card.querySelector('[data-ad-field="label"]')?.value.trim()||"",
+      image_url:card.querySelector('[data-ad-field="image_url"]')?.value.trim()||"",
+      alt:card.querySelector('[data-ad-field="alt"]')?.value.trim()||"",
+      link_url:card.querySelector('[data-ad-field="link_url"]')?.value.trim()||"",
+      link_rel:card.querySelector('[data-ad-field="link_rel"]')?.value||"follow",
+    }));
+  }
+  function renderAdBannerSettings() {
+    const root=$("#ad-banners-list");
+    if(!root)return;
+    if(!Array.isArray(state.adBanners)||state.adBanners.length<2)state.adBanners=defaultAdBanners();
+    state.adBanners=state.adBanners.slice(0,8);
+    const relOptions=[
+      ["follow","دوفالو (Follow)"],
+      ["nofollow","نوفالو (Nofollow)"],
+      ["sponsored","اسپانسر (Sponsored)"],
+      ["ugc","محتوای کاربر (UGC)"],
+      ["nofollow sponsored","نوفالو + اسپانسر"],
+      ["nofollow ugc","نوفالو + UGC"],
+      ["nofollow sponsored ugc","نوفالو + اسپانسر + UGC"],
+    ];
+    root.innerHTML=state.adBanners.map((banner,index)=>{
+      const id=escapeHtml(banner.id||("banner-"+(index+1)));
+      const image=banner.image_url?'<img src="'+escapeHtml(banner.image_url)+'" alt="">':'<span class="ad-preview-placeholder">پیش‌نمایش تصویر ۱:۱</span>';
+      const options=relOptions.map(([value,label])=>'<option value="'+value+'" '+((banner.link_rel||"follow")===value?"selected":"")+'>'+label+'</option>').join("");
+      const remove=index>=2?'<button class="text-button danger-text" type="button" data-remove-ad="'+id+'">حذف این جایگاه</button>':"";
+      return `
+        <article class="ad-management-card" data-ad-card="${id}">
+          <header class="ad-management-heading">
+            <div><span class="kicker">AD SLOT / ${String(index+1).padStart(2,"0")}</span><h2>جایگاه تبلیغاتی ${index+1}</h2></div>
+            <label class="ad-enabled-toggle"><input type="checkbox" data-ad-field="enabled" ${banner.enabled?"checked":""}> فعال‌سازی</label>
+          </header>
+          <div class="ad-management-layout">
+            <div class="ad-management-media">
+              <div class="ad-management-preview">${image}</div>
+              <label class="file-button ad-file-button">انتخاب تصویر<input type="file" data-ad-file accept="image/jpeg,image/png,image/webp,image/gif"></label>
+              <small>JPG، PNG، WebP یا GIF متحرک؛ حداکثر ۳ مگابایت</small>
+              <input type="hidden" data-ad-field="image_url" value="${escapeHtml(banner.image_url||"")}">
+            </div>
+            <div class="ad-management-fields">
+              <label class="field-label">نوع بنر (اختیاری)<input data-ad-field="label" maxlength="48" value="${escapeHtml(banner.label||"")}" placeholder="مثلاً تبلیغات یا اسپانسر"></label>
+              <label class="field-label">متن جایگزین تصویر<input data-ad-field="alt" maxlength="240" value="${escapeHtml(banner.alt||"")}" placeholder="شرح تصویر برای دسترس‌پذیری"></label>
+              <label class="field-label">پیوند مقصد<input data-ad-field="link_url" type="url" inputmode="url" maxlength="800" dir="ltr" value="${escapeHtml(banner.link_url||"")}" placeholder="https://example.com/"></label>
+              <label class="field-label">نوع لینک<select data-ad-field="link_rel">${options}</select></label>
+              <p class="help-text">اگر نوع بنر خالی باشه، نشانگر بالای تصویر نمایش داده نمی‌شه. لینک فقط با HTTPS ذخیره می‌شه. «دوفالو» یعنی relهای nofollow، sponsored و ugc روی لینک اعمال نمی‌شن.</p>
+            </div>
+          </div>
+          <footer class="ad-management-footer"><span>${banner.enabled?"نمایش در همۀ مقاله‌ها فعال است.":"این جایگاه در سایت عمومی نمایش داده نمی‌شه."}</span>${remove}</footer>
+        </article>`;
+    }).join("");
+  }
+  async function saveAdBanners(event) {
+    event.preventDefault();
+    const button=$("#save-ad-banners");
+    state.adBanners=collectAdBannersFromForm();
+    setButton(button,true,"در حال ذخیره…");
+    $("#ad-banners-message").textContent="در حال اعتبارسنجی تنظیمات و آماده‌سازی انتشار…";
+    try{
+      const result=await api("save_ad_banners",{banners:state.adBanners});
+      state.settings={...(state.settings||{}),...(result.settings||{})};
+      state.adBanners=Array.isArray(result.settings?.ad_banners)?result.settings.ad_banners:state.adBanners;
+      renderAdBannerSettings();
+      $("#ad-banners-message").textContent="تنظیمات ذخیره شد و ساخت نسخۀ عمومی آغاز شد.";
+      toast("بنرها ذخیره شدن؛ بعد از Build در همۀ مقاله‌ها به‌روزرسانی می‌شن.");
+    }catch(error){
+      $("#ad-banners-message").textContent=error.message;
+      toast(error.message,true);
+    }finally{setButton(button,false);}
+  }
   async function loadSettings() {
     const result=await api("get_settings");fillSettings(result.settings||{});
     state.adBanners=Array.isArray(result.settings?.ad_banners)?result.settings.ad_banners:defaultAdBanners();
