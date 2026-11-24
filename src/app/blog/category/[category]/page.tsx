@@ -56,7 +56,7 @@ export default async function BlogCategoryPage({ params }: { params: Promise<{ c
     return (
       <>
         <BlogHeader />
-        <main className="blog-main" dir="rtl">
+        <main id="main" className="blog-main" dir="rtl">
           <section className="blog-container blog-category-heading">
             <h1>هنوز دسته‌بندی‌ای برای نمایش وجود نداره.</h1>
             <p>بعد از انتشار اولین مقاله، دسته‌بندی‌ها اینجا نمایش داده می‌شن.</p>
