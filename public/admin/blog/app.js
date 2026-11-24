@@ -1349,7 +1349,7 @@
       return `
         <article class="ad-management-card" data-ad-card="${id}">
           <header class="ad-management-heading">
-            <div><span class="kicker">AD SLOT / ${String(index+1).padStart(2,"0")}</span><h2>جایگاه تبلیغاتی ${index+1}</h2></div>
+            <div><span class="kicker">جایگاه / ${String(index+1).padStart(2,"0")}</span><h2>جایگاه تبلیغاتی ${index+1}</h2></div>
             <label class="ad-enabled-toggle"><input type="checkbox" data-ad-field="enabled" ${banner.enabled?"checked":""}> فعال‌سازی</label>
           </header>
           <div class="ad-management-layout">
