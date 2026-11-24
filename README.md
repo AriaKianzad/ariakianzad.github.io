@@ -1,21 +1,24 @@
 # Aria Kianzad
 
-This repository contains my personal website and the standalone Persian microsite for the book **«میانِ ما»**.
+This repository contains my personal website, Persian blog and CMS, authenticated analytics dashboards, and the standalone Persian microsite for the book **«میانِ ما»**.
 
 - **Personal website:** https://ariakianzad.github.io/
+- **Persian blog:** https://ariakianzad.github.io/blog/
 - **Book page:** https://ariakianzad.github.io/Mian-e-Ma/
-- **Private analytics dashboard:** https://ariakianzad.github.io/admin/
+- **Analytics dashboard:** https://ariakianzad.github.io/admin/
+- **Blog CMS and article analytics:** https://ariakianzad.github.io/admin/blog/
 - **Book PDF release:** https://github.com/AriaKianzad/ariakianzad.github.io/releases/tag/mian-e-ma-v1
 
-The personal website, book page and dashboard are static frontends. The personal homepage is generated with Next.js, but ships as static HTML without a Next.js hydration runtime. Its 3D hero is a separate same-origin ESM module built with esbuild; it requests a locally bundled, code-split Three.js scene only when the hero approaches the viewport. The dashboard uses a separate Supabase backend for authentication and reporting. Rexo is the creative agency at https://rexo.agency/.
+The personal website, blog archive and articles, book page, and admin interfaces are static frontends. The personal homepage is generated with Next.js, but ships as static HTML without a Next.js hydration runtime. Its 3D hero is a separate same-origin ESM module built with esbuild; it requests a locally bundled, code-split Three.js scene only when the hero approaches the viewport. The dashboard uses a separate Supabase backend for authentication and reporting. Rexo is the creative agency at https://rexo.agency/.
 
 ## Project architecture
 
 | Area | Implementation |
 | --- | --- |
 | Personal website | Next.js App Router static export; TypeScript/React at build time, standalone esbuild + Three.js ESM hero |
+| Blog and CMS | Next.js static pages plus a static HTML/CSS/JS authoring and analytics workspace |
 | Book microsite | Standalone HTML, CSS and JavaScript |
-| Admin interface | Static HTML, CSS and JavaScript |
+| Admin interfaces | Static HTML, CSS and JavaScript; authorization and data access are enforced server-side |
 | Hosting | GitHub Pages, with an optional Apache/cPanel bundle |
 | Data and authentication | Supabase Auth, Postgres and Edge Functions |
 | Download counter | GitHub Release asset metadata, captured in daily Postgres snapshots |
@@ -27,8 +30,11 @@ The Next.js application is exported as static files. The deployed website does n
 ### Main routes
 
 - /: English personal website.
+- /blog/: Persian article archive, categories, RSS feed and published articles.
+- /blog/contact/: public contact form with server-side validation and rate limiting.
 - /Mian-e-Ma/: Persian book information and download page.
-- /admin/: password-protected analytics interface.
+- /admin/: authenticated download and site-analytics dashboard.
+- /admin/blog/: authenticated blog CMS, global advertising settings and per-article analytics.
 - /robots.txt, /sitemap.xml, /llms.txt: public discovery and metadata files.
 
 The redesigned homepage is organized around research and insight, positioning and identity, content and communication, a four-step method, Rexo, writing, about and contact. It uses a restrained dark editorial system, Estedad typography, a locally bundled 3D signal sculpture in the hero, scroll-triggered section entrances and subtle interactive diagrams. Motion respects `prefers-reduced-motion`; the hero has a CSS fallback and is not required to read or navigate the page.
@@ -45,7 +51,7 @@ The dashboard combines three independent data sources:
 
 A Supabase Cron job captures the GitHub cumulative count once per day at **00:15 UTC (03:45 Asia/Tehran)**. A private PostgreSQL function fetches the public GitHub Release API and upserts the snapshot using the Tehran calendar date. Opening the dashboard also refreshes the current day's value. Daily differences are calculated from consecutive cumulative snapshots; the first snapshot is a baseline, not historical daily data.
 
-The personal and book pages ask visitors for analytics consent. The Google Analytics tag is not requested until a visitor accepts. The privacy-settings control remains available after both acceptance and refusal, so visitors can review or withdraw consent later. The choice is stored in browser local storage.
+The personal and book pages ask visitors for analytics consent. The Google Analytics tag is not requested until a visitor accepts. Blog pages intentionally suppress the consent overlay to preserve the reading surface, but honour an existing choice: GA loads there only when consent was previously granted. The privacy-settings control remains available on the personal and book surfaces after acceptance or refusal. The choice is stored in browser local storage.
 
 ## Dashboard security model
 
@@ -54,8 +60,8 @@ The dashboard uses Supabase Auth and a server-side email allowlist:
 1. A user signs in through Supabase Auth.
 2. Each Edge Function validates the access token with Supabase Auth.
 3. The user must have a confirmed email and an active matching entry in public.dashboard_admins.
-4. The Edge Functions use server-side Supabase credentials to access the database and Google APIs.
-5. Browser roles have no table privileges on download_snapshots or dashboard_admins; both tables have Row Level Security enabled.
+4. The authenticated Edge Functions use server-side Supabase credentials to access the database, CMS media and Google APIs.
+5. Browser roles have no table privileges on blog_posts, blog_settings, download_snapshots or dashboard_admins. These tables use Row Level Security; direct browser writes are not part of the architecture.
 
 The dashboard's config.js contains only the Supabase project URL and a **publishable** client key. Publishable keys are designed to be visible in browser code; they are not administrator credentials. Supabase secret keys, service-role keys, GitHub tokens and Google service-account private keys must never be placed in frontend code or committed to this repository.
 
@@ -142,22 +148,26 @@ NEXT_PUBLIC_SITE_URL is a public URL, not a secret.
 
 The repository keeps response-header policies in public/_headers (for compatible static hosts such as Cloudflare Pages) and public/.htaccess (for Apache/cPanel). GitHub Pages does **not** process either file, so the static HTML pages also carry a Content Security Policy meta tag. The build adds hashes for any required inline style blocks and verifies the policy.
 
-A CSP meta tag cannot set every HTTP response header. Directives such as frame-ancestors, HSTS, X-Frame-Options, Referrer-Policy and Permissions-Policy require response-header support. They are therefore available on compatible hosts through the header configuration, but should not be assumed to be active on GitHub Pages.
+A CSP meta tag cannot set every HTTP response header. Directives such as frame-ancestors, HSTS, X-Frame-Options, Referrer-Policy and Permissions-Policy require response-header support. They are therefore available on compatible hosts through the header configuration, but should not be assumed to be active on GitHub Pages. The build also rejects inline style attributes because they are blocked by the strict style-src policy; dynamic theme values are emitted in hashable style blocks instead.
 
 ## Supabase backend
 
-Supabase migrations and Edge Function sources are versioned under supabase/. The two deployed functions are:
+Supabase migrations and Edge Function sources are versioned under supabase/. The production project currently has four active functions:
 
-- **download-stats:** authenticates an allowlisted dashboard administrator and returns the GitHub Release count and snapshot history.
-- **site-analytics:** authenticates the same administrator and requests read-only GA4 and Search Console reports.
+- **download-stats:** validates an allowlisted dashboard administrator and returns the GitHub Release count and snapshot history.
+- **site-analytics:** validates the same administrator and requests read-only GA4 and Search Console reports, including per-article analytics.
+- **blog-admin:** validates the same administrator, manages the blog CMS and global advertising placements, uploads approved media, and dispatches the static-site build.
+- **blog-contact:** a deliberately public form endpoint. It validates the exact site origin, request type, body size and fields; uses a honeypot and an hourly rate limit based on a keyed hash of the visitor address; then relays through a secret-protected Google Apps Script. It does not use the dashboard email allowlist.
 
 To deploy function source changes using the Supabase CLI:
 
     supabase link --project-ref bkohdqwecnvbmeaiuyyx
     supabase functions deploy download-stats
     supabase functions deploy site-analytics
+    supabase functions deploy blog-admin
+    supabase functions deploy blog-contact
 
-Both Edge Functions use the exact Supabase JS version declared in their respective deno.json import maps. They set verify_jwt = false because each handler explicitly validates the bearer token with auth.getUser(token), requires a confirmed email and checks the active email allowlist. CORS is restricted to the personal-site origin, but CORS is not an authorization boundary; do not remove the handler-level checks. Production database migrations have already been applied; review migration state before applying any new migration.
+The three admin-only functions use the exact Supabase JS version declared in their respective deno.json import maps. They set verify_jwt = false because each handler performs its own bearer-token validation with auth.getUser(token), requires a confirmed email and checks the active email allowlist. The public blog-contact function does not authenticate a dashboard user; its Origin check is not an authorization boundary and must remain backed by the server-side rate limit, field validation and secret-protected relay. Function deployments are independent of the GitHub Pages workflow. Production database migrations have already been applied; review migration state before applying any new migration.
 
 ## Repository layout
 
@@ -170,7 +180,8 @@ Both Edge Functions use the exact Supabase JS version declared in their respecti
 
     public/
       Mian-e-Ma/           Standalone Persian book page and local assets
-      admin/               Static dashboard interface and public client config
+      blog/                Generated archive, categories, articles and RSS feed
+      admin/               Static analytics dashboard, blog CMS and public client config
       analytics-consent.js Consent-aware Google Analytics loader
       _headers             Security headers for compatible static hosts
       .htaccess             Apache/cPanel security and hosting configuration
@@ -178,7 +189,7 @@ Both Edge Functions use the exact Supabase JS version declared in their respecti
       boot.js, ui.js        Progressive enhancement and interface behavior
 
     supabase/
-      functions/            Edge Function source, per-function Deno import maps and both API handlers
+      functions/            Edge Function source for three admin-only functions and the public blog-contact relay; per-function Deno import maps where used
       migrations/           Versioned database and scheduled-job migrations
       config.toml           Function runtime configuration
       README.md             Backend setup and operational notes
