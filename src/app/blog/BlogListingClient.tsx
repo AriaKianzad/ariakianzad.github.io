@@ -26,7 +26,7 @@ export function BlogPostCard({ post, featured = false, showReadingTime = true, c
         <h2><Link href={"/blog/" + post.slug + "/"}>{post.title}</Link></h2>
         {post.excerpt ? <p>{post.excerpt}</p> : null}
         <div className="blog-card-bottom">
-          {showReadingTime ? <span className="blog-reading-time" dir={post.language === "fa" ? "rtl" : "ltr"}><bdi dir={post.language === "fa" ? "rtl" : "ltr"}>{minutes} {post.language === "fa" ? "دقیقه مطالعه" : "min read"}</bdi></span> : <span />}
+          {showReadingTime ? <span className={"blog-reading-time " + (post.language === "fa" ? "is-fa" : "is-en")}><bdi className="blog-reading-time-number" dir="ltr">{minutes}</bdi><span className="blog-reading-time-unit" dir={post.language === "fa" ? "rtl" : "ltr"}>{post.language === "fa" ? "دقیقه مطالعه" : "min read"}</span></span> : <span />}
           <Link href={"/blog/" + post.slug + "/"} aria-label={"خواندن " + post.title}>ادامه مطلب <span aria-hidden="true">←</span></Link>
         </div>
       </div>
