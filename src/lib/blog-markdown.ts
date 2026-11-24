@@ -1,7 +1,17 @@
 export type TocItem={id:string;title:string;level:number};
 export function slugHeading(value:string){return value.trim().toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu,"").replace(/\s+/g,"-").replace(/-+/g,"-")||"section";}
 function esc(value:string){return value.replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]||c));}
-function allowedUrl(value:string){const v=value.trim();return /^(https?:\/\/|mailto:|\/|#)/i.test(v)&&!/^\/\//.test(v)?v:"#";}
+function allowedUrl(value:string){
+  const candidate=value.trim();
+  if(!candidate)return "#";
+  if(candidate.startsWith("#"))return candidate;
+  if(candidate.startsWith("/")&&candidate[1]!=="/"&&candidate[1]!==String.fromCharCode(92))return candidate;
+  try{
+    const url=new URL(candidate);
+    if(["http:","https:","mailto:"].includes(url.protocol)&&!url.username&&!url.password)return candidate;
+  }catch{}
+  return "#";
+}
 function inline(value:string){
   let s=esc(value);
   s=s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>'<img src="'+esc(allowedUrl(url.replace(/&amp;/g,"&")))+'" alt="'+alt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">');
