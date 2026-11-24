@@ -179,6 +179,7 @@ assert.ok(fetchScript.includes(".cache/blog-content.json"), "build payload must 
 assert.ok(!fetchScript.includes("blog_posts"), "the public build must not query private CMS tables directly");
 assert.ok(/resize\(\s*1200\s*,\s*630\s*,/.test(imageScript), "social images must be 1200x630");
 assert.ok(imageScript.includes("sharp(") && imageScript.includes("jpeg({quality:88"), "social images must be optimized in the build");
+assert.ok(imageScript.includes("trustedMediaUrl") && imageScript.includes('url.origin!==MEDIA_ORIGIN') && imageScript.includes('url.protocol!=="https:"') && imageScript.includes('redirect:"error"') && imageScript.includes("MAX_MEDIA_BYTES"), "social preview generation must fetch only bounded images from the project's public blog-media bucket");
 assert.ok(dataSource.includes("readFileSync"), "blog data must be loaded at build time, not per public request");
 
 assert.ok(listingPage.includes("getBlogPosts()") && listingPage.includes("BlogListingClient"), "the blog archive must be server-rendered with client search controls");
