@@ -375,7 +375,8 @@ const inlineSerializer = adminApp.slice(adminApp.indexOf("function inlineToMarkd
 const blockSerializer = adminApp.slice(adminApp.indexOf("function blockToMarkdown"),adminApp.indexOf("function editorToMarkdown"));
 assert.ok(["tag===\"strong\"","tag===\"em\"","tag===\"u\"","tag===\"del\"","tag===\"code\"","tag===\"a\"","tag===\"img\""].every((token)=>inlineSerializer.includes(token)), "the editor serializer must preserve emphasis, underline, deletion, code, links and images");
 assert.ok(["tag===\"figure\"","/^h[1-6]$/","tag===\"p\"","tag===\"ul\"","tag===\"ol\"","tag===\"blockquote\"","tag===\"pre\"","tag===\"hr\"","tag===\"table\""].every((token)=>blockSerializer.includes(token)), "the editor serializer must preserve all supported block structures");
-assert.ok(adminApp.includes("function parseListItem") && adminApp.includes("listStack") && adminApp.includes("if(!parseListItem("), "the CMS preview must preserve blank-separated and nested list structure");
+const cmsPreviewRenderer = adminApp.slice(adminApp.indexOf("function renderPreviewMarkdown"),adminApp.indexOf("function inlineToMarkdown"));
+assert.ok(cmsPreviewRenderer.includes("const parseListItem=") && cmsPreviewRenderer.includes("listStack") && cmsPreviewRenderer.includes("if(!parseListItem(") && cmsPreviewRenderer.includes("appendListItem(item)"), "the CMS preview must preserve blank-separated and nested list structure");
 
 assert.ok(blogCss.includes(".blog-prose ul{list-style-type:disc}") && blogCss.includes(".blog-prose ol{list-style-type:decimal}") && blogCss.includes(".blog-prose li::marker"), "public article lists must explicitly restore bullets and numbering after the portfolio-wide list reset");
 assert.ok(["h2","h3","h4","p","strong","em","u","del","a","blockquote","pre","code","img","hr"].every((tag)=>blogCss.includes(".blog-prose "+tag)), "public article CSS must style every semantic text format emitted by the Markdown renderer");
