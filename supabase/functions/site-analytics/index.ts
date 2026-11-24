@@ -732,7 +732,7 @@ async function getArticleAnalyticsData(accessToken: string) {
   if (postsError) throw new Error("دریافت فهرست مقاله‌های منتشرشده برای گزارش آمار ناموفق بود.");
 
   const dateRanges = [{ startDate: "29daysAgo", endDate: "today" }];
-  const [pageReportResult, sourceReportResult, gscOverviewResult] = await Promise.allSettled([
+  const [pageReportResult, sourceReportResult, gscOverviewResult, historyReportResult] = await Promise.allSettled([
     ga4Report(accessToken, {
       dateRanges,
       dimensions: [{ name: "pagePath" }],
@@ -764,10 +764,37 @@ async function getArticleAnalyticsData(accessToken: string) {
       limit: "10000",
     }),
     getSearchConsoleData(accessToken),
+    ga4Report(accessToken, {
+      dateRanges,
+      dimensions: [{ name: "date" }],
+      metrics: [{ name: "screenPageViews" }],
+      dimensionFilter: {
+        filter: {
+          fieldName: "pagePath",
+          stringFilter: { matchType: "BEGINS_WITH", value: "/blog/" },
+        },
+      },
+      orderBys: [{ dimension: { dimensionName: "date" } }],
+      limit: "10000",
+    }),
   ]);
 
   const pageRows = pageReportResult.status === "fulfilled" ? pageReportResult.value.rows : [];
   const sourceRows = sourceReportResult.status === "fulfilled" ? sourceReportResult.value.rows : [];
+  const historyRows = historyReportResult.status === "fulfilled" ? historyReportResult.value.rows : [];
+  const history = historyRows.map((row) => {
+    const rawDate = String(row.date || "");
+    const date = /^\\d{8}$/.test(rawDate)
+      ? rawDate.slice(0, 4) + "-" + rawDate.slice(4, 6) + "-" + rawDate.slice(6, 8)
+      : rawDate;
+    return { date, pageViews: Number(row.screenPageViews || 0) };
+  }).filter((row) => /^\\d{4}-\\d{2}-\\d{2}$/.test(row.date));
+  const historyStatus = historyReportResult.status === "rejected"
+    ? "error"
+    : history.length ? "ok" : "no_data";
+  const historyMessage = historyReportResult.status === "rejected"
+    ? String(historyReportResult.reason?.message || historyReportResult.reason).slice(0, 240)
+    : history.length ? "" : "در بازۀ گزارش‌شده، دادهٔ روزانه‌ای برای بازدید مقاله‌ها وجود نداره.";
   const pageMetrics = new Map<string, { pageViews: number; users: number; sessions: number; engagedSessions: number }>();
   const sourceMetrics = new Map<string, Array<{ sourceMedium: string; sessions: number; users: number }>>();
 
@@ -889,7 +916,7 @@ async function getArticleAnalyticsData(accessToken: string) {
   });
 
   const hasReportData = ga4Status === "ok" || gscStatus === "ok";
-  const hasReportError = ga4Status === "error" || gscStatus === "error" || gscStatus === "no_access";
+  const hasReportError = ga4Status === "error" || gscStatus === "error" || gscStatus === "no_access" || historyStatus === "error";
   const overallStatus = hasReportData
     ? (ga4Status !== "ok" || gscStatus !== "ok" ? "partial" : "ok")
     : hasReportError ? "error" : "no_data";
@@ -905,6 +932,9 @@ async function getArticleAnalyticsData(accessToken: string) {
       ? gscOverviewResult.value.propertyUrl || GSC_SITE_URL
       : GSC_SITE_URL,
     ga4: { status: ga4Status, message: ga4Message },
+    history,
+    historyStatus,
+    historyMessage,
     sources: {
       status: sourcesStatus,
       articleLandingSessions,
@@ -954,23 +984,15 @@ Deno.serve(async (request: Request) => {
           status: "not_configured",
           message,
           ga4: { status: "not_configured", message },
+          sources: { status: "not_configured", message, articleLandingSessions: 0 },
+          history: [],
+          historyStatus: "not_configured",
+          historyMessage: message,
           searchConsole: { status: "not_configured", message },
           articles: [],
         }, 424);
       }
-      if (requestMode === "articles") {
-      const articles = await getArticleAnalyticsData(google.accessToken);
-      console.info("site-analytics article report diagnostics", {
-        status: articles.status,
-        articleCount: articles.articleCount,
-        ga4: articles.ga4.status,
-        sources: articles.sources.status,
-        searchConsole: articles.searchConsole.status,
-      });
-      return json(articles);
-    }
-
-    if (requestMode === "ga4") {
+      if (requestMode === "ga4") {
         return json({
           status: "not_configured",
           message,
@@ -983,6 +1005,19 @@ Deno.serve(async (request: Request) => {
         ga4: { status: "not_configured", message },
         searchConsole: { status: "not_configured", message },
       }, 424);
+    }
+
+    if (requestMode === "articles") {
+      const articles = await getArticleAnalyticsData(google.accessToken);
+      console.info("site-analytics article report diagnostics", {
+        status: articles.status,
+        articleCount: articles.articleCount,
+        ga4: articles.ga4.status,
+        history: articles.historyStatus,
+        sources: articles.sources.status,
+        searchConsole: articles.searchConsole.status,
+      });
+      return json(articles);
     }
 
     if (requestMode === "realtime") {
