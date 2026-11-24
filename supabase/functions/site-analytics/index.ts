@@ -766,7 +766,7 @@ async function getArticleAnalyticsData(accessToken: string) {
     getSearchConsoleData(accessToken),
     ga4Report(accessToken, {
       dateRanges,
-      dimensions: [{ name: "date" }],
+      dimensions: [{ name: "date" }, { name: "pagePath" }],
       metrics: [{ name: "screenPageViews" }],
       dimensionFilter: {
         filter: {
@@ -782,13 +782,21 @@ async function getArticleAnalyticsData(accessToken: string) {
   const pageRows = pageReportResult.status === "fulfilled" ? pageReportResult.value.rows : [];
   const sourceRows = sourceReportResult.status === "fulfilled" ? sourceReportResult.value.rows : [];
   const historyRows = historyReportResult.status === "fulfilled" ? historyReportResult.value.rows : [];
-  const history = historyRows.map((row) => {
+  const articleSlugs = new Set((publishedPosts || []).map((post) => String(post.slug || "").toLowerCase()));
+  const historyByDate = new Map<string, number>();
+  for (const row of historyRows) {
+    const slug = blogSlugFromPath(String(row.pagePath || ""));
+    if (!slug || !articleSlugs.has(slug)) continue;
     const rawDate = String(row.date || "");
     const date = /^\d{8}$/.test(rawDate)
       ? rawDate.slice(0, 4) + "-" + rawDate.slice(4, 6) + "-" + rawDate.slice(6, 8)
       : rawDate;
-    return { date, pageViews: Number(row.screenPageViews || 0) };
-  }).filter((row) => /^\d{4}-\d{2}-\d{2}$/.test(row.date));
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+    historyByDate.set(date, (historyByDate.get(date) || 0) + Number(row.screenPageViews || 0));
+  }
+  const history = [...historyByDate.entries()]
+    .map(([date, pageViews]) => ({ date, pageViews }))
+    .sort((a, b) => a.date.localeCompare(b.date));
   const historyStatus = historyReportResult.status === "rejected"
     ? "error"
     : history.length ? "ok" : "no_data";
