@@ -1,34 +1,38 @@
-# Mian-e-Ma analytics backend
+# Aria Kianzad website and blog backend
 
-The private dashboard frontend is hosted at https://ariakianzad.github.io/admin/. Its HTML, CSS, JavaScript and public client configuration are visible to everyone. Supabase is responsible for authentication, authorization and access to analytics data.
+The site has two static admin frontends: the download/site dashboard at https://ariakianzad.github.io/admin/ and the blog CMS at https://ariakianzad.github.io/admin/blog/. Their HTML, CSS, JavaScript and public client configuration are visible to everyone. Supabase is responsible for authentication, authorization, CMS data, media uploads and analytics data.
 
 ## Project
 
 - Supabase project: mian-e-ma-analytics
 - Project ref: bkohdqwecnvbmeaiuyyx
 - Region: eu-central-1
-- Edge Functions: download-stats, site-analytics
-- Database schema: public plus a private schema for the scheduled snapshot function
+- Edge Functions: download-stats, site-analytics, blog-admin, blog-contact
+- Database schemas: public and private; Storage bucket: blog-media
+- Production migrations: all repository migrations through global_article_advertising_slots are applied
 
-The source for both deployed Edge Functions is tracked in this repository:
+The source for all four active Edge Functions is tracked in this repository:
 
-- supabase/functions/download-stats/index.ts
-- supabase/functions/site-analytics/index.ts
+- `supabase/functions/download-stats/index.ts` — administrator-only GitHub Release download statistics.
+- `supabase/functions/site-analytics/index.ts` — administrator-only GA4, Search Console and per-article reports.
+- `supabase/functions/blog-admin/index.ts` — administrator-only blog CMS, global ad slots, media uploads and GitHub build dispatch.
+- `supabase/functions/blog-contact/index.ts` — public contact form endpoint with request validation, rate limiting and a secret-protected Apps Script relay.
 
 The repository source is the version-controlled reference for deployments. Edge Function deployments are independent from the GitHub Pages site deployment: publishing the website does not update Supabase functions. After a function deployment, verify its active version and deployed source against the corresponding file and deno.json in this repository; do not assume the GitHub Pages workflow updates Supabase.
 
 ## Security and authorization model
 
-1. The browser signs in through Supabase Auth using the public publishable key in public/admin/config.js.
-2. The browser sends its Supabase access token to the Edge Function.
-3. Each function verifies the token with Supabase Auth using auth.getUser(token); it does not trust an unverified JWT payload.
-4. The user must have a confirmed email and an active matching lowercase email in public.dashboard_admins.
-5. Only after these checks does the function use server-side Supabase credentials to read/write dashboard data or request Google reports.
-6. Both public.dashboard_admins and public.download_snapshots have RLS enabled. Browser roles anon and authenticated have no table privileges; the functions access the tables with server-side credentials.
+1. The two admin frontends sign in through Supabase Auth using the public publishable key in their public config files.
+2. The browser sends its access token to the admin-only Edge Function.
+3. `download-stats`, `site-analytics` and `blog-admin` verify the token with Auth `auth.getUser(token)`; they do not trust an unverified JWT payload.
+4. The user must have a confirmed email and an active, lowercase matching entry in `public.dashboard_admins`.
+5. Only after those checks do the functions use server-side credentials to access dashboard data, the CMS, Storage or Google APIs.
+6. `blog-contact` is deliberately public and does not use the administrator allowlist. It applies a strict Origin check, request validation, honeypot, body-size cap and three-per-hour hashed-IP rate limit before forwarding through the secret-protected Google Apps Script.
+7. `blog_posts`, `blog_settings`, `dashboard_admins` and `download_snapshots` have RLS enabled; browser roles have no direct table privileges. Public readers use the constrained published-content RPC and read-only public media objects.
 
-Each function's deno.json pins the direct @supabase/supabase-js dependency to an exact version and maps the package to its source import. The current pin is 2.119.2. There is not yet a committed deno.lock, so transitive Deno dependency resolution is not completely frozen; generate and commit per-function lockfiles before treating builds as fully reproducible.
+The three functions that import `@supabase/supabase-js` each use a per-function `deno.json` with an exact direct dependency pin (currently 2.119.2). `blog-contact` uses the Supabase REST endpoint through server-side fetch and does not import the SDK. No per-function `deno.lock` is currently committed, so transitive Deno dependency resolution is not completely frozen; add lockfiles before treating these function builds as fully reproducible.
 
-The two functions have verify_jwt = false in supabase/config.toml because they implement their own explicit access-token validation and allowlist check. Each handler calls auth.getUser(token), requires a confirmed email and checks the active allowlist. This is intentional. Do not remove the checks in the function handlers or change verify_jwt without reviewing the complete authentication flow.
+The three admin-only functions have `verify_jwt = false` in `supabase/config.toml` because they perform their own explicit token validation and allowlist check. Each handler calls `auth.getUser(token)`, requires a confirmed email and checks the active allowlist. `blog-contact` is also configured with `verify_jwt = false`, but it is a public form endpoint and intentionally uses its separate request-validation, rate-limit and secret-relay model. Do not remove or conflate these checks.
 
 The client configuration contains only the Supabase project URL and an sb_publishable_ key. Publishable keys are intended for browser use. Never put a Supabase secret key, legacy service-role key, GitHub token or Google private key in public/admin/config.js, any other browser asset or Git history.
 
@@ -69,6 +73,22 @@ The GitHub Release API is public and returns the current cumulative asset count 
 The scheduled job runs private.capture_github_download_snapshot(), a private-schema function with a fixed search path and restricted execute privileges. It calls the GitHub Releases API through the http extension and upserts the cumulative count using the Tehran calendar date. Only the database postgres role can execute it; browser roles and the Edge Function service role cannot invoke it directly.
 
 The daily count is derived from differences between cumulative snapshots. The first available snapshot is a baseline and cannot reconstruct earlier day-by-day activity. GitHub's count is not a count of unique people. Cron execution history is available in cron.job_run_details or the Supabase Integrations → Cron page.
+
+## Blog CMS and global advertising
+
+The blog's published content is read from `public.get_public_blog_payload()`, a constrained public RPC that returns published posts and safe public settings only. Drafts are not part of that public payload. The build script fetches the RPC response and writes it to the ignored `.cache/blog-content.json` before generating static HTML.
+
+The `blog-admin` function requires the same confirmed-email allowlist as the analytics dashboards. It handles post/category/settings CRUD, per-post SEO, global advertising configuration and media uploads. Global ad settings live in `public.blog_settings.ad_banners`; the first two slots exist disabled by default, and the CMS supports up to eight slots. Enabled banners are rendered on every article page. Link relations are restricted to Follow, Nofollow, Sponsored, UGC and approved combinations. Images are stored in the public-read `blog-media` bucket; direct browser uploads are not granted and uploads are performed through the authorized Edge Function.
+
+The upload endpoint accepts WebP, JPEG, PNG and GIF up to 3 MB. The server checks MIME type and file signature; GIF data is kept as the original file so animation is preserved. The public read policy on `storage.objects` is intentional because article images and banners must be fetched by anonymous readers. Do not add public insert/update/delete policies.
+
+The admin function uses `GITHUB_WORKFLOW_TOKEN` only server-side to dispatch the production static build after a successful write. A Supabase function deploy and a GitHub Pages deploy are separate operations.
+
+## Public blog contact endpoint
+
+`blog-contact` is the only intentionally public write-oriented Edge Function. It accepts POST JSON from the exact personal-site origin, limits the body to 12 KiB, validates field lengths and request type, returns a generic success for a filled honeypot, and rate-limits a keyed hash of the visitor network address to three accepted submissions per hour. Raw IP addresses are not stored in the rate-limit table. It then sends the request through a Google Apps Script whose shared token is stored in Supabase Secrets and Apps Script Script Properties. CORS/Origin checks are browser controls, not authentication; keep the server-side rate limit and relay token.
+
+See `integrations/google-apps-script/README.md` for the mail relay setup and secret names.
 
 ## Google Analytics 4 and Search Console
 
@@ -116,5 +136,7 @@ To deploy a changed Edge Function with the Supabase CLI:
     supabase link --project-ref bkohdqwecnvbmeaiuyyx
     supabase functions deploy download-stats
     supabase functions deploy site-analytics
+    supabase functions deploy blog-admin
+    supabase functions deploy blog-contact
 
-The CLI reads verify_jwt = false from supabase/config.toml. Function deployment replaces the live function version. Review the full source, exact dependency pin and authentication checks first, then verify the deployed function version after deployment. Database migrations are a separate operation. The GitHub Pages workflow does not deploy Supabase Edge Functions or modify production database migrations.
+The CLI reads verify_jwt = false from supabase/config.toml. Function deployment replaces the live function version. Review the full source, exact dependency pin where applicable, request boundary and authentication model first, then verify the deployed function version after deployment. Database migrations are a separate operation. The GitHub Pages workflow does not deploy Supabase Edge Functions or modify production database migrations.
