@@ -51,7 +51,7 @@ export function BlogFooter() {
           </div>
         </div>
         <div className="blog-footer-bottom">
-          <small>© {new Date().toLocaleDateString("fa-IR", { year: "numeric" })} آریا کیانزاد</small>
+          <small>© {new Date().toLocaleDateString("fa-IR", { year: "numeric", timeZone: "Asia/Tehran" })} آریا کیانزاد</small>
           <span>این نوشته‌ها رو از نگاه و تجربهٔ خودم می‌نویسم.</span>
         </div>
       </div>
