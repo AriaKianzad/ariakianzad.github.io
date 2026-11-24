@@ -461,3 +461,50 @@ body, body * { font-family: Estedad, Tahoma, sans-serif !important; }
 @media(max-width:560px) {
   .article-analytics-chart-panel {padding:14px 10px}
 }
+
+
+.ad-settings-intro {max-width:1120px;margin-bottom:16px;display:grid;gap:6px}
+.ad-settings-intro>strong {font-size:13px}
+.ad-settings-intro p {margin:0;color:var(--muted);font-size:11px;line-height:1.9}
+.ad-banners-form {max-width:1120px;display:grid;gap:16px}
+.ad-banners-list {display:grid;gap:16px}
+.ad-management-card {min-width:0;padding:20px;border:1px solid var(--line);background:var(--surface)}
+.ad-management-heading {display:flex;align-items:center;justify-content:space-between;gap:18px;padding-bottom:13px;border-bottom:1px solid var(--line)}
+.ad-management-heading .kicker {display:block;margin-bottom:3px;color:var(--muted);font:8px ui-monospace,monospace;letter-spacing:.1em;direction:ltr}
+.ad-management-heading h2 {margin:0;font-size:16px}
+.ad-enabled-toggle {display:flex;align-items:center;gap:8px;color:var(--soft);font-size:10px;white-space:nowrap}
+.ad-management-layout {display:grid;grid-template-columns:240px minmax(0,1fr);gap:24px;padding-top:16px}
+.ad-management-media {display:grid;align-content:start;justify-items:start;min-width:0}
+.ad-management-preview {display:grid;place-items:center;width:100%;aspect-ratio:1/1;overflow:hidden;border:1px dashed var(--line);background:#f2efe7;color:var(--muted);font-size:10px}
+.ad-management-preview img {display:block;width:100%;height:100%;object-fit:contain}
+.ad-preview-placeholder {padding:14px;text-align:center}
+.ad-file-button {margin:10px 0 5px}
+.ad-management-media>small {color:var(--muted);font-size:9px;line-height:1.8}
+.ad-management-fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:4px 14px;min-width:0}
+.ad-management-fields .field-label {min-width:0;margin:0}
+.ad-management-fields .field-label:nth-child(3),
+.ad-management-fields .help-text {grid-column:1/-1}
+.ad-management-fields input[data-ad-field="link_url"] {direction:ltr;text-align:left}
+.ad-management-footer {display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:9px}
+.ad-management-footer .text-button {white-space:nowrap}
+.ad-banners-actions {justify-content:space-between;padding:14px 0}
+.ad-banners-buttons {display:flex;gap:9px;flex-wrap:wrap}
+@media(max-width:820px) {
+  .ad-management-layout {grid-template-columns:190px minmax(0,1fr);gap:16px}
+}
+@media(max-width:600px) {
+  .ad-management-card {padding:14px}
+  .ad-management-heading {align-items:flex-start;flex-direction:column;gap:8px}
+  .ad-management-layout {grid-template-columns:minmax(0,1fr)}
+  .ad-management-media {grid-template-columns:minmax(130px,180px) minmax(0,1fr);align-items:center;gap:10px}
+  .ad-management-preview {grid-row:span 2;grid-column:1;max-width:180px}
+  .ad-management-media .file-button {grid-column:2;align-self:end}
+  .ad-management-media>small {grid-column:2;align-self:start}
+  .ad-management-fields {grid-template-columns:minmax(0,1fr)}
+  .ad-management-fields .field-label:nth-child(3),
+  .ad-management-fields .help-text {grid-column:auto}
+  .ad-management-footer {align-items:flex-start;flex-direction:column}
+  .ad-banners-actions {align-items:stretch;flex-direction:column}
+  .ad-banners-buttons {display:grid;grid-template-columns:minmax(0,1fr)}
+  .ad-banners-buttons .button {width:100%}
+}
