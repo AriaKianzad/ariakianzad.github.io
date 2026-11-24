@@ -1311,6 +1311,7 @@ body:has(.blog-theme) > main#main { display:contents; }
   }
   .blog-theme .blog-article-meta {
     grid-area:meta;
+    direction:rtl;
     display:flex !important;
     align-items:center;
     justify-content:flex-start;
