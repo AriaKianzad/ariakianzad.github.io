@@ -1603,7 +1603,7 @@ body:has(.blog-theme) > main#main { display:contents; }
    The number comes first, followed by the Persian/English unit. */
 .blog-theme .blog-reading-time {
   display:inline-flex;
-  direction:ltr !important;
+  direction:inherit !important;
   unicode-bidi:isolate;
   flex-direction:row;
   align-items:center;
@@ -1612,7 +1612,7 @@ body:has(.blog-theme) > main#main { display:contents; }
   white-space:nowrap;
 }
 .blog-theme .blog-reading-time>bdi {
-  direction:ltr;
+  direction:inherit;
   unicode-bidi:isolate;
   flex:0 0 auto;
 }
@@ -1639,7 +1639,7 @@ body:has(.blog-theme) > main#main { display:contents; }
    No pseudo-label is injected, so Persian word order cannot be split/reversed. */
 .blog-theme .blog-article-meta .blog-reading-time {
   display:inline-flex !important;
-  direction:rtl !important;
+  direction:inherit !important;
   unicode-bidi:isolate;
   flex-direction:row;
   align-items:center;
@@ -1661,8 +1661,5 @@ body:has(.blog-theme) > main#main { display:contents; }
   .blog-theme .blog-article-sidebar {
     position:static;
     top:auto;
-  }
-  .blog-theme .blog-article-meta .blog-reading-time {
-    direction:rtl !important;
   }
 }
