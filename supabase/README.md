@@ -58,6 +58,8 @@ These are fallback controls; they do **not** provide the breached-password datab
 4. Keep public sign-ups disabled after creating the intended administrator account.
 5. Open https://ariakianzad.github.io/admin/ and sign in.
 
+The homepage and book page hide the floating privacy-settings button after acceptance and keep it available after refusal. The blog always hides both the consent panel and the floating control; it still loads Google Analytics only when a saved consent grant exists. This is the live behaviour of `public/analytics-consent.js`, not a statement that Analytics runs without consent.
+
 The dashboard's **«مرا به خاطر بسپار»** option is off by default. Only when a user explicitly enables it does the browser store the rotating Supabase refresh token in localStorage; the password and access token are not stored there. Same-origin JavaScript can nevertheless read local storage, so leave it disabled and use **خروج** on shared or public devices. Logout also requests local-session revocation from Supabase.
 
 ## Blog CMS and public contact form
@@ -66,7 +68,7 @@ The CMS uses public.blog_posts and public.blog_settings. Both tables have RLS en
 
 The blog-media Storage bucket is public-read because published article pages need to render images. Uploads are handled only by the authenticated blog-admin function. The function caps uploads at 3 MB, validates the declared MIME type against the file signature and uses a random storage path. The bucket permits WebP, JPEG, PNG and GIF.
 
-The public blog-contact endpoint is unauthenticated by design. It checks the expected site Origin, accepts only POST JSON, caps the body at 12 KB, validates fields, ignores a filled honeypot and rate-limits to three accepted attempts per client-IP fingerprint per hour. The current source trusts only the Cloudflare `cf-connecting-ip` header and deliberately does not fall back to `x-real-ip` or `x-forwarded-for`. It stores an HMAC-SHA-256 fingerprint rather than the raw IP. If the Cloudflare header is absent or malformed, the request shares an `unknown` fingerprint bucket; check the deployed ingress header behaviour if this causes false rate limits.
+The public blog-contact endpoint is unauthenticated by design. It checks the expected site Origin, accepts only POST JSON, caps the body at 12 KB, validates fields, ignores a filled honeypot and rate-limits to three accepted attempts per client-IP fingerprint per hour. The current source trusts only the Cloudflare `cf-connecting-ip` header and deliberately does not fall back to `x-real-ip` or `x-forwarded-for`. It stores an HMAC-SHA-256 fingerprint rather than the raw IP. If the Cloudflare header is absent or malformed, the request shares an `unknown` fingerprint bucket; check the deployed ingress header behaviour if this causes false rate limits. On 2026-11-24 the live `blog-contact` function was redeployed as version 5 and its active source was verified against this repository.
 
 The function forwards messages to integrations/google-apps-script/blog-contact.gs using GOOGLE_APPS_SCRIPT_URL and GOOGLE_APPS_SCRIPT_TOKEN. The Apps Script stores its matching BLOG_CONTACT_TOKEN and destination BLOG_CONTACT_TO_EMAIL in Script Properties. The token is never sent to the browser. The script uses a lock and a short duplicate-submission cache and checks Google's daily email quota.
 

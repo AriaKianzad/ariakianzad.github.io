@@ -45,6 +45,7 @@ const [
   read("supabase/migrations/20261121171937_schedule_daily_download_snapshots.sql"),
 ]);
 
+const contact = await read("supabase/functions/blog-contact/index.ts");
 const sdkVersion = "npm:@supabase/supabase-js@2.119.2";
 for (const [name, source, deno] of [
   ["download-stats", download, downloadDeno],
@@ -75,6 +76,17 @@ assert.ok(download.includes("date >= assetCreatedDate"),
   "the first known snapshot on or after asset publication must seed the cumulative total");
 assert.ok(analytics.includes("confirmed_at") || analytics.includes("email_confirmed_at"),
   "site-analytics must require a confirmed email");
+
+const contactIpBlock = contact.slice(contact.indexOf("function clientIp"), contact.indexOf("async function fingerprint"));
+assert.ok(contactIpBlock.includes('request.headers.get("cf-connecting-ip")'), "blog-contact must obtain the client IP from Cloudflare's managed ingress header");
+assert.ok(!/x-real-ip|x-forwarded-for/i.test(contactIpBlock), "blog-contact must not trust caller-controlled forwarding headers");
+assert.ok(contactIpBlock.includes('return "unknown"') && contactIpBlock.includes("direct.length > 64") && contactIpBlock.includes("/[,;\\s]/"), "missing or malformed Cloudflare IP values must enter the bounded unknown bucket");
+assert.ok(contact.includes('name: "HMAC"') && contact.includes('crypto.subtle.sign("HMAC"'), "blog-contact must create a keyed HMAC-SHA-256 fingerprint rather than an unkeyed IP hash");
+assert.ok(!contact.includes('crypto.subtle.digest("SHA-256"'), "blog-contact must not use a plain hash of the IP and secret");
+assert.ok(contact.includes("p_fingerprint: ipHash") && !contact.includes("p_ip:"), "blog-contact must send only the keyed fingerprint to the database rate limiter");
+assert.ok(contact.includes('origin !== SITE_ORIGIN') && contact.includes("MAX_BODY_BYTES") && contact.includes("companyFax"), "the public contact endpoint must retain its Origin, body-size and honeypot controls");
+assert.ok(contact.includes('scriptUrl.hostname !== "script.google.com"') && contact.includes("GOOGLE_APPS_SCRIPT_TOKEN"), "the contact relay must use only the expected HTTPS Google Apps Script host and a server-only token");
+assert.ok(config.includes("[functions.blog-contact]") && config.includes("verify_jwt = false"), "the contact endpoint must preserve its intentional public-function JWT mode");
 
 for (const [name, migration] of [
   ["dashboard_admins", allowlistMigration],

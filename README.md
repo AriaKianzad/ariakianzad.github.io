@@ -52,7 +52,9 @@ The dashboard combines three independent data sources:
 
 A Supabase Cron job captures the GitHub cumulative count once per day at **00:15 UTC (03:45 Asia/Tehran)**. A private PostgreSQL function fetches the public GitHub Release API and upserts the snapshot using the Tehran calendar date. Opening the dashboard also refreshes the current day's value. Daily differences are calculated from consecutive cumulative snapshots; the first snapshot is a baseline, not historical daily data.
 
-The personal website, book page and blog share one consent-aware Google Analytics loader. Analytics remains off until a visitor accepts. The privacy-settings control remains reachable after acceptance or refusal on every public route; the blog suppresses the automatic prompt to protect the reading experience, but its privacy control can open the panel when a visitor wants to change their choice. Consent is stored in browser local storage.
+The personal website and book page share one consent-aware Google Analytics loader. Analytics remains off until a visitor accepts. On those routes, the floating privacy-settings control is hidden after acceptance; after a refusal it remains available so the visitor can change the choice later. The blog never displays either the consent panel or the floating preferences control, regardless of the saved choice; it still loads Analytics only when a previous consent grant exists. Consent is stored in browser local storage.
+
+The CMS is a static frontend, but publication updates are automated: publishing or unpublishing/archiving a post, and saving relevant blog settings such as categories or SEO defaults, dispatches the GitHub Pages workflow on `main`. The workflow fetches the latest published snapshot from the restricted Supabase RPC before the build, then regenerates article and category HTML, `/sitemap.xml`, RSS at `/blog/feed.xml`, and article social images. Draft-only saves do not publish a new public build. Search engines may take time to recrawl a changed sitemap; a successful build is not a guarantee of immediate indexing.
 
 ## Authentication and data access
 

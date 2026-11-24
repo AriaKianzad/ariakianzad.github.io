@@ -1832,3 +1832,17 @@ body:has(.blog-theme) .analytics-preferences:hover {
     display:none !important;
   }
 }
+
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto!important}
+  .blog-theme *,
+  .blog-theme *::before,
+  .blog-theme *::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+    transition-delay:0ms!important;
+    scroll-behavior:auto!important;
+  }
+}
