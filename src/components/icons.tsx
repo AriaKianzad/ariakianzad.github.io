@@ -3,7 +3,7 @@ import paths from "@/lib/social-icons.json";
 
 /**
  * Social glyphs use Simple Icons geometry (24x24 viewBox, filled, CC0):
- * youtube/instagram/x/unsplash/medium from simple-icons@15, linkedin from
+ * youtube/instagram/x/unsplash/telegram from Simple Icons, linkedin from
  * simple-icons@9 (the glyph was removed from the set at v10). Vendored in
  * assets-src/icons/ and extracted to src/lib/social-icons.json.
  *

@@ -7,7 +7,7 @@ import { join } from "node:path";
 
 const dir = join(process.cwd(), "assets-src", "icons");
 const target = join(process.cwd(), "src", "lib", "social-icons.json");
-const expected = ["instagram", "linkedin", "medium", "unsplash", "x", "youtube"];
+const expected = ["instagram", "linkedin", "telegram", "unsplash", "x", "youtube"];
 const files = readdirSync(dir).filter((file) => file.endsWith(".svg"));
 const available = new Set(files.map((file) => file.replace(/\.svg$/, "")));
 const missing = expected.filter((name) => !available.has(name));

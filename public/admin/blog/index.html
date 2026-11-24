@@ -106,7 +106,7 @@
 <div id="link-settings-list" class="link-settings-list"></div>
 </section>
 
-<div class="editor-tabs" role="tablist"><button class="editor-tab active" type="button" data-tab="seo">سئو و شبکه‌های اجتماعی</button><button class="editor-tab" type="button" data-tab="appearance">ظاهر مقاله</button><button class="editor-tab" type="button" data-tab="faq">پرسش‌های متداول</button></div>
+<div class="editor-tabs" role="tablist"><button class="editor-tab active" type="button" data-tab="seo">سئو و شبکه‌های اجتماعی</button><button class="editor-tab" type="button" data-tab="appearance">ظاهر مقاله</button><button class="editor-tab" type="button" data-tab="ads">بنر تبلیغاتی</button><button class="editor-tab" type="button" data-tab="faq">پرسش‌های متداول</button></div>
 <section class="tab-panel active" id="tab-seo"><div class="content-panel">
 <div class="panel-heading"><div><span class="kicker">پیش‌نمایش جست‌وجو</span><h2>نمایش در گوگل</h2></div><span id="seo-score" class="seo-score">۰ / ۱۰۰</span></div>
 <div id="google-preview" class="google-preview" dir="rtl"><span id="seo-preview-url">https://ariakianzad.github.io/blog/</span><strong id="seo-preview-title">عنوان مقاله</strong><p id="seo-preview-description">توضیحات مقاله در نتایج جست‌وجو اینجا نمایش داده می‌شه.</p></div>
@@ -131,6 +131,21 @@
 <div class="media-editor"><div class="panel-heading"><div><span class="kicker">پیش‌نمایش شبکه‌های اجتماعی</span><h2>تصویر اشتراک‌گذاری</h2></div></div>
 <div id="og-image-preview" class="media-preview media-preview-small"><span>تصویر اجتماعی جداگانه اختیاریه.</span></div><input id="post-og-url" data-field="og_image_url" type="hidden">
 <label class="file-button">انتخاب تصویر اشتراک‌گذاری<input id="og-image-file" type="file" accept="image/jpeg,image/png,image/webp"></label></div>
+</div></section>
+
+<section class="tab-panel" id="tab-ads" hidden><div class="content-panel">
+<div class="panel-heading"><div><span class="kicker">AD PLACEMENT / 1:1</span><h2>بنر تبلیغاتی مقاله</h2></div></div>
+<p class="help-text">این بنر در نسخۀ دسکتاپ، در ستون کناری مقاله و دقیقاً زیر فهرست مقاله نمایش داده می‌شه. نسبت تصویر پیشنهادی ۱:۱ است. تا وقتی تصویر انتخاب نکنی و بنر رو فعال نکنی، هیچ فضای خالی‌ای در صفحۀ عمومی اشغال نمی‌شه.</p>
+<div class="media-editor">
+<div id="ad-banner-preview" class="media-preview media-preview-square"><span>هنوز تصویری برای بنر انتخاب نشده.</span></div>
+<input id="post-ad-banner-url" data-field="ad_banner_image_url" type="hidden">
+<label class="file-button">انتخاب تصویر بنر<input id="ad-banner-file" type="file" accept="image/jpeg,image/png,image/webp"></label>
+<button id="clear-ad-banner" class="text-button danger-text" type="button">حذف تصویر و تنظیمات بنر</button>
+<label class="field-label">متن جایگزین تصویر<input id="post-ad-banner-alt" data-field="ad_banner_alt" maxlength="240" placeholder="توضیح کوتاه و دقیق بنر"></label>
+<label class="field-label">پیوند مقصد بنر<input id="post-ad-banner-link" data-field="ad_banner_link_url" type="url" inputmode="url" maxlength="800" placeholder="https://example.com/"></label>
+<div class="check-row"><label><input id="post-ad-banner-enabled" data-field="ad_banner_enabled" type="checkbox"> نمایش بنر در این مقاله</label></div>
+<p class="help-text">برای فعال‌کردن بنر، ابتدا تصویر و متن جایگزینش رو وارد کن. پیوند مقصد اختیاریه و فقط آدرس HTTPS پذیرفته می‌شه.</p>
+</div>
 </div></section>
 
 <section class="tab-panel" id="tab-faq" hidden><div class="content-panel">
@@ -232,6 +247,19 @@
 <p id="article-analytics-status" role="status" aria-live="polite">برای دریافت گزارش، روی «به‌روزرسانی آمار» بزن.</p>
 </div>
 <div id="article-analytics-summary" class="article-analytics-summary"></div>
+<section class="article-analytics-chart-panel" aria-labelledby="article-analytics-chart-title">
+  <div class="panel-heading"><div><span class="kicker">GA4 / PAGE VIEWS</span><h2 id="article-analytics-chart-title">روند بازدید مقاله‌ها</h2><p class="help-text">بازدید صفحه‌های مقاله در ۳۰ روز اخیر</p></div></div>
+  <div id="article-analytics-chart-wrap" class="article-analytics-chart-wrap" hidden>
+    <svg id="article-analytics-chart" viewBox="0 0 900 220" role="img" aria-label="نمودار بازدید روزانۀ مقاله‌ها">
+      <g id="article-analytics-chart-grid" class="article-analytics-chart-grid"></g>
+      <path id="article-analytics-chart-area" class="article-analytics-chart-area"></path>
+      <path id="article-analytics-chart-line" class="article-analytics-chart-line"></path>
+      <g id="article-analytics-chart-points"></g>
+    </svg>
+    <div id="article-analytics-chart-labels" class="article-analytics-chart-labels"></div>
+  </div>
+  <p id="article-analytics-chart-empty" class="article-analytics-chart-empty" role="status">برای نمایش نمودار، آمار رو دریافت کن.</p>
+</section>
 <div id="article-analytics-results" class="article-analytics-list"></div>
 <div id="article-analytics-empty" class="empty-state" hidden>برای این جست‌وجو مقاله‌ای پیدا نشد.</div>
 </section>

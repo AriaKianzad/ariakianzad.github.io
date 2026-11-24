@@ -4,7 +4,7 @@ import { socials } from "@/lib/site";
 import { SocialIcon } from "@/components/icons";
 
 const socialLabels: Record<string, string> = {
-  youtube: "یوتیوب", instagram: "اینستاگرام", linkedin: "لینکدین", x: "ایکس", unsplash: "آنسپلیش", medium: "مدیوم",
+  youtube: "یوتیوب", instagram: "اینستاگرام", linkedin: "لینکدین", x: "ایکس", unsplash: "آنسپلیش", telegram: "تلگرام",
 };
 
 export function BlogHeader() {

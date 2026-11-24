@@ -16,6 +16,7 @@ export type BlogPost={
   canonical_url:string;og_title:string;og_description:string;robots_index:boolean;robots_follow:boolean;
   featured:boolean;toc_enabled:boolean;drop_cap:boolean;content_width:"reading"|"wide";accent_color:string;
   faqs:BlogFaq[];published_at:string;updated_at:string;
+  ad_banner_enabled?:boolean;ad_banner_image_url?:string;ad_banner_alt?:string;ad_banner_link_url?:string;
 };
 export type BlogSettings={
   title:string;tagline:string;description:string;canonical_url:string;background_theme:string;accent_color:string;card_style:string;
@@ -91,6 +92,28 @@ export function getBlogCategories(){
 }
 export const getPostsByCategory=(slug:string)=>getBlogPosts().filter((post)=>getPostCategorySlugs(post).includes(slug));
 export function readingTime(content:string,language:"fa"|"en"="fa"){
-  const words=content.trim().split(/\s+/).filter(Boolean).length;
+  const readable=String(content||"")
+    .replace(/```[\s\S]*?```/g," ")
+    .replace(/~~~[\s\S]*?~~~/g," ")
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g," ")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g,"$1")
+    .replace(/<[^>]*>/g," ")
+    .replace(/^[ \t]{0,3}#{1,6}[ \t]+/gm," ")
+    .replace(/^[ \t]{0,3}>[ \t]?/gm," ")
+    .replace(/^[ \t]{0,3}(?:[-*+]|\d+\.)[ \t]+/gm," ")
+    .replace(/https?:\/\/\S+/g," ")
+    .replace(/[`*_~]/g," ")
+    .replace(/\s+/g," ")
+    .trim();
+  const words=readable.match(/[\p{L}\p{N}]+(?:[\p{M}\u200c'’.-]*[\p{L}\p{N}]+)*/gu)?.length||0;
   return Math.max(1,Math.ceil(words/(language==="fa"?180:220)));
+}
+export function formatBlogDate(value:string|Date|null|undefined,language:"fa"|"en"="fa"){
+  if(!value)return "—";
+  const date=value instanceof Date?value:new Date(value);
+  if(!Number.isFinite(date.getTime()))return "—";
+  return new Intl.DateTimeFormat(language==="fa"?"fa-IR-u-ca-persian":"en-US",{
+    year:"numeric",month:"short",day:"numeric",
+    timeZone:language==="fa"?"Asia/Tehran":"UTC",
+  }).format(date);
 }

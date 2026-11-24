@@ -55,7 +55,7 @@ export const socials = [
   { id: "linkedin", label: "Aria Kianzad on LinkedIn", href: "https://www.linkedin.com/in/ariakianzad" },
   { id: "x", label: "Aria Kianzad on X", href: "https://x.com/ariakianzad" },
   { id: "unsplash", label: "Aria Kianzad on Unsplash", href: "https://unsplash.com/@ariakianzad" },
-  { id: "medium", label: "Aria Kianzad on Medium", href: "https://medium.com/@AriaKianzad" },
+  { id: "telegram", label: "Aria Kianzad on Telegram", href: "https://t.me/KianzadAria" },
 ] as const;
 
 export type SocialId = (typeof socials)[number]["id"];
