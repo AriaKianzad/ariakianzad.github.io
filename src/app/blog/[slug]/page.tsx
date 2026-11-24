@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { site } from "@/lib/site";
-import { getBlogPost, getBlogPosts, getBlogSettings, readingTime, getBlogCategoryName, getPostCategorySlugs, getPrimaryCategorySlug } from "@/lib/blog-data";
+import { getBlogPost, getBlogPosts, getBlogSettings, readingTime, formatBlogDate, getBlogCategoryName, getPostCategorySlugs, getPrimaryCategorySlug } from "@/lib/blog-data";
 import { extractToc, extractMarkdownImageUrls, renderMarkdown } from "@/lib/blog-markdown";
 import { BlogHeader, BlogFooter } from "../BlogHeader";
 import { CopyLinkButton } from "../CopyLinkButton";
@@ -82,6 +82,8 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
     : [];
   const canonical = post.canonical_url || site.url + "/blog/" + post.slug + "/";
   const categoryName = primaryCategory ? getBlogCategoryName(primaryCategory) : "";
+  const adBannerEnabled = post.ad_banner_enabled === true && Boolean(post.ad_banner_image_url);
+  const hasArticleSidebar = toc.length > 0 || adBannerEnabled;
   const schema = {
     "@context": "https://schema.org", "@type": settings.schema_type,
     headline: post.title, description: post.meta_description || post.excerpt,
@@ -136,16 +138,31 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
             ) : <div className="blog-article-visual-empty" aria-hidden="true" />}
             <div className="blog-article-meta">
               <span>آریا کیانزاد</span>
-              <time dateTime={post.published_at} dir={direction}>{new Intl.DateTimeFormat(language === "fa" ? "fa-IR" : "en-US", {year:"numeric",month:"long",day:"numeric",timeZone:language==="fa"?"Asia/Tehran":"UTC"}).format(new Date(post.published_at))}</time>
+              <time dateTime={post.published_at || ""} dir={direction}>{formatBlogDate(post.published_at, post.language)}</time>
               {settings.show_reading_time ? <span className="blog-reading-time" dir={direction}><bdi>{readingTime(post.content, post.language).toLocaleString(language === "fa" ? "fa-IR" : "en-US")}</bdi> {language === "fa" ? "دقیقه مطالعه" : "min read"}</span> : null}
             </div>
           </div>
         </header>
-        <div className={"blog-article-grid blog-container" + (toc.length ? " has-toc" : " no-toc") + (post.content_width === "wide" || settings.content_width === "wide" ? " content-wide" : "")}>
-          {toc.length ? (
-            <aside className="blog-toc">
-              <strong>در این مقاله</strong>
-              <ol>{toc.map((item) => <li key={item.id} className={item.level === 3 ? "toc-sub" : ""}><a href={"#" + item.id}>{item.title}</a></li>)}</ol>
+        <div className={"blog-article-grid blog-container " + (hasArticleSidebar ? "has-sidebar " : "no-sidebar ") + (toc.length ? "has-toc" : "no-toc") + (adBannerEnabled ? "has-ad " : "") + (post.content_width === "wide" || settings.content_width === "wide" ? "content-wide" : "")}>
+          {hasArticleSidebar ? (
+            <aside className="blog-article-sidebar">
+              {toc.length ? (
+                <nav className="blog-toc" aria-label="فهرست مقاله">
+                  <strong>فهرست مقاله</strong>
+                  <ol>{toc.map((item) => <li key={item.id} className={item.level === 3 ? "toc-sub" : ""}><a href={"#" + item.id}>{item.title}</a></li>)}</ol>
+                </nav>
+              ) : null}
+              {adBannerEnabled ? (
+                <div className="blog-ad-slot">
+                  {post.ad_banner_link_url ? (
+                    <a href={post.ad_banner_link_url} target="_blank" rel="sponsored noopener noreferrer" aria-label={post.ad_banner_alt || "مشاهدۀ بنر تبلیغاتی"}>
+                      <img src={post.ad_banner_image_url || ""} alt={post.ad_banner_alt || "بنر تبلیغاتی"} loading="lazy" decoding="async" />
+                    </a>
+                  ) : (
+                    <img src={post.ad_banner_image_url || ""} alt={post.ad_banner_alt || "بنر تبلیغاتی"} loading="lazy" decoding="async" />
+                  )}
+                </div>
+              ) : null}
             </aside>
           ) : null}
           <article className={"blog-prose" + (post.drop_cap ? " has-drop-cap" : "")} dangerouslySetInnerHTML={{ __html: html }} />
