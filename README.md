@@ -1,13 +1,15 @@
 # Aria Kianzad
 
-This repository contains my personal website and the standalone Persian microsite for the book **«میانِ ما»**.
+This repository contains my personal website, Persian editorial blog and CMS, the standalone microsite for the book **«میانِ ما»**, and two browser-based administration interfaces backed by Supabase.
 
 - **Personal website:** https://ariakianzad.github.io/
 - **Book page:** https://ariakianzad.github.io/Mian-e-Ma/
-- **Private analytics dashboard:** https://ariakianzad.github.io/admin/
+- **Blog:** https://ariakianzad.github.io/blog/
+- **Blog CMS:** https://ariakianzad.github.io/admin/blog/
+- **Analytics dashboard:** https://ariakianzad.github.io/admin/
 - **Book PDF release:** https://github.com/AriaKianzad/ariakianzad.github.io/releases/tag/mian-e-ma-v1
 
-The personal website, book page and dashboard are static frontends. The personal homepage is generated with Next.js, but ships as static HTML without a Next.js hydration runtime. Its 3D hero is a separate same-origin ESM module built with esbuild; it requests a locally bundled, code-split Three.js scene only when the hero approaches the viewport. The dashboard uses a separate Supabase backend for authentication and reporting. Rexo is the creative agency at https://rexo.agency/.
+All public pages and both admin interfaces are static frontends. The personal homepage and blog are generated with Next.js, but ship as static HTML without a Next.js hydration runtime. The 3D hero is a separate same-origin ESM module built with esbuild; it requests a locally bundled, code-split Three.js scene only when the hero approaches the viewport. Supabase provides authentication, CMS operations, publication data and analytics APIs. Rexo is the creative agency at https://rexo.agency/.
 
 ## Project architecture
 
@@ -15,7 +17,9 @@ The personal website, book page and dashboard are static frontends. The personal
 | --- | --- |
 | Personal website | Next.js App Router static export; TypeScript/React at build time, standalone esbuild + Three.js ESM hero |
 | Book microsite | Standalone HTML, CSS and JavaScript |
-| Admin interface | Static HTML, CSS and JavaScript |
+| Analytics dashboard | Static HTML, CSS and JavaScript |
+| Blog CMS | Static HTML, CSS and JavaScript; privileged operations use an authenticated Supabase Edge Function |
+| Blog publication | Build-time snapshot from a restricted public Supabase RPC; article and category routes are generated as static HTML |
 | Hosting | GitHub Pages, with an optional Apache/cPanel bundle |
 | Data and authentication | Supabase Auth, Postgres and Edge Functions |
 | Download counter | GitHub Release asset metadata, captured in daily Postgres snapshots |
@@ -28,7 +32,10 @@ The Next.js application is exported as static files. The deployed website does n
 
 - /: English personal website.
 - /Mian-e-Ma/: Persian book information and download page.
-- /admin/: password-protected analytics interface.
+- /blog/: Persian/English editorial archive with static article and category routes.
+- /blog/contact/: public contact form with server-side validation and abuse controls.
+- /admin/: password-protected analytics dashboard.
+- /admin/blog/: authenticated editorial CMS. Its static frontend is public code; privileged actions are checked by Supabase.
 - /robots.txt, /sitemap.xml, /llms.txt: public discovery and metadata files.
 
 The redesigned homepage is organized around research and insight, positioning and identity, content and communication, a four-step method, Rexo, writing, about and contact. It uses a restrained dark editorial system, Estedad typography, a locally bundled 3D signal sculpture in the hero, scroll-triggered section entrances and subtle interactive diagrams. Motion respects `prefers-reduced-motion`; the hero has a CSS fallback and is not required to read or navigate the page.
@@ -45,17 +52,17 @@ The dashboard combines three independent data sources:
 
 A Supabase Cron job captures the GitHub cumulative count once per day at **00:15 UTC (03:45 Asia/Tehran)**. A private PostgreSQL function fetches the public GitHub Release API and upserts the snapshot using the Tehran calendar date. Opening the dashboard also refreshes the current day's value. Daily differences are calculated from consecutive cumulative snapshots; the first snapshot is a baseline, not historical daily data.
 
-The personal and book pages ask visitors for analytics consent. The Google Analytics tag is not requested until a visitor accepts. The privacy-settings control remains available after both acceptance and refusal, so visitors can review or withdraw consent later. The choice is stored in browser local storage.
+The personal website, book page and blog share one consent-aware Google Analytics loader. Analytics remains off until a visitor accepts. The privacy-settings control remains reachable after acceptance or refusal on every public route; the blog suppresses the automatic prompt to protect the reading experience, but its privacy control can open the panel when a visitor wants to change their choice. Consent is stored in browser local storage.
 
-## Dashboard security model
+## Authentication and data access
 
-The dashboard uses Supabase Auth and a server-side email allowlist:
+The analytics dashboard and blog CMS use Supabase Auth and a server-side email allowlist:
 
 1. A user signs in through Supabase Auth.
-2. Each Edge Function validates the access token with Supabase Auth.
-3. The user must have a confirmed email and an active matching entry in public.dashboard_admins.
-4. The Edge Functions use server-side Supabase credentials to access the database and Google APIs.
-5. Browser roles have no table privileges on download_snapshots or dashboard_admins; both tables have Row Level Security enabled.
+2. The protected functions (download-stats, site-analytics and blog-admin) validate the bearer token with Auth, require a confirmed email and check the active public.dashboard_admins allowlist.
+3. Only after authorization do these functions use server-side Supabase credentials to access private records, upload media or request Google reports.
+4. Browser roles have no table privileges on download_snapshots, dashboard_admins, blog_posts or blog_settings. CMS publication data is exposed through an explicit public RPC that returns published snapshots and approved public settings only.
+5. The public blog contact function is intentionally unauthenticated. It validates requests, limits body size, uses a honeypot and rate limit, and forwards mail through a token-protected Google Apps Script relay. No mail token or Supabase secret is included in the browser bundle.
 
 The dashboard's config.js contains only the Supabase project URL and a **publishable** client key. Publishable keys are designed to be visible in browser code; they are not administrator credentials. Supabase secret keys, service-role keys, GitHub tokens and Google service-account private keys must never be placed in frontend code or committed to this repository.
 
@@ -146,18 +153,22 @@ A CSP meta tag cannot set every HTTP response header. Directives such as frame-a
 
 ## Supabase backend
 
-Supabase migrations and Edge Function sources are versioned under supabase/. The two deployed functions are:
+Supabase migrations and Edge Function sources are versioned under supabase/. The four deployed functions are:
 
 - **download-stats:** authenticates an allowlisted dashboard administrator and returns the GitHub Release count and snapshot history.
 - **site-analytics:** authenticates the same administrator and requests read-only GA4 and Search Console reports.
+- **blog-admin:** authenticates an allowlisted administrator and handles CMS drafts, publishing, blog settings, advertising placements and media uploads.
+- **blog-contact:** accepts validated public contact requests, applies server-side abuse controls and forwards them to a token-protected Google Apps Script Gmail relay.
 
 To deploy function source changes using the Supabase CLI:
 
     supabase link --project-ref bkohdqwecnvbmeaiuyyx
     supabase functions deploy download-stats
     supabase functions deploy site-analytics
+    supabase functions deploy blog-admin
+    supabase functions deploy blog-contact
 
-Both Edge Functions use the exact Supabase JS version declared in their respective deno.json import maps. They set verify_jwt = false because each handler explicitly validates the bearer token with auth.getUser(token), requires a confirmed email and checks the active email allowlist. CORS is restricted to the personal-site origin, but CORS is not an authorization boundary; do not remove the handler-level checks. Production database migrations have already been applied; review migration state before applying any new migration.
+The three protected functions use the exact Supabase JS version declared in their respective deno.json import maps. Their verify_jwt setting is false because the handlers explicitly call auth.getUser(token), require a confirmed email and check the active email allowlist. blog-contact is the deliberate public exception: it has no dashboard login and relies on request validation, rate limiting and a server-only mail-relay token. CORS is not an authorization boundary. Do not remove the protected handlers' authorization checks. Production database migrations have already been applied; review and reconcile migration history before applying any new migration.
 
 ## Repository layout
 
@@ -170,7 +181,10 @@ Both Edge Functions use the exact Supabase JS version declared in their respecti
 
     public/
       Mian-e-Ma/           Standalone Persian book page and local assets
-      admin/               Static dashboard interface and public client config
+      admin/               Static analytics dashboard and blog CMS interfaces
+      blog-contact.js      Public contact-form client
+      blog-copy.js         Article share-link behavior
+      blog-listing.js      Static blog archive search and filters
       analytics-consent.js Consent-aware Google Analytics loader
       _headers             Security headers for compatible static hosts
       .htaccess             Apache/cPanel security and hosting configuration
