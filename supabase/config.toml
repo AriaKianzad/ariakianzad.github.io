@@ -1,8 +1,9 @@
-# Supabase project configuration for the Mian-e-Ma analytics dashboard.
+# Supabase runtime configuration for the website, blog CMS and analytics.
 #
-# Both Edge Functions verify the supplied Supabase access token with Auth,
+# The three admin-only functions validate the Supabase access token with Auth,
 # require a confirmed email and check the active dashboard_admins allowlist.
-# Keep those checks in the handlers when verify_jwt is disabled.
+# blog-contact is intentionally public and uses Origin, input, honeypot,
+# rate-limit and secret-relay checks instead. Keep each model in its handler.
 
 [functions.download-stats]
 verify_jwt = false
