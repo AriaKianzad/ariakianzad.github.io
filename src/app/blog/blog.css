@@ -1703,3 +1703,53 @@ body:has(.blog-theme) > main#main { display:contents; }
   content:none !important;
   display:none !important;
 }
+
+
+/* The global consent controls sit outside the blog wrapper. Keep their
+   viewport-fixed placement, but use the light editorial surface and Estedad. */
+body:has(.blog-theme) .analytics-consent,
+body:has(.blog-theme) .analytics-preferences {
+  direction: rtl;
+  font-family: var(--font-estedad), Estedad, Tahoma, sans-serif;
+}
+body:has(.blog-theme) .analytics-consent {
+  border-color: #d8d5ca;
+  background: rgba(251,249,244,.98);
+  color: #1d3432;
+  box-shadow: 0 18px 56px rgba(29,52,50,.16);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+body:has(.blog-theme) .analytics-consent__copy strong { color: #1d3432; }
+body:has(.blog-theme) .analytics-consent__copy p { color: #596863; }
+body:has(.blog-theme) .analytics-consent__accept {
+  border-color: #1d3432;
+  background: #1d3432;
+  color: #fff;
+}
+body:has(.blog-theme) .analytics-consent__accept:hover {
+  border-color: #294845;
+  background: #294845;
+}
+body:has(.blog-theme) .analytics-consent__reject {
+  border-color: rgba(29,52,50,.3);
+  background: transparent;
+  color: #1d3432;
+}
+body:has(.blog-theme) .analytics-consent__reject:hover {
+  border-color: #a86f54;
+  color: #a86f54;
+}
+body:has(.blog-theme) .analytics-preferences {
+  border-color: #d8d5ca;
+  background: rgba(251,249,244,.96);
+  color: #405653;
+  font-size: 11px;
+  letter-spacing: 0;
+  box-shadow: 0 8px 28px rgba(29,52,50,.12);
+}
+body:has(.blog-theme) .analytics-preferences:hover {
+  border-color: #a86f54;
+  background: #fbf9f4;
+  color: #a86f54;
+}
