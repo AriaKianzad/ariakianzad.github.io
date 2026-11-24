@@ -470,7 +470,14 @@
   }
   function safeHref(raw) {
     const value=String(raw||"").trim();
-    return /^(https?:\/\/|mailto:|\/|#)/i.test(value)&&!/^\/\//.test(value)?value:"#";
+    if(!value)return "#";
+    if(value.startsWith("#"))return value;
+    if(value.startsWith("/")&&value[1]!=="/"&&value[1]!==String.fromCharCode(92))return value;
+    try{
+      const url=new URL(value);
+      if(["http:","https:","mailto:"].includes(url.protocol)&&!url.username&&!url.password)return value;
+    }catch{}
+    return "#";
   }
   function unescapeMarkdownAttribute(value) {
     return String(value||"").replace(/\\([\\\]"])/g,"$1");
