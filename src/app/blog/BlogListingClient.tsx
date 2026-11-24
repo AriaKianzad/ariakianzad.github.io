@@ -1,20 +1,8 @@
 import Link from "next/link";
 import { getPostCategorySlugs, getPrimaryCategorySlug } from "@/lib/blog-category-utils";
-import type { BlogPost } from "@/lib/blog-data";
+import { formatBlogDate, readingTime, type BlogPost } from "@/lib/blog-data";
 
 type Category = { name: string; count: number; slug: string };
-
-function readingTime(content: string, language: "fa" | "en" = "fa") {
-  const words = content.trim().split(/\\s+/).filter(Boolean).length;
-  return Math.max(1, Math.ceil(words / (language === "fa" ? 180 : 220)));
-}
-
-function formatDate(value: string, language: "fa" | "en") {
-  return new Intl.DateTimeFormat(language === "fa" ? "fa-IR" : "en-US", {
-    year: "numeric", month: "short", day: "numeric",
-    timeZone: language === "fa" ? "Asia/Tehran" : "UTC",
-  }).format(new Date(value));
-}
 
 export function BlogPostCard({ post, featured = false, showReadingTime = true, categoryName, searchableTerms = [] }: { post: BlogPost; featured?: boolean; showReadingTime?: boolean; categoryName?: string; searchableTerms?: string[] }) {
   const dir = post.language === "fa" ? "rtl" : "ltr";
@@ -33,7 +21,7 @@ export function BlogPostCard({ post, featured = false, showReadingTime = true, c
       <div className="blog-card-copy">
         <div className="blog-card-meta">
           {getPrimaryCategorySlug(post) ? <span>{categoryName || getPrimaryCategorySlug(post).replace(/-/g, " ")}</span> : null}
-          <time dateTime={post.published_at} dir={dir}>{formatDate(post.published_at, post.language)}</time>
+          <time dateTime={post.published_at} dir={dir}>{formatBlogDate(post.published_at, post.language)}</time>
         </div>
         <h2><Link href={"/blog/" + post.slug + "/"}>{post.title}</Link></h2>
         {post.excerpt ? <p>{post.excerpt}</p> : null}
