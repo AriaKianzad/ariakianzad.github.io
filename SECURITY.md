@@ -37,13 +37,15 @@ ALTER TABLE private.blog_contact_rate_limits ENABLE ROW LEVEL SECURITY;
 
 This statement has **not** been applied. Review the function owner and its grants before running it. The function is expected to continue accessing the table as its `postgres` owner; do not use `FORCE ROW LEVEL SECURITY` without re-testing the rate-limit function.
 
-The private snapshot function also uses a fixed `search_path` and restricted execute privileges.
+The live function ACL review also confirmed the intended split: the snapshot function is executable only by `postgres`; the contact rate-limit helper is executable by `service_role`; its public-schema wrapper is `SECURITY INVOKER` and also service-role-only. The three private `SECURITY DEFINER` helpers that supply the public blog payload are executable by `anon` and `authenticated` so the public `SECURITY INVOKER` RPC can call them. Those helpers return only published content or curated public settings. Keep the `private` schema out of the Data API's exposed-schema list; the public wrapper is the intended API boundary.
+
+The current `SECURITY DEFINER` functions pin their `search_path` to trusted schemas rather than the empty path recommended by current Supabase guidance. A live privilege check found no `CREATE` privilege for `anon` or `authenticated` in `public`, `private` or `extensions`, and the functions schema-qualify table references. This reduces schema-shadowing risk. Tightening these functions to `SET search_path = ''` is a worthwhile follow-up migration, but it should be done only after the production migration-version drift is reconciled and the public RPC call chain is re-tested.
 
 On GitHub Pages, the repository's `_headers` and `.htaccess` files are not applied as HTTP response headers. The static pages carry CSP meta policies, but meta CSP cannot replace response headers such as HSTS, X-Frame-Options, Referrer-Policy or Permissions-Policy. Do not assume those headers are active on GitHub Pages; they are configured for compatible hosts such as Apache/cPanel and supported static hosts.
 
 ## Auth password-protection status
 
-The live Supabase Security Advisor reported `auth_leaked_password_protection` as disabled on 2026-11-24. This means Supabase Auth is not currently enforcing its hosted breached-password screening. Confirm the plan's feature availability and enable the control in Authentication → Sign In / Providers → Email when available. Until then, use a unique 12+ character administrator password, enable all four character classes in the Email provider's password-strength settings, keep public sign-ups disabled and enable MFA where practical. Do not attempt to implement Have I Been Pwned screening in browser code. This Advisor warning does not mean that an existing password has been identified in a breach.
+The Supabase organization was verified as **Free** on 2026-11-24, and the live Security Advisor reported `auth_leaked_password_protection` as disabled. Supabase's current password-security documentation states that hosted leaked-password protection is available on **Pro and above**. Until an upgrade is available, use a unique 12+ character administrator password, enable all four character classes in the Email provider's password-strength settings, keep public sign-ups disabled and enable MFA where practical. Do not implement Have I Been Pwned screening in browser code. This Advisor warning does not mean that an existing password has been identified in a breach.
 
 ## Supported version
 
