@@ -201,7 +201,9 @@ assert.ok(socialGenerator.includes("mian-e-ma-cover-v2.webp") &&
 // Accessibility and consent controls stay out of the normal page flow.
 assert.ok(siteChrome.includes('className="skip-link" href="#main"'), "keyboard skip navigation must remain available on portfolio routes");
 assert.ok(chrome.includes(".skip-link:focus-visible"), "skip navigation must appear when keyboard-focused");
-assert.ok(chrome.includes(".analytics-consent {\n  position: fixed;"), "analytics dialog must be viewport-fixed");
+assert.ok(layout.includes('role="region"') && layout.includes('aria-labelledby="analytics-consent-title"') && !layout.includes('role="dialog"'), "portfolio privacy preferences must use non-modal labelled-region semantics");
+assert.ok(bookPage.includes('role="region"') && bookPage.includes('aria-labelledby="analytics-consent-title"') && !bookPage.includes('role="dialog"'), "book privacy preferences must use non-modal labelled-region semantics");
+assert.ok(chrome.includes(".analytics-consent {\n  position: fixed;"), "analytics consent panel must be viewport-fixed");
 assert.ok(chrome.includes(".analytics-preferences {\n  position: fixed;"), "analytics shortcut must be viewport-fixed");
 assert.ok(chrome.includes(".analytics-consent[hidden]") && chrome.includes("display: none !important"), "hidden consent controls must respect the hidden attribute");
 assert.ok(chrome.includes("@media (max-width: 560px)"), "consent controls need a narrow-screen layout");
