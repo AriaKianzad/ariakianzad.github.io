@@ -109,7 +109,7 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
   assert.equal(page.stored.get("aria-google-analytics-consent-v1"), "granted");
   assert.equal(get(page, "analytics-consent").hidden, true);
   assert.equal(get(page, "analytics-preferences").hidden, false);
-  assert.equal(get(page, "analytics-preferences").textContent, "تنظیمات حریم خصوصی · فعال");
+  assert.equal(get(page, "analytics-preferences").textContent, "Privacy settings · On");
   assert.equal(page.scripts.length, 1, "GA script should load only after consent");
   assert.equal(page.scripts[0].src, "https://www.googletagmanager.com/gtag/js?id=G-0CKL90M5R2");
 }
@@ -128,7 +128,7 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
   const page = createPage("/", "denied");
   assert.equal(get(page, "analytics-consent").hidden, true);
   assert.equal(get(page, "analytics-preferences").hidden, false);
-  assert.equal(get(page, "analytics-preferences").textContent, "تنظیمات حریم خصوصی · غیرفعال");
+  assert.equal(get(page, "analytics-preferences").textContent, "Privacy settings · Off");
   assert.equal(page.scripts.length, 0);
 
   openPreferences(page);
@@ -171,6 +171,7 @@ const openPreferences = (page) => get(page, "analytics-preferences").click();
   assert.equal(get(firstVisit, "analytics-consent").hidden, false);
   accept(firstVisit);
   assert.equal(get(firstVisit, "analytics-preferences").hidden, false);
+  assert.equal(get(firstVisit, "analytics-preferences").textContent, "تنظیمات حریم خصوصی · فعال");
   assert.equal(firstVisit.scripts.length, 1, "first-time blog visitors must be able to opt in");
 
   const accepted = createPage("/blog/black-friday-history/", "granted");
