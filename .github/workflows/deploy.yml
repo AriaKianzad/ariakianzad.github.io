@@ -56,6 +56,9 @@ jobs:
       - name: Test hosting build safety
         run: npm run test:build-safety
 
+      - name: Test portable ZIP creation and extraction
+        run: npm run test:hosting
+
       - name: Test analytics consent states
         run: npm run test:consent
 
@@ -198,6 +201,9 @@ jobs:
           test "$PDF_STATUS" = "404"
           STATUS="$(curl --path-as-is --silent --output /dev/null --write-out '%{http_code}' 'http://127.0.0.1:4173/%2e%2e/%2e%2e/etc/passwd')"
           test "$STATUS" != "200"
+
+      - name: Build and verify the cPanel bundle on Linux
+        run: npm run hosting
 
       - name: Prepare GitHub Pages artifact
         shell: bash
