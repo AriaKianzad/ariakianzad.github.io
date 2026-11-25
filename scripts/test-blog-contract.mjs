@@ -10,7 +10,7 @@ const [
   adminApp, adminEdge, publicRpcMigration, browserDenyMigration, snapshotMigration,
   publicHeader, workflow, sitemap, robots, heroVisualComponent, signalScene, heroBootstrap,
   blogLayout, contactPage, contactForm, contactEdge, contactMigration, rootLayout, configToml, googleContactScript, contactBrowserScript,
-  adClickTracker, adClickEdge, adClickMigration,
+  adClickTracker, adClickEdge, adClickMigration, adClickExpansionMigration,
 ] = await Promise.all([
   read("package.json"),
   read("scripts/fetch-blog-content.mjs"),
@@ -48,6 +48,7 @@ const [
   read("public/blog-ad-click.js"),
   read("supabase/functions/blog-ad-click/index.ts"),
   read("supabase/migrations/20261125115301_add_blog_ad_click_tracking.sql"),
+  read("supabase/migrations/20261125120557_expand_blog_ad_banner_ids.sql"),
 ]);
 
 
@@ -570,5 +571,6 @@ assert.ok(adClickEdge.includes("Do not expose the absolute click total publicly"
 assert.ok(adClickTracker.includes('document.addEventListener("click"') && adClickTracker.includes('a[data-ad-click]') && adClickTracker.includes("keepalive: true") && adClickTracker.includes('"/functions/v1/blog-ad-click"'), "public banner clicks must be tracked without blocking the destination navigation");
 assert.ok(blogLayout.includes('<script src="/admin/config.js" defer />') && blogLayout.includes('<script src="/blog-ad-click.js" defer />') && articlePage.includes("data-ad-click={banner.id}") && articlePage.includes("data-ad-click={articleEndBanner.id}"), "all linked article banner placements must load the tracker and expose their stable slot IDs");
 assert.ok(adminEdge.includes('action === "get_ad_click_counts"') && adminEdge.includes('action === "reset_ad_click_count"') && adminEdge.includes("reset_blog_ad_click_count") && adminEdge.includes("blog_ad_click_counts"), "authenticated admin API must return per-slot totals and reset only the selected banner");
+assert.ok(adClickExpansionMigration.includes("banner-[1-9][0-9]*") && adClickExpansionMigration.includes("create or replace function public.record_blog_ad_click") && adClickExpansionMigration.includes("create or replace function public.reset_blog_ad_click_count") && adClickEdge.includes("/^banner-[1-9][0-9]*$/") && adClickTracker.includes("/^banner-[1-9][0-9]*$/") && adminEdge.includes("/^banner-[1-9][0-9]*$/"), "custom banner IDs must remain unique across repeated remove-and-add cycles without exceeding the eight simultaneously configured slots");
 assert.ok(adminApp.includes('api("get_ad_click_counts")') && adminApp.includes('api("reset_ad_click_count"') && adminApp.includes("data-ad-click-count") && adminApp.includes("data-reset-ad-clicks") && adminApp.includes("window.confirm(") && adminHtml.includes("به‌روزرسانی آمار"), "the ad workspace must display per-banner click totals and confirm independent resets");
 assert.ok(adminCss.includes(".ad-click-metrics") && adminCss.includes(".ad-click-stat") && adminCss.includes(".ad-reset-clicks") && adminCss.includes("@media(max-width:600px)"), "click metrics and reset controls must remain legible and operable on mobile");
