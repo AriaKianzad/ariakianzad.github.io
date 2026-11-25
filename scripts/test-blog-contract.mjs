@@ -49,7 +49,7 @@ const [
   read("supabase/functions/blog-ad-click/index.ts"),
   read("supabase/migrations/20261125115301_add_blog_ad_click_tracking.sql"),
   read("supabase/migrations/20261125120557_expand_blog_ad_banner_ids.sql"),
-  read("supabase/migrations/20261125170000_harden_blog_rate_limits_and_contact_cleanup.sql"),
+  read("supabase/migrations/20261125170128_harden_blog_rate_limits_and_contact_cleanup.sql"),
 ]);
 
 
