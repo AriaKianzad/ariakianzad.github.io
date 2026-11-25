@@ -71,7 +71,14 @@
     const button = form.querySelector('button[type="submit"]');
     if (button && button.disabled) return;
 
-    const values = Object.fromEntries(new FormData(form).entries());
+    const formData = new FormData(form);
+    const turnstileWidget = form.querySelector(".cf-turnstile");
+    if (turnstileWidget && !String(formData.get("cf-turnstile-response") || "").trim()) {
+      showStatus(form, "لطفاً بررسی امنیتی رو کامل کنید.", "error");
+      return;
+    }
+
+    const values = Object.fromEntries(formData.entries());
     values.submissionId = newSubmissionId();
 
     setBusy(form, true);
@@ -98,6 +105,9 @@
       }
 
       form.reset();
+      if (form.querySelector(".cf-turnstile") && window.turnstile && typeof window.turnstile.reset === "function") {
+        window.turnstile.reset();
+      }
       updateConditionalFields(form);
       showStatus(
         form,
@@ -110,6 +120,9 @@
         : "ارتباط با سرویس ارسال پیام برقرار نشد. لطفاً کمی بعد دوباره تلاش کنید.";
       showStatus(form, message, "error");
     } finally {
+      if (form.querySelector(".cf-turnstile") && window.turnstile && typeof window.turnstile.reset === "function") {
+        window.turnstile.reset();
+      }
       setBusy(form, false);
     }
   }
