@@ -4,7 +4,7 @@
   const supabaseUrl = typeof config.supabaseUrl === "string" ? config.supabaseUrl.replace(/\/+$/,"") : "";
   const anonKey = typeof config.supabaseAnonKey === "string" ? config.supabaseAnonKey : "";
   const $ = (selector) => document.querySelector(selector);
-  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0, analyticsVisited:false, analyticsLastFetchedAt:0, adBanners:[], adClickCounts:{}, adClickCountsBusy:false, postSaveBusy:false, publishBusy:false, statusBusy:false };
+  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0, analyticsVisited:false, analyticsLastFetchedAt:0, adBanners:[], adClickCounts:{}, adClickCountsBusy:false, adClickCountsUnavailable:false, postSaveBusy:false, publishBusy:false, statusBusy:false };
   const statusLabels = { draft:"پیش‌نویس", published:"منتشرشده", archived:"بایگانی" };
   const validConfig = supabaseUrl === "https://bkohdqwecnvbmeaiuyyx.supabase.co" && anonKey.startsWith("sb_publishable_");
 
@@ -1516,7 +1516,7 @@
       if(number){
         number.textContent=count
           ?Number(count.click_count||0).toLocaleString("fa-IR")
-          :(state.adClickCountsBusy?"…":"۰");
+          :(state.adClickCountsBusy?"…":state.adClickCountsUnavailable?"—":"۰");
       }
       if(reset){
         reset.textContent=count?.reset_at
@@ -1534,13 +1534,15 @@
       const result=await api("get_ad_click_counts");
       state.adClickCounts=Object.fromEntries((Array.isArray(result.counts)?result.counts:[])
         .map((item)=>[item.banner_id,item]));
+      state.adClickCountsUnavailable=false;
       if($("#ad-click-status")){
         $("#ad-click-status").textContent="آخرین دریافت آمار: "+new Date().toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"});
       }
       updateAdClickMetrics();
     }catch(error){
+      state.adClickCountsUnavailable=true;
       if($("#ad-click-status"))$("#ad-click-status").textContent="دریافت آمار ناموفق بود؛ دوباره تلاش کن.";
-      document.querySelectorAll("[data-ad-click-count]").forEach((node)=>{node.textContent="—";});
+      updateAdClickMetrics();
       if(!silent)toast(error.message,true);
     }finally{
       state.adClickCountsBusy=false;
