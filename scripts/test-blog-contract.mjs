@@ -63,6 +63,7 @@ const [analyticsEdge, adBannerMigration, siteConfig, socialIcons, socialIconExtr
 
 const blogChromeCss = await read("src/app/chrome.css");
 const categorySeoMigration = await read("supabase/migrations/20261123143405_add_category_level_seo.sql");
+const cultureRenameMigration = await read("supabase/migrations/20261125122854_rename_culture_display_name_to_culture_and_media.sql");
 const categoryTaxonomyMigration = await read("supabase/migrations/20261123194500_add_blog_category_taxonomy_and_advanced_seo.sql");
 const multipleCategoryMigration = await read("supabase/migrations/20261123212331_add_multiple_post_categories.sql");
 const snapshotCategorySyncMigration = await read("supabase/migrations/20261123215838_sync_multi_category_published_snapshots.sql");
@@ -469,6 +470,7 @@ assert.ok(publicHeader.includes("SocialIcon") && !publicHeader.includes("mailto:
 
 assert.ok(adminHtml.includes("مرا به خاطر بسپار") && !/EDITORIAL OVERVIEW|RECENT WORK|CONTENT LIBRARY|PRIVATE WORKSPACE|MAIN WEBSITE/.test(adminHtml), "CMS visible labels must be Persian and offer a remember-me option");
 assert.ok(categoryTaxonomyMigration.includes("add column if not exists categories jsonb") && categoryTaxonomyMigration.includes("'brand-and-business'") && categoryTaxonomyMigration.includes("blog_get_public_blog_settings_extras"), "taxonomy migration must seed a stable English category slug and expose only curated public settings");
+assert.ok(cultureRenameMigration.includes("category.item ->> 'slug' = 'culture'") && cultureRenameMigration.includes("'فرهنگ و رسانه'::text") && !cultureRenameMigration.includes("set slug"), "culture display name migration must preserve the stable culture URL slug");
 assert.ok(adminHtml.includes('id="post-category-options"') && adminHtml.includes('id="post-primary-category"') && adminHtml.includes('id="category-manager-list"') && adminHtml.includes('id="new-category-name"') && adminHtml.includes('id="new-category-slug"'), "CMS must expose managed categories with Persian labels and independent English slugs");
 assert.ok(adminApp.includes("function getConfiguredCategories") && adminApp.includes("function addManagedCategory") && adminApp.includes("collectCategories(settings?.categories||[])") && adminApp.includes("renderCategoryManager(settings)"), "CMS must add, list, preserve and select managed categories");
 assert.ok(adminApp.includes("function syncCategoryDrafts()") && adminApp.includes("categories:collectCategories(current.categories||[])") && adminApp.includes("category_seo:collectCategorySeo(current.category_seo||{})"), "the CMS must synchronize category names and category SEO into shared draft state before a rerender");
