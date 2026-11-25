@@ -156,7 +156,6 @@
       }
 
       form.reset();
-      resetTurnstile(form);
       updateConditionalFields(form);
       showStatus(
         form,
