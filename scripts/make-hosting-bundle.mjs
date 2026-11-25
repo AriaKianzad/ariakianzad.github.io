@@ -16,13 +16,8 @@
  *   - licenses/ <- LICENSES/ (SIL OFL 1.1 for Estedad + Geist Mono)
  *   - HOSTING-README.txt <- hosting/HOSTING-README.txt
  *
- * ZIP writer: the Windows-native .NET ZipArchive (scripts/make-zip.ps1),
- * with entry names written explicitly with forward slashes - parsed
- * correctly by Windows Explorer, Linux unzip, and cPanel File Manager.
- * bsdtar's zip writer is deliberately not used: its archives are valid
- * but documented to render as EMPTY in Windows Explorer
- * (libarchive/libarchive#2489), which caused a false "empty archive"
- * report for an earlier bundle.
+ * ZIP creation, parsing, extraction and CRC verification use Node.js built-ins.
+ * No PowerShell, .NET, tar, unzip or third-party archive program is required.
  *
  * This command is fail-safe: it exits 1 unless EVERY validation passes.
  * A zero-byte zip, an invalid structure, a missing entry, a hash
@@ -35,24 +30,21 @@
  *      names use forward slashes only, sizes match staging
  *      byte-for-byte, root-level index.html/.htaccess, no duplicate,
  *      encrypted, or forbidden (development-artifact) entries
- *   3. independent listing by bsdtar (-tf) equals the parsed entries
- *   4. independent .NET read (scripts/inspect-zip.ps1) equals counts,
- *      uncompressed total, and confirms root-level index.html/.htaccess
- *   5. extraction by bsdtar (-xf) into a clean directory; every file
- *      SHA-256-equal to its staged counterpart
- *   6. HTTP smoke test: the extracted site is served on an ephemeral
+ *   3. Node extracts every entry after path, method, size and CRC checks;
+ *      every extracted file is SHA-256-equal to its staged counterpart
+ *   4. HTTP smoke test: the extracted site is served on an ephemeral
  *      port; every asset referenced by index.html plus robots/sitemap/
  *      llms/og must respond 200 with a plausible content type, an
  *      unknown path must respond 404
  *
  * Usage: node scripts/make-hosting-bundle.mjs
  */
-import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { constants, copyFileSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync } from "node:fs";
+import { constants, copyFileSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import http from "node:http";
+import { createZipBuffer, extractZipBuffer, readZipEntries } from "./zip-utils.mjs";
 
 const repoRoot = process.cwd();
 const outDir = join(repoRoot, "out");
@@ -127,44 +119,6 @@ const collect = (dir) => {
   return map;
 };
 
-/* Node-side structural parse; no dependencies. Standard zip (not Zip64). */
-const parseCentralDirectory = (buffer) => {
-  let eocd = -1;
-  const searchStart = Math.max(0, buffer.length - 22 - 65535);
-  for (let i = buffer.length - 22; i >= searchStart; i--) {
-    if (buffer.readUInt32LE(i) === 0x06054b50) { eocd = i; break; }
-  }
-  if (eocd < 0) throw new Error("end-of-central-directory record not found");
-  const count = buffer.readUInt16LE(eocd + 10);
-  const cdSize = buffer.readUInt32LE(eocd + 12);
-  const cdOffset = buffer.readUInt32LE(eocd + 16);
-  if (count === 0xffff || cdOffset === 0xffffffff || cdSize === 0xffffffff) {
-    throw new Error("Zip64 archive unexpected for this bundle");
-  }
-  const entries = [];
-  let p = cdOffset;
-  for (let n = 0; n < count; n++) {
-    if (buffer.readUInt32LE(p) !== 0x02014b50) {
-      throw new Error(`central directory entry ${n}: bad signature`);
-    }
-    entries.push({
-      name: buffer.toString("utf8", p + 46, p + 46 + buffer.readUInt16LE(p + 28)),
-      madeBy: buffer.readUInt16LE(p + 4) >>> 8,
-      flags: buffer.readUInt16LE(p + 8),
-      compressed: buffer.readUInt32LE(p + 20),
-      uncompressed: buffer.readUInt32LE(p + 24),
-      extraLen: buffer.readUInt16LE(p + 30),
-      commentLen: buffer.readUInt16LE(p + 32),
-      externalAttributes: buffer.readUInt32LE(p + 38),
-    });
-    p += 46 + entries[n].name.length + entries[n].extraLen + entries[n].commentLen;
-  }
-  if (p - cdOffset !== cdSize) {
-    throw new Error(`central directory size mismatch: walked ${p - cdOffset}, EOCD declares ${cdSize}`);
-  }
-  return entries;
-};
-
 async function main() {
   if (!existsSync(join(outDir, "index.html"))) {
     fail("out/index.html not found - run `npm run build` first");
@@ -200,17 +154,24 @@ async function main() {
   const staged = collect(staging);
   const stagedBytes = [...staged.values()].reduce((sum, f) => sum + f.size, 0);
 
-  /* Zip with the Windows-native .NET writer. */
-  const psExe = join(process.env.SystemRoot || "C:\\Windows", "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
-  execFileSync(psExe, [
-    "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File",
-    join(repoRoot, "scripts", "make-zip.ps1"),
-    "-Staging", staging, "-ZipPath", zipPath,
-  ], { stdio: "inherit" });
+  /* Create a standard UTF-8 ZIP archive with Node's built-in zlib. */
+  const zipFiles = new Map();
+  for (const name of staged.keys()) {
+    zipFiles.set(name, readFileSync(join(staging, ...name.split("/"))));
+  }
+  const generatedZip = createZipBuffer(zipFiles);
+  writeFileSync(zipPath, generatedZip, { flag: "wx" });
   if (!existsSync(zipPath)) fail("zip was not produced");
   const buffer = readFileSync(zipPath);
   if (buffer.length < 1000) problems.push(`zip suspiciously small (${buffer.length} bytes)`);
 
+  /* 1. Parse the ZIP central directory and validate every entry. */
+  let entries;
+  try {
+    entries = readZipEntries(buffer);
+  } catch (error) {
+    fail(`zip structure invalid: ${error.message}`);
+  }
   /* 1. Structural parse in Node. */
   let entries;
   try {
@@ -269,32 +230,13 @@ async function main() {
     problems.push(`uncompressed total mismatch: archive ${uncompressedTotal}, staging ${stagedBytes}`);
   }
 
-  /* 2. Independent bsdtar listing. */
-  const tarNames = new Set(
-    execFileSync("tar.exe", ["-tf", zipPath], { encoding: "utf8" })
-      .split(/\r?\n/)
-      .map((line) => line.replace(/^\.\//, "").replace(/\/$/, ""))
-      .filter((line) => line !== "")
-  );
-  if (tarNames.size !== names.size || [...names].some((n) => !tarNames.has(n))) {
-    problems.push("bsdtar listing disagrees with the parsed central directory");
-  }
-
-  /* 3. Independent .NET read. */
-  const dotnetJson = execFileSync(psExe, [
-    "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File",
-    join(repoRoot, "scripts", "inspect-zip.ps1"), "-ZipPath", zipPath,
-  ], { encoding: "utf8" }).trim().split(/\r?\n/).pop();
-  const dotnet = JSON.parse(dotnetJson);
-  if (dotnet.files !== fileEntries.length) problems.push(".NET read disagrees on file count");
-  if (dotnet.uncompressed !== uncompressedTotal) problems.push(".NET read disagrees on uncompressed total");
-  if (!dotnet.hasIndex || !dotnet.hasHtaccess) {
-    problems.push(".NET read did not confirm root-level index.html/.htaccess");
-  }
-
-  /* 4. Extraction into a new directory inside the unique workspace. */
+  /* 2. Extract with the bounded Node ZIP reader and verify CRC-32. */
   mkdirSync(extract, { recursive: true });
-  execFileSync("tar.exe", ["-xf", zipPath, "-C", extract], { stdio: "pipe" });
+  try {
+    extractZipBuffer(buffer, extract);
+  } catch (error) {
+    fail(`ZIP extraction or CRC verification failed: ${error.message}`);
+  }
   const extracted = collect(extract);
   if (extracted.size !== staged.size) {
     problems.push(`extracted file count ${extracted.size} != staged ${staged.size}`);
@@ -493,7 +435,7 @@ async function main() {
   rmSync(workspaceRoot, { recursive: true, force: true });
   console.log(`hosting bundle OK: ${finalZipPath}`);
   console.log(`  zip size: ${buffer.length} bytes`);
-  console.log(`  entries: ${fileEntries.length} files, ${dirEntries.length} directory records`);
+  console.log(`  entries: ${fileEntries.length} files`);
   console.log(`  uncompressed: ${uncompressedTotal} bytes (compressed: ${compressedTotal} bytes)`);
   console.log(`  root-level index.html and .htaccess confirmed; no nesting, no dev artifacts`);
   console.log(`  extraction: ${extracted.size}/${staged.size} files SHA-256-identical to staging`);
