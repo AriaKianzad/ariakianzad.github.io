@@ -577,9 +577,10 @@ assert.ok(adClickMigration.includes("create table if not exists public.blog_ad_c
 assert.ok(adClickMigration.includes("private.blog_ad_click_rate_limits") && adClickMigration.includes("p_fingerprint text") && adClickMigration.includes("request_count > 60") && adClickMigration.includes("interval '1 minute'") && adClickMigration.includes("cron.schedule"), "click rate limiting must use hashed fingerprints and expire old rate-limit rows");
 assert.ok(adClickMigration.includes("security invoker") && adClickMigration.includes("grant execute on function public.record_blog_ad_click(text, text) to service_role") && adClickMigration.includes("grant execute on function public.reset_blog_ad_click_count(text) to service_role"), "click and reset RPCs must run as invoker and be executable only by service_role");
 assert.ok(adClickEdge.includes('request.headers.get("cf-connecting-ip")') && adClickEdge.includes("HMAC") && !adClickEdge.includes('request.headers.get("x-forwarded-for")') && adClickEdge.includes('origin !== SITE_ORIGIN') && adClickEdge.includes('record_blog_ad_click'), "public click endpoint must validate the site origin, trust only managed ingress IP metadata and hash it before rate limiting");
+const clickFunctionConfig = configToml.slice(configToml.indexOf("[functions.blog-ad-click]"));
+assert.ok(adClickEdge.includes('requestContentType.includes("text/plain")') && adClickEdge.includes('requestContentType.includes("application/json")') && clickFunctionConfig.startsWith("[functions.blog-ad-click]") && clickFunctionConfig.includes("verify_jwt = false"), "the public click endpoint must accept simple beacon content types without requiring platform JWT verification");
+assert.ok(adClickTracker.includes("navigator.sendBeacon") && adClickTracker.includes('new Blob([payload], { type: "text/plain;charset=UTF-8" })') && adClickTracker.includes('"Content-Type": "text/plain;charset=UTF-8"') && !adClickTracker.includes("apikey:"), "the browser tracker must avoid a CORS preflight and use fetch keepalive only as a sendBeacon fallback");
 assert.ok(adClickEdge.includes("Do not expose the absolute click total publicly") && adClickEdge.includes("counted:"), "the public click endpoint must not disclose internal click totals");
-const trackerEvents = {};
-const trackerRequests = [];
 class MockTrackerElement {
   constructor(tagName, attributes = {}, parent = null) {
     this.tagName = tagName;
@@ -595,41 +596,67 @@ class MockTrackerElement {
   }
   getAttribute(name) { return this.attributes[name] ?? null; }
 }
-const trackerLink = new MockTrackerElement("A", {"data-ad-click":"banner-1"});
-const trackerImage = new MockTrackerElement("IMG", {}, trackerLink);
-const trackerDocument = {
-  addEventListener(type, handler, options) {
-    trackerEvents[type] = {handler, options};
-  },
-};
-const trackerWindow = {
-  MIAN_E_MA_DASHBOARD_CONFIG: {
-    supabaseUrl: "https://project.supabase.co",
-    supabaseAnonKey: "sb_publishable_test",
-  },
-};
-runInNewContext(adClickTracker, {
-  window: trackerWindow,
-  document: trackerDocument,
-  Element: MockTrackerElement,
-  fetch: (url, options) => {
-    trackerRequests.push({url,options});
-    return Promise.resolve({ok:true,status:202});
-  },
+class MockTrackerBlob {
+  constructor(parts, options) {
+    this.parts = parts;
+    this.type = options.type;
+  }
+}
+function makeTrackerTestContext(sendBeacon) {
+  const events = {};
+  const beacons = [];
+  const requests = [];
+  const link = new MockTrackerElement("A", {"data-ad-click":"banner-1"});
+  const image = new MockTrackerElement("IMG", {}, link);
+  const context = {
+    window: {MIAN_E_MA_DASHBOARD_CONFIG:{supabaseUrl:"https://project.supabase.co"}},
+    document: {
+      addEventListener(type, handler, options) {
+        events[type] = {handler, options};
+      },
+    },
+    navigator: {
+      sendBeacon(url, body) {
+        beacons.push({url,body});
+        return sendBeacon(url,body);
+      },
+    },
+    Element: MockTrackerElement,
+    Blob: MockTrackerBlob,
+    fetch: (url, options) => {
+      requests.push({url,options});
+      return Promise.resolve({ok:true,status:202});
+    },
+  };
+  runInNewContext(adClickTracker, context);
+  return {events,beacons,requests,link,image};
+}
+const beaconTracker = makeTrackerTestContext(() => true);
+assert.ok(beaconTracker.events.click && beaconTracker.events.click.options.capture && beaconTracker.events.click.options.passive, "the banner tracker must register an early passive capture listener");
+beaconTracker.events.click.handler({
+  target:beaconTracker.image,
+  defaultPrevented:true,
+  button:2,
+  composedPath:()=>[beaconTracker.image,beaconTracker.link],
 });
-assert.ok(trackerEvents.click && trackerEvents.click.options.capture && trackerEvents.click.options.passive, "the banner tracker must register an early passive capture listener");
-trackerEvents.click.handler({
-  target: trackerImage,
-  defaultPrevented: true,
-  button: 2,
-  composedPath: () => [trackerImage,trackerLink],
+assert.equal(beaconTracker.beacons.length,1,"a banner activation must be queued with sendBeacon even when another listener prevents navigation");
+assert.equal(beaconTracker.beacons[0].url,"https://project.supabase.co/functions/v1/blog-ad-click","the beacon must target the configured Supabase endpoint");
+assert.equal(beaconTracker.beacons[0].body.type,"text/plain;charset=UTF-8","sendBeacon must use a CORS-safelisted text/plain body");
+assert.deepEqual(JSON.parse(beaconTracker.beacons[0].body.parts[0]),{banner_id:"banner-1"},"the beacon must include the stable banner slot ID");
+assert.equal(beaconTracker.requests.length,0,"successful sendBeacon queueing must avoid a competing fetch request");
+const fallbackTracker = makeTrackerTestContext(() => false);
+fallbackTracker.events.click.handler({
+  target:fallbackTracker.image,
+  defaultPrevented:false,
+  button:0,
+  composedPath:()=>[fallbackTracker.image,fallbackTracker.link],
 });
-assert.equal(trackerRequests.length,1,"a banner activation must be sent even when another listener prevents navigation");
-assert.equal(trackerRequests[0].url,"https://project.supabase.co/functions/v1/blog-ad-click","the tracker must post to the configured Supabase endpoint");
-assert.equal(trackerRequests[0].options.headers.apikey,"sb_publishable_test","the tracker must send the public Supabase key");
-assert.deepEqual(JSON.parse(trackerRequests[0].options.body),{banner_id:"banner-1"},"the tracker must send the stable banner slot ID");
-assert.ok(trackerRequests[0].options.keepalive && trackerRequests[0].options.mode==="cors","the click request must survive link navigation and use CORS");
-assert.ok(adClickTracker.includes('document.addEventListener("click", trackBannerClick, { capture: true, passive: true })') && adClickTracker.includes("a[data-ad-click]") && adClickTracker.includes("keepalive: true") && adClickTracker.includes('"/functions/v1/blog-ad-click"'), "public banner clicks must be tracked without blocking the destination navigation");
+assert.equal(fallbackTracker.requests.length,1,"fetch keepalive must be used when sendBeacon cannot queue the request");
+assert.equal(fallbackTracker.requests[0].url,"https://project.supabase.co/functions/v1/blog-ad-click","the fetch fallback must target the click endpoint");
+assert.equal(fallbackTracker.requests[0].options.headers["Content-Type"],"text/plain;charset=UTF-8","the fetch fallback must avoid a preflight-triggering JSON content type");
+assert.equal(Object.hasOwn(fallbackTracker.requests[0].options.headers,"apikey"),false,"the click endpoint must not require a custom apikey header");
+assert.ok(fallbackTracker.requests[0].options.keepalive && fallbackTracker.requests[0].options.mode==="cors","the fallback request must survive navigation without blocking the destination");
+assert.ok(adClickTracker.includes('document.addEventListener("click", trackBannerClick, { capture: true, passive: true })') && adClickTracker.includes("sendBeacon") && adClickTracker.includes("text/plain;charset=UTF-8") && adClickTracker.includes("keepalive: true") && adClickTracker.includes('"/functions/v1/blog-ad-click"'), "public banner clicks must use a no-preflight beacon with a keepalive fetch fallback");
 assert.ok(blogLayout.includes('<script src="/admin/config.js" />') && blogLayout.includes('<script src="/blog-ad-click.js" />') && !blogLayout.includes("/blog-ad-click.js\" defer") && blogLayout.indexOf('/admin/config.js') < blogLayout.indexOf('/blog-ad-click.js') && blogLayout.indexOf('/blog-ad-click.js') < blogLayout.indexOf("{children}") && articlePage.includes("data-ad-click={banner.id}") && articlePage.includes("data-ad-click={articleEndBanner.id}"), "the configuration and click listener must load synchronously, in order, before article banner links become interactive");
 assert.ok(adminEdge.includes('action === "get_ad_click_counts"') && adminEdge.includes('action === "reset_ad_click_count"') && adminEdge.includes("reset_blog_ad_click_count") && adminEdge.includes("blog_ad_click_counts"), "authenticated admin API must return per-slot totals and reset only the selected banner");
 assert.ok(adClickExpansionMigration.includes("banner-[1-9][0-9]*") && adClickExpansionMigration.includes("create or replace function public.record_blog_ad_click") && adClickExpansionMigration.includes("create or replace function public.reset_blog_ad_click_count") && adClickEdge.includes("/^banner-[1-9][0-9]*$/") && adClickTracker.includes("/^banner-[1-9][0-9]*$/") && adminEdge.includes("/^banner-[1-9][0-9]*$/"), "custom banner IDs must remain unique across repeated remove-and-add cycles without exceeding the eight simultaneously configured slots");

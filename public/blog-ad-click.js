@@ -25,19 +25,37 @@
     if (!/^banner-[1-9][0-9]*$/.test(bannerId)) return;
 
     const config = window.MIAN_E_MA_DASHBOARD_CONFIG || {};
-    if (typeof config.supabaseUrl !== "string" || typeof config.supabaseAnonKey !== "string") {
-      console.warn("Blog ad click tracking is missing its public Supabase configuration.");
+    if (typeof config.supabaseUrl !== "string") {
+      console.warn("Blog ad click tracking is missing its Supabase URL.");
       return;
     }
 
-    fetch(config.supabaseUrl.replace(/\/+$/, "") + "/functions/v1/blog-ad-click", {
+    const endpoint = config.supabaseUrl.replace(/\/+$/, "") + "/functions/v1/blog-ad-click";
+    const payload = JSON.stringify({ banner_id: bannerId });
+
+    // sendBeacon uses a CORS-safelisted text/plain body. That avoids the OPTIONS
+    // preflight that can be cancelled when a banner click immediately navigates away.
+    if (typeof navigator.sendBeacon === "function") {
+      try {
+        const queued = navigator.sendBeacon(
+          endpoint,
+          new Blob([payload], { type: "text/plain;charset=UTF-8" }),
+        );
+        if (queued) return;
+      } catch (error) {
+        console.warn("Blog ad click beacon could not be queued; falling back to fetch.", error);
+      }
+    }
+
+    // text/plain is a CORS-safelisted content type; do not add the apikey header.
+    // keepalive lets the small request finish after the browser follows the banner link.
+    fetch(endpoint, {
       method: "POST",
       mode: "cors",
       headers: {
-        apikey: config.supabaseAnonKey,
-        "Content-Type": "application/json",
+        "Content-Type": "text/plain;charset=UTF-8",
       },
-      body: JSON.stringify({ banner_id: bannerId }),
+      body: payload,
       credentials: "omit",
       cache: "no-store",
       keepalive: true,
