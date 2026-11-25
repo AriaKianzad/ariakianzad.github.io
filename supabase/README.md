@@ -1,22 +1,23 @@
 # Website, blog CMS and analytics backend
 
-The public site is hosted at https://ariakianzad.github.io/. The analytics dashboard is at /admin/ and the editorial CMS is at /admin/blog/. All frontends, HTML, CSS, JavaScript and publishable client configuration are public static files. Supabase enforces authentication, CMS operations, publication access, contact-form rate limiting and analytics data access.
+The public site is hosted at https://ariakianzad.github.io/. The analytics dashboard is at /admin/ and the editorial CMS is at /admin/blog/. All frontends, HTML, CSS, JavaScript and publishable client configuration are public static files. Supabase enforces authentication, CMS operations, publication access, contact-form abuse controls, private banner-click tracking and analytics data access.
 
 ## Project
 
 - Supabase project: mian-e-ma-analytics
 - Project ref: bkohdqwecnvbmeaiuyyx
 - Region: eu-central-1
-- Edge Functions: download-stats, site-analytics, blog-admin, blog-contact
+- Edge Functions: download-stats, site-analytics, blog-admin, blog-contact, blog-ad-click
 - Database schemas: public and private; the private schema contains snapshot, published-payload and contact-rate-limit helpers
 - Storage bucket: blog-media (public read, authenticated CMS upload)
 
-All four Edge Function sources are tracked in this repository:
+All five Edge Function sources are tracked in this repository:
 
 - supabase/functions/download-stats/index.ts
 - supabase/functions/site-analytics/index.ts
 - supabase/functions/blog-admin/index.ts
 - supabase/functions/blog-contact/index.ts
+- supabase/functions/blog-ad-click/index.ts
 - integrations/google-apps-script/blog-contact.gs (Gmail relay)
 
 The repository source is the version-controlled reference for deployments. Edge Function deployments are independent from the GitHub Pages site deployment: publishing the website does not update Supabase functions. After a function deployment, verify its active version and deployed source against the corresponding file and deno.json in this repository; do not assume the GitHub Pages workflow updates Supabase.
@@ -68,9 +69,22 @@ The CMS uses public.blog_posts and public.blog_settings. Both tables have RLS en
 
 The blog-media Storage bucket is public-read because published article pages need to render images. Uploads are handled only by the authenticated blog-admin function. The function caps uploads at 3 MB, validates the declared MIME type against the file signature and uses a random storage path. The bucket permits WebP, JPEG, PNG and GIF.
 
-The public blog-contact endpoint is unauthenticated by design. It checks the expected site Origin, accepts only POST JSON, caps the body at 12 KB, validates fields, ignores a filled honeypot and rate-limits to three accepted attempts per client-IP fingerprint per hour. The current source trusts only the Cloudflare `cf-connecting-ip` header and deliberately does not fall back to `x-real-ip` or `x-forwarded-for`. It stores an HMAC-SHA-256 fingerprint rather than the raw IP. If the Cloudflare header is absent or malformed, the request shares an `unknown` fingerprint bucket; check the deployed ingress header behaviour if this causes false rate limits. On 2026-11-24 the live `blog-contact` function was redeployed as version 5 and its active source was verified against this repository.
+The public blog-contact endpoint is unauthenticated by design. It checks the expected site Origin, accepts POST JSON, caps the body at 12 KB, validates fields and ignores a filled honeypot. It rate-limits to three accepted attempts per trusted client-IP fingerprint per hour and does not store raw IP addresses. It trusts only Cloudflare's managed `cf-connecting-ip` header; if the header is missing or malformed, it returns HTTP 503 instead of making every visitor share one `unknown` bucket. Single-line values such as the sender name have all control characters removed before the name is placed in the email subject. The multi-line message retains its line breaks and is HTML-escaped before being included in the email.
+
+Cloudflare Turnstile integration is implemented but is **not active until both keys are configured**:
+- Set the public site key as the GitHub Actions repository variable `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. The deployment workflow passes it into the static build; the widget is rendered on the contact page only when this variable is non-empty.
+- Set the matching private secret as the Supabase Edge Function secret `CLOUDFLARE_TURNSTILE_SECRET_KEY`. The Edge Function sends every submitted token to Cloudflare's Siteverify endpoint and requires `success=true`, hostname `ariakianzad.github.io`, and action `blog_contact`.
+- Configure the Turnstile widget to allow the hostname `ariakianzad.github.io`. Do not commit the secret key or place it in a public build variable.
+
+Until both keys are configured, the pre-existing honeypot and IP rate limit remain active, but there is no CAPTCHA verification. A missing Cloudflare client-IP header fails closed. The function forwards messages to integrations/google-apps-script/blog-contact.gs using GOOGLE_APPS_SCRIPT_URL and GOOGLE_APPS_SCRIPT_TOKEN. The Apps Script stores its matching BLOG_CONTACT_TOKEN and destination BLOG_CONTACT_TO_EMAIL in Script Properties. The token is never sent to the browser. The script uses a lock and a short duplicate-submission cache and checks Google's daily email quota.
 
 The function forwards messages to integrations/google-apps-script/blog-contact.gs using GOOGLE_APPS_SCRIPT_URL and GOOGLE_APPS_SCRIPT_TOKEN. The Apps Script stores its matching BLOG_CONTACT_TOKEN and destination BLOG_CONTACT_TO_EMAIL in Script Properties. The token is never sent to the browser. The script uses a lock and a short duplicate-submission cache and checks Google's daily email quota.
+
+### Banner click event tracking
+
+The deployed `blog-ad-click` function sends an HMAC fingerprint and the validated banner ID to `public.record_blog_ad_click`. The function uses the Cloudflare-managed `cf-connecting-ip` header; missing or malformed values are acknowledged but not counted. The rate-limit table is keyed by (fingerprint, banner_id), and the database permits at most ten registered events per pair per hour. This is an anti-abuse heuristic, not bot-proof measurement. A network with many legitimate visitors behind one public IP can be undercounted; a distributed attacker can still rotate IPs. The dashboard label therefore says "registered click events" and explicitly states that the number is not unique visitors. The public Origin header is forgeable and is not treated as authentication.
+
+The click totals table remains inaccessible to `anon` and `authenticated`; only the server-side function/admin path can read or reset it. Historical totals in `public.blog_ad_click_counts` are preserved when the transient rate-limit key is migrated.
 
 ### Contact rate-limit table: live security finding
 
@@ -149,9 +163,10 @@ To deploy a changed Edge Function with the Supabase CLI:
     supabase functions deploy site-analytics
     supabase functions deploy blog-admin
     supabase functions deploy blog-contact
+    supabase functions deploy blog-ad-click
 
 The CLI reads the verify_jwt settings from supabase/config.toml. Function deployment replaces the live function version. Review the full source, dependency pin and authentication boundary first, then verify the deployed source and function version. Database migrations are a separate operation. The GitHub Pages workflow does not deploy Supabase Edge Functions or modify production database migrations.
 
 ### Migration history reconciliation
 
-The production migration list was checked on 2026-11-24. All 22 applied migration names map to exactly one local SQL file by migration name. Seven of the 22 version timestamps match the local filename prefixes; 15 timestamps still differ. The `responsive_article_advertising` migration is aligned at version `20261124111304` and is already applied. Supabase tracks applied migrations by version, not just the descriptive name. Do not run `supabase db push` until the remaining 15 version differences are reconciled, because the CLI may treat renamed-version files as pending migrations and attempt to run them again. Do not rename or edit already-applied production migrations. Record the exact version-to-file mapping and use a new migration version for future changes.
+The production migration list was checked after the November 25 abuse-control migration. All 26 applied migration names map to exactly one local SQL file by migration name. Eleven of the 26 version timestamps match the local filename prefixes; 15 earlier timestamps still differ. The `responsive_article_advertising` migration is aligned at version `20261124111304` and is already applied. Supabase tracks applied migrations by version, not just the descriptive name. Do not run `supabase db push` until the remaining 15 version differences are reconciled, because the CLI may treat renamed-version files as pending migrations and attempt to run them again. Do not rename or edit already-applied production migrations. Record the exact version-to-file mapping and use a new migration version for future changes.
