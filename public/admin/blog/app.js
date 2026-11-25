@@ -1555,7 +1555,7 @@
           </div>
           <div class="ad-click-metrics" aria-live="polite">
             <div class="ad-click-stat">
-              <span>کلیک‌های ثبت‌شده</span>
+              <span>رویدادهای کلیک ثبت‌شده</span>
               <strong data-ad-click-count>${clickCount}</strong>
               <small data-ad-click-reset>${escapeHtml(resetLabel)}</small>
             </div>
