@@ -590,12 +590,8 @@ class MockTrackerElement {
     return selector === "a[data-ad-click]" && this.tagName === "A" && typeof this.attributes["data-ad-click"] === "string";
   }
   closest(selector) {
-    let current = this;
-    while (current) {
-      if (current.matches(selector)) return current;
-      current = current.parentElement;
-    }
-    return null;
+    if (this.matches(selector)) return this;
+    return this.parentElement ? this.parentElement.closest(selector) : null;
   }
   getAttribute(name) { return this.attributes[name] ?? null; }
 }
