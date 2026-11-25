@@ -4,9 +4,43 @@
   const supabaseUrl = typeof config.supabaseUrl === "string" ? config.supabaseUrl.replace(/\/+$/,"") : "";
   const anonKey = typeof config.supabaseAnonKey === "string" ? config.supabaseAnonKey : "";
   const $ = (selector) => document.querySelector(selector);
-  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0, analyticsVisited:false, analyticsLastFetchedAt:0, adBanners:[] };
+  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0, analyticsVisited:false, analyticsLastFetchedAt:0, adBanners:[], adClickCounts:{}, adClickCountsBusy:false, adClickCountsUnavailable:false, editorDirty:false, editorChangeVersion:0, postSaveBusy:false, publishBusy:false, statusBusy:false };
   const statusLabels = { draft:"پیش‌نویس", published:"منتشرشده", archived:"بایگانی" };
   const validConfig = supabaseUrl === "https://bkohdqwecnvbmeaiuyyx.supabase.co" && anonKey.startsWith("sb_publishable_");
+
+  function updateEditorDirtyIndicator() {
+    const indicator=$("#editor-dirty-indicator");
+    if(!indicator)return;
+    indicator.hidden=!state.editorDirty;
+    indicator.textContent=state.editorDirty?"تغییرات ذخیره‌نشده":"همۀ تغییرات ذخیره شدن";
+  }
+  function markEditorDirty() {
+    if($("#view-editor")?.hidden)return;
+    state.editorChangeVersion+=1;
+    state.editorDirty=true;
+    updateEditorDirtyIndicator();
+  }
+  function clearEditorDirty() {
+    state.editorDirty=false;
+    updateEditorDirtyIndicator();
+  }
+  function confirmLeaveEditor() {
+    if($("#view-editor")?.hidden)return true;
+    if(state.postSaveBusy||state.publishBusy||state.statusBusy){
+      toast("یک عملیات روی مقاله در حال انجامه؛ تا پایانش از ویرایش خارج نشو.",true);
+      return false;
+    }
+    if(!state.editorDirty)return true;
+    const confirmed=window.confirm("تغییرات این مقاله هنوز ذخیره نشدن. بدون ذخیره از ویرایش خارج بشیم؟");
+    if(confirmed)clearEditorDirty();
+    return confirmed;
+  }
+
+  window.addEventListener("beforeunload",(event)=>{
+    if(!state.editorDirty)return;
+    event.preventDefault();
+    event.returnValue="";
+  });
 
   function toast(message, error) {
     const box=$("#toast");
@@ -126,6 +160,7 @@
     $("#admin-email").textContent=window.blogAdminEmail||"مدیر";
   }
   async function logout(revoke) {
+    if(!confirmLeaveEditor())return;
     const token=state.accessToken;
     if(navigator.credentials?.preventSilentAccess)navigator.credentials.preventSilentAccess().catch(()=>{});
     state.analyticsEpoch+=1;state.articleAnalytics=null;state.analyticsBusy=false;state.analyticsVisited=false;state.analyticsLastFetchedAt=0;
@@ -183,7 +218,13 @@
       (!needle||[post.title,post.slug,...postCategorySlugs(post)].join(" ").toLocaleLowerCase().includes(needle)));
     const grid=$("#posts-grid");grid.replaceChildren();
     posts.forEach((post)=>grid.appendChild(createPostRow(post)));
-    $("#posts-empty").hidden=posts.length>0;
+    const empty=$("#posts-empty");
+    empty.hidden=posts.length>0;
+    if(!posts.length){
+      empty.textContent=state.posts.length
+        ? "با این جست‌وجو یا فیلتر، مقاله‌ای پیدا نشد."
+        : "هنوز مقاله‌ای ایجاد نکردی. از «نوشتۀ تازه» برای شروع استفاده کن.";
+    }
   }
   function formatMetric(value) {
     return Number(value||0).toLocaleString("fa-IR");
@@ -389,15 +430,16 @@
     content_width:"reading",accent_color:"#a86f54",faqs:[],status:"draft",has_unpublished_changes:false,
   });
   function showEditor(post) {
-    state.currentPost={...newPost(),...(post||{}),robots_follow:true};
+    state.currentPost={...newPost(),...(post||{})};
+    state.editorChangeVersion=0;
+    clearEditorDirty();
     state.preview=false;$("#editor-form").reset();fillEditor(state.currentPost);
     showView("editor");updatePreview();updateSeo();updateEditorStatus();
     $("#markdown-preview").hidden=true;$("#post-content").hidden=false;
     $("#link-settings").hidden=true;refreshLinkManager();
-    document.querySelectorAll(".editor-tab").forEach((b)=>b.classList.toggle("active",b.dataset.tab==="seo"));
-    document.querySelectorAll(".tab-panel").forEach((p)=>{p.hidden=p.id!=="tab-seo";p.classList.toggle("active",p.id==="tab-seo");});
+    showTab("seo");
   }
-  function newArticle(){showEditor(newPost());}
+  function newArticle(){if(!confirmLeaveEditor())return;showEditor(newPost());}
   function setField(selector,value){const field=$(selector);if(!field)return;if(field.type==="checkbox")field.checked=value!==false;else field.value=value??"";}
   function fillEditor(post) {
     const fields={
@@ -437,8 +479,8 @@
       const key=field.dataset.field;
       post[key]=field.type==="checkbox"?field.checked:field.value.trim();
     });
-    post.content=editorToMarkdown($("#post-content"));
     post.robots_follow=true;
+    post.content=editorToMarkdown($("#post-content"));
     post.categories=selectedEditorCategories();
     post.primary_category=post.categories.includes($("#post-primary-category").value)
       ? $("#post-primary-category").value
@@ -458,12 +500,23 @@
     $("#sidebar-publish").textContent=post.status==="published"?"انتشار تغییرات ↗":"انتشار مقاله ↗";
   }
   async function editPost(id) {
+    if(!confirmLeaveEditor())return;
     try{const result=await api("get_post",{id});showEditor(result.post);}
     catch(error){toast(error.message,true);}
   }
-  function showTab(name) {
-    document.querySelectorAll(".editor-tab").forEach((button)=>button.classList.toggle("active",button.dataset.tab===name));
-    document.querySelectorAll(".tab-panel").forEach((panel)=>{panel.hidden=panel.id!=="tab-"+name;panel.classList.toggle("active",panel.id==="tab-"+name);});
+  function showTab(name,focus=false) {
+    document.querySelectorAll(".editor-tab").forEach((button)=>{
+      const active=button.dataset.tab===name;
+      button.classList.toggle("active",active);
+      button.setAttribute("aria-selected",active?"true":"false");
+      button.tabIndex=active?0:-1;
+      if(active&&focus)button.focus();
+    });
+    document.querySelectorAll(".tab-panel").forEach((panel)=>{
+      const active=panel.id==="tab-"+name;
+      panel.hidden=!active;
+      panel.classList.toggle("active",active);
+    });
   }
   function escapeHtml(text) {
     return String(text).replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -818,12 +871,12 @@
       const relation=document.createElement("select");relation.setAttribute("aria-label","نوع لینک برای "+(anchor.textContent||"پیوند "+(index+1)));
       [["follow","عادی · دنبال‌شونده"],["nofollow","دنبال‌نشونده"],["sponsored","تبلیغاتی"],["ugc","محتوای کاربر"]].forEach(([value,title])=>{const option=document.createElement("option");option.value=value;option.textContent=title;relation.appendChild(option);});
       relation.value=anchor.dataset.linkRel||((anchor.rel||"").split(/\s+/).find((v)=>["nofollow","sponsored","ugc"].includes(v))||(/^https?:\/\//i.test(anchor.href)?"nofollow":"follow"));
-      relation.addEventListener("change",()=>{anchor.dataset.linkRel=relation.value;anchor.rel=[...(relation.value==="follow"?[]:[relation.value]),...(anchor.target==="_blank"?["noopener","noreferrer"]:[])].join(" ");updatePreview();updateSeo();});
+      relation.addEventListener("change",()=>{anchor.dataset.linkRel=relation.value;anchor.rel=[...(relation.value==="follow"?[]:[relation.value]),...(anchor.target==="_blank"?["noopener","noreferrer"]:[])].join(" ");markEditorDirty();updatePreview();updateSeo();});
       const targetLabel=document.createElement("label");targetLabel.textContent="بازشدن";
       const target=document.createElement("select");target.setAttribute("aria-label","نحوۀ بازشدن "+(anchor.textContent||"پیوند "+(index+1)));
       [["auto","پیش‌فرض"],["_self","همین زبانه"],["_blank","زبانه جدید"]].forEach(([value,title])=>{const option=document.createElement("option");option.value=value;option.textContent=title;target.appendChild(option);});
       target.value=anchor.dataset.linkTarget||anchor.target||"auto";
-      target.addEventListener("change",()=>{const external=/^https?:\/\//i.test(anchor.href);const value=target.value==="auto"?(external?"_blank":"_self"):target.value;anchor.dataset.linkTarget=value;if(value==="_self")anchor.setAttribute("target","_self");else anchor.setAttribute("target","_blank");const rel=anchor.dataset.linkRel||"follow";anchor.rel=[...(rel==="follow"?[]:[rel]),...(value==="_blank"?["noopener","noreferrer"]:[])].join(" ");updatePreview();updateSeo();});
+      target.addEventListener("change",()=>{const external=/^https?:\/\//i.test(anchor.href);const value=target.value==="auto"?(external?"_blank":"_self"):target.value;anchor.dataset.linkTarget=value;if(value==="_self")anchor.setAttribute("target","_self");else anchor.setAttribute("target","_blank");const rel=anchor.dataset.linkRel||"follow";anchor.rel=[...(rel==="follow"?[]:[rel]),...(value==="_blank"?["noopener","noreferrer"]:[])].join(" ");markEditorDirty();updatePreview();updateSeo();});
       const controls=document.createElement("div");controls.className="link-manager-controls";
       controls.append(relationLabel,relation,targetLabel,target);row.append(details,controls);list.appendChild(row);
     });
@@ -841,6 +894,8 @@
       const label=window.prompt("متن نمایشی پیوند را وارد کن:","مشاهدۀ منبع");
       if(!label)return;
       insertHtmlAtCaret('<a href="'+escapeHtml(href)+'" target="'+target+'" data-link-rel="'+relation+'" data-link-target="'+target+'"'+(external?' rel="nofollow noopener noreferrer"':'')+'>'+escapeHtml(label)+"</a>");
+      markEditorDirty();
+      updatePreview();updateSeo();refreshLinkManager();
       return;
     }
     const selection=window.getSelection(),node=selection?.anchorNode;
@@ -850,6 +905,7 @@
       anchor.setAttribute("target",target);
       anchor.rel=[...(relation==="follow"?[]:[relation]),...(target==="_blank"?["noopener","noreferrer"]:[])].join(" ");
     }
+    markEditorDirty();
     updatePreview();updateSeo();refreshLinkManager();
   }
   function currentEditorBlock() {
@@ -937,25 +993,55 @@
     $("#seo-preview-title").textContent=seoTitle||"عنوان مقاله";
     $("#seo-preview-description").textContent=description||"توضیحات مقاله در نتایج جست‌وجو اینجا نمایش داده می‌شه.";
   }
-  async function savePost() {
-    const post=collectPost();
-    const result=await api("save_post",{post});
-    state.currentPost=result.post;
-    await loadPosts();updateEditorStatus();
-    toast("پیش‌نویس ذخیره شد.");
-    return result.post;
+  async function savePost(options={}) {
+    if(state.postSaveBusy)throw new Error("ذخیرۀ مقاله در حال انجامه؛ کمی صبر کن.");
+    const submittedVersion=state.editorChangeVersion;
+    state.postSaveBusy=true;
+    const buttons=["#save-post","#sidebar-save"].map((selector)=>$(selector));
+    buttons.forEach((button)=>setButton(button,true,"در حال ذخیره…"));
+    try{
+      const post=collectPost();
+      const result=await api("save_post",{post});
+      state.currentPost=result.post;
+      if(state.editorChangeVersion===submittedVersion)clearEditorDirty();
+      else updateEditorDirtyIndicator();
+      await loadPosts();updateEditorStatus();
+      if(options.silent!==true)toast("پیش‌نویس ذخیره شد.");
+      return result.post;
+    }finally{
+      state.postSaveBusy=false;
+      buttons.forEach((button)=>setButton(button,false));
+    }
   }
   async function publishPost() {
-    const post=await savePost();
-    const result=await api("publish_post",{id:post.id});
-    state.currentPost=result.post;await loadPosts();updateEditorStatus();
-    toast("درخواست انتشار ثبت شد؛ بعد از Build مقاله و سایت‌مپ به‌روز می‌شن.");
+    if(state.publishBusy)return;
+    state.publishBusy=true;
+    const buttons=["#publish-post","#sidebar-publish"].map((selector)=>$(selector));
+    buttons.forEach((button)=>setButton(button,true,"در حال انتشار…"));
+    try{
+      const post=await savePost({silent:true});
+      const result=await api("publish_post",{id:post.id});
+      state.currentPost=result.post;await loadPosts();updateEditorStatus();
+      toast("درخواست انتشار ثبت شد؛ بعد از Build مقاله و سایت‌مپ به‌روز می‌شن.");
+    }finally{
+      state.publishBusy=false;
+      buttons.forEach((button)=>setButton(button,false));
+    }
   }
   async function changeStatus(action) {
-    const post=state.currentPost;if(!post?.id)return;
+    const post=state.currentPost;if(!post?.id||state.statusBusy)return;
+    if(state.editorDirty){toast("ابتدا تغییرات مقاله رو ذخیره کن؛ بعد وضعیت انتشار رو تغییر بده.",true);return;}
     if(!window.confirm(action==="archive_post"?"این مقاله به بایگانی منتقل بشه؟":"این مقاله از وبلاگ عمومی خارج بشه؟"))return;
-    const result=await api(action,{id:post.id});state.currentPost=result.post;await loadPosts();updateEditorStatus();
-    toast(action==="archive_post"?"مقاله بایگانی شد.":"مقاله از انتشار خارج شد.");
+    state.statusBusy=true;
+    const buttons=["#unpublish-post","#archive-post"].map((selector)=>$(selector));
+    buttons.forEach((button)=>setButton(button,true,"در حال انجام…"));
+    try{
+      const result=await api(action,{id:post.id});state.currentPost=result.post;await loadPosts();updateEditorStatus();
+      toast(action==="archive_post"?"مقاله بایگانی شد.":"مقاله از انتشار خارج شد.");
+    }finally{
+      state.statusBusy=false;
+      buttons.forEach((button)=>setButton(button,false));
+    }
   }
   function canvasBlob(canvas,type,quality) {
     return new Promise((resolve,reject)=>canvas.toBlob((blob)=>blob?resolve(blob):reject(new Error("تبدیل تصویر ناموفق بود.")),type,quality));
@@ -1002,6 +1088,7 @@
       input.disabled=true;
       const url=await uploadImage(file);$("#"+urlId).value=url;
       updateImagePreview(previewId,url,$(altSelector)?.value||"");
+      markEditorDirty();
       toast("تصویر فشرده و بارگذاری شد.");
       updateSeo();
     } catch(error) {toast(error.message,true);}
@@ -1109,6 +1196,7 @@
         toast("تصویر فشرده و به متن مقاله اضافه شد.");
       }
       closeInlineImageDialog();
+      markEditorDirty();
       updatePreview();updateSeo();
     }catch(error){
       toast(error instanceof Error?error.message:"درج تصویر ناموفق بود.",true);
@@ -1263,7 +1351,7 @@
     const categories=categorySeoEntries();
     if(!categories.length){
       const note=document.createElement("p");note.className="empty-state";
-      note.textContent="بعد از اینکه مقاله‌ای به یک دسته‌بندی اختصاص بدی، تنظیمات سئوی همون دسته‌بندی اینجا نمایش داده می‌شه.";
+      note.textContent="هنوز دسته‌بندی‌ای تعریف نشده. ابتدا از بخش مدیریت دسته‌بندی‌ها یک دسته اضافه کن تا تنظیمات سئوش اینجا در دسترس باشه.";
       list.appendChild(note);return;
     }
     const current=settings.category_seo||{};
@@ -1386,7 +1474,11 @@
   }
   function nextAdBannerIndex() {
     let index=4;
-    while(state.adBanners.some((banner)=>banner.id==="banner-"+index))index++;
+    const usedIds=new Set([
+      ...(state.adBanners||[]),
+      ...(Array.isArray(state.settings?.ad_banners)?state.settings.ad_banners:[]),
+    ].map((banner)=>String(banner.id||"")));
+    while(usedIds.has("banner-"+index))index++;
     return index;
   }
   function collectAdBannersFromForm() {
@@ -1422,6 +1514,11 @@
       const placementLabel=isArticleEnd?"انتهای متن مقاله":"کنار فهرست مقاله";
       const image=banner.image_url?'<img src="'+escapeHtml(banner.image_url)+'" alt="">':'<span class="ad-preview-placeholder">'+(isArticleEnd?"پیش‌نمایش بنر افقی ۸٫۵:۱":"پیش‌نمایش تصویر ۱:۱")+'</span>';
       const options=relOptions.map(([value,label])=>'<option value="'+value+'" '+((banner.link_rel||"follow")===value?"selected":"")+'>'+label+'</option>').join("");
+      const clickData=state.adClickCounts[banner.id];
+      const clickCount=clickData?Number(clickData.click_count||0).toLocaleString("fa-IR"):(state.adClickCountsBusy?"…":"۰");
+      const resetLabel=clickData?.reset_at?"آخرین ریست: "+dateLabel(clickData.reset_at):"شمارش هنوز ریست نشده";
+      const isPersisted=Array.isArray(state.settings?.ad_banners)&&state.settings.ad_banners.some((saved)=>saved.id===banner.id);
+      const resetButton='<button class="button button-light ad-reset-clicks" type="button" data-reset-ad-clicks="'+id+'" '+(isPersisted?"":"disabled title=\"بعد از ذخیرۀ جایگاه فعال می‌شه\"")+' aria-label="ریست شمارش کلیک جایگاه تبلیغاتی '+(index+1)+'">ریست شمارش</button>';
       const remove=index>=3?'<button class="text-button danger-text" type="button" data-remove-ad="'+id+'">حذف این جایگاه</button>':"";
       return `
         <article class="ad-management-card" data-ad-card="${id}">
@@ -1445,9 +1542,77 @@
               <p class="help-text">اگر نوع بنر خالی باشه، نشانگر بالای تصویر نمایش داده نمی‌شه. لینک فقط با HTTPS ذخیره می‌شه. برای جایگاه سوم، فایل افقی با نسبت حدود ۸٫۵:۱ انتخاب کن.</p>
             </div>
           </div>
+          <div class="ad-click-metrics" aria-live="polite">
+            <div class="ad-click-stat">
+              <span>کلیک‌های ثبت‌شده</span>
+              <strong data-ad-click-count>${clickCount}</strong>
+              <small data-ad-click-reset>${escapeHtml(resetLabel)}</small>
+            </div>
+            ${resetButton}
+          </div>
           <footer class="ad-management-footer"><span>${banner.enabled?"نمایش "+placementLabel+" در مقاله‌ها فعال است.":"این جایگاه در سایت عمومی نمایش داده نمی‌شه."}</span>${remove}</footer>
         </article>`;
     }).join("");
+    updateAdClickMetrics();
+  }
+  function updateAdClickMetrics() {
+    document.querySelectorAll("[data-ad-card]").forEach((card)=>{
+      const id=card.dataset.adCard||"";
+      const count=state.adClickCounts[id];
+      const number=card.querySelector("[data-ad-click-count]");
+      const reset=card.querySelector("[data-ad-click-reset]");
+      if(number){
+        number.textContent=count
+          ?Number(count.click_count||0).toLocaleString("fa-IR")
+          :(state.adClickCountsBusy?"…":state.adClickCountsUnavailable?"—":"۰");
+      }
+      if(reset){
+        reset.textContent=count?.reset_at
+          ?"آخرین ریست: "+dateLabel(count.reset_at)
+          :"شمارش هنوز ریست نشده";
+      }
+    });
+  }
+  async function loadAdClickCounts(silent=false) {
+    if(state.adClickCountsBusy)return;
+    state.adClickCountsBusy=true;
+    if($("#ad-click-status"))$("#ad-click-status").textContent="در حال دریافت شمارش کلیک‌ها…";
+    updateAdClickMetrics();
+    try{
+      const result=await api("get_ad_click_counts");
+      state.adClickCounts=Object.fromEntries((Array.isArray(result.counts)?result.counts:[])
+        .map((item)=>[item.banner_id,item]));
+      state.adClickCountsUnavailable=false;
+      if($("#ad-click-status")){
+        $("#ad-click-status").textContent="آخرین دریافت آمار: "+new Date().toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"});
+      }
+      updateAdClickMetrics();
+    }catch(error){
+      state.adClickCountsUnavailable=true;
+      if($("#ad-click-status"))$("#ad-click-status").textContent="دریافت آمار ناموفق بود؛ دوباره تلاش کن.";
+      updateAdClickMetrics();
+      if(!silent)toast(error.message,true);
+    }finally{
+      state.adClickCountsBusy=false;
+    }
+  }
+  async function resetAdClickCount(button) {
+    const id=button?.dataset.resetAdClicks||"";
+    const banner=state.adBanners.find((item)=>item.id===id);
+    if(!banner)return;
+    const label="جایگاه تبلیغاتی "+(state.adBanners.findIndex((item)=>item.id===id)+1);
+    if(!window.confirm("شمارش کلیک‌های «"+label+"» به صفر برگرده؟ این کار قابل بازگشت نیست."))return;
+    setButton(button,true,"در حال ریست…");
+    try{
+      const result=await api("reset_ad_click_count",{banner_id:id});
+      state.adClickCounts={...(state.adClickCounts||{}),[id]:result.count};
+      updateAdClickMetrics();
+      toast("شمارش کلیک‌های "+label+" به صفر برگشت.");
+    }catch(error){
+      toast(error.message,true);
+    }finally{
+      setButton(button,false);
+    }
   }
   async function saveAdBanners(event) {
     event.preventDefault();
@@ -1461,6 +1626,7 @@
       state.adBanners=normalizeAdBanners(result.settings?.ad_banners||state.adBanners);
       renderAdBannerSettings();
       $("#ad-banners-message").textContent="تنظیمات ذخیره شد و ساخت نسخۀ عمومی آغاز شد.";
+      await loadAdClickCounts(true);
       toast("بنرها ذخیره شدن؛ بعد از Build در همۀ مقاله‌ها به‌روزرسانی می‌شن.");
     }catch(error){
       $("#ad-banners-message").textContent=error.message;
@@ -1496,16 +1662,37 @@
   }
   function bindEvents() {
     document.querySelectorAll("[data-view]").forEach((button)=>button.addEventListener("click",()=>{
-      const name=button.dataset.view;showView(name);if(name==="settings")void loadSettings().catch((e)=>toast(e.message,true));
-      if(name==="ads")renderAdBannerSettings();
+      const name=button.dataset.view;
+      if(name!=="editor"&&!confirmLeaveEditor())return;
+      showView(name);if(name==="settings")void loadSettings().catch((e)=>toast(e.message,true));
+      if(name==="ads"){renderAdBannerSettings();void loadAdClickCounts(true);}
       if(name==="analytics"){state.analyticsVisited=true;void loadArticleAnalytics(false);}
     }));
     document.querySelectorAll("[data-new-post]").forEach((button)=>button.addEventListener("click",newArticle));
-    $("#back-to-posts").addEventListener("click",()=>showView("posts"));
+    $("#back-to-posts").addEventListener("click",()=>{if(confirmLeaveEditor())showView("posts");});
     document.querySelectorAll(".editor-tab").forEach((button)=>button.addEventListener("click",()=>showTab(button.dataset.tab)));
+    $(".editor-tabs").addEventListener("keydown",(event)=>{
+      if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;
+      const tabs=[...document.querySelectorAll(".editor-tab")];
+      const currentIndex=tabs.indexOf(document.activeElement);
+      if(currentIndex<0)return;
+      event.preventDefault();
+      let nextIndex=currentIndex;
+      if(event.key==="Home")nextIndex=0;
+      else if(event.key==="End")nextIndex=tabs.length-1;
+      else{
+        const rtl=getComputedStyle($(".editor-tabs")).direction==="rtl";
+        const step=event.key==="ArrowRight"?(rtl?-1:1):(rtl?1:-1);
+        nextIndex=(currentIndex+step+tabs.length)%tabs.length;
+      }
+      showTab(tabs[nextIndex].dataset.tab,true);
+    });
     $("#posts-search").addEventListener("input",renderPosts);$("#posts-filter").addEventListener("change",renderPosts);
     $("#refresh-article-analytics").addEventListener("click",()=>void loadArticleAnalytics(true));
+    $("#refresh-ad-click-counts").addEventListener("click",()=>void loadAdClickCounts());
     $("#article-analytics-search").addEventListener("input",renderArticleAnalytics);
+    $("#editor-form").addEventListener("input",markEditorDirty);
+    $("#editor-form").addEventListener("change",markEditorDirty);
     $("#post-content").addEventListener("input",()=>{updatePreview();updateSeo();refreshLinkManager();updateFormatToolbar();});
     ["keyup","mouseup","focus"].forEach((eventName)=>$("#post-content").addEventListener(eventName,updateFormatToolbar));
     document.addEventListener("selectionchange",updateFormatToolbar);
@@ -1526,6 +1713,7 @@
         }else{
           document.execCommand(command,false,value);
         }
+        markEditorDirty();
         updatePreview();updateSeo();refreshLinkManager();updateFormatToolbar();
       });
     });
@@ -1585,10 +1773,14 @@
       finally{input.disabled=false;input.value="";}
     });
     $("#ad-banners-list").addEventListener("click",(event)=>{
+      const resetButton=event.target.closest("[data-reset-ad-clicks]");
+      if(resetButton){void resetAdClickCount(resetButton);return;}
       const button=event.target.closest("[data-remove-ad]");
       if(!button)return;
       const current=collectAdBannersFromForm();
       if(current.length<=3){toast("سه جایگاه اصلی قابل حذف نیستن.",true);return;}
+      const bannerNumber=current.findIndex((item)=>item.id===button.dataset.removeAd)+1;
+      if(!window.confirm("جایگاه تبلیغاتی "+bannerNumber+" حذف بشه؟ بعد از ذخیرۀ جایگاه‌ها، شمارش کلیک همین جایگاه هم پاک می‌شه."))return;
       state.adBanners=current.filter((item)=>item.id!==button.dataset.removeAd);
       renderAdBannerSettings();
     });
@@ -1643,7 +1835,12 @@
   }
   function showView(name) {
     document.querySelectorAll(".view").forEach((view)=>{view.hidden=view.id!=="view-"+name;view.classList.toggle("active",view.id==="view-"+name);});
-    document.querySelectorAll(".side-link").forEach((button)=>button.classList.toggle("active",button.dataset.view===name));
+    document.querySelectorAll(".side-link").forEach((button)=>{
+      const active=button.dataset.view===name;
+      button.classList.toggle("active",active);
+      if(active)button.setAttribute("aria-current","page");
+      else button.removeAttribute("aria-current");
+    });
     $("#workspace-title").textContent=({overview:"نمای کلی",posts:"مقاله‌ها",editor:"ویرایش مقاله",settings:"تنظیمات بلاگ",analytics:"آمار بازدید",ads:"بنرهای تبلیغاتی"})[name]||"مدیریت";
     if(name==="posts")renderPosts();
   }

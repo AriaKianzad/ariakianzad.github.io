@@ -208,7 +208,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
                     {banner.label?.trim() ? <span className="blog-ad-label">{banner.label}</span> : null}
                     <div className="blog-ad-slot">
                       {banner.link_url ? (
-                        <a href={banner.link_url} target="_blank" rel={relValue} aria-label={banner.alt || "مشاهدۀ بنر"}>
+                        <a href={banner.link_url} target="_blank" rel={relValue} data-ad-click={banner.id} aria-label={banner.alt || "مشاهدۀ بنر"}>
                           {image}
                         </a>
                       ) : image}
@@ -225,7 +225,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
                 {articleEndBanner.label?.trim() ? <span className="blog-ad-label">{articleEndBanner.label}</span> : null}
                 <div className="blog-in-article-ad-slot">
                   {articleEndBanner.link_url ? (
-                    <a href={articleEndBanner.link_url} target="_blank" rel={[
+                    <a href={articleEndBanner.link_url} target="_blank" data-ad-click={articleEndBanner.id} rel={[
                       ["follow","nofollow","sponsored","ugc","nofollow sponsored","nofollow ugc","nofollow sponsored ugc"].includes(articleEndBanner.link_rel) && articleEndBanner.link_rel !== "follow" ? articleEndBanner.link_rel : "",
                       "noopener","noreferrer",
                     ].filter(Boolean).join(" ")} aria-label={articleEndBanner.alt || "مشاهدۀ بنر"}>

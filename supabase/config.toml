@@ -1,8 +1,8 @@
 # Supabase project configuration for the Mian-e-Ma analytics dashboard.
 #
-# Both Edge Functions verify the supplied Supabase access token with Auth,
-# require a confirmed email and check the active dashboard_admins allowlist.
-# Keep those checks in the handlers when verify_jwt is disabled.
+# Admin routes verify Supabase sessions, confirmed email and the dashboard_admins
+# allowlist inside their handlers. Public routes enforce their own Origin and
+# request validation and must not require a user JWT.
 
 [functions.download-stats]
 verify_jwt = false
@@ -14,4 +14,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.blog-contact]
+verify_jwt = false
+
+[functions.blog-ad-click]
 verify_jwt = false

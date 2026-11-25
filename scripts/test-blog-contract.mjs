@@ -10,6 +10,7 @@ const [
   adminApp, adminEdge, publicRpcMigration, browserDenyMigration, snapshotMigration,
   publicHeader, workflow, sitemap, robots, heroVisualComponent, signalScene, heroBootstrap,
   blogLayout, contactPage, contactForm, contactEdge, contactMigration, rootLayout, configToml, googleContactScript, contactBrowserScript,
+  adClickTracker, adClickEdge, adClickMigration, adClickExpansionMigration,
 ] = await Promise.all([
   read("package.json"),
   read("scripts/fetch-blog-content.mjs"),
@@ -44,6 +45,10 @@ const [
   read("supabase/config.toml"),
   read("integrations/google-apps-script/blog-contact.gs"),
   read("public/blog-contact.js"),
+  read("public/blog-ad-click.js"),
+  read("supabase/functions/blog-ad-click/index.ts"),
+  read("supabase/migrations/20261125115301_add_blog_ad_click_tracking.sql"),
+  read("supabase/migrations/20261125120557_expand_blog_ad_banner_ids.sql"),
 ]);
 
 
@@ -546,3 +551,26 @@ assert.ok(!adminApp.slice(adminApp.indexOf("function clipboardHeadingLevel"),adm
 
 assert.ok(adminApp.includes('explicitRelation==="follow"') && adminApp.includes('if(relation!=="follow"||explicitRelation==="follow")'), "an explicitly selected follow relation must survive Markdown serialization and subsequent editing");
 assert.ok(adminApp.includes('["follow","nofollow","sponsored","ugc"].includes(value)') && adminApp.includes('const external=/^https?:\\/\\//i.test(href)'), "clipboard sanitization must preserve explicit follow while defaulting pasted external links to nofollow");
+
+
+const collectPostSource = adminApp.slice(adminApp.indexOf("function collectPost()"), adminApp.indexOf("function updateEditorStatus"));
+assert.ok(collectPostSource.includes("post.robots_follow=true") && !adminHtml.includes('id="post-robots-follow"'), "article robots follow must continue inheriting the global setting instead of exposing a per-article override");
+assert.ok(adminHtml.includes('role="tablist" aria-label="تنظیمات مقاله"') && adminHtml.includes('role="tab" aria-selected="true"') && adminHtml.includes('role="tabpanel"') && adminApp.includes('showTab(tabs[nextIndex].dataset.tab,true)') && adminApp.includes('button.setAttribute("aria-selected"'), "editor tabs must expose selected state, labelled panels and keyboard arrow navigation");
+assert.ok(adminHtml.includes('aria-current="page"') && adminHtml.includes('aria-controls="view-overview"') && adminApp.includes('button.setAttribute("aria-current","page")'), "the workspace navigation must expose the active view to assistive technology");
+assert.ok(adminApp.includes("state.postSaveBusy") && adminApp.includes("state.publishBusy") && adminApp.includes("state.statusBusy") && adminApp.includes("ذخیرۀ مقاله در حال انجامه"), "article save, publish and status actions must guard against duplicate submissions");
+assert.ok(adminApp.includes("state.editorDirty") && adminApp.includes("confirmLeaveEditor") && adminApp.includes("beforeunload") && adminApp.includes("تغییرات این مقاله هنوز ذخیره نشدن") && adminHtml.includes('id="editor-dirty-indicator"') && adminCss.includes(".editor-dirty-indicator"), "the editor must indicate unsaved changes and confirm before navigation or tab close");
+assert.ok(adminApp.includes("state.editorChangeVersion===submittedVersion") && adminApp.includes("state.editorDirty){toast(\"ابتدا تغییرات مقاله رو ذخیره کن"), "saving must not clear changes typed while a request is in flight, and publication status changes must not discard unsaved edits");
+assert.ok(adminApp.includes("با این جست‌وجو یا فیلتر، مقاله‌ای پیدا نشد.") && adminApp.includes("هنوز مقاله‌ای ایجاد نکردی"), "the article list must distinguish a truly empty workspace from an empty search result");
+assert.ok(adminApp.includes("window.confirm(") && adminApp.includes("بعد از ذخیرۀ جایگاه‌ها، شمارش کلیک همین جایگاه هم پاک می‌شه"), "removing an additional ad slot must clearly confirm the impact before it is discarded");
+
+assert.ok(adClickMigration.includes("create table if not exists public.blog_ad_click_counts") && adClickMigration.includes("alter table public.blog_ad_click_counts enable row level security") && adClickMigration.includes("revoke all on table public.blog_ad_click_counts from public, anon, authenticated"), "banner click totals must live in a private-to-browser table with RLS and no browser grants");
+assert.ok(adClickMigration.includes("private.blog_ad_click_rate_limits") && adClickMigration.includes("p_fingerprint text") && adClickMigration.includes("request_count > 60") && adClickMigration.includes("interval '1 minute'") && adClickMigration.includes("cron.schedule"), "click rate limiting must use hashed fingerprints and expire old rate-limit rows");
+assert.ok(adClickMigration.includes("security invoker") && adClickMigration.includes("grant execute on function public.record_blog_ad_click(text, text) to service_role") && adClickMigration.includes("grant execute on function public.reset_blog_ad_click_count(text) to service_role"), "click and reset RPCs must run as invoker and be executable only by service_role");
+assert.ok(adClickEdge.includes('request.headers.get("cf-connecting-ip")') && adClickEdge.includes("HMAC") && !adClickEdge.includes('request.headers.get("x-forwarded-for")') && adClickEdge.includes('origin !== SITE_ORIGIN') && adClickEdge.includes('record_blog_ad_click'), "public click endpoint must validate the site origin, trust only managed ingress IP metadata and hash it before rate limiting");
+assert.ok(adClickEdge.includes("Do not expose the absolute click total publicly") && adClickEdge.includes("counted:"), "the public click endpoint must not disclose internal click totals");
+assert.ok(adClickTracker.includes('document.addEventListener("click"') && adClickTracker.includes('a[data-ad-click]') && adClickTracker.includes("keepalive: true") && adClickTracker.includes('"/functions/v1/blog-ad-click"'), "public banner clicks must be tracked without blocking the destination navigation");
+assert.ok(blogLayout.includes('<script src="/admin/config.js" defer />') && blogLayout.includes('<script src="/blog-ad-click.js" defer />') && articlePage.includes("data-ad-click={banner.id}") && articlePage.includes("data-ad-click={articleEndBanner.id}"), "all linked article banner placements must load the tracker and expose their stable slot IDs");
+assert.ok(adminEdge.includes('action === "get_ad_click_counts"') && adminEdge.includes('action === "reset_ad_click_count"') && adminEdge.includes("reset_blog_ad_click_count") && adminEdge.includes("blog_ad_click_counts"), "authenticated admin API must return per-slot totals and reset only the selected banner");
+assert.ok(adClickExpansionMigration.includes("banner-[1-9][0-9]*") && adClickExpansionMigration.includes("create or replace function public.record_blog_ad_click") && adClickExpansionMigration.includes("create or replace function public.reset_blog_ad_click_count") && adClickEdge.includes("/^banner-[1-9][0-9]*$/") && adClickTracker.includes("/^banner-[1-9][0-9]*$/") && adminEdge.includes("/^banner-[1-9][0-9]*$/"), "custom banner IDs must remain unique across repeated remove-and-add cycles without exceeding the eight simultaneously configured slots");
+assert.ok(adminApp.includes('api("get_ad_click_counts")') && adminApp.includes('api("reset_ad_click_count"') && adminApp.includes("data-ad-click-count") && adminApp.includes("data-reset-ad-clicks") && adminApp.includes("window.confirm(") && adminHtml.includes("به‌روزرسانی آمار"), "the ad workspace must display per-banner click totals and confirm independent resets");
+assert.ok(adminCss.includes(".ad-click-metrics") && adminCss.includes(".ad-click-stat") && adminCss.includes(".ad-reset-clicks") && adminCss.includes("@media(max-width:600px)"), "click metrics and reset controls must remain legible and operable on mobile");

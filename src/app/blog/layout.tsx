@@ -30,6 +30,8 @@ export default function BlogLayout({ children }: { children: ReactNode }) {
       className={"blog-theme theme-" + (settings.background_theme || "paper") + " layout-" + (settings.layout_style || "editorial") + " cards-" + (settings.card_style || "editorial")}
       style={style}
     >
+      <script src="/admin/config.js" defer />
+      <script src="/blog-ad-click.js" defer />
       {children}
     </div>
   );
