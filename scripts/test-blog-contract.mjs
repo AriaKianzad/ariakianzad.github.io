@@ -412,7 +412,7 @@ const renderedUnderscoredLink = markdownRuntime.exports.renderMarkdown("[**مق�
 assert.ok(renderedUnderscoredLink.includes('href="' + underscoredUrl + '"'), "underscores in external URLs and query parameters must remain unchanged");
 assert.ok(renderedUnderscoredLink.includes('target="_blank"') && renderedUnderscoredLink.includes('rel="nofollow noopener noreferrer"'), "protected link tags must retain safe external-link attributes");
 assert.ok(renderedUnderscoredLink.includes("<strong>مقالۀ مرتبط</strong>"), "inline formatting inside a link label must still render");
-const renderedUnderscoredImage = markdownRuntime.exports.renderMarkdown("![my_image_alt](https://example.com/my_image_file.png \\"my_image_title\\")");
+const renderedUnderscoredImage = markdownRuntime.exports.renderMarkdown('![my_image_alt](https://example.com/my_image_file.png "my_image_title")');
 assert.ok(renderedUnderscoredImage.includes('src="https://example.com/my_image_file.png"') && renderedUnderscoredImage.includes('alt="my_image_alt"') && renderedUnderscoredImage.includes('title="my_image_title"'), "underscores in image URLs, alt text and titles must be preserved");
 
 const inlineSerializer = adminApp.slice(adminApp.indexOf("function inlineToMarkdown"),adminApp.indexOf("function listToMarkdown"));
@@ -471,6 +471,7 @@ assert.ok(contactMigration.includes("private.blog_contact_rate_limits") && conta
 assert.ok(signalScene.includes("new THREE.SphereGeometry(0.92, 96, 80)") && signalScene.includes("new THREE.WireframeGeometry(innerGeometry)") && signalScene.includes("new THREE.HemisphereLight") && signalScene.includes('window.matchMedia("(max-width: 700px)").matches ? 2.72 : 2.35') && signalScene.includes("visibleHalfHeight / Math.tan"), "blog signal scene must fit the lit sphere and orbit geometry inside its responsive canvas");
 assert.ok(signalScene.includes("new THREE.IcosahedronGeometry(0.92, 5)") && signalScene.includes("new THREE.MeshStandardMaterial({") && signalScene.includes("wireGeometry?.dispose()"), "homepage hero must keep its original mesh and clean up the optional blog wireframe safely");
 assert.ok(rootLayout.includes("https://bkohdqwecnvbmeaiuyyx.supabase.co;") && !rootLayout.includes("'unsafe-inline'"), "site CSP must allow contact form requests without permitting inline scripts");
+assert.ok(rootLayout.includes("https://challenges.cloudflare.com") && publicHeader.includes("https://challenges.cloudflare.com"), "the page and compatible static-host CSPs must allow Turnstile scripts and frames");
 assert.ok(configToml.includes("[functions.blog-contact]") && configToml.includes("verify_jwt = false"), "contact Edge Function must have public JWT configuration");
 assert.ok(!articlePage.includes("ARTICLE / ARCHIVE") && !categoryPage.includes("CATEGORY / ARCHIVE"), "public blog screens must not expose English archive labels");
 assert.ok(!adminHtml.includes("Google Docs") && !adminHtml.includes("Open Graph") && !adminHtml.includes(">English<"), "CMS visible interface copy must be Persian");
