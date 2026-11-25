@@ -25,9 +25,9 @@ const [
   read("public/admin/blog/blog.css"),
   read("public/admin/blog/app.js"),
   read("supabase/functions/blog-admin/index.ts"),
-  read("supabase/migrations/20261123110500_harden_public_blog_rpc.sql"),
+  read("supabase/migrations/20261123112106_harden_public_blog_rpc.sql"),
   read("supabase/migrations/20261123095924_deny_browser_access_to_blog_cms.sql"),
-  read("supabase/migrations/20261123112000_separate_blog_published_snapshots.sql"),
+  read("supabase/migrations/20261123112448_separate_blog_published_snapshots.sql"),
   read("src/app/blog/BlogHeader.tsx"),
   read(".github/workflows/deploy.yml"),
   read("src/app/sitemap.ts"),
@@ -39,7 +39,7 @@ const [
   read("src/app/blog/contact/page.tsx"),
   read("src/app/blog/contact/ContactForm.tsx"),
   read("supabase/functions/blog-contact/index.ts"),
-  read("supabase/migrations/20261123170000_add_blog_contact_rate_limit.sql"),
+  read("supabase/migrations/20261123150911_add_blog_contact_rate_limit.sql"),
   read("src/app/layout.tsx"),
   read("supabase/config.toml"),
   read("integrations/google-apps-script/blog-contact.gs"),
@@ -49,7 +49,7 @@ const [
 
 const [analyticsEdge, adBannerMigration, siteConfig, socialIcons, socialIconExtractor, telegramIconSource] = await Promise.all([
   read("supabase/functions/site-analytics/index.ts"),
-  read("supabase/migrations/20261124234500_global_article_advertising_slots.sql"),
+  read("supabase/migrations/20261124075303_global_article_advertising_slots.sql"),
   read("src/lib/site.ts"),
   read("src/lib/social-icons.json"),
   read("scripts/extract-social-paths.mjs"),
@@ -57,11 +57,11 @@ const [analyticsEdge, adBannerMigration, siteConfig, socialIcons, socialIconExtr
 ]);
 
 const blogChromeCss = await read("src/app/chrome.css");
-const categorySeoMigration = await read("supabase/migrations/20261123130000_add_category_level_seo.sql");
-const categoryTaxonomyMigration = await read("supabase/migrations/20261123200000_add_blog_category_taxonomy_and_advanced_seo.sql");
-const multipleCategoryMigration = await read("supabase/migrations/20261124210000_add_multiple_post_categories.sql");
-const snapshotCategorySyncMigration = await read("supabase/migrations/20261124220000_sync_multi_category_published_snapshots.sql");
-const canonicalMigration = await read("supabase/migrations/20261124230000_add_blog_default_canonical_url.sql");
+const categorySeoMigration = await read("supabase/migrations/20261123143405_add_category_level_seo.sql");
+const categoryTaxonomyMigration = await read("supabase/migrations/20261123194500_add_blog_category_taxonomy_and_advanced_seo.sql");
+const multipleCategoryMigration = await read("supabase/migrations/20261123212331_add_multiple_post_categories.sql");
+const snapshotCategorySyncMigration = await read("supabase/migrations/20261123215838_sync_multi_category_published_snapshots.sql");
+const canonicalMigration = await read("supabase/migrations/20261123230705_add_blog_default_canonical_url.sql");
 const responsiveAdMigration = await read("supabase/migrations/20261124111304_responsive_article_advertising.sql");
 const categoryUtils = await read("src/lib/blog-category-utils.ts");
 const listingClient = await read("src/app/blog/BlogListingClient.tsx");
@@ -169,7 +169,7 @@ const analyticsConsent = await read("public/analytics-consent.js");
 const notFoundContent = await read("src/app/NotFoundContent.tsx");
 const notFoundCss = await read("src/app/not-found.css");
 const blogNotFound = await read("src/app/blog/not-found.tsx");
-const legacyCategoryMigration = await read("supabase/migrations/20261123235500_cleanup_legacy_persian_blog_category.sql");
+const legacyCategoryMigration = await read("supabase/migrations/20261123202602_cleanup_legacy_persian_blog_category.sql");
 const legacyCategoryRedirect = await read("public/blog/category/برند-و-کسب‌وکار/index.html");
 new Script(contactBrowserScript, { filename: "public/blog-contact.js" });
 new Script(googleContactScript, { filename: "integrations/google-apps-script/blog-contact.gs" });
