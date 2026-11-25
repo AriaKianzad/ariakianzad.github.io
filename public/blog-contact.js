@@ -42,6 +42,57 @@
     label.textContent = busy ? "در حال ارسال..." : "ارسال درخواست";
   }
 
+  let turnstileLoaderPromise = null;
+
+  function loadTurnstileWidget(form) {
+    const widget = form.querySelector(".cf-turnstile");
+    if (!widget || widget.dataset.widgetId) return;
+
+    const render = () => {
+      if (!widget.isConnected || widget.dataset.widgetId || !window.turnstile) return;
+      widget.dataset.widgetId = window.turnstile.render(widget, {
+        sitekey: widget.dataset.sitekey,
+        action: widget.dataset.action || "blog_contact",
+        theme: widget.dataset.theme || "light",
+      });
+    };
+
+    if (window.turnstile && typeof window.turnstile.render === "function") {
+      render();
+      return;
+    }
+
+    if (!turnstileLoaderPromise) {
+      turnstileLoaderPromise = new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-turnstile-loader]');
+        if (existing) {
+          existing.addEventListener("load", resolve, { once: true });
+          existing.addEventListener("error", reject, { once: true });
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+        script.async = true;
+        script.defer = true;
+        script.dataset.turnstileLoader = "true";
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+
+    turnstileLoaderPromise.then(render).catch(() => {
+      showStatus(form, "بررسی امنیتی بارگذاری نشد. لطفاً صفحه رو تازه‌سازی کنید.", "error");
+    });
+  }
+
+  function resetTurnstile(form) {
+    const widget = form.querySelector(".cf-turnstile");
+    if (!widget || !window.turnstile || typeof window.turnstile.reset !== "function") return;
+    if (widget.dataset.widgetId) window.turnstile.reset(widget.dataset.widgetId);
+  }
+
   function newSubmissionId() {
     if (window.crypto && typeof window.crypto.randomUUID === "function") {
       return window.crypto.randomUUID();
@@ -105,9 +156,7 @@
       }
 
       form.reset();
-      if (form.querySelector(".cf-turnstile") && window.turnstile && typeof window.turnstile.reset === "function") {
-        window.turnstile.reset();
-      }
+      resetTurnstile(form);
       updateConditionalFields(form);
       showStatus(
         form,
@@ -120,9 +169,7 @@
         : "ارتباط با سرویس ارسال پیام برقرار نشد. لطفاً کمی بعد دوباره تلاش کنید.";
       showStatus(form, message, "error");
     } finally {
-      if (form.querySelector(".cf-turnstile") && window.turnstile && typeof window.turnstile.reset === "function") {
-        window.turnstile.reset();
-      }
+      resetTurnstile(form);
       setBusy(form, false);
     }
   }
@@ -133,6 +180,7 @@
     form.noValidate = true;
 
     updateConditionalFields(form);
+    loadTurnstileWidget(form);
     form.addEventListener("submit", (event) => {
       void submitForm(form, event);
     });
