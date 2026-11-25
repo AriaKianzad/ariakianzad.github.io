@@ -111,12 +111,21 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
   const tocCountLabel = language === "fa"
     ? toc.length.toLocaleString("fa-IR") + " بخش"
     : toc.length.toLocaleString("en-US") + (toc.length === 1 ? " section" : " sections");
-  const renderTocItems = () => toc.map((item,index) => (
-    <li key={item.id} className={item.level === 3 ? "toc-sub" : ""}>
-      <span className="blog-toc-index" aria-hidden="true">{tocNumber(index + 1)}</span>
-      <a href={"#" + item.id}>{item.title}</a>
-    </li>
-  ));
+  const renderTocItems = () => {
+    let sectionNumber = 0;
+    return toc.map((item) => {
+      if (item.level === 2) sectionNumber += 1;
+      const isSubheading = item.level === 3;
+      return (
+        <li key={item.id} className={isSubheading ? "toc-sub" : "toc-main"}>
+          <span className={isSubheading ? "blog-toc-bullet" : "blog-toc-index"} aria-hidden="true">
+            {isSubheading ? "•" : tocNumber(sectionNumber)}
+          </span>
+          <a href={"#" + item.id}>{item.title}</a>
+        </li>
+      );
+    });
+  };
   const publishedDateParts = formatBlogDateParts(post.published_at, post.language);
   const articleLineHeight = post.language === "fa" ? (settings.body_line_height || 1.95) : 1.7;
   const articleParagraphGap = post.language === "fa" ? articleLineHeight * 1.05 : 1.45;
