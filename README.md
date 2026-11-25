@@ -156,7 +156,7 @@ A CSP meta tag cannot set every HTTP response header. Directives such as frame-a
 
 ## Supabase backend
 
-Supabase migrations and Edge Function sources are versioned under supabase/. The five deployed functions are:
+Supabase migrations and Edge Function sources are versioned under supabase/. The five Supabase Edge Functions defined for this project are:
 
 - **download-stats:** authenticates an allowlisted dashboard administrator and returns the GitHub Release count and snapshot history.
 - **site-analytics:** authenticates the same administrator and requests read-only GA4 and Search Console reports.
