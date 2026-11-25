@@ -893,6 +893,8 @@
       const label=window.prompt("متن نمایشی پیوند را وارد کن:","مشاهدۀ منبع");
       if(!label)return;
       insertHtmlAtCaret('<a href="'+escapeHtml(href)+'" target="'+target+'" data-link-rel="'+relation+'" data-link-target="'+target+'"'+(external?' rel="nofollow noopener noreferrer"':'')+'>'+escapeHtml(label)+"</a>");
+      markEditorDirty();
+      updatePreview();updateSeo();refreshLinkManager();
       return;
     }
     const selection=window.getSelection(),node=selection?.anchorNode;
