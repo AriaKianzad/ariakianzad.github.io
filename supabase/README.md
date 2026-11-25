@@ -7,7 +7,7 @@ The public site is hosted at https://ariakianzad.github.io/. The analytics dashb
 - Supabase project: mian-e-ma-analytics
 - Project ref: bkohdqwecnvbmeaiuyyx
 - Region: eu-central-1
-- Edge Functions: download-stats, site-analytics, blog-admin, blog-contact, blog-ad-click, blog-ad-click
+- Edge Functions: download-stats, site-analytics, blog-admin, blog-contact, blog-ad-click
 - Database schemas: public and private; the private schema contains snapshot, published-payload and contact-rate-limit helpers
 - Storage bucket: blog-media (public read, authenticated CMS upload)
 
