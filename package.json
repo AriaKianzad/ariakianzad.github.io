@@ -23,7 +23,9 @@
     "test:build-safety": "node scripts/test-build-safety.mjs",
     "prebuild": "node scripts/fetch-blog-content.mjs && node scripts/generate-blog-og.mjs",
     "predev": "node scripts/fetch-blog-content.mjs && node scripts/generate-blog-og.mjs",
-    "test:blog": "node scripts/test-blog-contract.mjs"
+    "test:blog": "node scripts/test-blog-contract.mjs",
+    "publish": "node scripts/publish-to-github.mjs",
+    "test:hosting": "node scripts/test-hosting-bundle.mjs"
   },
   "dependencies": {
     "next": "16.4.6",
