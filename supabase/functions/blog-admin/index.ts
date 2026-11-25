@@ -459,6 +459,50 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
     return { deleted: true };
   }
 
+  if (action === "get_ad_click_counts") {
+    const [settingsResult, countsResult] = await Promise.all([
+      client.from("blog_settings").select("ad_banners").eq("id", 1).maybeSingle(),
+      client.from("blog_ad_click_counts").select("banner_id,click_count,reset_at,updated_at"),
+    ]);
+    if (settingsResult.error || countsResult.error) {
+      throw new Error("دریافت آمار کلیک بنرها ناموفق بود.");
+    }
+    const banners = Array.isArray(settingsResult.data?.ad_banners)
+      ? settingsResult.data.ad_banners
+      : [];
+    const countById = new Map(
+      (countsResult.data || []).map((item) => [item.banner_id, item]),
+    );
+    return {
+      counts: banners.map((banner: Record<string, unknown>) => {
+        const id = typeof banner.id === "string" ? banner.id : "";
+        const item = countById.get(id);
+        return {
+          banner_id: id,
+          click_count: item?.click_count || 0,
+          reset_at: item?.reset_at || null,
+          updated_at: item?.updated_at || null,
+        };
+      }),
+    };
+  }
+
+  if (action === "reset_ad_click_count") {
+    const id = textValue(body.banner_id, 80, "شناسه جایگاه", true);
+    if (!/^banner-[1-8]$/.test(id)) throw new Error("شناسه جایگاه تبلیغاتی معتبر نیست.");
+    const { data: settings, error: settingsError } = await client
+      .from("blog_settings").select("ad_banners").eq("id", 1).maybeSingle();
+    if (settingsError || !Array.isArray(settings?.ad_banners)
+      || !settings.ad_banners.some((banner: Record<string, unknown>) => banner.id === id)) {
+      throw new Error("جایگاه تبلیغاتی پیدا نشد.");
+    }
+    const { data, error } = await client.rpc("reset_blog_ad_click_count", {
+      p_banner_id: id,
+    });
+    if (error || !data) throw new Error("ریست شمارش کلیک این بنر ناموفق بود.");
+    return { count: data };
+  }
+
   if (action === "save_ad_banners") {
     const input = Array.isArray(body.banners) ? body.banners : [];
     if (input.length < 3 || input.length > 8) throw new Error("سه جایگاه اصلی و در مجموع حداکثر هشت جایگاه تبلیغاتی می‌تونی داشته باشی.");
@@ -487,10 +531,27 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
       return { id, enabled, label, image_url: imageUrl, alt, link_url: linkUrl, link_rel: linkRel, show_on_mobile: item.show_on_mobile !== false };
     });
     if (!banners.some((banner) => banner.id === "banner-3")) throw new Error("جایگاه سوم برای نمایش بنر انتهای مقاله باید حفظ بشه.");
+    const { data: previousSettings, error: previousError } = await client
+      .from("blog_settings").select("ad_banners").eq("id", 1).maybeSingle();
+    if (previousError) throw new Error("دریافت جایگاه‌های تبلیغاتی فعلی ناموفق بود.");
+    const nextIds = new Set(banners.map((banner) => banner.id));
+    const removedIds = (Array.isArray(previousSettings?.ad_banners) ? previousSettings.ad_banners : [])
+      .map((banner: Record<string, unknown>) => typeof banner.id === "string" ? banner.id : "")
+      .filter((id: string) => id && !nextIds.has(id));
     const { data, error } = await client.from("blog_settings")
       .update({ ad_banners: banners, updated_at: new Date().toISOString() })
       .eq("id", 1).select("*").single();
     if (error || !data) throw new Error("ذخیرۀ تنظیمات بنرهای تبلیغاتی ناموفق بود.");
+    if (removedIds.length) {
+      const { error: cleanupError } = await client.from("blog_ad_click_counts")
+        .delete().in("banner_id", removedIds);
+      if (cleanupError) {
+        console.error("blog-admin could not remove counters for deleted banner slots", {
+          count: removedIds.length,
+          code: cleanupError.code || "unknown",
+        });
+      }
+    }
     await dispatchAfterWrite("save_ad_banners");
     return { settings: data, buildDispatched: true };
   }
