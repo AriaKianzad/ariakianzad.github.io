@@ -114,15 +114,17 @@ async function verifyTurnstileToken(token: string, clientAddress: string): Promi
   if (!secret) return token.length === 0;
   if (!token || token.length > 2048) return false;
 
-  const form = new FormData();
-  form.set("secret", secret);
-  form.set("response", token);
-  form.set("remoteip", clientAddress);
+  const form = new URLSearchParams({
+    secret,
+    response: token,
+    remoteip: clientAddress,
+  });
 
   let response: Response;
   try {
     response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: form,
       signal: AbortSignal.timeout(10000),
     });
