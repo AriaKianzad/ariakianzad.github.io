@@ -118,7 +118,7 @@ Deno.serve(async (request: Request) => {
     }
 
     // Do not expose the absolute click total publicly; only the admin panel can read it.
-    return json({ ok: true, counted: typeof data === "number" }, 202);
+    return json({ ok: true, counted: data !== null && data !== undefined }, 202);
   } catch {
     return json({ error: "Invalid click request." }, 400);
   }
