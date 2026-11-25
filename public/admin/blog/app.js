@@ -411,7 +411,7 @@
       "#post-hero-alt":"hero_image_alt","#post-hero-caption":"hero_image_caption","#post-og-url":"og_image_url",
       "#post-seo-title":"seo_title","#post-meta-description":"meta_description","#post-focus-keyword":"focus_keyword",
       "#post-canonical":"canonical_url","#post-og-title":"og_title","#post-og-description":"og_description",
-      "#post-robots-index":"robots_index","#post-featured":"featured",
+      "#post-robots-index":"robots_index","#post-robots-follow":"robots_follow","#post-featured":"featured",
       "#post-toc":"toc_enabled","#post-dropcap":"drop_cap","#post-width":"content_width","#post-accent":"accent_color",
     };
     Object.entries(fields).forEach(([selector,key])=>setField(selector,post[key]));
@@ -1303,7 +1303,7 @@
     const categories=categorySeoEntries();
     if(!categories.length){
       const note=document.createElement("p");note.className="empty-state";
-      note.textContent="بعد از اینکه مقاله‌ای به یک دسته‌بندی اختصاص بدی، تنظیمات سئوی همون دسته‌بندی اینجا نمایش داده می‌شه.";
+      note.textContent="هنوز دسته‌بندی‌ای تعریف نشده. ابتدا از بخش مدیریت دسته‌بندی‌ها یک دسته اضافه کن تا تنظیمات سئوش اینجا در دسترس باشه.";
       list.appendChild(note);return;
     }
     const current=settings.category_seo||{};
