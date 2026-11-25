@@ -489,7 +489,7 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
 
   if (action === "reset_ad_click_count") {
     const id = textValue(body.banner_id, 80, "شناسه جایگاه", true);
-    if (!/^banner-[1-8]$/.test(id)) throw new Error("شناسه جایگاه تبلیغاتی معتبر نیست.");
+    if (!/^banner-[1-9][0-9]*$/.test(id)) throw new Error("شناسه جایگاه تبلیغاتی معتبر نیست.");
     const { data: settings, error: settingsError } = await client
       .from("blog_settings").select("ad_banners").eq("id", 1).maybeSingle();
     if (settingsError || !Array.isArray(settings?.ad_banners)
