@@ -1462,6 +1462,10 @@
       const placementLabel=isArticleEnd?"انتهای متن مقاله":"کنار فهرست مقاله";
       const image=banner.image_url?'<img src="'+escapeHtml(banner.image_url)+'" alt="">':'<span class="ad-preview-placeholder">'+(isArticleEnd?"پیش‌نمایش بنر افقی ۸٫۵:۱":"پیش‌نمایش تصویر ۱:۱")+'</span>';
       const options=relOptions.map(([value,label])=>'<option value="'+value+'" '+((banner.link_rel||"follow")===value?"selected":"")+'>'+label+'</option>').join("");
+      const clickData=state.adClickCounts[banner.id];
+      const clickCount=clickData?Number(clickData.click_count||0).toLocaleString("fa-IR"):(state.adClickCountsBusy?"…":"۰");
+      const resetLabel=clickData?.reset_at?"آخرین ریست: "+dateLabel(clickData.reset_at):"شمارش هنوز ریست نشده";
+      const resetButton='<button class="button button-light ad-reset-clicks" type="button" data-reset-ad-clicks="'+id+'" aria-label="ریست شمارش کلیک جایگاه تبلیغاتی '+(index+1)+'">ریست شمارش</button>';
       const remove=index>=3?'<button class="text-button danger-text" type="button" data-remove-ad="'+id+'">حذف این جایگاه</button>':"";
       return `
         <article class="ad-management-card" data-ad-card="${id}">
@@ -1484,6 +1488,14 @@
               <label class="ad-mobile-toggle"><input type="checkbox" data-ad-field="show_on_mobile" ${banner.show_on_mobile!==false?"checked":""}> نمایش در نسخۀ موبایل</label>
               <p class="help-text">اگر نوع بنر خالی باشه، نشانگر بالای تصویر نمایش داده نمی‌شه. لینک فقط با HTTPS ذخیره می‌شه. برای جایگاه سوم، فایل افقی با نسبت حدود ۸٫۵:۱ انتخاب کن.</p>
             </div>
+          </div>
+          <div class="ad-click-metrics" aria-live="polite">
+            <div class="ad-click-stat">
+              <span>کلیک‌های ثبت‌شده</span>
+              <strong data-ad-click-count>${clickCount}</strong>
+              <small data-ad-click-reset>${escapeHtml(resetLabel)}</small>
+            </div>
+            ${resetButton}
           </div>
           <footer class="ad-management-footer"><span>${banner.enabled?"نمایش "+placementLabel+" در مقاله‌ها فعال است.":"این جایگاه در سایت عمومی نمایش داده نمی‌شه."}</span>${remove}</footer>
         </article>`;
@@ -1602,6 +1614,22 @@
     document.querySelectorAll("[data-new-post]").forEach((button)=>button.addEventListener("click",newArticle));
     $("#back-to-posts").addEventListener("click",()=>showView("posts"));
     document.querySelectorAll(".editor-tab").forEach((button)=>button.addEventListener("click",()=>showTab(button.dataset.tab)));
+    $(".editor-tabs").addEventListener("keydown",(event)=>{
+      if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;
+      const tabs=[...document.querySelectorAll(".editor-tab")];
+      const currentIndex=tabs.indexOf(document.activeElement);
+      if(currentIndex<0)return;
+      event.preventDefault();
+      let nextIndex=currentIndex;
+      if(event.key==="Home")nextIndex=0;
+      else if(event.key==="End")nextIndex=tabs.length-1;
+      else{
+        const rtl=getComputedStyle($(".editor-tabs")).direction==="rtl";
+        const step=event.key==="ArrowRight"?(rtl?-1:1):(rtl?1:-1);
+        nextIndex=(currentIndex+step+tabs.length)%tabs.length;
+      }
+      showTab(tabs[nextIndex].dataset.tab,true);
+    });
     $("#posts-search").addEventListener("input",renderPosts);$("#posts-filter").addEventListener("change",renderPosts);
     $("#refresh-article-analytics").addEventListener("click",()=>void loadArticleAnalytics(true));
     $("#refresh-ad-click-counts").addEventListener("click",()=>void loadAdClickCounts());
@@ -1747,7 +1775,12 @@
   }
   function showView(name) {
     document.querySelectorAll(".view").forEach((view)=>{view.hidden=view.id!=="view-"+name;view.classList.toggle("active",view.id==="view-"+name);});
-    document.querySelectorAll(".side-link").forEach((button)=>button.classList.toggle("active",button.dataset.view===name));
+    document.querySelectorAll(".side-link").forEach((button)=>{
+      const active=button.dataset.view===name;
+      button.classList.toggle("active",active);
+      if(active)button.setAttribute("aria-current","page");
+      else button.removeAttribute("aria-current");
+    });
     $("#workspace-title").textContent=({overview:"نمای کلی",posts:"مقاله‌ها",editor:"ویرایش مقاله",settings:"تنظیمات بلاگ",analytics:"آمار بازدید",ads:"بنرهای تبلیغاتی"})[name]||"مدیریت";
     if(name==="posts")renderPosts();
   }
