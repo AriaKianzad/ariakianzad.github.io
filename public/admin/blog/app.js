@@ -25,7 +25,12 @@
     updateEditorDirtyIndicator();
   }
   function confirmLeaveEditor() {
-    if($("#view-editor")?.hidden||!state.editorDirty)return true;
+    if($("#view-editor")?.hidden)return true;
+    if(state.postSaveBusy||state.publishBusy||state.statusBusy){
+      toast("یک عملیات روی مقاله در حال انجامه؛ تا پایانش از ویرایش خارج نشو.",true);
+      return false;
+    }
+    if(!state.editorDirty)return true;
     const confirmed=window.confirm("تغییرات این مقاله هنوز ذخیره نشدن. بدون ذخیره از ویرایش خارج بشیم؟");
     if(confirmed)clearEditorDirty();
     return confirmed;
@@ -865,12 +870,12 @@
       const relation=document.createElement("select");relation.setAttribute("aria-label","نوع لینک برای "+(anchor.textContent||"پیوند "+(index+1)));
       [["follow","عادی · دنبال‌شونده"],["nofollow","دنبال‌نشونده"],["sponsored","تبلیغاتی"],["ugc","محتوای کاربر"]].forEach(([value,title])=>{const option=document.createElement("option");option.value=value;option.textContent=title;relation.appendChild(option);});
       relation.value=anchor.dataset.linkRel||((anchor.rel||"").split(/\s+/).find((v)=>["nofollow","sponsored","ugc"].includes(v))||(/^https?:\/\//i.test(anchor.href)?"nofollow":"follow"));
-      relation.addEventListener("change",()=>{anchor.dataset.linkRel=relation.value;anchor.rel=[...(relation.value==="follow"?[]:[relation.value]),...(anchor.target==="_blank"?["noopener","noreferrer"]:[])].join(" ");updatePreview();updateSeo();});
+      relation.addEventListener("change",()=>{anchor.dataset.linkRel=relation.value;anchor.rel=[...(relation.value==="follow"?[]:[relation.value]),...(anchor.target==="_blank"?["noopener","noreferrer"]:[])].join(" ");markEditorDirty();updatePreview();updateSeo();});
       const targetLabel=document.createElement("label");targetLabel.textContent="بازشدن";
       const target=document.createElement("select");target.setAttribute("aria-label","نحوۀ بازشدن "+(anchor.textContent||"پیوند "+(index+1)));
       [["auto","پیش‌فرض"],["_self","همین زبانه"],["_blank","زبانه جدید"]].forEach(([value,title])=>{const option=document.createElement("option");option.value=value;option.textContent=title;target.appendChild(option);});
       target.value=anchor.dataset.linkTarget||anchor.target||"auto";
-      target.addEventListener("change",()=>{const external=/^https?:\/\//i.test(anchor.href);const value=target.value==="auto"?(external?"_blank":"_self"):target.value;anchor.dataset.linkTarget=value;if(value==="_self")anchor.setAttribute("target","_self");else anchor.setAttribute("target","_blank");const rel=anchor.dataset.linkRel||"follow";anchor.rel=[...(rel==="follow"?[]:[rel]),...(value==="_blank"?["noopener","noreferrer"]:[])].join(" ");updatePreview();updateSeo();});
+      target.addEventListener("change",()=>{const external=/^https?:\/\//i.test(anchor.href);const value=target.value==="auto"?(external?"_blank":"_self"):target.value;anchor.dataset.linkTarget=value;if(value==="_self")anchor.setAttribute("target","_self");else anchor.setAttribute("target","_blank");const rel=anchor.dataset.linkRel||"follow";anchor.rel=[...(rel==="follow"?[]:[rel]),...(value==="_blank"?["noopener","noreferrer"]:[])].join(" ");markEditorDirty();updatePreview();updateSeo();});
       const controls=document.createElement("div");controls.className="link-manager-controls";
       controls.append(relationLabel,relation,targetLabel,target);row.append(details,controls);list.appendChild(row);
     });
@@ -897,6 +902,7 @@
       anchor.setAttribute("target",target);
       anchor.rel=[...(relation==="follow"?[]:[relation]),...(target==="_blank"?["noopener","noreferrer"]:[])].join(" ");
     }
+    markEditorDirty();
     updatePreview();updateSeo();refreshLinkManager();
   }
   function currentEditorBlock() {
