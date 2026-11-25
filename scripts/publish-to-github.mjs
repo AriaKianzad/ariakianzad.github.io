@@ -56,7 +56,7 @@ function main() {
   }
 
   console.log("Scanning the working tree for accidental credentials...");
-  run("npm", ["run", "check:security"], { inherit: true });
+  run(process.execPath, [resolve(PROJECT_ROOT, "scripts", "verify-secrets.mjs")], { inherit: true });
 
   console.log("Staging changes in the personal website repository only...");
   git(["add", "-A"], { inherit: true });
