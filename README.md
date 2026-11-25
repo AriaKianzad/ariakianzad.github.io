@@ -104,12 +104,14 @@ Useful checks and production commands:
     npm run check:security
     npm run test:security-scan
     npm run test:build-safety
+    npm run test:hosting
     npm run test:consent
     npm run test:homepage
     npm run test:supabase
     npm run test:analytics
     npm run build
     npm run preview
+    npm run publish
 
 The production build runs the static-export cleanup, compiles the standalone lazy hero module and its hashed scene chunk, then verifies the export. The preview server serves the generated out/ directory on loopback and applies the repository's static-host headers for local testing.
 
@@ -118,10 +120,12 @@ Additional asset and packaging tasks:
     npm run assets
     npm run social-icons
     npm run hosting
+    npm run publish
 
 - assets regenerates the social card and app icons from local source assets.
 - social-icons rebuilds the checked-in icon path map from assets-src/icons/.
-- hosting creates and verifies an optional cPanel ZIP bundle. It requires Windows PowerShell and .NET's ZIP writer. The builder uses a unique temporary workspace, rejects symlinks and unsafe archive paths, and refuses to overwrite an existing hosting-bundle.zip.
+- hosting creates and verifies an optional cPanel ZIP bundle using Node.js built-ins only. It works on Windows, macOS and Linux without PowerShell, .NET, tar or unzip. The builder uses a unique temporary workspace, rejects symlinks and unsafe archive paths, verifies ZIP CRCs and SHA-256 hashes after extraction, smoke-tests the extracted site, and refuses to overwrite an existing hosting-bundle.zip.
+- publish runs the credential scan, stages and commits changes, and pushes only the `main` branch to the expected personal-site GitHub remote. It refuses a different branch or a mismatched `origin`.
 
 ## Build and deployment
 
@@ -129,7 +133,7 @@ GitHub Actions builds and deploys the main branch to GitHub Pages. Pull requests
 
 - installs the locked dependency tree with npm ci;
 - scans the working tree for high-confidence credential patterns, including legacy Supabase service-role JWTs; the regression test exercises a synthetic JWT and confirms that token values are never printed;
-- runs synthetic-token and hosting-build safety regressions, plus the analytics-consent, homepage, Supabase and Google Analytics/Search Console contract tests;
+- runs synthetic-token and hosting-build safety regressions, including a Node-only ZIP writer/extractor test, plus the analytics-consent, homepage, Supabase and Google Analytics/Search Console contract tests;
 - runs npm audit, TypeScript and ESLint checks;
 - verifies generated social icon paths and build scripts;
 - creates and validates the static export;
@@ -140,9 +144,8 @@ Third-party GitHub Actions are pinned to immutable commit SHAs. The build job ha
 
 The credential scanner checks the current working tree; it is an accidental-commit guard, not a scan of every historical Git object. A clean working-tree scan does not establish that credentials were never committed in the past. If a credential was exposed historically, revoke/rotate it and review the relevant Git history and provider audit logs.
 
-For GitHub Pages, the canonical site URL defaults to https://ariakianzad.github.io. For the optional custom domain, set the public build-time URL before building:
+For GitHub Pages, the canonical site URL defaults to https://ariakianzad.github.io. For the optional custom domain, set the public build-time URL before building. In PowerShell use `$env:NEXT_PUBLIC_SITE_URL = "https://ariakianzad.ir"`; in macOS/Linux shells use `export NEXT_PUBLIC_SITE_URL="https://ariakianzad.ir"`. Then run:
 
-    $env:NEXT_PUBLIC_SITE_URL = "https://ariakianzad.ir"
     npm run build
     npm run hosting
 

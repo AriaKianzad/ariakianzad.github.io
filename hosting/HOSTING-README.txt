@@ -1,6 +1,8 @@
 HOSTING BUNDLE - ariakianzad.ir
 ===============================
 
+This archive is created and validated with Node.js built-ins. It does not require PowerShell, .NET, tar or unzip, so the same hosting command works on Windows, macOS and Linux.
+
 This archive contains the complete production build of my personal website
 at https://ariakianzad.ir, including the standalone Persian book page for
 «میانِ ما» and an Apache configuration for shared cPanel hosting. It is
@@ -16,7 +18,7 @@ PACKAGE CONTENTS
 index.html              the personal homepage (single page)
 Mian-e-Ma/              standalone Persian book landing page
                         with its own HTML, CSS, cover artwork, line art,
-                        Estedad font and direct PDF download
+                        Estedad font and a link to the canonical GitHub Release PDF
 404.html                custom not-found page
 .htaccess               Apache config: security headers, caching,
                         compression, custom error page, HTTPS +
@@ -40,12 +42,17 @@ HOSTING-README.txt      this file
 BUILDING THE BUNDLE FOR THIS DOMAIN
 -----------------------------------
 Before creating a bundle for ariakianzad.ir, set the public canonical origin
-and build a fresh export from the repository root (PowerShell):
+and build a fresh export from the repository root in any terminal
+(PowerShell, Command Prompt, bash or zsh):
 
-  $env:NEXT_PUBLIC_SITE_URL = "https://ariakianzad.ir"
   npm ci
   npm run build
   npm run hosting
+
+Set NEXT_PUBLIC_SITE_URL=https://ariakianzad.ir in the environment before
+running the build. For PowerShell: $env:NEXT_PUBLIC_SITE_URL =
+"https://ariakianzad.ir". For bash/zsh: export
+NEXT_PUBLIC_SITE_URL="https://ariakianzad.ir".
 
 This keeps canonical URLs, Open Graph URLs and sitemap entries aligned with
 the host's HTTPS redirect. For GitHub Pages, do not use this cPanel bundle;
