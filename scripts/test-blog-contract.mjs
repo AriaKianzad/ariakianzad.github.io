@@ -553,7 +553,7 @@ assert.ok(adminApp.includes('["follow","nofollow","sponsored","ugc"].includes(va
 
 
 const collectPostSource = adminApp.slice(adminApp.indexOf("function collectPost()"), adminApp.indexOf("function updateEditorStatus"));
-assert.ok(collectPostSource.includes("post[key]") && !collectPostSource.includes("post.robots_follow=true") && adminApp.includes('"#post-robots-follow":"robots_follow"') && adminHtml.includes('id="post-robots-follow"'), "the article editor must preserve robots_follow when opening and saving existing content");
+assert.ok(collectPostSource.includes("post.robots_follow=true") && !adminHtml.includes('id="post-robots-follow"'), "article robots follow must continue inheriting the global setting instead of exposing a per-article override");
 assert.ok(adminHtml.includes('role="tablist" aria-label="تنظیمات مقاله"') && adminHtml.includes('role="tab" aria-selected="true"') && adminHtml.includes('role="tabpanel"') && adminApp.includes('showTab(tabs[nextIndex].dataset.tab,true)') && adminApp.includes('button.setAttribute("aria-selected"'), "editor tabs must expose selected state, labelled panels and keyboard arrow navigation");
 assert.ok(adminHtml.includes('aria-current="page"') && adminHtml.includes('aria-controls="view-overview"') && adminApp.includes('button.setAttribute("aria-current","page")'), "the workspace navigation must expose the active view to assistive technology");
 assert.ok(adminApp.includes("state.postSaveBusy") && adminApp.includes("state.publishBusy") && adminApp.includes("state.statusBusy") && adminApp.includes("ذخیرۀ مقاله در حال انجامه"), "article save, publish and status actions must guard against duplicate submissions");
