@@ -8,7 +8,7 @@ const [
   packageJson, fetchScript, imageScript, dataSource, markdownSource,
   listingPage, articlePage, categoryPage, rssRoute, blogCss, adminHtml, adminCss,
   adminApp, adminEdge, publicRpcMigration, browserDenyMigration, snapshotMigration,
-  publicHeader, workflow, sitemap, robots, heroVisualComponent, signalScene, heroBootstrap,
+  publicHeader, workflow, sitemap, robots, heroVisualComponent, signalScene, heroBootstrap, staticHostHeaders, apacheHeaders,
   blogLayout, contactPage, contactForm, contactEdge, contactMigration, rootLayout, configToml, googleContactScript, contactBrowserScript,
   adClickTracker, adClickEdge, adClickMigration, adClickExpansionMigration, adClickHardeningMigration,
 ] = await Promise.all([
@@ -36,6 +36,8 @@ const [
   read("src/components/hero-visual.tsx"),
   read("src/client/signal-scene.ts"),
   read("src/client/hero-visual.ts"),
+  read("public/_headers"),
+  read("public/.htaccess"),
   read("src/app/blog/layout.tsx"),
   read("src/app/blog/contact/page.tsx"),
   read("src/app/blog/contact/ContactForm.tsx"),
@@ -471,7 +473,7 @@ assert.ok(contactMigration.includes("private.blog_contact_rate_limits") && conta
 assert.ok(signalScene.includes("new THREE.SphereGeometry(0.92, 96, 80)") && signalScene.includes("new THREE.WireframeGeometry(innerGeometry)") && signalScene.includes("new THREE.HemisphereLight") && signalScene.includes('window.matchMedia("(max-width: 700px)").matches ? 2.72 : 2.35') && signalScene.includes("visibleHalfHeight / Math.tan"), "blog signal scene must fit the lit sphere and orbit geometry inside its responsive canvas");
 assert.ok(signalScene.includes("new THREE.IcosahedronGeometry(0.92, 5)") && signalScene.includes("new THREE.MeshStandardMaterial({") && signalScene.includes("wireGeometry?.dispose()"), "homepage hero must keep its original mesh and clean up the optional blog wireframe safely");
 assert.ok(rootLayout.includes("https://bkohdqwecnvbmeaiuyyx.supabase.co;") && !rootLayout.includes("'unsafe-inline'"), "site CSP must allow contact form requests without permitting inline scripts");
-assert.ok(rootLayout.includes("https://challenges.cloudflare.com") && publicHeader.includes("https://challenges.cloudflare.com"), "the page and compatible static-host CSPs must allow Turnstile scripts and frames");
+assert.ok(rootLayout.includes("https://challenges.cloudflare.com") && staticHostHeaders.includes("https://challenges.cloudflare.com") && apacheHeaders.includes("https://challenges.cloudflare.com"), "the page and compatible static-host CSPs must allow Turnstile scripts and frames");
 assert.ok(configToml.includes("[functions.blog-contact]") && configToml.includes("verify_jwt = false"), "contact Edge Function must have public JWT configuration");
 assert.ok(!articlePage.includes("ARTICLE / ARCHIVE") && !categoryPage.includes("CATEGORY / ARCHIVE"), "public blog screens must not expose English archive labels");
 assert.ok(!adminHtml.includes("Google Docs") && !adminHtml.includes("Open Graph") && !adminHtml.includes(">English<"), "CMS visible interface copy must be Persian");
