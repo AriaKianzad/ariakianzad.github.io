@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Verify simple cross-origin POST without an API key or preflight
+        # Re-run against the latest deployed click function.
         shell: bash
         env:
           SUPABASE_URL: https://bkohdqwecnvbmeaiuyyx.supabase.co
