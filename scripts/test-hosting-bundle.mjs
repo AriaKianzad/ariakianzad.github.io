@@ -40,7 +40,11 @@ try {
   const centralSignature = Buffer.from([0x50, 0x4b, 0x01, 0x02]);
   const centralOffset = damaged.indexOf(centralSignature);
   assert.notEqual(centralOffset, -1, "a central-directory record must exist");
+  const localSignature = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
+  const localOffset = damaged.indexOf(localSignature);
+  assert.notEqual(localOffset, -1, "a local file header must exist");
   damaged[centralOffset + 16] ^= 0xff;
+  damaged[localOffset + 14] ^= 0xff;
   assert.throws(
     () => extractZipBuffer(damaged, join(temporary, "damaged")),
     /CRC-32 mismatch/,
