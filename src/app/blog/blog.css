@@ -1985,3 +1985,20 @@ body:has(.blog-theme) .analytics-preferences:hover {
     padding-inline:14px;
   }
 }
+
+/* Keep numbering on top-level H2 sections; nested H3 headings use a lighter bullet. */
+.blog-theme .blog-toc-bullet {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:21px;
+  margin-top:1px;
+  background:transparent;
+  color:var(--blog-accent);
+  font-size:16px;
+  font-weight:700;
+  line-height:1;
+}
+.blog-theme .blog-toc li.toc-sub .blog-toc-bullet {
+  font-size:15px;
+}
