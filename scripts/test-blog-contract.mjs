@@ -55,13 +55,15 @@ const [
 ]);
 
 
-const [analyticsEdge, adBannerMigration, siteConfig, socialIcons, socialIconExtractor, telegramIconSource] = await Promise.all([
+const [analyticsEdge, adBannerMigration, siteConfig, socialIcons, socialIconExtractor, telegramIconSource, staticHostHeaders, apacheHeaders] = await Promise.all([
   read("supabase/functions/site-analytics/index.ts"),
   read("supabase/migrations/20261124075303_global_article_advertising_slots.sql"),
   read("src/lib/site.ts"),
   read("src/lib/social-icons.json"),
   read("scripts/extract-social-paths.mjs"),
   read("assets-src/icons/telegram.svg"),
+  read("public/_headers"),
+  read("public/.htaccess"),
 ]);
 
 const blogChromeCss = await read("src/app/chrome.css");
