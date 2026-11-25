@@ -4,7 +4,7 @@
   const supabaseUrl = typeof config.supabaseUrl === "string" ? config.supabaseUrl.replace(/\/+$/,"") : "";
   const anonKey = typeof config.supabaseAnonKey === "string" ? config.supabaseAnonKey : "";
   const $ = (selector) => document.querySelector(selector);
-  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0, analyticsVisited:false, analyticsLastFetchedAt:0, adBanners:[] };
+  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0, analyticsVisited:false, analyticsLastFetchedAt:0, adBanners:[], adClickCounts:{}, adClickCountsBusy:false, postSaveBusy:false, publishBusy:false, statusBusy:false };
   const statusLabels = { draft:"پیش‌نویس", published:"منتشرشده", archived:"بایگانی" };
   const validConfig = supabaseUrl === "https://bkohdqwecnvbmeaiuyyx.supabase.co" && anonKey.startsWith("sb_publishable_");
 
@@ -183,7 +183,13 @@
       (!needle||[post.title,post.slug,...postCategorySlugs(post)].join(" ").toLocaleLowerCase().includes(needle)));
     const grid=$("#posts-grid");grid.replaceChildren();
     posts.forEach((post)=>grid.appendChild(createPostRow(post)));
-    $("#posts-empty").hidden=posts.length>0;
+    const empty=$("#posts-empty");
+    empty.hidden=posts.length>0;
+    if(!posts.length){
+      empty.textContent=state.posts.length
+        ? "با این جست‌وجو یا فیلتر، مقاله‌ای پیدا نشد."
+        : "هنوز مقاله‌ای ایجاد نکردی. از «نوشتۀ تازه» برای شروع استفاده کن.";
+    }
   }
   function formatMetric(value) {
     return Number(value||0).toLocaleString("fa-IR");
@@ -389,13 +395,12 @@
     content_width:"reading",accent_color:"#a86f54",faqs:[],status:"draft",has_unpublished_changes:false,
   });
   function showEditor(post) {
-    state.currentPost={...newPost(),...(post||{}),robots_follow:true};
+    state.currentPost={...newPost(),...(post||{})};
     state.preview=false;$("#editor-form").reset();fillEditor(state.currentPost);
     showView("editor");updatePreview();updateSeo();updateEditorStatus();
     $("#markdown-preview").hidden=true;$("#post-content").hidden=false;
     $("#link-settings").hidden=true;refreshLinkManager();
-    document.querySelectorAll(".editor-tab").forEach((b)=>b.classList.toggle("active",b.dataset.tab==="seo"));
-    document.querySelectorAll(".tab-panel").forEach((p)=>{p.hidden=p.id!=="tab-seo";p.classList.toggle("active",p.id==="tab-seo");});
+    showTab("seo");
   }
   function newArticle(){showEditor(newPost());}
   function setField(selector,value){const field=$(selector);if(!field)return;if(field.type==="checkbox")field.checked=value!==false;else field.value=value??"";}
@@ -438,7 +443,6 @@
       post[key]=field.type==="checkbox"?field.checked:field.value.trim();
     });
     post.content=editorToMarkdown($("#post-content"));
-    post.robots_follow=true;
     post.categories=selectedEditorCategories();
     post.primary_category=post.categories.includes($("#post-primary-category").value)
       ? $("#post-primary-category").value
@@ -461,9 +465,19 @@
     try{const result=await api("get_post",{id});showEditor(result.post);}
     catch(error){toast(error.message,true);}
   }
-  function showTab(name) {
-    document.querySelectorAll(".editor-tab").forEach((button)=>button.classList.toggle("active",button.dataset.tab===name));
-    document.querySelectorAll(".tab-panel").forEach((panel)=>{panel.hidden=panel.id!=="tab-"+name;panel.classList.toggle("active",panel.id==="tab-"+name);});
+  function showTab(name,focus=false) {
+    document.querySelectorAll(".editor-tab").forEach((button)=>{
+      const active=button.dataset.tab===name;
+      button.classList.toggle("active",active);
+      button.setAttribute("aria-selected",active?"true":"false");
+      button.tabIndex=active?0:-1;
+      if(active&&focus)button.focus();
+    });
+    document.querySelectorAll(".tab-panel").forEach((panel)=>{
+      const active=panel.id==="tab-"+name;
+      panel.hidden=!active;
+      panel.classList.toggle("active",active);
+    });
   }
   function escapeHtml(text) {
     return String(text).replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -937,25 +951,51 @@
     $("#seo-preview-title").textContent=seoTitle||"عنوان مقاله";
     $("#seo-preview-description").textContent=description||"توضیحات مقاله در نتایج جست‌وجو اینجا نمایش داده می‌شه.";
   }
-  async function savePost() {
-    const post=collectPost();
-    const result=await api("save_post",{post});
-    state.currentPost=result.post;
-    await loadPosts();updateEditorStatus();
-    toast("پیش‌نویس ذخیره شد.");
-    return result.post;
+  async function savePost(options={}) {
+    if(state.postSaveBusy)throw new Error("ذخیرۀ مقاله در حال انجامه؛ کمی صبر کن.");
+    state.postSaveBusy=true;
+    const buttons=["#save-post","#sidebar-save"].map((selector)=>$(selector));
+    buttons.forEach((button)=>setButton(button,true,"در حال ذخیره…"));
+    try{
+      const post=collectPost();
+      const result=await api("save_post",{post});
+      state.currentPost=result.post;
+      await loadPosts();updateEditorStatus();
+      if(options.silent!==true)toast("پیش‌نویس ذخیره شد.");
+      return result.post;
+    }finally{
+      state.postSaveBusy=false;
+      buttons.forEach((button)=>setButton(button,false));
+    }
   }
   async function publishPost() {
-    const post=await savePost();
-    const result=await api("publish_post",{id:post.id});
-    state.currentPost=result.post;await loadPosts();updateEditorStatus();
-    toast("درخواست انتشار ثبت شد؛ بعد از Build مقاله و سایت‌مپ به‌روز می‌شن.");
+    if(state.publishBusy)return;
+    state.publishBusy=true;
+    const buttons=["#publish-post","#sidebar-publish"].map((selector)=>$(selector));
+    buttons.forEach((button)=>setButton(button,true,"در حال انتشار…"));
+    try{
+      const post=await savePost({silent:true});
+      const result=await api("publish_post",{id:post.id});
+      state.currentPost=result.post;await loadPosts();updateEditorStatus();
+      toast("درخواست انتشار ثبت شد؛ بعد از Build مقاله و سایت‌مپ به‌روز می‌شن.");
+    }finally{
+      state.publishBusy=false;
+      buttons.forEach((button)=>setButton(button,false));
+    }
   }
   async function changeStatus(action) {
-    const post=state.currentPost;if(!post?.id)return;
+    const post=state.currentPost;if(!post?.id||state.statusBusy)return;
     if(!window.confirm(action==="archive_post"?"این مقاله به بایگانی منتقل بشه؟":"این مقاله از وبلاگ عمومی خارج بشه؟"))return;
-    const result=await api(action,{id:post.id});state.currentPost=result.post;await loadPosts();updateEditorStatus();
-    toast(action==="archive_post"?"مقاله بایگانی شد.":"مقاله از انتشار خارج شد.");
+    state.statusBusy=true;
+    const buttons=["#unpublish-post","#archive-post"].map((selector)=>$(selector));
+    buttons.forEach((button)=>setButton(button,true,"در حال انجام…"));
+    try{
+      const result=await api(action,{id:post.id});state.currentPost=result.post;await loadPosts();updateEditorStatus();
+      toast(action==="archive_post"?"مقاله بایگانی شد.":"مقاله از انتشار خارج شد.");
+    }finally{
+      state.statusBusy=false;
+      buttons.forEach((button)=>setButton(button,false));
+    }
   }
   function canvasBlob(canvas,type,quality) {
     return new Promise((resolve,reject)=>canvas.toBlob((blob)=>blob?resolve(blob):reject(new Error("تبدیل تصویر ناموفق بود.")),type,quality));
@@ -1448,6 +1488,64 @@
           <footer class="ad-management-footer"><span>${banner.enabled?"نمایش "+placementLabel+" در مقاله‌ها فعال است.":"این جایگاه در سایت عمومی نمایش داده نمی‌شه."}</span>${remove}</footer>
         </article>`;
     }).join("");
+    updateAdClickMetrics();
+  }
+  function updateAdClickMetrics() {
+    document.querySelectorAll("[data-ad-card]").forEach((card)=>{
+      const id=card.dataset.adCard||"";
+      const count=state.adClickCounts[id];
+      const number=card.querySelector("[data-ad-click-count]");
+      const reset=card.querySelector("[data-ad-click-reset]");
+      if(number){
+        number.textContent=count
+          ?Number(count.click_count||0).toLocaleString("fa-IR")
+          :(state.adClickCountsBusy?"…":"۰");
+      }
+      if(reset){
+        reset.textContent=count?.reset_at
+          ?"آخرین ریست: "+dateLabel(count.reset_at)
+          :"شمارش هنوز ریست نشده";
+      }
+    });
+  }
+  async function loadAdClickCounts(silent=false) {
+    if(state.adClickCountsBusy)return;
+    state.adClickCountsBusy=true;
+    if($("#ad-click-status"))$("#ad-click-status").textContent="در حال دریافت شمارش کلیک‌ها…";
+    updateAdClickMetrics();
+    try{
+      const result=await api("get_ad_click_counts");
+      state.adClickCounts=Object.fromEntries((Array.isArray(result.counts)?result.counts:[])
+        .map((item)=>[item.banner_id,item]));
+      if($("#ad-click-status")){
+        $("#ad-click-status").textContent="آخرین دریافت آمار: "+new Date().toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"});
+      }
+      updateAdClickMetrics();
+    }catch(error){
+      if($("#ad-click-status"))$("#ad-click-status").textContent="دریافت آمار ناموفق بود؛ دوباره تلاش کن.";
+      document.querySelectorAll("[data-ad-click-count]").forEach((node)=>{node.textContent="—";});
+      if(!silent)toast(error.message,true);
+    }finally{
+      state.adClickCountsBusy=false;
+    }
+  }
+  async function resetAdClickCount(button) {
+    const id=button?.dataset.resetAdClicks||"";
+    const banner=state.adBanners.find((item)=>item.id===id);
+    if(!banner)return;
+    const label="جایگاه تبلیغاتی "+(state.adBanners.findIndex((item)=>item.id===id)+1);
+    if(!window.confirm("شمارش کلیک‌های «"+label+"» به صفر برگرده؟ این کار قابل بازگشت نیست."))return;
+    setButton(button,true,"در حال ریست…");
+    try{
+      const result=await api("reset_ad_click_count",{banner_id:id});
+      state.adClickCounts={...(state.adClickCounts||{}),[id]:result.count};
+      updateAdClickMetrics();
+      toast("شمارش کلیک‌های "+label+" به صفر برگشت.");
+    }catch(error){
+      toast(error.message,true);
+    }finally{
+      setButton(button,false);
+    }
   }
   async function saveAdBanners(event) {
     event.preventDefault();
@@ -1461,6 +1559,7 @@
       state.adBanners=normalizeAdBanners(result.settings?.ad_banners||state.adBanners);
       renderAdBannerSettings();
       $("#ad-banners-message").textContent="تنظیمات ذخیره شد و ساخت نسخۀ عمومی آغاز شد.";
+      await loadAdClickCounts(true);
       toast("بنرها ذخیره شدن؛ بعد از Build در همۀ مقاله‌ها به‌روزرسانی می‌شن.");
     }catch(error){
       $("#ad-banners-message").textContent=error.message;
@@ -1497,7 +1596,7 @@
   function bindEvents() {
     document.querySelectorAll("[data-view]").forEach((button)=>button.addEventListener("click",()=>{
       const name=button.dataset.view;showView(name);if(name==="settings")void loadSettings().catch((e)=>toast(e.message,true));
-      if(name==="ads")renderAdBannerSettings();
+      if(name==="ads"){renderAdBannerSettings();void loadAdClickCounts(true);}
       if(name==="analytics"){state.analyticsVisited=true;void loadArticleAnalytics(false);}
     }));
     document.querySelectorAll("[data-new-post]").forEach((button)=>button.addEventListener("click",newArticle));
@@ -1505,6 +1604,7 @@
     document.querySelectorAll(".editor-tab").forEach((button)=>button.addEventListener("click",()=>showTab(button.dataset.tab)));
     $("#posts-search").addEventListener("input",renderPosts);$("#posts-filter").addEventListener("change",renderPosts);
     $("#refresh-article-analytics").addEventListener("click",()=>void loadArticleAnalytics(true));
+    $("#refresh-ad-click-counts").addEventListener("click",()=>void loadAdClickCounts());
     $("#article-analytics-search").addEventListener("input",renderArticleAnalytics);
     $("#post-content").addEventListener("input",()=>{updatePreview();updateSeo();refreshLinkManager();updateFormatToolbar();});
     ["keyup","mouseup","focus"].forEach((eventName)=>$("#post-content").addEventListener(eventName,updateFormatToolbar));
@@ -1585,10 +1685,14 @@
       finally{input.disabled=false;input.value="";}
     });
     $("#ad-banners-list").addEventListener("click",(event)=>{
+      const resetButton=event.target.closest("[data-reset-ad-clicks]");
+      if(resetButton){void resetAdClickCount(resetButton);return;}
       const button=event.target.closest("[data-remove-ad]");
       if(!button)return;
       const current=collectAdBannersFromForm();
       if(current.length<=3){toast("سه جایگاه اصلی قابل حذف نیستن.",true);return;}
+      const bannerNumber=current.findIndex((item)=>item.id===button.dataset.removeAd)+1;
+      if(!window.confirm("جایگاه تبلیغاتی "+bannerNumber+" حذف بشه؟ بعد از ذخیرۀ جایگاه‌ها، شمارش کلیک همین جایگاه هم پاک می‌شه."))return;
       state.adBanners=current.filter((item)=>item.id!==button.dataset.removeAd);
       renderAdBannerSettings();
     });
