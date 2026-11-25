@@ -179,20 +179,31 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
             <aside className="blog-article-sidebar">
               {toc.length ? (
                 <>
-                  <nav className="blog-toc blog-toc-desktop" aria-label="فهرست مقاله">
-                    <div className="blog-toc-heading">
-                      <strong>فهرست مقاله</strong>
-                      <span>{tocCountLabel}</span>
-                    </div>
+                  <details className="blog-toc blog-toc-desktop">
+                    <summary className="blog-toc-summary">
+                      <span className="blog-toc-summary-copy">
+                        <span>فهرست مقاله</span>
+                        <small>{tocCountLabel}</small>
+                      </span>
+                      <span className="blog-toc-chevron" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                          <path d="m6.5 9.5 5.5 5.5 5.5-5.5" />
+                        </svg>
+                      </span>
+                    </summary>
                     <ol>{renderTocItems()}</ol>
-                  </nav>
+                  </details>
                   <details className="blog-toc-mobile">
                     <summary>
                       <span className="blog-toc-summary-copy">
                         <span>فهرست مقاله</span>
                         <small>{tocCountLabel}</small>
                       </span>
-                      <span className="blog-toc-chevron" aria-hidden="true">⌄</span>
+                      <span className="blog-toc-chevron" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                          <path d="m6.5 9.5 5.5 5.5 5.5-5.5" />
+                        </svg>
+                      </span>
                     </summary>
                     <ol id="blog-toc-mobile-list">{renderTocItems()}</ol>
                   </details>
