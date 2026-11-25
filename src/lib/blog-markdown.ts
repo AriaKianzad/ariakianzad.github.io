@@ -12,6 +12,21 @@ function allowedUrl(value:string){
   }catch{}
   return "#";
 }
+function plainInline(value:string){
+  return value
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g,"$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)(?:\{[^}]*\})?/g,"$1")
+    .replace(/\x60+([^\x60]+)\x60+/g,"$1")
+    .replace(/(\*\*|__)(.*?)\1/g,"$2")
+    .replace(/~~(.*?)~~/g,"$1")
+    .replace(/\+\+(.*?)\+\+/g,"$1")
+    .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g,"$1")
+    .replace(/(?<!_)_([^_\n]+)_(?!_)/g,"$1")
+    .replace(/<[^>]*>/g,"")
+    .replace(/\\([\\\x60*{}\[\]()#+\-.!_>])/g,"$1")
+    .replace(/\s+/g," ")
+    .trim();
+}
 function inline(value:string){
   let s=esc(value);
   s=s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>'<img src="'+esc(allowedUrl(url.replace(/&amp;/g,"&")))+'" alt="'+alt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">');
@@ -52,13 +67,13 @@ export function extractToc(markdown:string):TocItem[]{
   const lines=markdown.replace(/\r\n/g,"\n").split("\n");
   const seen=new Map<string,number>(),items:TocItem[]=[];
   const add=(level:number,title:string)=>{
-    if(level<2||level>3)return;
     const base=slugHeading(title),count=seen.get(base)||0;seen.set(base,count+1);
-    items.push({id:count?base+"-"+(count+1):base,title,level});
+    if(level<2||level>3)return;
+    items.push({id:count?base+"-"+(count+1):base,title:plainInline(title),level});
   };
   for(let index=0;index<lines.length;index++){
     const line=lines[index].replace(/^\s{0,3}/,"");
-    const heading=line.match(/^(#{2,3})\s+(.+?)\s*#*$/);
+    const heading=line.match(/^(#{1,4})\s+(.+?)\s*#*$/);
     if(heading){add(heading[1].length,heading[2].trim());continue;}
     if(line.trim()&&index+1<lines.length){
       const setext=lines[index+1].trim().match(/^(={3,}|-{3,})$/);

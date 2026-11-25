@@ -107,6 +107,16 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
   } : null;
   const language = post.language === "fa" ? "fa" : "en";
   const direction = post.language === "fa" ? "rtl" : "ltr";
+  const tocNumber = (value:number) => value.toLocaleString(language === "fa" ? "fa-IR" : "en-US", { minimumIntegerDigits:2, useGrouping:false });
+  const tocCountLabel = language === "fa"
+    ? toc.length.toLocaleString("fa-IR") + " بخش"
+    : toc.length.toLocaleString("en-US") + (toc.length === 1 ? " section" : " sections");
+  const renderTocItems = () => toc.map((item,index) => (
+    <li key={item.id} className={item.level === 3 ? "toc-sub" : ""}>
+      <span className="blog-toc-index" aria-hidden="true">{tocNumber(index + 1)}</span>
+      <a href={"#" + item.id}>{item.title}</a>
+    </li>
+  ));
   const publishedDateParts = formatBlogDateParts(post.published_at, post.language);
   const articleLineHeight = post.language === "fa" ? (settings.body_line_height || 1.95) : 1.7;
   const articleParagraphGap = post.language === "fa" ? articleLineHeight * 1.05 : 1.45;
@@ -161,12 +171,21 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
               {toc.length ? (
                 <>
                   <nav className="blog-toc blog-toc-desktop" aria-label="فهرست مقاله">
-                    <strong>فهرست مقاله</strong>
-                    <ol>{toc.map((item) => <li key={item.id} className={item.level === 3 ? "toc-sub" : ""}><a href={"#" + item.id}>{item.title}</a></li>)}</ol>
+                    <div className="blog-toc-heading">
+                      <strong>فهرست مقاله</strong>
+                      <span>{tocCountLabel}</span>
+                    </div>
+                    <ol>{renderTocItems()}</ol>
                   </nav>
                   <details className="blog-toc-mobile">
-                    <summary>فهرست مقاله <span aria-hidden="true">⌄</span></summary>
-                    <ol>{toc.map((item) => <li key={item.id} className={item.level === 3 ? "toc-sub" : ""}><a href={"#" + item.id}>{item.title}</a></li>)}</ol>
+                    <summary>
+                      <span className="blog-toc-summary-copy">
+                        <span>فهرست مقاله</span>
+                        <small>{tocCountLabel}</small>
+                      </span>
+                      <span className="blog-toc-chevron" aria-hidden="true">⌄</span>
+                    </summary>
+                    <ol id="blog-toc-mobile-list">{renderTocItems()}</ol>
                   </details>
                 </>
               ) : null}
