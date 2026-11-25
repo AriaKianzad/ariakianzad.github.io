@@ -69,7 +69,7 @@ export function createZipBuffer(files) {
   if (!(files instanceof Map) || files.size === 0) {
     throw new Error("ZIP input must be a non-empty Map of relative paths to Buffers.");
   }
-  if (files.size > MAX_U16) {
+  if (files.size >= MAX_U16) {
     throw new Error("ZIP64 is not supported: too many files.");
   }
 
@@ -87,12 +87,12 @@ export function createZipBuffer(files) {
 
     const nameBytes = Buffer.from(name, "utf8");
     const data = Buffer.isBuffer(value) ? value : Buffer.from(value);
-    if (nameBytes.length > MAX_U16 || data.length > MAX_U32) {
+    if (nameBytes.length > MAX_U16 || data.length >= MAX_U32) {
       throw new Error("ZIP64 is not supported for entry: " + name);
     }
 
     const compressed = deflateRawSync(data, { level: 9 });
-    if (compressed.length > MAX_U32) {
+    if (compressed.length >= MAX_U32) {
       throw new Error("ZIP64 is not supported for compressed entry: " + name);
     }
     const checksum = crc32(data);
@@ -132,13 +132,13 @@ export function createZipBuffer(files) {
     centralRecords.push(central, nameBytes);
 
     localOffset += local.length + nameBytes.length + compressed.length;
-    if (localOffset > MAX_U32) throw new Error("ZIP64 is not supported: archive is too large.");
+    if (localOffset >= MAX_U32) throw new Error("ZIP64 is not supported: archive is too large.");
   }
 
   const centralBuffer = Buffer.concat(centralRecords);
   const centralOffset = localOffset;
   const centralSize = centralBuffer.length;
-  if (centralSize > MAX_U32 || centralOffset + centralSize > MAX_U32) {
+  if (centralSize >= MAX_U32 || centralOffset + centralSize >= MAX_U32) {
     throw new Error("ZIP64 is not supported: central directory is too large.");
   }
 
@@ -299,9 +299,18 @@ export function extractZipBuffer(buffer, destination) {
 
     const localFlags = buffer.readUInt16LE(local + 6);
     const localMethod = buffer.readUInt16LE(local + 8);
+    const localCrc = buffer.readUInt32LE(local + 14);
+    const localCompressed = buffer.readUInt32LE(local + 18);
+    const localUncompressed = buffer.readUInt32LE(local + 22);
     const localNameLength = buffer.readUInt16LE(local + 26);
     const localExtraLength = buffer.readUInt16LE(local + 28);
-    if (localFlags !== entry.flags || localMethod !== entry.method) {
+    if (
+      localFlags !== entry.flags ||
+      localMethod !== entry.method ||
+      localCrc !== entry.crc ||
+      localCompressed !== entry.compressed ||
+      localUncompressed !== entry.uncompressed
+    ) {
       throw new Error("Local and central ZIP headers disagree for: " + entry.name);
     }
 
