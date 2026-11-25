@@ -63,7 +63,7 @@ function field(
   const raw = body[key];
   const value = typeof raw === "string"
     ? (singleLine
-      ? raw.replace(/[\u0000-\u001F\u007F]/g, "")
+      ? raw.replace(/[\u0000-\u001F\u007F-\u009F]/g, "")
       : raw.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " "))
       .trim()
     : "";
@@ -111,7 +111,7 @@ async function verifyTurnstileToken(token: string, clientAddress: string): Promi
   const secret = readSecret("CLOUDFLARE_TURNSTILE_SECRET_KEY");
   // Until both the public site key and this server-only secret are configured,
   // the existing honeypot and IP rate limit remain active.
-  if (!secret) return true;
+  if (!secret) return token.length === 0;
   if (!token || token.length > 2048) return false;
 
   const form = new FormData();
