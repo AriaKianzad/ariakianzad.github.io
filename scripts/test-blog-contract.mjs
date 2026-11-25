@@ -304,6 +304,23 @@ new Script(markdownCompiled, { filename: "src/lib/blog-markdown.ts" }).runInNewC
   module: { exports: markdownRuntime.exports },
   URL,
 });
+assert.ok(markdownSource.includes("function plainInline(") && markdownSource.includes("title:plainInline(title)") && markdownSource.includes("heading.match(/^(#{1,4})"), "TOC extraction must convert Markdown heading labels to plain text and keep heading ID counters aligned with rendered headings");
+const tocMarkdown = [
+  "# تیتر تکراری",
+  "## **تیتر برجسته** با *تأکید* و \x60کد\x60",
+  "### [**عنوان پیونددار**](https://example.com) و ~~خط‌خورده~~ و ++زیرخط++",
+  "## تیتر تکراری",
+].join("\n");
+const extractedToc = markdownRuntime.exports.extractToc(tocMarkdown);
+assert.equal(extractedToc.length, 3, "the TOC must include level-two and level-three headings only");
+assert.equal(extractedToc[0].title, "تیتر برجسته با تأکید و کد", "TOC labels must remove bold, italic and inline-code Markdown markers");
+assert.equal(extractedToc[1].title, "عنوان پیونددار و خط‌خورده و زیرخط", "TOC labels must keep link text while removing URLs and inline emphasis markers");
+assert.equal(extractedToc[2].id, "تیتر-تکراری-2", "TOC heading IDs must account for earlier level-one headings just like the Markdown renderer");
+const renderedTocHeadings = markdownRuntime.exports.renderMarkdown(tocMarkdown);
+assert.ok(renderedTocHeadings.includes('<h2 id="' + extractedToc[2].id + '">تیتر تکراری</h2>'), "TOC anchor IDs must match the rendered article heading IDs");
+assert.ok(articlePage.includes("blog-toc-heading") && articlePage.includes("blog-toc-index") && articlePage.includes("tocCountLabel") && articlePage.includes('id="blog-toc-mobile-list"'), "desktop and mobile TOCs must expose a section count and clearly numbered links");
+assert.ok(blogCss.includes(".blog-toc-heading") && blogCss.includes("max-height:min(52vh,460px)") && blogCss.includes("overflow-y:auto") && blogCss.includes("padding-inline:14px"), "the TOC must have readable spacing, hierarchy and bounded scrolling on narrow screens");
+
 const sampleTable = [
   "| **نقش** | **تمرکز اصلی** |",
   "| --- | --- |",
