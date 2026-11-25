@@ -45,7 +45,7 @@ function trustedClientIp(request: Request): string | null {
   // Only trust Cloudflare's managed ingress header. A missing address must
   // not merge every visitor into one shared fingerprint.
   const value = request.headers.get("cf-connecting-ip")?.trim();
-  if (!value || value.length > 64 || /[,;\\s]/.test(value)) return null;
+  if (!value || value.length > 64 || /[,;\s]/.test(value)) return null;
   return value.toLowerCase();
 }
 
