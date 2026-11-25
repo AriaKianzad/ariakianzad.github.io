@@ -1426,7 +1426,11 @@
   }
   function nextAdBannerIndex() {
     let index=4;
-    while(state.adBanners.some((banner)=>banner.id==="banner-"+index))index++;
+    const usedIds=new Set([
+      ...(state.adBanners||[]),
+      ...(Array.isArray(state.settings?.ad_banners)?state.settings.ad_banners:[]),
+    ].map((banner)=>String(banner.id||"")));
+    while(usedIds.has("banner-"+index))index++;
     return index;
   }
   function collectAdBannersFromForm() {
