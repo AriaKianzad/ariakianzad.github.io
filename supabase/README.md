@@ -76,9 +76,9 @@ Cloudflare Turnstile integration is implemented but is **not active until both k
 - Set the matching private secret as the Supabase Edge Function secret `CLOUDFLARE_TURNSTILE_SECRET_KEY`. The Edge Function sends every submitted token to Cloudflare's Siteverify endpoint and requires `success=true`, hostname `ariakianzad.github.io`, and action `blog_contact`.
 - Configure the Turnstile widget to allow the hostname `ariakianzad.github.io`. Do not commit the secret key or place it in a public build variable.
 
-Until both keys are configured, the pre-existing honeypot and IP rate limit remain active, but there is no CAPTCHA verification. A missing Cloudflare client-IP header fails closed. The function forwards messages to integrations/google-apps-script/blog-contact.gs using GOOGLE_APPS_SCRIPT_URL and GOOGLE_APPS_SCRIPT_TOKEN. The Apps Script stores its matching BLOG_CONTACT_TOKEN and destination BLOG_CONTACT_TO_EMAIL in Script Properties. The token is never sent to the browser. The script uses a lock and a short duplicate-submission cache and checks Google's daily email quota.
+Both keys must be configured together. If the server secret is absent, a request carrying a Turnstile token is rejected instead of being accepted without verification. Until the public site key is added, the pre-existing honeypot and IP rate limit remain active, but there is no CAPTCHA widget. A missing Cloudflare client-IP header fails closed. The function forwards messages to integrations/google-apps-script/blog-contact.gs using GOOGLE_APPS_SCRIPT_URL and GOOGLE_APPS_SCRIPT_TOKEN. The Apps Script stores its matching BLOG_CONTACT_TOKEN and destination BLOG_CONTACT_TO_EMAIL in Script Properties. The token is never sent to the browser. The script uses a lock and a short duplicate-submission cache and checks Google's daily email quota.
 
-The function forwards messages to integrations/google-apps-script/blog-contact.gs using GOOGLE_APPS_SCRIPT_URL and GOOGLE_APPS_SCRIPT_TOKEN. The Apps Script stores its matching BLOG_CONTACT_TOKEN and destination BLOG_CONTACT_TO_EMAIL in Script Properties. The token is never sent to the browser. The script uses a lock and a short duplicate-submission cache and checks Google's daily email quota.
+
 
 ### Banner click event tracking
 
