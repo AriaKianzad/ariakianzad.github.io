@@ -595,3 +595,19 @@ body, body * { font-family: Estedad, Tahoma, sans-serif !important; }
   .ad-management-card .ad-click-metrics {align-items:flex-start;flex-direction:column}
   .ad-reset-clicks {width:100%}
 }
+
+.editor-topbar-state {display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.editor-dirty-indicator {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 9px;
+  border:1px solid #d8b99f;
+  background:#f8eee7;
+  color:#995b38;
+  font-size:9px;
+  line-height:1.7;
+  border-radius:999px;
+}
+.editor-dirty-indicator[hidden] {display:none}
+.editor-dirty-indicator:not([hidden])::before {content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
