@@ -92,7 +92,7 @@ Deno.serve(async (request: Request) => {
     }
 
     const bannerId = (parsed as Record<string, unknown>).banner_id;
-    if (typeof bannerId !== "string" || !/^banner-[1-8]$/.test(bannerId)) {
+    if (typeof bannerId !== "string" || !/^banner-[1-9][0-9]*$/.test(bannerId)) {
       return json({ error: "Invalid banner ID." }, 400);
     }
 
