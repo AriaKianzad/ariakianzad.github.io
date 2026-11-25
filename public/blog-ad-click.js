@@ -9,7 +9,7 @@
     if (!link || event.defaultPrevented || (event.button !== 0)) return;
 
     const bannerId = link.getAttribute("data-ad-click") || "";
-    if (!/^banner-[1-8]$/.test(bannerId)) return;
+    if (!/^banner-[1-9][0-9]*$/.test(bannerId)) return;
 
     const config = window.MIAN_E_MA_DASHBOARD_CONFIG || {};
     if (typeof config.supabaseUrl !== "string" || typeof config.supabaseAnonKey !== "string") return;
