@@ -1286,6 +1286,15 @@
       name:card.querySelector("[data-category-name]")?.value.trim()||"",
     })).filter((item)=>item.slug&&item.name);
   }
+  function syncCategoryDrafts() {
+    const current=state.settings||{};
+    state.settings={
+      ...current,
+      categories:collectCategories(current.categories||[]),
+      category_seo:collectCategorySeo(current.category_seo||{}),
+    };
+    return state.settings;
+  }
   function renderCategoryManager(settings) {
     const list=$("#category-manager-list");
     if(!list)return;
@@ -1311,6 +1320,7 @@
       remove.disabled=used>0;
       remove.title=used>0?"ابتدا مقاله‌های این دسته‌بندی رو به دسته‌بندی دیگه منتقل کن.":"حذف دسته‌بندی";
       remove.addEventListener("click",()=>{
+        syncCategoryDrafts();
         const next=(state.settings?.categories||[]).filter((entry)=>entry.slug!==item.slug);
         state.settings={...(state.settings||{}),categories:next};
         const seo={...(state.settings.category_seo||{})};delete seo[item.slug];
@@ -1325,6 +1335,7 @@
     if(state.currentPost)renderPostCategoryControls(state.currentPost.categories,state.currentPost.primary_category||state.currentPost.category);
   }
   function addManagedCategory() {
+    syncCategoryDrafts();
     const name=$("#new-category-name").value.trim();
     const slug=$("#new-category-slug").value.trim().toLowerCase();
     const message=$("#category-manager-message");
@@ -1806,6 +1817,7 @@
     $("#new-category-slug").addEventListener("keydown",(event)=>{if(event.key==="Enter"){event.preventDefault();addManagedCategory();}});
     $("#category-manager-list").addEventListener("input",(event)=>{
       if(event.target.matches("[data-category-name]")){
+        syncCategoryDrafts();
         const card=event.target.closest(".category-manager-item");
         const slug=card?.dataset.categorySlug;
         const seoCard=slug?document.querySelector('.category-seo-card[data-category-slug="'+CSS.escape(slug)+'"]'):null;
@@ -1817,6 +1829,11 @@
         if(primaryOption)primaryOption.textContent=event.target.value.trim()||slug;
       }
     });
+    $("#category-manager-list").addEventListener("change",(event)=>{
+      if(event.target.matches("[data-category-name]"))syncCategoryDrafts();
+    });
+    $("#category-seo-list").addEventListener("input",syncCategoryDrafts);
+    $("#category-seo-list").addEventListener("change",syncCategoryDrafts);
     $("#settings-form").addEventListener("submit",saveSettings);
     $("#logout-button").addEventListener("click",()=>void logout(true));
     $("#header-logout-button").addEventListener("click",()=>void logout(true));
