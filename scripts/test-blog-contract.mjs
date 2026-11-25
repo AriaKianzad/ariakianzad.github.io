@@ -318,8 +318,8 @@ assert.equal(extractedToc[1].title, "عنوان پیونددار و خط‌خو�
 assert.equal(extractedToc[2].id, "تیتر-تکراری-2", "TOC heading IDs must account for earlier level-one headings just like the Markdown renderer");
 const renderedTocHeadings = markdownRuntime.exports.renderMarkdown(tocMarkdown);
 assert.ok(renderedTocHeadings.includes('<h2 id="' + extractedToc[2].id + '">تیتر تکراری</h2>'), "TOC anchor IDs must match the rendered article heading IDs");
-assert.ok(articlePage.includes("blog-toc-heading") && articlePage.includes("blog-toc-index") && articlePage.includes("tocCountLabel") && articlePage.includes('id="blog-toc-mobile-list"'), "desktop and mobile TOCs must expose a section count and clearly numbered links");
-assert.ok(blogCss.includes(".blog-toc-heading") && blogCss.includes("max-height:min(52vh,460px)") && blogCss.includes("overflow-y:auto") && blogCss.includes("padding-inline:14px"), "the TOC must have readable spacing, hierarchy and bounded scrolling on narrow screens");
+assert.ok(articlePage.includes("blog-toc-heading") && articlePage.includes("blog-toc-index") && articlePage.includes("blog-toc-bullet") && articlePage.includes("sectionNumber += 1") && articlePage.includes("isSubheading ? \"•\" : tocNumber(sectionNumber)") && articlePage.includes("tocCountLabel") && articlePage.includes('id="blog-toc-mobile-list"'), "desktop and mobile TOCs must number H2 sections and use bullets for nested H3 headings");
+assert.ok(blogCss.includes(".blog-toc-heading") && blogCss.includes(".blog-toc-bullet") && blogCss.includes(".blog-toc li.toc-sub .blog-toc-bullet") && blogCss.includes("max-height:min(52vh,460px)") && blogCss.includes("overflow-y:auto") && blogCss.includes("padding-inline:14px"), "the TOC must distinguish nested bullet markers and retain readable spacing and bounded scrolling on narrow screens");
 
 const sampleTable = [
   "| **نقش** | **تمرکز اصلی** |",
