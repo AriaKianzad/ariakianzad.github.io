@@ -10,7 +10,7 @@ const [
   adminApp, adminEdge, publicRpcMigration, browserDenyMigration, snapshotMigration,
   publicHeader, workflow, sitemap, robots, heroVisualComponent, signalScene, heroBootstrap,
   blogLayout, contactPage, contactForm, contactEdge, contactMigration, rootLayout, configToml, googleContactScript, contactBrowserScript,
-  adClickTracker, adClickEdge, adClickMigration, adClickExpansionMigration,
+  adClickTracker, adClickEdge, adClickMigration, adClickExpansionMigration, adClickHardeningMigration,
 ] = await Promise.all([
   read("package.json"),
   read("scripts/fetch-blog-content.mjs"),
@@ -49,6 +49,7 @@ const [
   read("supabase/functions/blog-ad-click/index.ts"),
   read("supabase/migrations/20261125115301_add_blog_ad_click_tracking.sql"),
   read("supabase/migrations/20261125120557_expand_blog_ad_banner_ids.sql"),
+  read("supabase/migrations/20261125170000_harden_blog_rate_limits_and_contact_cleanup.sql"),
 ]);
 
 
@@ -406,6 +407,14 @@ for (const [format, fragment] of [
   ["inline image","<figure class=\"blog-inline-image\"><img"],
 ]) assert.ok(renderedFormats.includes(fragment), format + " must render to semantic HTML");
 
+const underscoredUrl = "https://en.wikipedia.org/wiki/Brand_positioning?utm_source=weekly_newsletter";
+const renderedUnderscoredLink = markdownRuntime.exports.renderMarkdown("[**مقالۀ مرتبط**](" + underscoredUrl + ")");
+assert.ok(renderedUnderscoredLink.includes('href="' + underscoredUrl + '"'), "underscores in external URLs and query parameters must remain unchanged");
+assert.ok(renderedUnderscoredLink.includes('target="_blank"') && renderedUnderscoredLink.includes('rel="nofollow noopener noreferrer"'), "protected link tags must retain safe external-link attributes");
+assert.ok(renderedUnderscoredLink.includes("<strong>مقالۀ مرتبط</strong>"), "inline formatting inside a link label must still render");
+const renderedUnderscoredImage = markdownRuntime.exports.renderMarkdown("![my_image_alt](https://example.com/my_image_file.png \\"my_image_title\\")");
+assert.ok(renderedUnderscoredImage.includes('src="https://example.com/my_image_file.png"') && renderedUnderscoredImage.includes('alt="my_image_alt"') && renderedUnderscoredImage.includes('title="my_image_title"'), "underscores in image URLs, alt text and titles must be preserved");
+
 const inlineSerializer = adminApp.slice(adminApp.indexOf("function inlineToMarkdown"),adminApp.indexOf("function listToMarkdown"));
 const blockSerializer = adminApp.slice(adminApp.indexOf("function blockToMarkdown"),adminApp.indexOf("function editorToMarkdown"));
 assert.ok(["tag===\"strong\"","tag===\"em\"","tag===\"u\"","tag===\"del\"","tag===\"code\"","tag===\"a\"","tag===\"img\""].every((token)=>inlineSerializer.includes(token)), "the editor serializer must preserve emphasis, underline, deletion, code, links and images");
@@ -574,7 +583,9 @@ assert.ok(adminApp.includes("با این جست‌وجو یا فیلتر، مق�
 assert.ok(adminApp.includes("window.confirm(") && adminApp.includes("بعد از ذخیرۀ جایگاه‌ها، شمارش کلیک همین جایگاه هم پاک می‌شه"), "removing an additional ad slot must clearly confirm the impact before it is discarded");
 
 assert.ok(adClickMigration.includes("create table if not exists public.blog_ad_click_counts") && adClickMigration.includes("alter table public.blog_ad_click_counts enable row level security") && adClickMigration.includes("revoke all on table public.blog_ad_click_counts from public, anon, authenticated"), "banner click totals must live in a private-to-browser table with RLS and no browser grants");
-assert.ok(adClickMigration.includes("private.blog_ad_click_rate_limits") && adClickMigration.includes("p_fingerprint text") && adClickMigration.includes("request_count > 60") && adClickMigration.includes("interval '1 minute'") && adClickMigration.includes("cron.schedule"), "click rate limiting must use hashed fingerprints and expire old rate-limit rows");
+assert.ok(adClickMigration.includes("private.blog_ad_click_rate_limits") && adClickMigration.includes("p_fingerprint text") && adClickMigration.includes("cron.schedule"), "the initial click-tracking migration must create private fingerprint throttling and cleanup");
+assert.ok(adClickHardeningMigration.includes("primary key (fingerprint, banner_id)") && adClickHardeningMigration.includes("request_count > 10") && adClickHardeningMigration.includes("interval '1 hour'"), "click throttling must cap each banner and trusted fingerprint at ten events per hour");
+assert.ok(adClickHardeningMigration.includes("blog-contact-rate-limit-cleanup") && adClickHardeningMigration.includes("cron.schedule") && !adClickHardeningMigration.includes("DELETE FROM private.blog_contact_rate_limits;"), "contact rate-limit cleanup must run on a scheduled job rather than on every submission");
 assert.ok(adClickMigration.includes("security invoker") && adClickMigration.includes("grant execute on function public.record_blog_ad_click(text, text) to service_role") && adClickMigration.includes("grant execute on function public.reset_blog_ad_click_count(text) to service_role"), "click and reset RPCs must run as invoker and be executable only by service_role");
 assert.ok(adClickEdge.includes('request.headers.get("cf-connecting-ip")') && adClickEdge.includes("HMAC") && !adClickEdge.includes('request.headers.get("x-forwarded-for")') && adClickEdge.includes('origin !== SITE_ORIGIN') && adClickEdge.includes('record_blog_ad_click'), "public click endpoint must validate the site origin, trust only managed ingress IP metadata and hash it before rate limiting");
 const clickFunctionConfig = configToml.slice(configToml.indexOf("[functions.blog-ad-click]"));
