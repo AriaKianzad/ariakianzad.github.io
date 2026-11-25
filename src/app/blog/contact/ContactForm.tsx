@@ -1,5 +1,8 @@
 export function ContactForm() {
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
+
   return (
+    <>
     <form className="blog-contact-form" data-blog-contact-form noValidate>
       <div className="blog-contact-form-heading">
         <h2>پیامتون رو بفرستید</h2>
@@ -103,6 +106,17 @@ export function ContactForm() {
         />
       </div>
 
+      {turnstileSiteKey ? (
+        <div className="blog-contact-turnstile" aria-label="بررسی امنیتی فرم">
+          <div
+            className="cf-turnstile"
+            data-sitekey={turnstileSiteKey}
+            data-action="blog_contact"
+            data-theme="light"
+          />
+        </div>
+      ) : null}
+
       <p className="blog-contact-policy">
         اطلاعات فرم فقط برای بررسی درخواست و پاسخ‌گویی به شما استفاده می‌شه.
       </p>
@@ -114,5 +128,9 @@ export function ContactForm() {
 
       <p className="blog-contact-status" data-contact-status role="status" aria-live="polite" hidden />
     </form>
+    {turnstileSiteKey ? (
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
+    ) : null}
+    </>
   );
 }
