@@ -172,15 +172,7 @@ async function main() {
   } catch (error) {
     fail(`zip structure invalid: ${error.message}`);
   }
-  /* 1. Structural parse in Node. */
-  let entries;
-  try {
-    entries = parseCentralDirectory(buffer);
-  } catch (error) {
-    fail(`zip structure invalid: ${error.message}`);
-  }
   const fileEntries = entries.filter((e) => !e.name.endsWith("/"));
-  const dirEntries = entries.filter((e) => e.name.endsWith("/"));
   for (const entry of entries) {
     if (entry.name.includes("\\")) problems.push(`entry uses backslash separators: ${entry.name}`);
     if (entry.flags & 0x1) problems.push(`entry is encrypted: ${entry.name}`);
