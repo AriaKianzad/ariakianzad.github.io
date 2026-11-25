@@ -73,7 +73,8 @@ Deno.serve(async (request: Request) => {
 
   if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
   if (origin !== SITE_ORIGIN) return json({ error: "Origin not allowed." }, 403);
-  if (!(request.headers.get("content-type") || "").toLowerCase().includes("application/json")) {
+  const requestContentType = (request.headers.get("content-type") || "").toLowerCase();
+  if (!requestContentType.includes("application/json") && !requestContentType.includes("text/plain")) {
     return json({ error: "Unsupported content type." }, 415);
   }
 
