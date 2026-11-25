@@ -63,8 +63,8 @@ function field(
   const raw = body[key];
   const value = typeof raw === "string"
     ? (singleLine
-      ? raw.replace(/[\\u0000-\\u001F\\u007F]/g, "")
-      : raw.replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]/g, " "))
+      ? raw.replace(/[\u0000-\u001F\u007F]/g, "")
+      : raw.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " "))
       .trim()
     : "";
   if (required && value.length === 0) throw new Error("لطفاً فیلدهای ضروری رو کامل کنید.");
@@ -89,7 +89,7 @@ function clientIp(request: Request): string | null {
   // Only trust the address supplied by Cloudflare's managed ingress.
   // Never collapse missing addresses into one shared "unknown" rate-limit bucket.
   const direct = request.headers.get("cf-connecting-ip")?.trim();
-  if (!direct || direct.length > 64 || /[,;\\s]/.test(direct)) return null;
+  if (!direct || direct.length > 64 || /[,;\s]/.test(direct)) return null;
   return direct.toLowerCase();
 }
 
@@ -105,6 +105,43 @@ async function fingerprint(ip: string, secret: string): Promise<string> {
   );
   const digest = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(ip));
   return Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, "0")).join("");
+}
+
+async function verifyTurnstileToken(token: string, clientAddress: string): Promise<boolean> {
+  const secret = readSecret("CLOUDFLARE_TURNSTILE_SECRET_KEY");
+  // Until both the public site key and this server-only secret are configured,
+  // the existing honeypot and IP rate limit remain active.
+  if (!secret) return true;
+  if (!token || token.length > 2048) return false;
+
+  const form = new FormData();
+  form.set("secret", secret);
+  form.set("response", token);
+  form.set("remoteip", clientAddress);
+
+  let response: Response;
+  try {
+    response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      body: form,
+      signal: AbortSignal.timeout(10000),
+    });
+  } catch {
+    throw new ServiceUnavailableError("بررسی امنیتی موقتاً در دسترس نیست. لطفاً کمی بعد دوباره تلاش کنید.");
+  }
+  if (!response.ok) {
+    throw new ServiceUnavailableError("بررسی امنیتی موقتاً در دسترس نیست. لطفاً کمی بعد دوباره تلاش کنید.");
+  }
+
+  const result = await response.json().catch(() => null) as {
+    success?: boolean;
+    hostname?: string;
+    action?: string;
+  } | null;
+
+  return result?.success === true
+    && result.hostname === new URL(SITE_ORIGIN).hostname
+    && result.action === "blog_contact";
 }
 
 async function consumeRateLimit(clientAddress: string, supabaseUrl: string, serviceKey: string): Promise<boolean> {
@@ -207,6 +244,11 @@ Deno.serve(async (request: Request) => {
     const address = clientIp(request);
     if (!address) {
       return json({ error: "امکان بررسی امن درخواست در حال حاضر وجود نداره. لطفاً کمی بعد دوباره تلاش کنید." }, 503);
+    }
+
+    const turnstileToken = field(body, "cf-turnstile-response", 2048);
+    if (!await verifyTurnstileToken(turnstileToken, address)) {
+      return json({ error: "لطفاً بررسی امنیتی رو کامل کنید و دوباره درخواست رو بفرستید." }, 403);
     }
 
     const permitted = await consumeRateLimit(address, supabaseUrl, serviceKey);
