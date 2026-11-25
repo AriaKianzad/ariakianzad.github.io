@@ -247,7 +247,6 @@ const required = [
   join("admin", "blog", "app.js"),
   join("Mian-e-Ma", "index.html"),
   join("Mian-e-Ma", "styles.css"),
-  join("Mian-e-Ma", "assets", "Mian-e-Ma.pdf"),
   join("Mian-e-Ma", "assets", "estedad-variable.woff2"),
   join("Mian-e-Ma", "assets", "mian-e-ma-cover-v2.webp"),
   join("Mian-e-Ma", "assets", "mian-e-ma-lineart.webp"),
@@ -257,6 +256,11 @@ const required = [
 ];
 for (const name of required) {
   if (!existsSync(join(outDir, name))) problems.push(`required file missing: ${name}`);
+}
+
+const duplicateBookPdf = join(outDir, "Mian-e-Ma", "assets", "Mian-e-Ma.pdf");
+if (existsSync(duplicateBookPdf)) {
+  problems.push("Mian-e-Ma/assets/Mian-e-Ma.pdf: remove the duplicate Pages copy; the canonical PDF is hosted on the tracked GitHub Release");
 }
 
 const heroChunksDir = join(outDir, "_hero", "chunks");
