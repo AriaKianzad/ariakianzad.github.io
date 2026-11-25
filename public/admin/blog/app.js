@@ -4,9 +4,38 @@
   const supabaseUrl = typeof config.supabaseUrl === "string" ? config.supabaseUrl.replace(/\/+$/,"") : "";
   const anonKey = typeof config.supabaseAnonKey === "string" ? config.supabaseAnonKey : "";
   const $ = (selector) => document.querySelector(selector);
-  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0, analyticsVisited:false, analyticsLastFetchedAt:0, adBanners:[], adClickCounts:{}, adClickCountsBusy:false, adClickCountsUnavailable:false, postSaveBusy:false, publishBusy:false, statusBusy:false };
+  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0, analyticsVisited:false, analyticsLastFetchedAt:0, adBanners:[], adClickCounts:{}, adClickCountsBusy:false, adClickCountsUnavailable:false, editorDirty:false, editorChangeVersion:0, postSaveBusy:false, publishBusy:false, statusBusy:false };
   const statusLabels = { draft:"پیش‌نویس", published:"منتشرشده", archived:"بایگانی" };
   const validConfig = supabaseUrl === "https://bkohdqwecnvbmeaiuyyx.supabase.co" && anonKey.startsWith("sb_publishable_");
+
+  function updateEditorDirtyIndicator() {
+    const indicator=$("#editor-dirty-indicator");
+    if(!indicator)return;
+    indicator.hidden=!state.editorDirty;
+    indicator.textContent=state.editorDirty?"تغییرات ذخیره‌نشده":"همۀ تغییرات ذخیره شدن";
+  }
+  function markEditorDirty() {
+    if($("#view-editor")?.hidden)return;
+    state.editorChangeVersion+=1;
+    state.editorDirty=true;
+    updateEditorDirtyIndicator();
+  }
+  function clearEditorDirty() {
+    state.editorDirty=false;
+    updateEditorDirtyIndicator();
+  }
+  function confirmLeaveEditor() {
+    if($("#view-editor")?.hidden||!state.editorDirty)return true;
+    const confirmed=window.confirm("تغییرات این مقاله هنوز ذخیره نشدن. بدون ذخیره از ویرایش خارج بشیم؟");
+    if(confirmed)clearEditorDirty();
+    return confirmed;
+  }
+
+  window.addEventListener("beforeunload",(event)=>{
+    if(!state.editorDirty)return;
+    event.preventDefault();
+    event.returnValue="";
+  });
 
   function toast(message, error) {
     const box=$("#toast");
@@ -126,6 +155,7 @@
     $("#admin-email").textContent=window.blogAdminEmail||"مدیر";
   }
   async function logout(revoke) {
+    if(!confirmLeaveEditor())return;
     const token=state.accessToken;
     if(navigator.credentials?.preventSilentAccess)navigator.credentials.preventSilentAccess().catch(()=>{});
     state.analyticsEpoch+=1;state.articleAnalytics=null;state.analyticsBusy=false;state.analyticsVisited=false;state.analyticsLastFetchedAt=0;
@@ -396,13 +426,15 @@
   });
   function showEditor(post) {
     state.currentPost={...newPost(),...(post||{})};
+    state.editorChangeVersion=0;
+    clearEditorDirty();
     state.preview=false;$("#editor-form").reset();fillEditor(state.currentPost);
     showView("editor");updatePreview();updateSeo();updateEditorStatus();
     $("#markdown-preview").hidden=true;$("#post-content").hidden=false;
     $("#link-settings").hidden=true;refreshLinkManager();
     showTab("seo");
   }
-  function newArticle(){showEditor(newPost());}
+  function newArticle(){if(!confirmLeaveEditor())return;showEditor(newPost());}
   function setField(selector,value){const field=$(selector);if(!field)return;if(field.type==="checkbox")field.checked=value!==false;else field.value=value??"";}
   function fillEditor(post) {
     const fields={
@@ -462,6 +494,7 @@
     $("#sidebar-publish").textContent=post.status==="published"?"انتشار تغییرات ↗":"انتشار مقاله ↗";
   }
   async function editPost(id) {
+    if(!confirmLeaveEditor())return;
     try{const result=await api("get_post",{id});showEditor(result.post);}
     catch(error){toast(error.message,true);}
   }
@@ -953,6 +986,7 @@
   }
   async function savePost(options={}) {
     if(state.postSaveBusy)throw new Error("ذخیرۀ مقاله در حال انجامه؛ کمی صبر کن.");
+    const submittedVersion=state.editorChangeVersion;
     state.postSaveBusy=true;
     const buttons=["#save-post","#sidebar-save"].map((selector)=>$(selector));
     buttons.forEach((button)=>setButton(button,true,"در حال ذخیره…"));
@@ -960,6 +994,8 @@
       const post=collectPost();
       const result=await api("save_post",{post});
       state.currentPost=result.post;
+      if(state.editorChangeVersion===submittedVersion)clearEditorDirty();
+      else updateEditorDirtyIndicator();
       await loadPosts();updateEditorStatus();
       if(options.silent!==true)toast("پیش‌نویس ذخیره شد.");
       return result.post;
@@ -985,6 +1021,7 @@
   }
   async function changeStatus(action) {
     const post=state.currentPost;if(!post?.id||state.statusBusy)return;
+    if(state.editorDirty){toast("ابتدا تغییرات مقاله رو ذخیره کن؛ بعد وضعیت انتشار رو تغییر بده.",true);return;}
     if(!window.confirm(action==="archive_post"?"این مقاله به بایگانی منتقل بشه؟":"این مقاله از وبلاگ عمومی خارج بشه؟"))return;
     state.statusBusy=true;
     const buttons=["#unpublish-post","#archive-post"].map((selector)=>$(selector));
@@ -1042,6 +1079,7 @@
       input.disabled=true;
       const url=await uploadImage(file);$("#"+urlId).value=url;
       updateImagePreview(previewId,url,$(altSelector)?.value||"");
+      markEditorDirty();
       toast("تصویر فشرده و بارگذاری شد.");
       updateSeo();
     } catch(error) {toast(error.message,true);}
@@ -1149,6 +1187,7 @@
         toast("تصویر فشرده و به متن مقاله اضافه شد.");
       }
       closeInlineImageDialog();
+      markEditorDirty();
       updatePreview();updateSeo();
     }catch(error){
       toast(error instanceof Error?error.message:"درج تصویر ناموفق بود.",true);
@@ -1614,12 +1653,14 @@
   }
   function bindEvents() {
     document.querySelectorAll("[data-view]").forEach((button)=>button.addEventListener("click",()=>{
-      const name=button.dataset.view;showView(name);if(name==="settings")void loadSettings().catch((e)=>toast(e.message,true));
+      const name=button.dataset.view;
+      if(name!=="editor"&&!confirmLeaveEditor())return;
+      showView(name);if(name==="settings")void loadSettings().catch((e)=>toast(e.message,true));
       if(name==="ads"){renderAdBannerSettings();void loadAdClickCounts(true);}
       if(name==="analytics"){state.analyticsVisited=true;void loadArticleAnalytics(false);}
     }));
     document.querySelectorAll("[data-new-post]").forEach((button)=>button.addEventListener("click",newArticle));
-    $("#back-to-posts").addEventListener("click",()=>showView("posts"));
+    $("#back-to-posts").addEventListener("click",()=>{if(confirmLeaveEditor())showView("posts");});
     document.querySelectorAll(".editor-tab").forEach((button)=>button.addEventListener("click",()=>showTab(button.dataset.tab)));
     $(".editor-tabs").addEventListener("keydown",(event)=>{
       if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;
@@ -1641,6 +1682,8 @@
     $("#refresh-article-analytics").addEventListener("click",()=>void loadArticleAnalytics(true));
     $("#refresh-ad-click-counts").addEventListener("click",()=>void loadAdClickCounts());
     $("#article-analytics-search").addEventListener("input",renderArticleAnalytics);
+    $("#editor-form").addEventListener("input",markEditorDirty);
+    $("#editor-form").addEventListener("change",markEditorDirty);
     $("#post-content").addEventListener("input",()=>{updatePreview();updateSeo();refreshLinkManager();updateFormatToolbar();});
     ["keyup","mouseup","focus"].forEach((eventName)=>$("#post-content").addEventListener(eventName,updateFormatToolbar));
     document.addEventListener("selectionchange",updateFormatToolbar);
@@ -1661,6 +1704,7 @@
         }else{
           document.execCommand(command,false,value);
         }
+        markEditorDirty();
         updatePreview();updateSeo();refreshLinkManager();updateFormatToolbar();
       });
     });
