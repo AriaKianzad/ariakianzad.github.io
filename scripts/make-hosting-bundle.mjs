@@ -81,7 +81,6 @@ const REQUIRED = [
   "licenses/OFL-GeistMono.txt",
   "Mian-e-Ma/index.html",
   "Mian-e-Ma/styles.css",
-  "Mian-e-Ma/assets/Mian-e-Ma.pdf",
   "Mian-e-Ma/assets/estedad-variable.woff2",
   "Mian-e-Ma/assets/mian-e-ma-cover-v2.webp",
   "Mian-e-Ma/assets/mian-e-ma-lineart.webp",
@@ -476,10 +475,6 @@ async function main() {
     const type = res.type.split(";")[0];
     if (expected && type !== expected) {
       smoke.push("GET " + ref + " content-type " + type + ", expected " + expected);
-    }
-    if (ref.endsWith("/Mian-e-Ma/assets/Mian-e-Ma.pdf") &&
-        res.body.subarray(0, 5).toString("ascii") !== "%PDF-") {
-      smoke.push("Book PDF does not have a valid PDF signature");
     }
   }
 

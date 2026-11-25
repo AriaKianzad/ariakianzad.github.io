@@ -29,18 +29,39 @@ function plainInline(value:string){
 }
 function inline(value:string){
   let s=esc(value);
-  s=s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>'<img src="'+esc(allowedUrl(url.replace(/&amp;/g,"&")))+'" alt="'+alt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">');
+  const protectedFragments:Array<{token:string;html:string}>=[];
+  let nextToken=0;
+  const protect=(html:string)=>{
+    let token:string;
+    do{
+      token="\uE000"+(nextToken++).toString(36)+"\uE001";
+    }while(s.includes(token));
+    protectedFragments.push({token,html});
+    return token;
+  };
+
+  // Keep generated HTML tags out of the Markdown formatting regexes. The
+  // link label stays in the source string so bold/italic inside it still works.
+  s=s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>{
+    const html='<img src="'+esc(allowedUrl(url.replace(/&amp;/g,"&")))+'" alt="'+alt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">';
+    return protect(html);
+  });
   s=s.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
     const href=allowedUrl(url.replace(/&amp;/g,"&")),external=/^https?:\/\//i.test(href);
     const relation=(String(options||"").match(/rel=(follow|nofollow|sponsored|ugc)/i)||[])[1]||(external?"nofollow":"follow");
     const target=(String(options||"").match(/target=(_blank|_self)/i)||[])[1]||(external?"_blank":"");
     const rel=[...(relation!=="follow"?[relation]:[]),...(target==="_blank"?["noopener","noreferrer"]:[])].join(" ");
-    return '<a href="'+esc(href)+'"'+(title?' title="'+esc(title)+'"':"")+(target?' target="'+target+'"':"")+(rel?' rel="'+rel+'"':"")+'>'+label+'</a>';
+    const opening='<a href="'+esc(href)+'"'+(title?' title="'+esc(title)+'"':"")+(target?' target="'+target+'"':"")+(rel?' rel="'+rel+'"':"")+'>';
+    return protect(opening)+label+protect("</a>");
   });
   s=s.replace(/\x60([^\x60]+)\x60/g,"<code>$1</code>");
   s=s.replace(/\+\+([^+]+)\+\+/g,"<u>$1</u>").replace(/~~([^~]+)~~/g,"<del>$1</del>");
   s=s.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/__([^_]+)__/g,"<strong>$1</strong>");
   s=s.replace(/\*([^*]+)\*/g,"<em>$1</em>").replace(/_([^_]+)_/g,"<em>$1</em>");
+
+  for(const fragment of protectedFragments){
+    s=s.replace(fragment.token,fragment.html);
+  }
   return s;
 }
 

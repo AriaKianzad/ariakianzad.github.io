@@ -77,13 +77,15 @@ assert.ok(download.includes("date >= assetCreatedDate"),
 assert.ok(analytics.includes("confirmed_at") || analytics.includes("email_confirmed_at"),
   "site-analytics must require a confirmed email");
 
-const contactIpBlock = contact.slice(contact.indexOf("function clientIp"), contact.indexOf("async function fingerprint"));
+const contactIpBlock = contact.slice(contact.indexOf("function clientIp"), contact.indexOf("class ServiceUnavailableError"));
 assert.ok(contactIpBlock.includes('request.headers.get("cf-connecting-ip")'), "blog-contact must obtain the client IP from Cloudflare's managed ingress header");
 assert.ok(!/x-real-ip|x-forwarded-for/i.test(contactIpBlock), "blog-contact must not trust caller-controlled forwarding headers");
-assert.ok(contactIpBlock.includes('return "unknown"') && contactIpBlock.includes("direct.length > 64") && contactIpBlock.includes("/[,;\\s]/"), "missing or malformed Cloudflare IP values must enter the bounded unknown bucket");
+assert.ok(contactIpBlock.includes("return null") && contactIpBlock.includes("direct.length > 64") && contactIpBlock.includes("/[,;\\s]/"), "missing or malformed Cloudflare IP values must fail closed rather than share one rate-limit bucket");
 assert.ok(contact.includes('name: "HMAC"') && contact.includes('crypto.subtle.sign("HMAC"'), "blog-contact must create a keyed HMAC-SHA-256 fingerprint rather than an unkeyed IP hash");
 assert.ok(!contact.includes('crypto.subtle.digest("SHA-256"'), "blog-contact must not use a plain hash of the IP and secret");
 assert.ok(contact.includes("p_fingerprint: ipHash") && !contact.includes("p_ip:"), "blog-contact must send only the keyed fingerprint to the database rate limiter");
+assert.ok(contact.includes("CLOUDFLARE_TURNSTILE_SECRET_KEY") && contact.includes("/turnstile/v0/siteverify") && contact.includes('result.action === "blog_contact"'), "blog-contact must verify Turnstile tokens with Cloudflare Siteverify");
+assert.ok(contact.includes("ServiceUnavailableError") && contact.includes("if (!address)"), "unavailable anti-abuse checks must fail closed with a service-unavailable response");
 assert.ok(contact.includes('origin !== SITE_ORIGIN') && contact.includes("MAX_BODY_BYTES") && contact.includes("companyFax"), "the public contact endpoint must retain its Origin, body-size and honeypot controls");
 assert.ok(contact.includes('scriptUrl.hostname !== "script.google.com"') && contact.includes("GOOGLE_APPS_SCRIPT_TOKEN"), "the contact relay must use only the expected HTTPS Google Apps Script host and a server-only token");
 assert.ok(config.includes("[functions.blog-contact]") && config.includes("verify_jwt = false"), "the contact endpoint must preserve its intentional public-function JWT mode");

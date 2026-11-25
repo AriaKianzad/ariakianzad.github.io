@@ -53,10 +53,19 @@ function supabaseSecretKey(): string {
   return readSecret("SUPABASE_SERVICE_ROLE_KEY");
 }
 
-function field(body: Record<string, unknown>, key: string, max: number, required = false): string {
+function field(
+  body: Record<string, unknown>,
+  key: string,
+  max: number,
+  required = false,
+  singleLine = true,
+): string {
   const raw = body[key];
   const value = typeof raw === "string"
-    ? raw.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " ").trim()
+    ? (singleLine
+      ? raw.replace(/[\u0000-\u001F\u007F-\u009F]/g, "")
+      : raw.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " "))
+      .trim()
     : "";
   if (required && value.length === 0) throw new Error("لطفاً فیلدهای ضروری رو کامل کنید.");
   if (value.length > max) throw new Error("یکی از فیلدها بیش از حد طولانیه.");
@@ -76,13 +85,15 @@ function escapeHtml(value: string): string {
   });
 }
 
-function clientIp(request: Request): string {
-  // Only trust the client address supplied by Cloudflare's managed ingress.
-  // Do not fall back to caller-controlled forwarding headers.
+function clientIp(request: Request): string | null {
+  // Only trust the address supplied by Cloudflare's managed ingress.
+  // Never collapse missing addresses into one shared "unknown" rate-limit bucket.
   const direct = request.headers.get("cf-connecting-ip")?.trim();
-  if (!direct || direct.length > 64 || /[,;\s]/.test(direct)) return "unknown";
+  if (!direct || direct.length > 64 || /[,;\s]/.test(direct)) return null;
   return direct.toLowerCase();
 }
+
+class ServiceUnavailableError extends Error {}
 
 async function fingerprint(ip: string, secret: string): Promise<string> {
   const key = await crypto.subtle.importKey(
@@ -96,8 +107,47 @@ async function fingerprint(ip: string, secret: string): Promise<string> {
   return Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, "0")).join("");
 }
 
-async function consumeRateLimit(request: Request, supabaseUrl: string, serviceKey: string): Promise<boolean> {
-  const ipHash = await fingerprint(clientIp(request), serviceKey);
+async function verifyTurnstileToken(token: string, clientAddress: string): Promise<boolean> {
+  const secret = readSecret("CLOUDFLARE_TURNSTILE_SECRET_KEY");
+  // Until both the public site key and this server-only secret are configured,
+  // the existing honeypot and IP rate limit remain active.
+  if (!secret) return token.length === 0;
+  if (!token || token.length > 2048) return false;
+
+  const form = new URLSearchParams({
+    secret,
+    response: token,
+    remoteip: clientAddress,
+  });
+
+  let response: Response;
+  try {
+    response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: form,
+      signal: AbortSignal.timeout(10000),
+    });
+  } catch {
+    throw new ServiceUnavailableError("بررسی امنیتی موقتاً در دسترس نیست. لطفاً کمی بعد دوباره تلاش کنید.");
+  }
+  if (!response.ok) {
+    throw new ServiceUnavailableError("بررسی امنیتی موقتاً در دسترس نیست. لطفاً کمی بعد دوباره تلاش کنید.");
+  }
+
+  const result = await response.json().catch(() => null) as {
+    success?: boolean;
+    hostname?: string;
+    action?: string;
+  } | null;
+
+  return result?.success === true
+    && result.hostname === new URL(SITE_ORIGIN).hostname
+    && result.action === "blog_contact";
+}
+
+async function consumeRateLimit(clientAddress: string, supabaseUrl: string, serviceKey: string): Promise<boolean> {
+  const ipHash = await fingerprint(clientAddress, serviceKey);
   const response = await fetch(supabaseUrl + "/rest/v1/rpc/consume_blog_contact_rate_limit", {
     method: "POST",
     headers: {
@@ -110,7 +160,7 @@ async function consumeRateLimit(request: Request, supabaseUrl: string, serviceKe
   });
   if (!response.ok) {
     console.error("blog-contact rate limiter failed", { status: response.status });
-    throw new Error("سرویس دریافت پیام موقتاً در دسترس نیست.");
+    throw new ServiceUnavailableError("سرویس دریافت پیام موقتاً در دسترس نیست.");
   }
   return await response.json().catch(() => false) === true;
 }
@@ -151,7 +201,7 @@ Deno.serve(async (request: Request) => {
     const requestType = field(body, "requestType", 24, true);
     const websiteUrl = field(body, "websiteUrl", 2048);
     const sponsorshipDuration = field(body, "sponsorshipDuration", 32);
-    const message = field(body, "message", 3000, true);
+    const message = field(body, "message", 3000, true, false);
     const submissionId = field(body, "submissionId", 80, true);
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
@@ -193,7 +243,17 @@ Deno.serve(async (request: Request) => {
       return json({ error: "نشانی Google Apps Script معتبر نیست." }, 503);
     }
 
-    const permitted = await consumeRateLimit(request, supabaseUrl, serviceKey);
+    const address = clientIp(request);
+    if (!address) {
+      return json({ error: "امکان بررسی امن درخواست در حال حاضر وجود نداره. لطفاً کمی بعد دوباره تلاش کنید." }, 503);
+    }
+
+    const turnstileToken = field(body, "cf-turnstile-response", 2048);
+    if (!await verifyTurnstileToken(turnstileToken, address)) {
+      return json({ error: "لطفاً بررسی امنیتی رو کامل کنید و دوباره درخواست رو بفرستید." }, 403);
+    }
+
+    const permitted = await consumeRateLimit(address, supabaseUrl, serviceKey);
     if (!permitted) return json({ error: "تعداد درخواست‌ها از این شبکه بیش از حد مجازه. لطفاً یک ساعت دیگه دوباره تلاش کنید." }, 429);
 
     const requestLabel = requestLabels[requestType];
@@ -252,6 +312,7 @@ Deno.serve(async (request: Request) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : "درخواست ناموفق بود.";
     console.warn("blog-contact request rejected", { message: message.slice(0, 180) });
-    return json({ error: message || "درخواست ناموفق بود." }, 400);
+    const status = error instanceof ServiceUnavailableError ? 503 : 400;
+    return json({ error: message || "درخواست ناموفق بود." }, status);
   }
 });

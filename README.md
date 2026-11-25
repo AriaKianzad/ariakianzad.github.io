@@ -9,7 +9,7 @@ This repository contains my personal website, Persian editorial blog and CMS, th
 - **Analytics dashboard:** https://ariakianzad.github.io/admin/
 - **Book PDF release:** https://github.com/AriaKianzad/ariakianzad.github.io/releases/tag/mian-e-ma-v1
 
-All public pages and both admin interfaces are static frontends. The personal homepage and blog are generated with Next.js, but ship as static HTML without a Next.js hydration runtime. The 3D hero is a separate same-origin ESM module built with esbuild; it requests a locally bundled, code-split Three.js scene only when the hero approaches the viewport. Supabase provides authentication, CMS operations, publication data and analytics APIs. Rexo is the creative agency at https://rexo.agency/.
+All public pages and both admin interfaces are static frontends. The personal homepage and blog are generated with Next.js, but ship as static HTML without a Next.js hydration runtime. The 3D hero is a separate same-origin ESM module built with esbuild; it requests a locally bundled, code-split Three.js scene only when the hero approaches the viewport. Supabase provides authentication, CMS operations, publication data, site analytics and private banner-click reporting. Rexo is the creative agency at https://rexo.agency/.
 
 ## Project architecture
 
@@ -40,7 +40,7 @@ The Next.js application is exported as static files. The deployed website does n
 
 The redesigned homepage is organized around research and insight, positioning and identity, content and communication, a four-step method, Rexo, writing, about and contact. It uses a restrained dark editorial system, Estedad typography, a locally bundled 3D signal sculpture in the hero, scroll-triggered section entrances and subtle interactive diagrams. Motion respects `prefers-reduced-motion`; the hero has a CSS fallback and is not required to read or navigate the page.
 
-The book download links point to the PDF asset attached to GitHub Release mian-e-ma-v1. The Release download_count is the source of truth for total file downloads. It counts download requests reported by GitHub, not unique readers or confirmed reading sessions.
+The book download links point to the single PDF asset attached to GitHub Release mian-e-ma-v1. The duplicate PDF formerly copied into the GitHub Pages tree has been removed so there is no second public download path that bypasses the Release download counter. The Release download_count is the source of truth for total file downloads. It counts download requests reported by GitHub, not unique readers or confirmed reading sessions.
 
 ## Analytics and dashboard
 
@@ -64,7 +64,8 @@ The analytics dashboard and blog CMS use Supabase Auth and a server-side email a
 2. The protected functions (download-stats, site-analytics and blog-admin) validate the bearer token with Auth, require a confirmed email and check the active public.dashboard_admins allowlist.
 3. Only after authorization do these functions use server-side Supabase credentials to access private records, upload media or request Google reports.
 4. Browser roles have no table privileges on download_snapshots, dashboard_admins, blog_posts or blog_settings. CMS publication data is exposed through an explicit public RPC that returns published snapshots and approved public settings only.
-5. The public blog contact function is intentionally unauthenticated. It validates requests, limits body size, uses a honeypot and rate limit, and forwards mail through a token-protected Google Apps Script relay. No mail token or Supabase secret is included in the browser bundle.
+5. The public `blog-contact` function is intentionally unauthenticated. It validates requests, limits body size, uses a honeypot and a three-attempt-per-hour trusted-IP limit, and forwards mail through a token-protected Google Apps Script relay. It rejects requests if Cloudflare's managed client-IP header is missing rather than grouping all visitors into one shared bucket. Cloudflare Turnstile support is available but only becomes active after both `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (GitHub Actions repository variable) and `CLOUDFLARE_TURNSTILE_SECRET_KEY` (Supabase Edge Function secret) are configured; server-side Siteverify checks the token, expected hostname and action.
+6. The public `blog-ad-click` function records banner click events through a server-side RPC. It trusts only Cloudflare's managed client-IP header, stores HMAC fingerprints rather than raw IPs, and limits each banner/fingerprint pair to ten registered events per hour. Missing client IPs are not counted. The admin metric is registered click events, not unique visitors. Origin checks are defense in depth, not authentication; a non-browser client can forge an Origin header.
 
 The dashboard's config.js contains only the Supabase project URL and a **publishable** client key. Publishable keys are designed to be visible in browser code; they are not administrator credentials. Supabase secret keys, service-role keys, GitHub tokens and Google service-account private keys must never be placed in frontend code or committed to this repository.
 
@@ -155,12 +156,13 @@ A CSP meta tag cannot set every HTTP response header. Directives such as frame-a
 
 ## Supabase backend
 
-Supabase migrations and Edge Function sources are versioned under supabase/. The four deployed functions are:
+Supabase migrations and Edge Function sources are versioned under supabase/. The five Supabase Edge Functions defined for this project are:
 
 - **download-stats:** authenticates an allowlisted dashboard administrator and returns the GitHub Release count and snapshot history.
 - **site-analytics:** authenticates the same administrator and requests read-only GA4 and Search Console reports.
 - **blog-admin:** authenticates an allowlisted administrator and handles CMS drafts, publishing, blog settings, advertising placements and media uploads.
-- **blog-contact:** accepts validated public contact requests, applies server-side abuse controls and forwards them to a token-protected Google Apps Script Gmail relay.
+- **blog-contact:** accepts public contact requests, applies server-side validation, optional Cloudflare Turnstile, honeypot and rate limits, then forwards them to a token-protected Google Apps Script Gmail relay.
+- **blog-ad-click:** accepts public banner-click events and records rate-limited, HMAC-fingerprinted events for the authenticated admin dashboard.
 
 To deploy function source changes using the Supabase CLI:
 
@@ -169,8 +171,9 @@ To deploy function source changes using the Supabase CLI:
     supabase functions deploy site-analytics
     supabase functions deploy blog-admin
     supabase functions deploy blog-contact
+    supabase functions deploy blog-ad-click
 
-The three protected functions use the exact Supabase JS version declared in their respective deno.json import maps. Their verify_jwt setting is false because the handlers explicitly call auth.getUser(token), require a confirmed email and check the active email allowlist. blog-contact is the deliberate public exception: it has no dashboard login and relies on request validation, rate limiting and a server-only mail-relay token. CORS is not an authorization boundary. Do not remove the protected handlers' authorization checks. Production database migrations have already been applied; review and reconcile migration history before applying any new migration.
+The three protected functions use the exact Supabase JS version declared in their respective deno.json import maps. Their verify_jwt setting is false because the handlers explicitly call auth.getUser(token), require a confirmed email and check the active email allowlist. blog-contact and blog-ad-click are deliberate public endpoints with no dashboard login. blog-contact relies on request validation, an optional but server-validated Turnstile check, a honeypot, IP rate limiting and a server-only mail-relay token. blog-ad-click records only validated banner IDs with a per-banner/IP quota; its admin totals are not unique-user metrics. CORS is not an authorization boundary. Do not remove the protected handlers' authorization checks. Production database migrations have already been applied; review and reconcile migration history before applying any new migration.
 
 ## Repository layout
 

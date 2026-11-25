@@ -41,11 +41,11 @@ function serviceKey(): string {
   return secret("SUPABASE_SERVICE_ROLE_KEY");
 }
 
-function trustedClientIp(request: Request): string {
-  // Only trust the managed ingress header. Never trust X-Forwarded-For or
-  // other forwarding headers supplied directly by a browser.
-  const value = request.headers.get("cf-connecting-ip")?.trim() || "unknown";
-  if (value.length > 64 || /[,;\s]/.test(value)) return "unknown";
+function trustedClientIp(request: Request): string | null {
+  // Only trust Cloudflare's managed ingress header. A missing address must
+  // not merge every visitor into one shared fingerprint.
+  const value = request.headers.get("cf-connecting-ip")?.trim();
+  if (!value || value.length > 64 || /[,;\s]/.test(value)) return null;
   return value.toLowerCase();
 }
 
@@ -104,7 +104,10 @@ Deno.serve(async (request: Request) => {
       return json({ error: "Click tracking is temporarily unavailable." }, 503);
     }
 
-    const ipHash = await fingerprint(trustedClientIp(request), key);
+    const clientIp = trustedClientIp(request);
+    if (!clientIp) return json({ ok: true, counted: false }, 202);
+
+    const ipHash = await fingerprint(clientIp, key);
     const client = createClient(supabaseUrl, key, {
       auth: { persistSession: false, autoRefreshToken: false },
     });

@@ -1,4 +1,6 @@
 export function ContactForm() {
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
+
   return (
     <form className="blog-contact-form" data-blog-contact-form noValidate>
       <div className="blog-contact-form-heading">
@@ -102,6 +104,17 @@ export function ContactForm() {
           autoComplete="off"
         />
       </div>
+
+      {turnstileSiteKey ? (
+        <div className="blog-contact-turnstile" aria-label="بررسی امنیتی فرم">
+          <div
+            className="cf-turnstile"
+            data-sitekey={turnstileSiteKey}
+            data-action="blog_contact"
+            data-theme="light"
+          />
+        </div>
+      ) : null}
 
       <p className="blog-contact-policy">
         اطلاعات فرم فقط برای بررسی درخواست و پاسخ‌گویی به شما استفاده می‌شه.
