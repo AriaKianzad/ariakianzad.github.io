@@ -88,7 +88,7 @@ The click totals table remains inaccessible to `anon` and `authenticated`; only 
 
 ### Contact rate-limit table: live security finding
 
-The live Security Advisor reported RLS disabled on `private.blog_contact_rate_limits` as a critical finding on 2026-11-24. Direct privilege inspection on the same date found that anon and authenticated have no SELECT or INSERT table grants; the SECURITY DEFINER rate-limit helper is owned by postgres and has a fixed `search_path = pg_catalog, private`. This means the current table is not directly queryable through the client roles based on the grants inspected, but RLS is still a worthwhile defense-in-depth control.
+The live Security Advisor still reports RLS disabled on `private.blog_contact_rate_limits` as a critical finding on 2026-11-25. Direct privilege inspection on the same date confirmed that anon and authenticated have no SELECT or INSERT table grants; the SECURITY DEFINER rate-limit helper is owned by postgres and has a fixed `search_path = pg_catalog, private`. This means the current table is not directly queryable through the client roles based on the grants inspected, but RLS is still a worthwhile defense-in-depth control.
 
 The safe hardening candidate is:
 
