@@ -1465,7 +1465,8 @@
       const clickData=state.adClickCounts[banner.id];
       const clickCount=clickData?Number(clickData.click_count||0).toLocaleString("fa-IR"):(state.adClickCountsBusy?"…":"۰");
       const resetLabel=clickData?.reset_at?"آخرین ریست: "+dateLabel(clickData.reset_at):"شمارش هنوز ریست نشده";
-      const resetButton='<button class="button button-light ad-reset-clicks" type="button" data-reset-ad-clicks="'+id+'" aria-label="ریست شمارش کلیک جایگاه تبلیغاتی '+(index+1)+'">ریست شمارش</button>';
+      const isPersisted=Array.isArray(state.settings?.ad_banners)&&state.settings.ad_banners.some((saved)=>saved.id===banner.id);
+      const resetButton='<button class="button button-light ad-reset-clicks" type="button" data-reset-ad-clicks="'+id+'" '+(isPersisted?"":"disabled title=\"بعد از ذخیرۀ جایگاه فعال می‌شه\"")+' aria-label="ریست شمارش کلیک جایگاه تبلیغاتی '+(index+1)+'">ریست شمارش</button>';
       const remove=index>=3?'<button class="text-button danger-text" type="button" data-remove-ad="'+id+'">حذف این جایگاه</button>':"";
       return `
         <article class="ad-management-card" data-ad-card="${id}">
