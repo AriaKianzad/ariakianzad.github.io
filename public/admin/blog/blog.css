@@ -548,3 +548,50 @@ body, body * { font-family: Estedad, Tahoma, sans-serif !important; }
     scroll-behavior:auto!important;
   }
 }
+
+/* Banner click analytics and reset controls. */
+.ad-click-toolbar {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid var(--line);
+}
+.ad-click-toolbar p {margin:0;color:var(--muted);font-size:10px;line-height:1.8}
+.ad-management-card .ad-click-metrics {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin-top:14px;
+  padding:13px 15px;
+  border:1px solid var(--line);
+  background:#f7f4ed;
+}
+.ad-click-stat {display:grid;grid-template-columns:auto auto;align-items:center;gap:1px 12px;min-width:0}
+.ad-click-stat>span {color:var(--soft);font-size:10px}
+.ad-click-stat>strong {
+  color:var(--accent);
+  font:750 23px/1.35 Estedad,Tahoma,sans-serif;
+  font-variant-numeric:tabular-nums;
+  direction:rtl;
+}
+.ad-click-stat>small {grid-column:1/-1;color:var(--muted);font-size:9px;line-height:1.7}
+.ad-reset-clicks {flex:0 0 auto;min-height:34px;padding:6px 11px;font-size:10px}
+.ad-reset-clicks:disabled {opacity:.5;cursor:not-allowed}
+.editor-tabs .editor-tab[role="tab"]:focus-visible,
+.tab-panel[role="tabpanel"]:focus-visible {
+  outline:2px solid var(--accent);
+  outline-offset:3px;
+}
+.editor-tabs .editor-tab[aria-selected="true"] {color:var(--ink)}
+.side-link[aria-current="page"] {background:rgba(168,111,84,.1);color:var(--ink)}
+.side-link[aria-current="page"]>span {color:var(--accent)}
+@media(max-width:600px) {
+  .ad-click-toolbar {align-items:stretch;flex-direction:column}
+  .ad-click-toolbar .button {width:100%}
+  .ad-management-card .ad-click-metrics {align-items:flex-start;flex-direction:column}
+  .ad-reset-clicks {width:100%}
+}
