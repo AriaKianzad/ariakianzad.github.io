@@ -22,9 +22,7 @@ function trustedMediaUrl(value){
 }
 await mkdir(outputDir,{recursive:true});
 for(const name of await readdir(outputDir)){if(/\.(jpe?g|png)$/i.test(name))await rm(resolve(outputDir,name),{force:true});}
-const storedAccent=data.settings?.accent_color;
-const candidate=typeof storedAccent==="string"&&/^#[0-9a-fA-F]{6}$/.test(storedAccent)?storedAccent:"#7b3f58";
-const accent=candidate.toLowerCase()==="#a86f54"?"#7b3f58":candidate;
+const accent="#7b3f58";
 function xml(value){return String(value).replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c]));}
 for(const post of data.posts||[]){
   const target=resolve(outputDir,post.slug+".jpg");
@@ -47,6 +45,7 @@ for(const post of data.posts||[]){
     '<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">',
     '<rect width="1200" height="630" fill="#f3f0e8"/>',
     '<circle cx="80" cy="90" r="230" fill="#e7e0d6"/><circle cx="1140" cy="590" r="290" fill="#fbf9f4"/>',
+    '<circle cx="1080" cy="110" r="18" fill="#d6a443"/>',
     '<rect x="104" y="110" width="7" height="100" fill="'+accent+'"/>',
     '<text x="1080" y="150" text-anchor="end" font-family="Arial,sans-serif" font-size="22" letter-spacing="5" fill="#655b64">ARIA KIANZAD / WRITING</text>',
     '<text x="1080" y="330" text-anchor="end" direction="rtl" font-family="Estedad,sans-serif" font-size="62" font-weight="700" fill="#28242b">'+title+'</text>',
