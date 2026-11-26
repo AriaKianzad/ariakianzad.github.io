@@ -69,6 +69,7 @@ export default function BlogIndexPage() {
         </section>
       </main>
       <BlogFooter />
+      <script type="module" src="/_hero/hero-visual.js" />
     </>
   );
 }
