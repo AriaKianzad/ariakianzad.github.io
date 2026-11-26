@@ -81,6 +81,12 @@ export default function HomePage() {
             <span className="manifesto__axis-line"><i /></span>
             <span>SIGNAL</span>
           </div>
+          <div className="home-scene home-scene--orbit" data-home-scene="orbit" aria-hidden="true">
+            <canvas className="home-scene__canvas" data-home-scene-canvas />
+            <div className="home-scene__fallback" />
+            <span className="home-scene__label">01 / FIND THE SIGNAL</span>
+            <span className="home-scene__caption">INSIGHT · POSITION · EXPRESSION</span>
+          </div>
         </div>
       </section>
 
@@ -117,7 +123,7 @@ export default function HomePage() {
             ))}
           </ol>
           <p className="expertise__footnote">
-            The deliverable is never the starting point. The problem is.
+            The deliverable isn't the starting point. Getting the question right is.
             <FlowArrow />
           </p>
         </div>
@@ -153,6 +159,12 @@ export default function HomePage() {
               </li>
             ))}
           </ol>
+          <div className="home-scene home-scene--flow" data-home-scene="flow" aria-hidden="true">
+            <canvas className="home-scene__canvas" data-home-scene-canvas />
+            <div className="home-scene__fallback" />
+            <span className="home-scene__label">02 / FOLLOW THE IDEA</span>
+            <span className="home-scene__caption">LISTEN · INVESTIGATE · POSITION · EXPRESS</span>
+          </div>
         </div>
       </section>
 
@@ -209,14 +221,12 @@ export default function HomePage() {
             </h2>
             <p data-reveal="up">{notes.body}</p>
           </div>
-          <div className="notes-grid">
+          <div className="notes-grid notes-grid--single">
             {notes.items.map((item, index) => (
               <a
                 className="note-card"
                 key={item.title}
                 href={item.href}
-                target="_blank"
-                rel="noopener noreferrer"
                 data-reveal="up"
               >
                 <span className="note-card__type">{item.type}</span>
@@ -278,6 +288,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      <script type="module" src="/home-scenes.js" />
     </>
   );
 }
