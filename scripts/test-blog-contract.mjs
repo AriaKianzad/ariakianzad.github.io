@@ -445,6 +445,20 @@ assert.equal((renderedContinuedNumberedList.match(/<ol>/g)||[]).length,1,"one-sp
 assert.equal((renderedContinuedNumberedList.match(/<li>/g)||[]).length,4,"continued numbered descriptions must stay in their original list items");
 assert.equal((renderedContinuedNumberedList.match(/<p>/g)||[]).length,4,"each numbered metric must keep its explanatory paragraph");
 
+const continuedBulletListMarkdown=[
+  "- **سطح اول، حضور:**",
+  " آیا برند در پاسخ مرتبط ظاهر می‌شه؟ آیا نامش ذکر می‌شه؟",
+  "",
+  "- **سطح دوم، صحت بازنمایی:**",
+  " آیا سیستم اطلاعات برند رو درست توضیح می‌ده؟",
+  "",
+  "- **سطح سوم، معنای حضور:**",
+  " برند در چه موقعیتی وارد پاسخ شده؟",
+].join("\n");
+const renderedContinuedBulletList=markdownRuntime.exports.renderMarkdown(continuedBulletListMarkdown).replace(/\s+(?=<)/g,"");
+assert.equal((renderedContinuedBulletList.match(/<ul>/g)||[]).length,1,"one-space continuation paragraphs must not split unordered lists");
+assert.equal((renderedContinuedBulletList.match(/<li>/g)||[]).length,3,"bullet headings and descriptions must remain together in three list items");
+assert.equal((renderedContinuedBulletList.match(/<p>/g)||[]).length,3,"each bullet item must keep its explanatory paragraph");
 
 const formatMarkdown = [
   "## تیتر دوم",
