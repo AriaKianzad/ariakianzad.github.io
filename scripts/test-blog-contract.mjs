@@ -450,6 +450,16 @@ assert.ok(["tag===\"strong\"","tag===\"em\"","tag===\"u\"","tag===\"del\"","tag=
 assert.ok(["tag===\"figure\"","/^h[1-6]$/","tag===\"p\"","tag===\"ul\"","tag===\"ol\"","tag===\"blockquote\"","tag===\"pre\"","tag===\"hr\"","tag===\"table\""].every((token)=>blockSerializer.includes(token)), "the editor serializer must preserve all supported block structures");
 const cmsPreviewRenderer = adminApp.slice(adminApp.indexOf("function renderPreviewMarkdown"),adminApp.indexOf("function inlineToMarkdown"));
 assert.ok(cmsPreviewRenderer.includes("const parseListItem=") && cmsPreviewRenderer.includes("listStack") && cmsPreviewRenderer.includes("if(!parseListItem(") && cmsPreviewRenderer.includes("appendListItem(item)"), "the CMS preview must preserve blank-separated and nested list structure");
+const cmsPreviewContext = {
+  escapeHtml:(value)=>String(value).replace(/[&<>"']/g,(char)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char])),
+  previewInline:(value)=>String(value),
+  renderPreviewFigure:()=>"",
+};
+new Script(cmsPreviewRenderer+"\nthis.testRenderPreviewMarkdown=renderPreviewMarkdown;",{filename:"admin-list-preview.js"}).runInNewContext(cmsPreviewContext);
+const renderedCmsNumberedHeadings = cmsPreviewContext.testRenderPreviewMarkdown(numberedHeadingListMarkdown).replace(/\s+(?=<)/g,"");
+assert.equal((renderedCmsNumberedHeadings.match(/<ol>/g)||[]).length,1,"the admin preview must keep all numbered headings in one OL");
+assert.equal((renderedCmsNumberedHeadings.match(/<li>/g)||[]).length,4,"the admin preview must keep all four list items");
+assert.equal((renderedCmsNumberedHeadings.match(/<h3>/g)||[]).length,4,"the admin preview must show H3 semantics inside each numbered list item");
 
 assert.ok(blogCss.includes(".blog-prose ul{list-style-type:disc}") && blogCss.includes('.blog-prose[dir="rtl"] ol{list-style-type:persian}') && blogCss.includes('.blog-prose[dir="ltr"] ol{list-style-type:decimal}') && blogCss.includes(".blog-prose li::marker"), "public article lists must explicitly restore bullets and Persian numbering after the portfolio-wide list reset");
 assert.ok(["h2","h3","h4","p","strong","em","u","del","a","blockquote","pre","code","img","hr"].every((tag)=>blogCss.includes(".blog-prose "+tag)), "public article CSS must style every semantic text format emitted by the Markdown renderer");
