@@ -81,6 +81,11 @@ export default function HomePage() {
             <span className="manifesto__axis-line"><i /></span>
             <span>SIGNAL</span>
           </div>
+        </div>
+      </section>
+
+      <div className="home-scene-slot home-scene-slot--orbit" aria-hidden="true">
+        <div className="shell">
           <div className="home-scene home-scene--orbit" data-home-scene="orbit" aria-hidden="true">
             <canvas className="home-scene__canvas" data-home-scene-canvas />
             <div className="home-scene__fallback" />
@@ -88,7 +93,7 @@ export default function HomePage() {
             <span className="home-scene__caption">INSIGHT · POSITION · EXPRESSION</span>
           </div>
         </div>
-      </section>
+      </div>
 
       <section className="expertise section" id="expertise" aria-labelledby="expertise-title">
         <div className="shell">
@@ -159,6 +164,11 @@ export default function HomePage() {
               </li>
             ))}
           </ol>
+        </div>
+      </section>
+
+      <div className="home-scene-slot home-scene-slot--flow" aria-hidden="true">
+        <div className="shell">
           <div className="home-scene home-scene--flow" data-home-scene="flow" aria-hidden="true">
             <canvas className="home-scene__canvas" data-home-scene-canvas />
             <div className="home-scene__fallback" />
@@ -166,7 +176,7 @@ export default function HomePage() {
             <span className="home-scene__caption">LISTEN · INVESTIGATE · POSITION · EXPRESS</span>
           </div>
         </div>
-      </section>
+      </div>
 
       <section className="rexo-section" id="rexo" aria-labelledby="rexo-title">
         <div className="shell">
