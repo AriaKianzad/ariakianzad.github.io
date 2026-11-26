@@ -7,7 +7,7 @@
   z-index: 80;
   top: 0;
   border-bottom: 1px solid transparent;
-  background: rgba(9, 13, 12, 0.58);
+  background: rgba(243, 240, 232, 0.82);
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
   transition: background-color var(--duration) ease, border-color var(--duration) ease;
@@ -15,7 +15,7 @@
 
 .site-header.is-scrolled {
   border-bottom-color: var(--line);
-  background: rgba(9, 13, 12, 0.91);
+  background: rgba(243, 240, 232, 0.97);
 }
 
 .site-header__row {
@@ -50,7 +50,7 @@
 
 .wordmark:hover .wordmark__mark {
   border-color: var(--accent);
-  background: rgba(198, 232, 135, 0.08);
+  background: rgba(123, 63, 88, 0.07);
 }
 
 .wordmark__copy {
@@ -147,13 +147,13 @@
 .header-cta svg {
   width: 13px;
   height: 13px;
-  color: var(--accent);
+  color: var(--signal-dark);
   transition: transform var(--duration) var(--ease-out);
 }
 
 .header-cta:hover {
   border-color: var(--accent);
-  background: rgba(198, 232, 135, 0.06);
+  background: rgba(123, 63, 88, 0.07);
   color: var(--accent);
 }
 
@@ -212,8 +212,8 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
   padding-block: clamp(3.5rem, 6vw, 6rem) 2rem;
   border-top: 1px solid var(--line);
   background:
-    radial-gradient(ellipse at 85% 0%, rgba(92, 123, 72, 0.08), transparent 42%),
-    #080b0a;
+    radial-gradient(ellipse at 85% 0%, rgba(214, 164, 67, 0.16), transparent 42%),
+    var(--panel-dark);
 }
 
 .site-footer__top {
@@ -300,8 +300,8 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
 .social-link:hover {
   transform: translateY(-3px);
   border-color: var(--line-strong);
-  background: rgba(198, 232, 135, 0.05);
-  color: var(--accent);
+  background: rgba(214, 164, 67, 0.12);
+  color: var(--signal-dark);
 }
 
 .site-footer__base {
@@ -406,7 +406,7 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
     overscroll-behavior: contain;
     padding: clamp(1rem, 4vh, 2.5rem) var(--gutter) max(2rem, env(safe-area-inset-bottom));
     border-top: 1px solid var(--line);
-    background: rgba(9, 13, 12, 0.985);
+    background: rgba(243, 240, 232, 0.99);
   }
 
   html[data-js] nav[data-open] .site-nav__list {
@@ -578,11 +578,11 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
   padding: 0.65rem 0.9rem;
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: #11170f;
+  color: var(--bg-raised);
   font-size: var(--step-sm);
   font-weight: 650;
   text-decoration: none;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.32);
+  box-shadow: 0 8px 28px rgba(40, 36, 43, 0.18);
   transform: translateY(calc(-100% - 1.25rem));
   transition: transform var(--duration-fast) var(--ease-out);
 }
@@ -643,9 +643,9 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
   overflow-y: auto;
   padding: 1.25rem;
   border: 1px solid var(--line-strong);
-  background: rgba(13, 19, 16, 0.97);
+  background: rgba(251, 249, 244, 0.98);
   color: var(--ink);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.48);
+  box-shadow: 0 18px 60px rgba(40, 36, 43, 0.18);
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
 }
@@ -698,7 +698,7 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
 .analytics-consent__accept {
   border-color: var(--accent);
   background: var(--accent);
-  color: #11170f;
+  color: var(--bg-raised);
 }
 
 .analytics-consent__accept:hover {
@@ -728,13 +728,13 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
   padding: 0.5rem 0.8rem;
   border: 1px solid var(--line-strong);
   border-radius: 2px;
-  background: rgba(13, 19, 16, 0.94);
+  background: rgba(251, 249, 244, 0.96);
   color: var(--ink-soft);
   font-family: var(--font-mono);
   font-size: 0.65rem;
   letter-spacing: 0.025em;
   line-height: 1.35;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 8px 28px rgba(40, 36, 43, 0.14);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   cursor: pointer;
@@ -746,7 +746,7 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
 
 .analytics-preferences:hover {
   border-color: var(--accent);
-  background: rgba(26, 37, 28, 0.98);
+  background: var(--bg-raised);
   color: var(--accent);
 }
 

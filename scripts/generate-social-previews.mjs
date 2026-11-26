@@ -28,48 +28,48 @@ const renderSvg = (svg) =>
 const homepageSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 1200 630">
   <defs>
     <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#080d0b"/>
-      <stop offset="0.6" stop-color="#0b110e"/>
-      <stop offset="1" stop-color="#070b09"/>
+      <stop offset="0" stop-color="#f3f0e8"/>
+      <stop offset="0.6" stop-color="#fbf9f4"/>
+      <stop offset="1" stop-color="#e7e0d6"/>
     </linearGradient>
     <radialGradient id="glow">
-      <stop offset="0" stop-color="#c6e887" stop-opacity=".32"/>
-      <stop offset=".28" stop-color="#879d63" stop-opacity=".12"/>
-      <stop offset="1" stop-color="#879d63" stop-opacity="0"/>
+      <stop offset="0" stop-color="#d6a443" stop-opacity=".32"/>
+      <stop offset=".28" stop-color="#7b3f58" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#7b3f58" stop-opacity="0"/>
     </radialGradient>
     <pattern id="grid" width="72" height="72" patternUnits="userSpaceOnUse">
-      <path d="M72 0H0V72" fill="none" stroke="#cfdec3" stroke-opacity=".055" stroke-width="1"/>
+      <path d="M72 0H0V72" fill="none" stroke="#7b3f58" stroke-opacity=".055" stroke-width="1"/>
     </pattern>
   </defs>
   <rect width="1200" height="630" fill="url(#background)"/>
   <rect width="1200" height="630" fill="url(#grid)"/>
-  <rect x="54" y="48" width="1092" height="534" rx="4" fill="none" stroke="#d2dfc6" stroke-opacity=".34"/>
+  <rect x="54" y="48" width="1092" height="534" rx="4" fill="none" stroke="#7b3f58" stroke-opacity=".34"/>
   <g opacity=".9">
     <circle cx="850" cy="315" r="232" fill="url(#glow)"/>
-    <circle cx="850" cy="315" r="204" fill="none" stroke="#bdcba9" stroke-opacity=".35" stroke-width="1.4"/>
-    <ellipse cx="850" cy="315" rx="310" ry="105" transform="rotate(-9 850 315)" fill="none" stroke="#bdcba9" stroke-opacity=".40"/>
-    <ellipse cx="850" cy="315" rx="260" ry="154" transform="rotate(22 850 315)" fill="none" stroke="#bdcba9" stroke-opacity=".26"/>
-    <ellipse cx="850" cy="315" rx="115" ry="265" transform="rotate(4 850 315)" fill="none" stroke="#bdcba9" stroke-opacity=".22" stroke-dasharray="5 8"/>
-    <path d="M470 460L1190 80M545 315H1170M850 45V586" stroke="#c6d5b6" stroke-opacity=".22" fill="none"/>
-    <circle cx="780" cy="238" r="8" fill="#c6e887"/>
+    <circle cx="850" cy="315" r="204" fill="none" stroke="#7b3f58" stroke-opacity=".35" stroke-width="1.4"/>
+    <ellipse cx="850" cy="315" rx="310" ry="105" transform="rotate(-9 850 315)" fill="none" stroke="#7b3f58" stroke-opacity=".40"/>
+    <ellipse cx="850" cy="315" rx="260" ry="154" transform="rotate(22 850 315)" fill="none" stroke="#7b3f58" stroke-opacity=".26"/>
+    <ellipse cx="850" cy="315" rx="115" ry="265" transform="rotate(4 850 315)" fill="none" stroke="#7b3f58" stroke-opacity=".22" stroke-dasharray="5 8"/>
+    <path d="M470 460L1190 80M545 315H1170M850 45V586" stroke="#7b3f58" stroke-opacity=".22" fill="none"/>
+    <circle cx="780" cy="238" r="8" fill="#d6a443"/>
     <circle cx="780" cy="238" r="34" fill="url(#glow)"/>
-    <circle cx="565" cy="315" r="5" fill="#a9ba94" fill-opacity=".65"/>
-    <circle cx="1138" cy="360" r="5" fill="#a9ba94" fill-opacity=".7"/>
-    <circle cx="1000" cy="166" r="3" fill="#c6e887" fill-opacity=".65"/>
-    <circle cx="908" cy="520" r="3" fill="#c6e887" fill-opacity=".55"/>
-    <path d="M640 630C680 530 725 485 805 470" fill="none" stroke="#c6e887" stroke-opacity=".10" stroke-width="90"/>
+    <circle cx="565" cy="315" r="5" fill="#9b7b8b" fill-opacity=".65"/>
+    <circle cx="1138" cy="360" r="5" fill="#9b7b8b" fill-opacity=".7"/>
+    <circle cx="1000" cy="166" r="3" fill="#d6a443" fill-opacity=".65"/>
+    <circle cx="908" cy="520" r="3" fill="#d6a443" fill-opacity=".55"/>
+    <path d="M640 630C680 530 725 485 805 470" fill="none" stroke="#d6a443" stroke-opacity=".10" stroke-width="90"/>
   </g>
   <g font-family="Arial, Helvetica, sans-serif">
-    <circle cx="87" cy="89" r="5" fill="#c6e887"/>
-    <text x="111" y="95" font-size="18" font-weight="700" letter-spacing="1.2" fill="#eff2e8">ARIA KIANZAD</text>
-    <text x="111" y="120" font-family="monospace" font-size="12" letter-spacing="1.15" fill="#b9c3b8">BRAND STRATEGY  /  PERSONAL BRANDING</text>
-    <path d="M82 154V191" stroke="#c6e887" stroke-opacity=".7"/>
-    <text x="82" y="270" font-size="55" font-weight="700" fill="#eff2e8">Find the difference.</text>
-    <text x="82" y="335" font-size="53" font-weight="400" fill="#c6e887">Make it matter.</text>
-    <rect x="84" y="372" width="69" height="4" rx="2" fill="#c6e887"/>
-    <text x="84" y="416" font-size="18" fill="#b9c3b8">Research  ·  Positioning  ·  Identity</text>
-    <text x="84" y="534" font-family="monospace" font-size="13" letter-spacing=".7" fill="#abb8a8">ariakianzad.github.io</text>
-    <text x="1110" y="88" text-anchor="end" font-family="monospace" font-size="12" letter-spacing="1" fill="#d5e2ca">01 / SIGNAL</text>
+    <circle cx="87" cy="89" r="5" fill="#d6a443"/>
+    <text x="111" y="95" font-size="18" font-weight="700" letter-spacing="1.2" fill="#28242b">ARIA KIANZAD</text>
+    <text x="111" y="120" font-family="monospace" font-size="12" letter-spacing="1.15" fill="#655b64">BRAND STRATEGY  /  PERSONAL BRANDING</text>
+    <path d="M82 154V191" stroke="#d6a443" stroke-opacity=".7"/>
+    <text x="82" y="270" font-size="55" font-weight="700" fill="#28242b">Find the difference.</text>
+    <text x="82" y="335" font-size="53" font-weight="400" fill="#d6a443">Make it matter.</text>
+    <rect x="84" y="372" width="69" height="4" rx="2" fill="#d6a443"/>
+    <text x="84" y="416" font-size="18" fill="#655b64">Research  ·  Positioning  ·  Identity</text>
+    <text x="84" y="534" font-family="monospace" font-size="13" letter-spacing=".7" fill="#807780">ariakianzad.github.io</text>
+    <text x="1110" y="88" text-anchor="end" font-family="monospace" font-size="12" letter-spacing="1" fill="#7b3f58">01 / SIGNAL</text>
   </g>
 </svg>`;
 

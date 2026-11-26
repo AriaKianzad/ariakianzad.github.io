@@ -6,9 +6,9 @@ export function initSignalScene(host: HTMLElement) {
   const blogAccent = blogTheme
     ? window.getComputedStyle(blogTheme).getPropertyValue("--blog-accent").trim() || "#a86f54"
     : null;
-  const accentColor = new THREE.Color(blogAccent || 0xc8ed87);
-  const accentSoftColor = accentColor.clone().lerp(new THREE.Color(isBlog ? "#e7d8c9" : "#e0e8c9"), 0.42);
-  const secondaryColor = new THREE.Color(isBlog ? "#718b86" : "#8cae74");
+  const accentColor = new THREE.Color(blogAccent || (isBlog ? "#a86f54" : "#7b3f58"));
+  const accentSoftColor = accentColor.clone().lerp(new THREE.Color(isBlog ? "#e7d8c9" : "#ecd08d"), 0.42);
+  const secondaryColor = new THREE.Color(isBlog ? "#718b86" : "#d6a443");
   const canvas = host.querySelector<HTMLCanvasElement>("[data-signal-canvas]");
   if (!canvas) return;
 
@@ -26,7 +26,7 @@ export function initSignalScene(host: HTMLElement) {
   }
 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-  renderer.setClearColor(isBlog ? 0xf4f1e9 : 0x090d0c, 0);
+  renderer.setClearColor(isBlog ? 0xf4f1e9 : 0xf3f0e8, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -44,7 +44,7 @@ export function initSignalScene(host: HTMLElement) {
   innerGlow.position.set(isBlog ? 0.68 : 0.1, isBlog ? 0.55 : 0.05, isBlog ? 1.55 : 1.2);
   world.add(innerGlow);
 
-  const keyLight = new THREE.DirectionalLight(isBlog ? 0xf7e8d8 : 0xe0e8c9, isBlog ? 4.6 : 3.1);
+  const keyLight = new THREE.DirectionalLight(isBlog ? 0xf7e8d8 : 0xfff3df, isBlog ? 4.6 : 3.1);
   keyLight.position.set(3.5, 4, 4);
   scene.add(keyLight);
 
@@ -55,7 +55,7 @@ export function initSignalScene(host: HTMLElement) {
     scene.add(new THREE.HemisphereLight(0xfaf0e5, 0x213d37, 1.55));
     scene.add(new THREE.AmbientLight(0x8b7567, 0.38));
   } else {
-    scene.add(new THREE.AmbientLight(0x82917f, 0.72));
+    scene.add(new THREE.AmbientLight(0x9b8790, 0.82));
   }
 
   const rimLight = new THREE.DirectionalLight(secondaryColor, isBlog ? 3.3 : 2.2);
@@ -66,12 +66,12 @@ export function initSignalScene(host: HTMLElement) {
     ? new THREE.SphereGeometry(0.92, 96, 80)
     : new THREE.IcosahedronGeometry(0.92, 5);
   const coreMaterial = new THREE.MeshPhysicalMaterial({
-    color: isBlog ? new THREE.Color("#28483e") : 0x899a6f,
+    color: isBlog ? new THREE.Color("#28483e") : new THREE.Color("#563347"),
     metalness: isBlog ? 0.34 : 0.72,
     roughness: isBlog ? 0.28 : 0.2,
     clearcoat: isBlog ? 1 : 0.82,
     clearcoatRoughness: isBlog ? 0.14 : 0.18,
-    emissive: isBlog ? accentColor.clone().multiplyScalar(0.1) : 0x1b2914,
+    emissive: isBlog ? accentColor.clone().multiplyScalar(0.1) : 0x2b1d27,
     emissiveIntensity: isBlog ? 0.18 : 0.28,
   });
   const core = new THREE.Mesh(coreGeometry, coreMaterial);
@@ -97,7 +97,7 @@ export function initSignalScene(host: HTMLElement) {
     innerCore.renderOrder = 3;
   } else {
     innerMaterial = new THREE.MeshStandardMaterial({
-      color: 0x111915,
+      color: 0x2d252e,
       metalness: 0.74,
       roughness: 0.22,
       wireframe: true,
@@ -195,7 +195,7 @@ export function initSignalScene(host: HTMLElement) {
     new THREE.Float32BufferAttribute(particlePositions, 3),
   );
   const particleMaterial = new THREE.PointsMaterial({
-    color: isBlog ? 0x718b86 : 0xc5d0b6,
+    color: isBlog ? 0x718b86 : 0x947884,
     size: isBlog ? 0.016 : 0.012,
     transparent: true,
     opacity: isBlog ? 0.66 : 0.55,
