@@ -311,8 +311,8 @@ assert.ok(content.includes('copyright: "© 2027 Aria Kianzad. All rights reserve
   "the homepage footer year must be fixed to 2027");
 assert.ok(page.includes('<h3 className="note-card__title">{item.title}</h3>'),
   "the personal blog card title must be a semantic H3");
-assert.equal([...page.matchAll(/<h1\\b/g)].length, 1, "the homepage must contain exactly one H1");
-const headingLevels = [...page.matchAll(/<h([1-6])\\b/g)].map(([, level]) => Number(level));
+assert.equal([...page.matchAll(/<h1[ >]/g)].length, 1, "the homepage must contain exactly one H1");
+const headingLevels = [...page.matchAll(/<h([1-6])[ >]/g)].map(([, level]) => Number(level));
 assert.ok(headingLevels.length > 0 && headingLevels[0] === 1 &&
   headingLevels.every((level, index) => index === 0 || level <= headingLevels[index - 1] + 1),
   "homepage headings must follow a logical hierarchy without skipped levels");
@@ -326,7 +326,8 @@ assert.ok(chrome.includes("color: var(--panel-ink);") &&
   chrome.includes("border-bottom: 1px solid var(--panel-line);"),
   "footer text and dividers must use the dark-panel tokens");
 const readColorToken = (name) => {
-  const match = globals.match(new RegExp(name + ":\\\\s*(#[0-9a-f]{6})", "i"));
+  const declaration = globals.split(name + ": ")[1];
+  const match = declaration?.match(/^(#[0-9a-f]{6})/i);
   assert.ok(match, `missing color token ${name}`);
   return match[1];
 };
@@ -347,10 +348,15 @@ assert.ok(contrastRatio(readColorToken("--panel-muted"), footerBackground) >= 4.
   contrastRatio(readColorToken("--panel-ink"), footerBackground) >= 4.5 &&
   contrastRatio(readColorToken("--panel-ink-soft"), footerBackground) >= 4.5,
   "footer normal text colors must meet WCAG AA contrast against the dark panel");
+assert.ok(chrome.includes("@media (max-width: 780px)") &&
+  chrome.includes(".site-footer__top") &&
+  chrome.includes("flex-wrap: wrap;"),
+  "footer layout must retain its stacked and wrapping responsive treatment");
 
 // The primary CTA stays in place on hover; only its arrow moves subtly.
 const primaryButtonCss = globals.split(".button {")[1]?.split("/* Scroll-triggered reveal")[0] ?? "";
-assert.ok(primaryButtonCss.includes(".button:hover {\\n  transform: none; }") &&
+assert.ok(primaryButtonCss.includes("transform: none;") &&
+  !primaryButtonCss.includes("translateY(-3px)") &&
   primaryButtonCss.includes("background: var(--accent-dark)") &&
   primaryButtonCss.includes("transform: translate(2px, -2px);"),
   "primary CTA hover must avoid the previous floating lift and keep arrow motion subtle");
