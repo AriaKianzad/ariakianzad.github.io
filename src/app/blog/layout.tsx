@@ -41,7 +41,7 @@ export default function BlogLayout({ children }: { children: ReactNode }) {
     >
       <style>{themeStyles}</style>
       <script src="/admin/config.js" />
-      <script src="/blog-ad-click.js" defer />
+      <script src="/blog-ad-click.js" />
       <script src="/blog-listing.js" defer />
       {children}
     </div>
