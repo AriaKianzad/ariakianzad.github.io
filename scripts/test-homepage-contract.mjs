@@ -214,14 +214,47 @@ assert.ok(!/(#080d0b|#0b110e|#070b09|#c6e887|#879d63|#bdcba9)/i.test(homepageSvg
 
 
 
-assert.ok(faviconSource.includes('fill="#f3f0e8"') &&
-  faviconSource.includes('fill="#7b3f58"') &&
+assert.ok(faviconSource.includes('fill="#7b3f58"') &&
   faviconSource.includes('fill="#d6a443"') &&
-  faviconSource.includes('<path d="M150 365 220 148'),
-  "the shared vector favicon must use the current brand mark and palette");
+  faviconSource.includes('stroke="#fbf9f4"') &&
+  faviconSource.includes('transform="translate(-26 24.5)"') &&
+  faviconSource.includes('<rect x="28" y="28" width="456" height="456" rx="92"') &&
+  !faviconSource.includes('fill="#f3f0e8"') &&
+  !/<rect\\b[^>]*\\bwidth=["']512["']/.test(faviconSource),
+  "the shared favicon must use the current mark, have transparent outer canvas, and omit the old paper backplate");
+
+const faviconPreview = new Resvg(faviconSource).render();
+assert.equal(faviconPreview.width, 512, "the source favicon must render at 512px wide");
+assert.equal(faviconPreview.height, 512, "the source favicon must render at 512px high");
+assert.equal(faviconPreview.pixels[3], 0, "the favicon outer canvas must be transparent");
+let markLeft = faviconPreview.width;
+let markTop = faviconPreview.height;
+let markRight = -1;
+let markBottom = -1;
+for (let y = 0; y < faviconPreview.height; y++) {
+  for (let x = 0; x < faviconPreview.width; x++) {
+    const offset = (y * faviconPreview.width + x) * 4;
+    const [r, g, b, a] = faviconPreview.pixels.subarray(offset, offset + 4);
+    const isIvoryMark = r > 230 && g > 220 && b > 210;
+    const isBrassAccent = r > 180 && g > 130 && b < 110;
+    if (a > 240 && (isIvoryMark || isBrassAccent)) {
+      markLeft = Math.min(markLeft, x);
+      markTop = Math.min(markTop, y);
+      markRight = Math.max(markRight, x);
+      markBottom = Math.max(markBottom, y);
+    }
+  }
+}
+assert.ok(markRight >= markLeft && markBottom >= markTop, "the favicon monogram and accent must render");
+assert.ok(Math.abs((markLeft + markRight) / 2 - 256) <= 2,
+  "the monogram and brass accent must be centered horizontally inside the square");
+assert.ok(Math.abs((markTop + markBottom) / 2 - 256) <= 2,
+  "the monogram and brass accent must be centered vertically inside the square");
 assert.ok(assetGenerator.includes('writeFileSync(join(ROOT, "public", "favicon.svg")') &&
+  assetGenerator.includes('transform="translate(-26 24.5)"') &&
+  !assetGenerator.includes('const PAPER =') &&
   !assetGenerator.includes('public", "og", "og.png'),
-  "favicon source must be generated centrally and the legacy PNG social card must not return");
+  "the centered transparent favicon must be generated centrally and the legacy PNG social card must not return");
 assert.ok(metadata.includes('url: "/og/og.jpg"') &&
   !layout.includes('/og/og.png'),
   "JSON-LD and social metadata must reference the same current JPEG preview");
