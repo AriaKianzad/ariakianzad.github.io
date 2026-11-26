@@ -61,9 +61,13 @@ function load():Payload{
   if(cache)return cache;
   try{
     const parsed=JSON.parse(readFileSync(join(process.cwd(),".cache","blog-content.json"),"utf8"));
+    const storedAccent = typeof parsed.settings?.accent_color === "string" && /^#[0-9a-f]{6}$/i.test(parsed.settings.accent_color)
+      ? parsed.settings.accent_color
+      : defaults.accent_color;
+    const accentColor = storedAccent.toLowerCase() === "#a86f54" ? "#7b3f58" : storedAccent;
     cache={
       settings:{...defaults,...(parsed.settings||{}),
-        accent_color:(parsed.settings?.accent_color||"").toLowerCase()==="#a86f54"?"#7b3f58":(parsed.settings?.accent_color||defaults.accent_color),
+        accent_color:accentColor,
         categories:Array.isArray(parsed.settings?.categories)?parsed.settings.categories:defaults.categories,
         category_seo:parsed.settings?.category_seo||{},
         ad_banners:Array.isArray(parsed.settings?.ad_banners)?parsed.settings.ad_banners:defaults.ad_banners,
