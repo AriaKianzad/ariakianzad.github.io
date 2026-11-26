@@ -212,11 +212,7 @@ assert.ok(homepageSvgSource.includes('stop-color="#f3f0e8"') &&
 assert.ok(!/(#080d0b|#0b110e|#070b09|#c6e887|#879d63|#bdcba9)/i.test(homepageSvgSource),
   "homepage social preview must not retain the previous dark-lime palette");
 
-const bookPreviewColors = ["#f3f0e8", "#7b3f58", "#d6a443", "#4a2637"];
-assert.ok(bookPreviewColors.every((color) => bookSvgSource.includes(color)),
-  "book social preview must use the current paper, plum, brass and ink palette");
-assert.ok(!/(#36534f|#244241|#78958f)/i.test(bookSvgSource),
-  "book social preview must not retain the previous teal palette");
+
 
 assert.ok(faviconSource.includes('fill="#f3f0e8"') &&
   faviconSource.includes('fill="#7b3f58"') &&
@@ -265,6 +261,11 @@ assert.ok(blogLayout.includes('/blog-listing.js') &&
 
 
 const bookSvgSource = socialGenerator.split("const bookSvg = `")[1]?.split("</svg>`;")[0] ?? "";
+const bookPreviewColors = ["#f3f0e8", "#7b3f58", "#d6a443", "#4a2637"];
+assert.ok(bookPreviewColors.every((color) => bookSvgSource.includes(color)),
+  "book social preview must use the current paper, plum, brass and ink palette");
+assert.ok(!/(#36534f|#244241|#78958f)/i.test(bookSvgSource),
+  "book social preview must not retain the previous teal palette");
 assert.equal(
   [...bookSvgSource.matchAll(/<text class="fa"[^>]*text-anchor="end" direction="rtl"/g)].length,
   6,
