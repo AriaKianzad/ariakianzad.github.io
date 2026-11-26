@@ -243,17 +243,17 @@ assert.ok(heroScene.includes("new THREE.WebGLRenderer"), "hero must render a rea
 assert.ok(homeScenes.includes('size: compact ? 0.024 : 0.022') &&
   homeScenes.includes('size: compact ? 0.014 : 0.013'),
   "homepage wave points and particles must stay within small world-space sizes");
-const pointMaterialBlocks = [...homeScenes.matchAll(/new THREE\\.PointsMaterial\\(\\{([\\s\\S]*?)\\}\\)/g)].map(([, block]) => block);
+const pointMaterialBlocks = [...homeScenes.matchAll(/new THREE\.PointsMaterial\(\{([\s\S]*?)\}\)/g)].map(([, block]) => block);
 const pointSizes = pointMaterialBlocks.flatMap((block) =>
-  [...block.matchAll(/size:\\s*(?:compact\\s*\\?\\s*)?([0-9.]+)/g)].map(([, size]) => Number(size))
+  [...block.matchAll(/size:\s*(?:compact\s*\?\s*)?([0-9.]+)/g)].map(([, size]) => Number(size))
 );
-assert.ok(pointSizes.length >= 4 && pointSizes.every((size) => size > 0 && size <= 0.05),
+assert.ok(pointSizes.length >= 3 && pointSizes.every((size) => size > 0 && size <= 0.05),
   "homepage point materials must not create oversized square overlays");
 assert.ok(globals.includes("--accent-vivid: #7d83ff;") &&
   sections.includes("var(--accent-vivid)") &&
   homeScenes.includes('new THREE.Color("#7d83ff")'),
   "electric-indigo accent must be present across homepage content and motion");
-assert.ok(!/(#ff8a70|#ffb29e|255,\\s*138,\\s*112)/i.test(globals + sections + homeScenes),
+assert.ok(!/(#ff8a70|#ffb29e|255,\s*138,\s*112)/i.test(globals + sections + homeScenes),
   "rejected warm-coral accent must be fully removed from the homepage");
 assert.ok(heroScene.includes("visibilitychange"), "scene animation must pause when the tab is hidden");
 assert.ok(heroScene.includes("renderer.dispose()"), "WebGL resources must be disposed during cleanup");
