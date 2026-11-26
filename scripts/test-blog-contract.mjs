@@ -196,7 +196,7 @@ assert.ok(dataSource.includes("readFileSync"), "blog data must be loaded at buil
 
 assert.ok(listingPage.includes("getBlogPosts()") && listingPage.includes("BlogListingClient"), "the blog archive must be server-rendered with client search controls");
 assert.ok(listingScript.includes("data-blog-listing") && listingScript.includes("includes(activeCategory)") && listingScript.includes("visibleLimit += pageSize"), "standalone listing script must provide search, category filtering and load-more behavior");
-assert.ok(rootLayout.includes('<script src="/blog-listing.js" defer />'), "static blog search behavior must load as a same-origin script");
+assert.ok(blogLayout.includes('<script src="/blog-listing.js" defer />'), "static blog search behavior must load as a same-origin script on blog routes");
 assert.ok(listingPage.includes('"@type": "Blog"'), "the archive must include Blog structured data");
 assert.ok(articlePage.includes("generateStaticParams"), "published articles must be statically generated");
 assert.ok(articlePage.includes('{ slug: "__empty__" }') && articlePage.includes("robots: { index: false, follow: false }"), "empty article fallback must remain noindex");
@@ -440,7 +440,7 @@ assert.ok(publicHeader.includes("<span>آریا کیانزاد</span>"), "blog h
 assert.ok(blogCss.includes(".blog-theme .blog-header-blog-link {") && blogCss.includes('grid-template-areas:"visual copy"') && blogCss.includes("position:absolute;"), "blog header and hero must retain their desktop/mobile layout contracts");
 assert.ok(listingPage.includes("blog-intro-description") && listingPage.includes("settings.description"), "blog homepage must show the configured homepage description separately from its SEO description");
 assert.ok(blogCss.includes(".blog-theme .blog-intro > .blog-intro-description") && blogCss.includes("grid-column:1 / -1") && blogCss.includes("max-width:none"), "homepage description must have a full-width responsive row on mobile and desktop");
-assert.ok(blogLayout.includes("/blog-favicon.svg") && blogLayout.includes('themeColor: "#f4f1e9"'), "blog must use its own favicon and browser theme colour");
+assert.ok(blogLayout.includes('url: "/favicon.svg"') && blogLayout.includes('themeColor: "#f3f0e8"'), "blog must use the shared favicon and current browser theme colour");
 assert.ok(blogLayout.includes('lang={language}') && blogLayout.includes('dir={direction}'), "the blog shell must declare its active language and direction for all nested content");
 assert.ok(publicHeader.includes('className="blog-skip-link" href="#main"') && blogChromeCss.includes(".blog-skip-link:focus-visible"), "blog header must provide keyboard-visible skip navigation");
 assert.ok((listingPage.match(/<main id="main"/g)||[]).length===1 && (articlePage.match(/<main id="main"/g)||[]).length===2 && (categoryPage.match(/<main id="main"/g)||[]).length===2 && contactPage.includes('<main id="main"') && blogNotFound.includes('<main id="main"') && notFoundContent.includes('<main id="main"'), "all public blog routes and blog 404 states must provide a main landmark target");
@@ -454,7 +454,7 @@ assert.ok(contactForm.includes('data-show-for="advertorial sponsorship"') && con
 assert.ok(blogCss.includes(".blog-contact-field[hidden] {") && /\.blog-contact-field\[hidden\]\s*\{\s*display:\s*none\s*!important;/.test(blogCss), "hidden conditional contact fields must not be overridden by display:grid");
 assert.ok(contactBrowserScript.includes('container.hidden = !shouldShow') && contactBrowserScript.includes('field.disabled = !shouldShow'), "contact form must hide and disable fields outside their selected request type");
 assert.ok(contactBrowserScript.includes("functions/v1/blog-contact") && contactBrowserScript.includes("addEventListener(\"submit\"") && contactBrowserScript.includes("form.checkValidity()") && contactBrowserScript.includes("data-contact-status"), "same-origin browser script must handle submission, validation and visible feedback");
-assert.ok(rootLayout.includes('<script src="/blog-contact.js" defer />'), "contact behavior must be loaded as an external first-party script allowed by the CSP");
+assert.ok(contactPage.includes('<script src="/blog-contact.js" defer />'), "contact behavior must be loaded only on the contact route as a first-party script allowed by the CSP");
 assert.ok(contactBrowserScript.includes("sb_publishable_") && contactBrowserScript.includes("crypto.randomUUID"), "contact browser script must include the public Supabase key and unique submission id");
 assert.ok(!contactForm.includes("targetUrl") && !contactForm.includes("anchorText") && !contactForm.includes("contact-target") && !contactForm.includes("contact-anchor"), "contact form must not ask for destination URLs or anchor text");
 assert.ok(!contactForm.includes("developers.google.com/search/docs/essentials/spam-policies") && !contactForm.includes("لینک Follow در ازای پرداخت ارائه نمی‌شه"), "contact form must not show the paid-link policy paragraph");
@@ -473,6 +473,13 @@ assert.ok(contactMigration.includes("private.blog_contact_rate_limits") && conta
 assert.ok(signalScene.includes("new THREE.SphereGeometry(0.92, 96, 80)") && signalScene.includes("new THREE.WireframeGeometry(innerGeometry)") && signalScene.includes("new THREE.HemisphereLight") && signalScene.includes('window.matchMedia("(max-width: 700px)").matches ? 2.72 : 2.35') && signalScene.includes("visibleHalfHeight / Math.tan"), "blog signal scene must fit the lit sphere and orbit geometry inside its responsive canvas");
 assert.ok(signalScene.includes("new THREE.IcosahedronGeometry(0.92, 5)") && signalScene.includes("new THREE.MeshStandardMaterial({") && signalScene.includes("wireGeometry?.dispose()"), "homepage hero must keep its original mesh and clean up the optional blog wireframe safely");
 assert.ok(rootLayout.includes("https://bkohdqwecnvbmeaiuyyx.supabase.co;") && !rootLayout.includes("'unsafe-inline'"), "site CSP must allow contact form requests without permitting inline scripts");
+assert.ok(blogLayout.includes("<style>{themeStyles}</style>") && !blogLayout.includes("style={") &&
+  articlePage.includes("<style>{articleStyles}</style>") && !articlePage.includes("style={"),
+  "dynamic blog theme values must use hashed style blocks instead of inline style attributes");
+assert.ok(articlePage.includes("Number.isFinite(configuredLineHeight)") &&
+  articlePage.includes("Math.min(2.4, Math.max(1.6, configuredLineHeight))") &&
+  articlePage.includes("postAccent"),
+  "article CSS variables must be bounded and colour values validated before rendering");
 assert.ok(rootLayout.includes("https://challenges.cloudflare.com") && staticHostHeaders.includes("https://challenges.cloudflare.com") && apacheHeaders.includes("https://challenges.cloudflare.com"), "the page and compatible static-host CSPs must allow Turnstile scripts and frames");
 assert.ok(configToml.includes("[functions.blog-contact]") && configToml.includes("verify_jwt = false"), "contact Edge Function must have public JWT configuration");
 assert.ok(!articlePage.includes("ARTICLE / ARCHIVE") && !categoryPage.includes("CATEGORY / ARCHIVE"), "public blog screens must not expose English archive labels");
@@ -509,7 +516,7 @@ assert.ok(articlePage.includes("settings.schema_type") && articlePage.includes("
 assert.ok(!articlePage.includes("mailto:") && !articlePage.includes(">ایمیل"), "article share row must not expose an email action");
 assert.ok(!copyLinkButton.includes("\"use client\"") && copyLinkButton.includes("data-copy-link") && copyLinkButton.includes("data-copy-url") && copyLinkButton.includes("data-copy-feedback"), "copy-link markup must be a static server-rendered control, not a React hydration component");
 assert.ok(blogCopyScript.includes('document.addEventListener("click"') && blogCopyScript.includes("navigator.clipboard.writeText") && blogCopyScript.includes('document.execCommand("copy")') && blogCopyScript.includes("showManualCopy") && blogCopyScript.includes("لینک کپی شد"), "standalone copy script must handle click, clipboard, fallback and success feedback");
-assert.ok(rootLayout.includes('<script src="/blog-copy.js" defer />') && blogCss.includes(".blog-share-copy-wrap [hidden]"), "static copy script must load under the same-origin CSP and keep inactive feedback hidden");
+assert.ok(articlePage.includes('<script src="/blog-copy.js" defer />') && blogCss.includes(".blog-share-copy-wrap [hidden]"), "static copy script must load on article routes under the same-origin CSP and keep inactive feedback hidden");
 assert.ok(articlePage.includes('className="blog-reading-time-number"') && articlePage.includes('className="blog-reading-time-unit"') && listingClient.includes('className="blog-reading-time-number"') && listingClient.includes('className="blog-reading-time-unit"') && blogCss.includes('grid-template-areas:"unit number"') && blogCss.includes(".blog-reading-time.is-en") && blogCss.includes("grid-area:number") && blogCss.includes("grid-area:unit") && blogCss.includes("direction:ltr !important"), "reading-time number and unit must use explicit physical grid positions: Persian number right, unit left");
 assert.ok(fetchScript.includes("ad_banners:Array.isArray(s.ad_banners)") && fetchScript.includes("show_on_mobile:banner.show_on_mobile!==false"), "static blog payload must preserve global ad banner settings from the public Supabase RPC");
 assert.ok(adminHtml.includes('id="view-analytics"') && adminHtml.includes('data-view="analytics"') && adminApp.includes("async function loadArticleAnalytics") && adminApp.includes("function renderArticleAnalytics"), "the CMS must include a protected per-article analytics workspace");
@@ -558,7 +565,7 @@ assert.ok(dataSource.includes("export type BlogAdBanner") && dataSource.includes
 assert.ok(adminHtml.includes('data-view="ads"') && adminHtml.includes('id="view-ads"') && adminHtml.includes('id="ad-banners-form"') && adminHtml.includes('id="add-ad-banner"') && !adminHtml.includes('data-tab="ads"') && !adminHtml.includes('id="post-ad-banner-enabled"'), "advertising must live in its own workspace section, not in the article editor");
 assert.ok(adminApp.includes("function renderAdBannerSettings()") && adminApp.includes("function collectAdBannersFromForm()") && adminApp.includes('api("save_ad_banners"') && adminApp.includes('accept="image/jpeg,image/png,image/webp,image/gif"'), "workspace must manage multiple ad slots, their labels, images, destinations and link types");
 assert.ok(adminApp.includes("if(file.type===\"image/gif\")") && adminApp.includes("blob=file") && adminApp.includes("window.setInterval") && adminApp.includes("60*60*1000") && adminApp.includes("loadArticleAnalytics(true,true)"), "animated GIF uploads must remain unconverted and the article analytics report must refresh hourly while the admin session is active");
-assert.ok(blogCss.includes(".blog-article-meta {\n    display:flex !important;") && blogCss.includes("direction:inherit;") && articlePage.includes('style={{ direction }}'), "desktop article metadata must use the article language direction and a stable flex layout");
+assert.ok(blogCss.includes(".blog-article-meta {\n    display:flex !important;") && blogCss.includes("direction:inherit;") && articlePage.includes('dir={direction}') && !articlePage.includes("style={"), "desktop article metadata must use the article language direction without CSP-blocked style attributes");
 
 console.log("Personal blog contract passed: secure CMS, rich paste, category SEO, accessible formatting, responsive reading and isolated Persian editorial chrome.");
 
