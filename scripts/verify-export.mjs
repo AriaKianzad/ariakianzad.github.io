@@ -304,6 +304,18 @@ if (existsSync(blogPayloadPath)) {
 const xmlEscape = (value) => String(value).replace(/[&<>"']/g, (character) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;",
 })[character]);
+const robotsPath = join(outDir, "robots.txt");
+if (existsSync(robotsPath) && siteOrigin) {
+  const robotsText = readFileSync(robotsPath, "utf8");
+  if (!robotsText.includes("Sitemap: " + siteOrigin + "/sitemap.xml")) {
+    problems.push("robots.txt: the primary XML sitemap must be declared");
+  }
+  if (blogPayload?.settings?.enable_rss !== false &&
+      !robotsText.includes("Sitemap: " + siteOrigin + "/blog/feed.xml")) {
+    problems.push("robots.txt: the enabled RSS feed must be declared as an additional sitemap");
+  }
+}
+
 const sitemapPath = join(outDir, "sitemap.xml");
 if (existsSync(sitemapPath)) {
   const sitemap = readFileSync(sitemapPath, "utf8");
