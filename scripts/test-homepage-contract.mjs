@@ -74,6 +74,7 @@ const [
   blogArticle,
   blogContact,
   blogPage,
+  blogStyles,
   faviconSource,
   adminDashboard,
   adminBlogDashboard,
@@ -106,6 +107,7 @@ const [
   read("src/app/blog/[slug]/page.tsx"),
   read("src/app/blog/contact/page.tsx"),
   read("src/app/blog/page.tsx"),
+  read("src/app/blog/blog.css"),
   read("public/favicon.svg"),
   read("public/admin/index.html"),
   read("public/admin/blog/index.html"),
@@ -323,6 +325,15 @@ assert.ok(heroEntry.includes('window.addEventListener("pageshow"'), "the scene m
 assert.ok(hero.includes("hero-visual__fallback"), "hero must provide a CSS visual fallback");
 assert.ok(heroScene.includes('from "three"'), "Three.js must be bundled as a local dependency");
 assert.ok(heroScene.includes("new THREE.WebGLRenderer"), "hero must render a real WebGL scene");
+assert.ok(page.includes("<HeroVisual />") && blogPage.includes("<HeroVisual />"),
+  "homepage and blog archive must mount the same reusable hero component");
+assert.ok(heroScene.includes('new THREE.IcosahedronGeometry(0.92, 5)') &&
+  heroScene.includes('new THREE.Color("#563347")') &&
+  heroScene.includes('new THREE.Color("#d6a443")') &&
+  !/isBlog|blogTheme|blogAccent|0x718b86|#28483e|new THREE\.SphereGeometry\(0\.92/.test(heroScene),
+  "homepage and blog must share the same 3D geometry, materials, palette and motion configuration");
+assert.ok(!/\.blog-theme \.blog-intro-visual \.hero-visual__(?:fallback|label|coordinate)|\.blog-theme \.blog-intro-visual \.signal-canvas/.test(blogStyles),
+  "blog layout must not restyle or suppress the shared hero artwork, labels or canvas");
 assert.ok(homeScenes.includes('size: compact ? 0.024 : 0.022') &&
   homeScenes.includes('size: compact ? 0.014 : 0.013'),
   "homepage wave points and particles must stay within small world-space sizes");
