@@ -84,6 +84,40 @@ export function extractMarkdownImageUrls(markdown:string):string[]{
   }
   return urls;
 }
+type LegacyNumberedHeading={level:number;number:string;title:string};
+function parseLegacyNumberedHeading(lines:string[],index:number):LegacyNumberedHeading|null{
+  const heading=String(lines[index]||"").match(/^\s{0,3}(#{2,4})\s+\*\*\s*$/);
+  const numbered=String(lines[index+1]||"").match(/^\s*([0-9۰-۹٠-٩]+)[.)]\s+(.+?)\*\*\s*$/);
+  if(!heading||!numbered)return null;
+  return {level:Math.min(4,Math.max(2,heading[1].length)),number:numbered[1],title:numbered[2].replace(/^\*\*/,"").trim()};
+}
+type LegacyNumberedHeadingItem=LegacyNumberedHeading&{body:string[]};
+function parseLegacyNumberedHeadingList(lines:string[],start:number):{items:LegacyNumberedHeadingItem[];endIndex:number}|null{
+  if(!parseLegacyNumberedHeading(lines,start))return null;
+  const items:LegacyNumberedHeadingItem[]=[];let cursor=start;
+  while(cursor<lines.length){
+    const heading=parseLegacyNumberedHeading(lines,cursor);
+    if(!heading)break;
+    let end=cursor+2;
+    while(end<lines.length&&!parseLegacyNumberedHeading(lines,end)){
+      if(/^\s{0,3}#{2,4}\s+/.test(lines[end]))break;
+      end++;
+    }
+    items.push({...heading,body:lines.slice(cursor+2,end)});
+    cursor=end;
+    if(!parseLegacyNumberedHeading(lines,cursor))break;
+  }
+  return items.length?{items,endIndex:cursor-1}:null;
+}
+function arabicIndicNumber(value:string){
+  return Number(value.replace(/[0-9۰-۹٠-٩]/g,(digit)=>{
+    if(/[0-9]/.test(digit))return digit;
+    const persian="۰۱۲۳۴۵۶۷۸۹".indexOf(digit);
+    if(persian>=0)return String(persian);
+    const arabic="٠١٢٣٤٥٦٧٨٩".indexOf(digit);
+    return arabic>=0?String(arabic):digit;
+  }));
+}
 export function extractToc(markdown:string):TocItem[]{
   const lines=markdown.replace(/\r\n/g,"\n").split("\n");
   const seen=new Map<string,number>(),items:TocItem[]=[];
@@ -93,8 +127,10 @@ export function extractToc(markdown:string):TocItem[]{
     items.push({id:count?base+"-"+(count+1):base,title:plainInline(title),level});
   };
   for(let index=0;index<lines.length;index++){
+    const legacy=parseLegacyNumberedHeading(lines,index);
+    if(legacy){add(legacy.level,"**"+legacy.title+"**");index++;continue;}
     const line=lines[index].trimStart();
-    const listHeading=line.match(/^(?:[-*+]|\d+[.)])\s+(#{1,4})\s+(.+)$/);
+    const listHeading=line.match(/^(?:[-*+]|[0-9۰-۹٠-٩]+[.)])\s+(#{1,4})\s+(.+)$/);
     if(listHeading){add(listHeading[1].length,listHeading[2].trim());continue;}
     const heading=line.match(/^(#{1,4})\s+(.+?)\s*#*$/);
     if(heading){add(heading[1].length,heading[2].trim());continue;}
@@ -131,7 +167,7 @@ function isTableDivider(line:string,columns:number){
 }
 type MarkdownListItem={depth:number;type:"ul"|"ol";content:string;headingLevel:number|null};
 function parseMarkdownListItem(line:string):MarkdownListItem|null{
-  const match=line.match(/^(\s*)([-*+]|\d+[.)])\s+(.+)$/);
+  const match=line.match(/^(\s*)([-*+]|[0-9۰-۹٠-٩]+[.)])\s+(.+)$/);
   if(!match)return null;
   const indent=match[1].replace(/\t/g,"  ").length;
   const rawContent=match[3],heading=rawContent.match(/^(#{1,4})\s+(.+)$/);
@@ -188,8 +224,32 @@ export function renderMarkdown(markdown:string):string{
     return "<h"+actual+' id="'+esc(id)+'">'+inline(title)+"</h"+actual+">";
   };
   const heading=(level:number,title:string)=>out.push(headingHtml(level,title));
+  const continuationIndent=(line:string)=>{
+    const current=listStack[listStack.length-1],match=String(line||"").match(/^(\s+)\S/);
+    return Boolean(current?.itemOpen&&match&&match[1].replace(/\t/g,"  ").length>=current.depth*2+1);
+  };
+  const renderLegacyNumberedHeadingList=(items:LegacyNumberedHeadingItem[])=>{
+    const start=arabicIndicNumber(items[0].number);
+    out.push("<ol"+(Number.isFinite(start)&&start>1?' start="'+start+'"':"")+">");
+    for(const item of items){
+      out.push("<li>"+headingHtml(item.level,"**"+item.title+"**"));
+      let block:string[]=[];
+      const flushBlock=()=>{
+        if(block.length){out.push("<p>"+inline(block.join(" ").trim())+"</p>");block=[];}
+      };
+      for(const bodyLine of item.body){
+        if(!bodyLine.trim()){flushBlock();continue;}
+        block.push(bodyLine.trim());
+      }
+      flushBlock();
+      out.push("</li>");
+    }
+    out.push("</ol>");
+  };
   for(let index=0;index<lines.length;index++){
     const line=lines[index];
+    const legacyList=code?null:parseLegacyNumberedHeadingList(lines,index);
+    if(legacyList){closeP();closeL();renderLegacyNumberedHeadingList(legacyList.items);index=legacyList.endIndex;continue;}
     if(code){
       if(/^\x60{3}\s*$/.test(line)){out.push('<pre><code'+(language?' class="language-'+esc(language)+'"':"")+'>'+esc(code.join("\n"))+"</code></pre>");code=null;language="";}
       else code.push(line);continue;
@@ -198,7 +258,8 @@ export function renderMarkdown(markdown:string):string{
     if(fence){closeP();closeL();code=[];language=fence[1]||"";continue;}
     if(!line.trim()){
       closeP();
-      if(!parseMarkdownListItem(lines[index+1]||""))closeL();
+      const nextLine=lines[index+1]||"";
+      if(!parseMarkdownListItem(nextLine)&&!continuationIndent(nextLine))closeL();
       continue;
     }
     const headers=tableCells(line);
@@ -233,6 +294,7 @@ export function renderMarkdown(markdown:string):string{
     const quote=line.match(/^\s*>\s?(.*)$/);if(quote){closeP();closeL();out.push("<blockquote><p>"+inline(quote[1])+"</p></blockquote>");continue;}
     const item=parseMarkdownListItem(line);
     if(item){closeP();appendListItem(item);continue;}
+    if(continuationIndent(line)){paragraph.push(line.trim());continue;}
     closeL();paragraph.push(line.trim());
   }
   closeP();closeL();if(code)out.push("<pre><code>"+esc(code.join("\n"))+"</code></pre>");
