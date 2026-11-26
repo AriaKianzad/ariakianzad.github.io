@@ -26,10 +26,6 @@ const MARK = "#fbf9f4";
 const toBufferSource = (data) =>
   data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
 
-const loadFont = (file) => opentype.parse(toBufferSource(readFileSync(join(ROOT, "assets-src", file))));
-
-const semiBold = loadFont("Estedad-SemiBold.ttf");
-
 /* ------------------------------------------------------------------ */
 /* Verify the shipping web font before using it anywhere.              */
 /* ------------------------------------------------------------------ */
@@ -55,34 +51,16 @@ if (missing.length > 0) {
 console.log("wght axis and Latin coverage verified; generating assets");
 
 /* ------------------------------------------------------------------ */
-/* Helpers                                                             */
+/* Shared vector favicon + raster platform variants                    */
 /* ------------------------------------------------------------------ */
 
-const textPath = (font, text, x, y, size, fill) =>
-  `<path d="${font.getPath(text, x, y, size).toPathData(2)}" fill="${fill}"/>`;
-
-const advance = (font, text, size) => font.getAdvanceWidth(text, size);
-
-/* ------------------------------------------------------------------ */
-/* Favicon + apple icon                                                */
-/* ------------------------------------------------------------------ */
-
-const iconSvg = (size) => {
-  const inset = size * 0.055;
-  const tileSize = size - inset * 2;
-  const markSize = size * 0.46;
-  const mark = "AK";
-  const markWidth = advance(semiBold, mark, markSize);
-  const markX = (size - markWidth) / 2;
-  const markY = size * 0.5 + markSize * 0.34;
-  const cornerRadius = size * 0.18;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-<rect width="${size}" height="${size}" fill="${PAPER}"/>
-<rect x="${inset}" y="${inset}" width="${tileSize}" height="${tileSize}" rx="${cornerRadius}" fill="${PLUM}"/>
-${textPath(semiBold, mark, markX, markY, markSize, MARK)}
-<circle cx="${size * 0.79}" cy="${size * 0.22}" r="${size * 0.045}" fill="${BRASS}"/>
+const iconSvg = (size) => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">
+<rect width="512" height="512" fill="${PAPER}"/>
+<rect x="28" y="28" width="456" height="456" rx="92" fill="${PLUM}"/>
+<path d="M150 365 220 148 292 365 M174 292H270 M322 148V365 M322 258 390 148 M322 258 394 365"
+  fill="none" stroke="${MARK}" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="408" cy="104" r="20" fill="${BRASS}"/>
 </svg>`;
-};
 
 const vectorIcon = iconSvg(512);
 writeFileSync(join(ROOT, "public", "favicon.svg"), vectorIcon, "utf8");
