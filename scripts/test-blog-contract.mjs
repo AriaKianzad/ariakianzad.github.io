@@ -478,7 +478,7 @@ assert.ok(blogLayout.includes("<style>{themeStyles}</style>") && !blogLayout.inc
   "dynamic blog theme values must use hashed style blocks instead of inline style attributes");
 assert.ok(articlePage.includes("Number.isFinite(configuredLineHeight)") &&
   articlePage.includes("Math.min(2.4, Math.max(1.6, configuredLineHeight))") &&
-  articlePage.includes("postAccent"),
+  articlePage.includes("--post-accent:var(--blog-accent)"),
   "article CSS variables must be bounded and colour values validated before rendering");
 assert.ok(rootLayout.includes("https://challenges.cloudflare.com") && staticHostHeaders.includes("https://challenges.cloudflare.com") && apacheHeaders.includes("https://challenges.cloudflare.com"), "the page and compatible static-host CSPs must allow Turnstile scripts and frames");
 assert.ok(configToml.includes("[functions.blog-contact]") && configToml.includes("verify_jwt = false"), "contact Edge Function must have public JWT configuration");
@@ -487,7 +487,7 @@ assert.ok(!adminHtml.includes("Google Docs") && !adminHtml.includes("Open Graph"
 assert.ok(blogCss.includes("body:has(.blog-theme)") && blogCss.includes("font-family:var(--font-estedad)"), "blog pages must keep their own shell and Estedad typography");
 assert.ok(blogCss.includes('grid-template-areas:"visual copy"') && blogCss.includes("grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr)") && blogCss.includes("aspect-ratio:1 / 1") && blogCss.includes("overflow:visible") && blogCss.includes("font-size:clamp(24px,7.2vw,33px)"), "mobile blog hero must keep the animation beside a compact title without cropping or overlap");
 assert.ok(blogCss.includes("max-width:410px") && blogCss.includes("height:clamp(260px,28vw,340px)") && blogCss.includes("max-width:220px"), "desktop and mobile blog hero visual sizes must stay within compact bounds");
-assert.ok(blogCss.includes(`grid-template-areas:"hero" "meta"`) && blogCss.includes("background:rgba(248,244,232,.82)") && blogCss.includes("filter:brightness(.83) saturate(.9)") && blogCss.includes(".blog-article-meta {\n    grid-area:meta;\n    direction:rtl;"), "mobile article cover must keep the title readable without obscuring the featured image");
+assert.ok(blogCss.includes(`grid-template-areas:"hero" "meta"`) && blogCss.includes("background:rgba(251,249,244,.82)") && blogCss.includes("filter:brightness(.83) saturate(.9)") && blogCss.includes(".blog-article-meta {\n    grid-area:meta;\n    direction:rtl;"), "mobile article cover must keep the title readable without obscuring the featured image");
 assert.ok(blogCss.includes("direction:rtl; text-align:right") && blogCss.includes(".blog-socials"), "blog footer must use RTL alignment and social icon links");
 assert.ok(articlePage.indexOf("<h1>{post.title}</h1>") < articlePage.indexOf("<figure className=\"blog-hero-image\">"), "featured image must follow the article title");
 assert.ok(publicHeader.includes("SocialIcon") && !publicHeader.includes("mailto:") && !publicHeader.includes("/#about"), "blog footer must remove email/about links and include social icons");
@@ -546,7 +546,7 @@ assert.ok(adminHtml.includes('id="post-category-options"') && adminHtml.includes
 assert.ok(adminApp.includes("function selectedEditorCategories()") && adminApp.includes("chosen.length>3") && adminApp.includes("post.primary_category=post.categories.includes"), "CMS must limit articles to three categories and persist an explicit primary category");
 assert.ok(adminEdge.includes("rawCategories.length > 3") && adminEdge.includes("categories.length > 3") && adminEdge.includes("!categories.includes(primaryCategory)") && adminEdge.includes(".overlaps(\"categories\", removedSlugs)"), "Edge Function must validate the three-category limit, primary selection and protect secondary-category dependencies");
 assert.ok(articlePage.includes("getPostCategorySlugs(post)") && articlePage.includes("getPrimaryCategorySlug(post)") && !articlePage.includes('blog-eyebrow"><span /> {categoryName'), "article page must use primary category and remove the category eyebrow above the title");
-assert.ok(articlePage.includes('className="blog-article-title-highlight"') && articlePage.includes("settings.ad_banners") && articlePage.includes("blog-toc-mobile") && articlePage.includes("banner.link_rel") && articlePage.includes("rel={relValue}") && blogCss.includes("background:rgba(248,244,232,.82)") && blogCss.includes("box-decoration-break:clone") && blogCss.includes("aspect-ratio:1 / 1") && blogCss.includes(".blog-ad-label") && blogCss.includes(".blog-toc-mobile[open]"), "article pages must render global square ad slots below the desktop/mobile TOC and keep the mobile TOC collapsible");
+assert.ok(articlePage.includes('className="blog-article-title-highlight"') && articlePage.includes("settings.ad_banners") && articlePage.includes("blog-toc-mobile") && articlePage.includes("banner.link_rel") && articlePage.includes("rel={relValue}") && blogCss.includes("background:rgba(251,249,244,.82)") && blogCss.includes("box-decoration-break:clone") && blogCss.includes("aspect-ratio:1 / 1") && blogCss.includes(".blog-ad-label") && blogCss.includes(".blog-toc-mobile[open]"), "article pages must render global square ad slots below the desktop/mobile TOC and keep the mobile TOC collapsible");
 
 
 assert.ok(dataSource.includes("export function formatBlogDate") && dataSource.includes("export function formatBlogDateParts") && dataSource.includes("formatToParts(date)") && listingClient.includes("formatBlogDate(post.published_at") && listingClient.includes("readingTime(post.content") && !listingClient.includes("function readingTime"), "article cards must share the centralized Persian date and reading-time implementation");
@@ -690,3 +690,41 @@ assert.ok(adminEdge.includes('action === "get_ad_click_counts"') && adminEdge.in
 assert.ok(adClickExpansionMigration.includes("banner-[1-9][0-9]*") && adClickExpansionMigration.includes("create or replace function public.record_blog_ad_click") && adClickExpansionMigration.includes("create or replace function public.reset_blog_ad_click_count") && adClickEdge.includes("/^banner-[1-9][0-9]*$/") && adClickTracker.includes("/^banner-[1-9][0-9]*$/") && adminEdge.includes("/^banner-[1-9][0-9]*$/"), "custom banner IDs must remain unique across repeated remove-and-add cycles without exceeding the eight simultaneously configured slots");
 assert.ok(adminApp.includes('api("get_ad_click_counts")') && adminApp.includes('api("reset_ad_click_count"') && adminApp.includes("data-ad-click-count") && adminApp.includes("data-reset-ad-clicks") && adminApp.includes("window.confirm(") && adminHtml.includes("به‌روزرسانی آمار"), "the ad workspace must display per-banner click totals and confirm independent resets");
 assert.ok(adminCss.includes(".ad-click-metrics") && adminCss.includes(".ad-click-stat") && adminCss.includes(".ad-reset-clicks") && adminCss.includes("@media(max-width:600px)"), "click metrics and reset controls must remain legible and operable on mobile");
+
+
+// The public blog now shares the homepage's exact paper / ink / aubergine / brass system.
+const [blogRobotsSource, blogOgSource] = await Promise.all([
+  read("src/app/robots.ts"),
+  read("scripts/generate-blog-og.mjs"),
+]);
+for (const token of [
+  "--blog-paper:#f3f0e8",
+  "--blog-surface:#fbf9f4",
+  "--blog-deep:#e7e0d6",
+  "--blog-ink:#28242b",
+  "--blog-ink-soft:#554f57",
+  "--blog-muted:#807780",
+  "--blog-accent:#7b3f58",
+  "--blog-signal:#d6a443",
+  "--blog-panel-dark:#302731",
+]) {
+  assert.ok(blogCss.includes(token), "blog CSS must include homepage palette token " + token);
+}
+assert.ok(!/(#1d3432|#405653|#f4f1e9|#e9e5da|#d8d5ca|#777f77|#7d9b7e|#b36f61)/i.test(blogCss),
+  "the previous teal, green and warm-brown blog palette must not remain in the public blog stylesheet");
+assert.ok(blogLayout.includes("--blog-heading-scale") && !blogLayout.includes("settings.accent_color"),
+  "the public blog palette must not be overridden by the CMS accent setting");
+assert.ok(articlePage.includes("--post-accent:var(--blog-accent)") && !articlePage.includes("const postAccent"),
+  "article-level accents must inherit the shared brand accent without modifying stored post content");
+assert.ok(blogOgSource.includes('const accent="#7b3f58"') &&
+  blogOgSource.includes('fill="#d6a443"') &&
+  blogOgSource.includes('fill="#f3f0e8"'),
+  "fallback blog social previews must use the same paper, aubergine and brass palette");
+assert.ok(blogRobotsSource.includes('site.url + "/sitemap.xml"') &&
+  blogRobotsSource.includes('site.url + "/blog/feed.xml"') &&
+  blogRobotsSource.includes("settings.enable_rss"),
+  "robots.txt must advertise both the XML sitemap and the enabled RSS discovery feed");
+assert.ok(sitemap.includes("archiveLastModified") && sitemap.includes("categoryLastModified"),
+  "the sitemap must expose verifiable last-modified timestamps for the archive and category pages");
+assert.ok(rssRoute.includes("<lastBuildDate>") && rssRoute.includes("lastBuildDate"),
+  "the static RSS feed must publish a lastBuildDate for the latest published update");
