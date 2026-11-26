@@ -427,7 +427,7 @@
     hero_image_url:"",hero_image_alt:"",hero_image_caption:"",og_image_url:"",
     seo_title:"",meta_description:"",focus_keyword:"",canonical_url:"",og_title:"",og_description:"",
     robots_index:true,robots_follow:true,featured:false,toc_enabled:true,drop_cap:false,
-    content_width:"reading",accent_color:"#a86f54",faqs:[],status:"draft",has_unpublished_changes:false,
+    content_width:"reading",accent_color:"#7b3f58",faqs:[],status:"draft",has_unpublished_changes:false,
   });
   function showEditor(post) {
     state.currentPost={...newPost(),...(post||{})};
@@ -1444,7 +1444,7 @@
     const check=(id,value)=>{if($("#"+id))$("#"+id).checked=value!==false;};
     set("setting-title",settings.title);set("setting-tagline",settings.tagline);set("setting-description",settings.description);
     set("setting-intro-title",settings.intro_title);set("setting-intro-body",settings.intro_body);set("setting-footer",settings.footer_note);
-    set("setting-accent",settings.accent_color||"#a86f54");set("setting-card-style",settings.card_style);set("setting-layout",settings.layout_style);
+    set("setting-accent",settings.accent_color||"#7b3f58");set("setting-card-style",settings.card_style);set("setting-layout",settings.layout_style);
     set("setting-width",settings.content_width);set("setting-language",settings.default_language);set("setting-per-page",settings.posts_per_page);
     set("setting-heading-scale",settings.heading_scale);set("setting-line-height",settings.body_line_height);
     set("setting-meta-title",settings.default_meta_title);set("setting-meta-description",settings.default_meta_description);set("setting-canonical-url",settings.canonical_url);
