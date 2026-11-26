@@ -142,6 +142,8 @@
 .blog-prose ul{list-style-type:disc}
 .blog-prose[dir="rtl"] ol{list-style-type:persian}
 .blog-prose[dir="ltr"] ol{list-style-type:decimal}
+.blog-prose[dir="rtl"] ol ol,.blog-prose[dir="ltr"] ol ol{list-style-type:lower-alpha}
+.blog-prose[dir="rtl"] ol ol ol,.blog-prose[dir="ltr"] ol ol ol{list-style-type:lower-roman}
 .blog-prose ul ul{list-style-type:circle}
 .blog-prose ul ul ul{list-style-type:square}
 .blog-prose ol ol{list-style-type:lower-alpha}
