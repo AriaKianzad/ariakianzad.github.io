@@ -283,11 +283,8 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
   width: 43px;
   height: 43px;
   place-items: center;
-  border: 1px solid transparent;
   color: var(--panel-muted);
   transition:
-    border-color var(--duration) ease,
-    background-color var(--duration) ease,
     color var(--duration) ease,
     transform var(--duration) var(--ease-out);
 }
@@ -298,9 +295,7 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
 }
 
 .social-link:hover {
-  transform: translateY(-2px);
-  border-color: var(--panel-line);
-  background: rgba(214, 164, 67, 0.14);
+  transform: translateY(-3px);
   color: var(--signal-soft);
 }
 
