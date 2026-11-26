@@ -573,6 +573,29 @@
   function renderPreviewMarkdown(markdown) {
     const output=[],paragraph=[],listStack=[];
     const close=()=>{if(paragraph.length)output.push("<p>"+previewInline(paragraph.join(" "))+"</p>");paragraph.length=0;};
+    const parseLegacyHeading=(index)=>{
+      const heading=String(lines[index]||"").match(/^\s{0,3}(#{2,4})\s+\*\*\s*$/);
+      const numbered=String(lines[index+1]||"").match(/^\s*([0-9۰-۹٠-٩]+)[.)]\s+(.+?)\*\*\s*$/);
+      if(!heading||!numbered)return null;
+      return {level:Math.min(4,Math.max(2,heading[1].length)),number:numbered[1],title:numbered[2].replace(/^\*\*/,"").trim()};
+    };
+    const legacyHeadingList=(start)=>{
+      if(!parseLegacyHeading(start))return null;
+      const items=[];let cursor=start;
+      while(cursor<lines.length){
+        const heading=parseLegacyHeading(cursor);
+        if(!heading)break;
+        let end=cursor+2;
+        while(end<lines.length&&!parseLegacyHeading(end)){
+          if(/^\s{0,3}#{2,4}\s+/.test(lines[end]))break;
+          end++;
+        }
+        items.push({...heading,body:lines.slice(cursor+2,end)});
+        cursor=end;
+        if(!parseLegacyHeading(cursor))break;
+      }
+      return items.length?{items,endIndex:cursor-1}:null;
+    };
     const closeList=(keepDepth=0)=>{
       while(listStack.length>keepDepth){
         const current=listStack.pop();
@@ -581,7 +604,7 @@
       }
     };
     const parseListItem=(line)=>{
-      const match=String(line||"").match(/^(\s*)([-*+]|\d+[.)])\s+(.+)$/);
+      const match=String(line||"").match(/^(\s*)([-*+]|[0-9۰-۹٠-٩]+[.)])\s+(.+)$/);
       if(!match)return null;
       const indent=match[1].replace(/\t/g,"  ").length;
       const heading=match[3].match(/^(#{1,4})\s+(.+)$/);
@@ -623,8 +646,25 @@
       current.itemOpen=true;
     };
     const lines=String(markdown||"").replace(/\r\n/g,"\n").split("\n");
+    const continuationIndent=(line)=>{
+      const current=listStack[listStack.length-1],match=String(line||"").match(/^(\s+)\S/);
+      return Boolean(current?.itemOpen&&match&&match[1].replace(/\t/g,"  ").length>=(current.depth+1)*2);
+    };
+    const renderLegacyHeadingList=(items)=>{
+      output.push("<ol>");
+      items.forEach((item)=>{
+        output.push("<li><h"+item.level+">"+previewInline("**"+item.title+"**")+"</h"+item.level+">");
+        let block=[];
+        const flushBlock=()=>{if(block.length){output.push("<p>"+previewInline(block.join(" ").trim())+"</p>");block=[];}};
+        item.body.forEach((bodyLine)=>{if(!bodyLine.trim())flushBlock();else block.push(bodyLine.trim());});
+        flushBlock();output.push("</li>");
+      });
+      output.push("</ol>");
+    };
     for(let index=0;index<lines.length;index++){
       const line=lines[index];
+      const legacy=legacyHeadingList(index);
+      if(legacy){close();closeList();renderLegacyHeadingList(legacy.items);index=legacy.endIndex;continue;}
       if(/^\x60{3}/.test(line)){
         close();closeList();
         const code=[];
@@ -645,7 +685,8 @@
       }
       if(!line.trim()){
         close();
-        if(!parseListItem(lines[index+1]||""))closeList();
+        const nextLine=lines[index+1]||"";
+        if(!parseListItem(nextLine)&&!continuationIndent(nextLine))closeList();
         continue;
       }
       const image=renderPreviewFigure(line);
@@ -660,6 +701,7 @@
       if(quote){close();closeList();output.push("<blockquote><p>"+previewInline(quote[1])+"</p></blockquote>");continue;}
       const item=parseListItem(line);
       if(item){close();appendListItem(item);continue;}
+      if(continuationIndent(line)){paragraph.push(line.trim());continue;}
       if(/^\s*(---+|___+|\*\*\*+)\s*$/.test(line)){close();closeList();output.push("<hr>");continue;}
       closeList();paragraph.push(line.trim());
     }
@@ -722,8 +764,10 @@
       const explicitValue=Number(item.getAttribute("value"));
       if(ordered&&Number.isInteger(explicitValue)&&explicitValue>0)number=explicitValue;
       const marker=ordered?(number++)+".":"-";
-      const content=parts.join("\n").trim();
-      return indent+marker+" "+content+(nested.length?"\n"+nested.join("\n"):"");
+      const contentParts=parts.map((part)=>part.trim()).filter(Boolean);
+      const first=contentParts.shift()||"";
+      const continuation=contentParts.map((part)=>part.split("\n").map((line)=>indent+"  "+line).join("\n")).join("\n\n");
+      return indent+marker+" "+first+(continuation?"\n"+continuation:"")+(nested.length?"\n"+nested.join("\n"):"");
     }).join("\n\n");
   }
   function blockToMarkdown(node) {
