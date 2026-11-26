@@ -212,7 +212,11 @@ function init(root: HTMLElement): (() => void) | undefined {
   const visibility = () => document.visibilityState === "hidden" ? stop() : start();
   const intersection = typeof IntersectionObserver === "function" ? new IntersectionObserver(entries => {
     visible = Boolean(entries[0]?.isIntersecting);
-    visible ? start() : stop();
+    if (visible) {
+      start();
+    } else {
+      stop();
+    }
   }, { rootMargin: "40px 0px" }) : null;
   intersection?.observe(root);
 
