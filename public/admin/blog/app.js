@@ -1027,8 +1027,10 @@
   function updatePreview() {
     const title=$("#post-title").value||"عنوان مقاله";
     const content=editorToMarkdown($("#post-content"));
-    $("#google-preview").dir=$("#post-language").value==="fa"?"rtl":"ltr";
-    $("#post-content").dir=$("#post-language").value==="fa"?"rtl":"ltr";
+    const direction=$("#post-language").value==="fa"?"rtl":"ltr";
+    $("#google-preview").dir=direction;
+    $("#post-content").dir=direction;
+    $("#preview-content").dir=direction;
     $("#preview-content").innerHTML="<h1>"+escapeHtml(title)+"</h1>"+renderPreviewMarkdown(content);
   }
   function updateSeo() {
