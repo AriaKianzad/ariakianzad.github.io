@@ -690,3 +690,41 @@ assert.ok(adminEdge.includes('action === "get_ad_click_counts"') && adminEdge.in
 assert.ok(adClickExpansionMigration.includes("banner-[1-9][0-9]*") && adClickExpansionMigration.includes("create or replace function public.record_blog_ad_click") && adClickExpansionMigration.includes("create or replace function public.reset_blog_ad_click_count") && adClickEdge.includes("/^banner-[1-9][0-9]*$/") && adClickTracker.includes("/^banner-[1-9][0-9]*$/") && adminEdge.includes("/^banner-[1-9][0-9]*$/"), "custom banner IDs must remain unique across repeated remove-and-add cycles without exceeding the eight simultaneously configured slots");
 assert.ok(adminApp.includes('api("get_ad_click_counts")') && adminApp.includes('api("reset_ad_click_count"') && adminApp.includes("data-ad-click-count") && adminApp.includes("data-reset-ad-clicks") && adminApp.includes("window.confirm(") && adminHtml.includes("به‌روزرسانی آمار"), "the ad workspace must display per-banner click totals and confirm independent resets");
 assert.ok(adminCss.includes(".ad-click-metrics") && adminCss.includes(".ad-click-stat") && adminCss.includes(".ad-reset-clicks") && adminCss.includes("@media(max-width:600px)"), "click metrics and reset controls must remain legible and operable on mobile");
+
+
+// The public blog now shares the homepage's exact paper / ink / aubergine / brass system.
+const [blogRobotsSource, blogOgSource] = await Promise.all([
+  read("src/app/robots.ts"),
+  read("scripts/generate-blog-og.mjs"),
+]);
+for (const token of [
+  "--blog-paper:#f3f0e8",
+  "--blog-surface:#fbf9f4",
+  "--blog-deep:#e7e0d6",
+  "--blog-ink:#28242b",
+  "--blog-ink-soft:#554f57",
+  "--blog-muted:#807780",
+  "--blog-accent:#7b3f58",
+  "--blog-signal:#d6a443",
+  "--blog-panel-dark:#302731",
+]) {
+  assert.ok(blogCss.includes(token), "blog CSS must include homepage palette token " + token);
+}
+assert.ok(!/(#1d3432|#405653|#f4f1e9|#e9e5da|#d8d5ca|#777f77|#7d9b7e|#b36f61)/i.test(blogCss),
+  "the previous teal, green and warm-brown blog palette must not remain in the public blog stylesheet");
+assert.ok(blogLayout.includes("--blog-heading-scale") && !blogLayout.includes("settings.accent_color"),
+  "the public blog palette must not be overridden by the CMS accent setting");
+assert.ok(articlePage.includes("--post-accent:var(--blog-accent)") && !articlePage.includes("const postAccent"),
+  "article-level accents must inherit the shared brand accent without modifying stored post content");
+assert.ok(blogOgSource.includes('const accent="#7b3f58"') &&
+  blogOgSource.includes('fill="#d6a443"') &&
+  blogOgSource.includes('fill="#f3f0e8"'),
+  "fallback blog social previews must use the same paper, aubergine and brass palette");
+assert.ok(blogRobotsSource.includes('site.url + "/sitemap.xml"') &&
+  blogRobotsSource.includes('site.url + "/blog/feed.xml"') &&
+  blogRobotsSource.includes("settings.enable_rss"),
+  "robots.txt must advertise both the XML sitemap and the enabled RSS discovery feed");
+assert.ok(sitemap.includes("archiveLastModified") && sitemap.includes("categoryLastModified"),
+  "the sitemap must expose verifiable last-modified timestamps for the archive and category pages");
+assert.ok(rssRoute.includes("<lastBuildDate>") && rssRoute.includes("lastBuildDate"),
+  "the static RSS feed must publish a lastBuildDate for the latest published update");
