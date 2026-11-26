@@ -353,6 +353,17 @@ assert.ok(chrome.includes("@media (max-width: 780px)") &&
   chrome.includes("flex-wrap: wrap;"),
   "footer layout must retain its stacked and wrapping responsive treatment");
 
+const socialHoverRule = chrome.split(".social-link:hover {")[1]?.split("}")[0] ?? "";
+assert.ok(socialHoverRule.includes("transform: translateY(-3px);") &&
+  socialHoverRule.includes("color: var(--signal-soft);") &&
+  !socialHoverRule.includes("border") &&
+  !socialHoverRule.includes("background"),
+  "social icon hover must only lift the icon and change its color, without a frame or background");
+assert.ok(!chrome.includes("border: 1px solid transparent;") &&
+  !chrome.includes("background: rgba(214, 164, 67, 0.14);"),
+  "social icon links must not reserve or reveal a square hover frame");
+
+
 // The primary CTA stays in place on hover; only its arrow moves subtly.
 const primaryButtonCss = globals.split(".button {")[1]?.split("/* Scroll-triggered reveal")[0] ?? "";
 assert.ok(primaryButtonCss.includes("transform: none;") &&
