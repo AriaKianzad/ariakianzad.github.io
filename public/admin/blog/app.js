@@ -979,6 +979,73 @@
     markEditorDirty();
     updatePreview();updateSeo();refreshLinkManager();
   }
+  function moveEditorCaretToStart(block) {
+    const range=document.createRange();
+    range.selectNodeContents(block);
+    range.collapse(true);
+    const selection=window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  }
+  function editorBlockIsEmpty(block) {
+    return !String(block.textContent||"").replace(/\u200b/gi,"").trim()
+      && !block.querySelector("img,figure,table,hr,video,iframe");
+  }
+  function numberedListItemHasHeading(item) {
+    return Array.from(item.children).some((child)=>/^H[2-4]$/.test(child.tagName));
+  }
+  function numberedListItemHasContentOutsideBlock(item,block) {
+    return Array.from(item.childNodes).some((node)=>{
+      if(node===block)return false;
+      if(node.nodeType===Node.TEXT_NODE)return Boolean(node.nodeValue?.trim());
+      if(node.nodeType!==Node.ELEMENT_NODE)return false;
+      return Boolean(node.textContent?.trim()||node.matches("ul,ol,img,figure,table,blockquote,hr"));
+    });
+  }
+  function handleNumberedHeadingEnter(event) {
+    if(event.key!=="Enter"||event.shiftKey||event.ctrlKey||event.metaKey||event.altKey)return;
+    const editor=$("#post-content"),selection=window.getSelection();
+    if(!selection?.rangeCount||!editor.contains(selection.anchorNode))return;
+    let anchor=selection.anchorNode;
+    if(anchor.nodeType===Node.TEXT_NODE)anchor=anchor.parentElement;
+    if(!(anchor instanceof Element))return;
+    const item=anchor.closest("li"),list=item?.parentElement;
+    if(!item||!editor.contains(item)||list?.tagName!=="OL"||!numberedListItemHasHeading(item))return;
+    const block=anchor.closest("h2,h3,h4,p,div");
+    if(!block||!item.contains(block)||block.closest("blockquote,pre,table,figure"))return;
+    if(!block.contains(selection.anchorNode)||!block.contains(selection.focusNode))return;
+
+    const range=selection.getRangeAt(0);
+    const isContinuationBlock=block.tagName==="P"||block.tagName==="DIV";
+    if(isContinuationBlock&&editorBlockIsEmpty(block)){
+      if(!numberedListItemHasContentOutsideBlock(item,block))return;
+      event.preventDefault();
+      const nextItem=document.createElement("li");
+      const nextParagraph=document.createElement("p");
+      nextParagraph.appendChild(document.createElement("br"));
+      nextItem.appendChild(nextParagraph);
+      item.after(nextItem);
+      moveEditorCaretToStart(nextParagraph);
+    }else{
+      event.preventDefault();
+      if(!range.collapsed)range.deleteContents();
+      range.collapse(true);
+      const trailing=range.cloneRange();
+      trailing.setEnd(block,block.childNodes.length);
+      const trailingContent=trailing.extractContents();
+      const paragraph=document.createElement("p");
+      if(trailingContent.hasChildNodes())paragraph.appendChild(trailingContent);
+      else paragraph.appendChild(document.createElement("br"));
+      if(!block.textContent?.trim()&&!block.querySelector("img,figure"))block.appendChild(document.createElement("br"));
+      block.after(paragraph);
+      moveEditorCaretToStart(paragraph);
+    }
+    markEditorDirty();
+    updatePreview();
+    updateSeo();
+    refreshLinkManager();
+    updateFormatToolbar();
+  }
   function currentEditorBlock() {
     const editor=$("#post-content"),selection=window.getSelection();
     if(!selection||!selection.rangeCount||!editor.contains(selection.anchorNode))return null;
@@ -1820,6 +1887,7 @@
     $("#editor-form").addEventListener("input",markEditorDirty);
     $("#editor-form").addEventListener("change",markEditorDirty);
     $("#post-content").addEventListener("input",()=>{updatePreview();updateSeo();refreshLinkManager();updateFormatToolbar();});
+    $("#post-content").addEventListener("keydown",handleNumberedHeadingEnter);
     ["keyup","mouseup","focus"].forEach((eventName)=>$("#post-content").addEventListener(eventName,updateFormatToolbar));
     document.addEventListener("selectionchange",updateFormatToolbar);
     $("#post-content").addEventListener("paste",handleEditorPaste);

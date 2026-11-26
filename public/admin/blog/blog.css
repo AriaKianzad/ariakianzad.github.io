@@ -620,15 +620,9 @@ body, body * { font-family: Estedad, Tahoma, sans-serif !important; }
 .editor-dirty-indicator[hidden] {display:none}
 .editor-dirty-indicator:not([hidden])::before {content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
 
-/* Match the public article layout for bold and heading-led list items. */
+/* Keep semantic headings and their descriptions on separate lines within one list item. */
 .editor-richtext li>strong:first-child,
-.editor-richtext li>h2,
-.editor-richtext li>h3,
-.editor-richtext li>h4,
-.markdown-preview li>strong:first-child,
-.markdown-preview li>h2,
-.markdown-preview li>h3,
-.markdown-preview li>h4 {
+.markdown-preview li>strong:first-child {
   margin-inline-end:.35em;
 }
 .editor-richtext li>h2,
@@ -637,20 +631,21 @@ body, body * { font-family: Estedad, Tahoma, sans-serif !important; }
 .markdown-preview li>h2,
 .markdown-preview li>h3,
 .markdown-preview li>h4 {
-  display:inline;
-  margin-block:0;
-  font-size:inherit;
-  line-height:inherit;
-  letter-spacing:normal;
+  display:block;
+  margin:.2em 0 .35em;
 }
-.editor-richtext li>strong + p,
 .editor-richtext li>h2 + p,
 .editor-richtext li>h3 + p,
 .editor-richtext li>h4 + p,
-.markdown-preview li>strong + p,
 .markdown-preview li>h2 + p,
 .markdown-preview li>h3 + p,
 .markdown-preview li>h4 + p {
+  display:block;
+  margin:0 0 .8em;
+  line-height:inherit;
+}
+.editor-richtext li>strong + p,
+.markdown-preview li>strong + p {
   display:inline;
   margin:0;
   line-height:inherit;
