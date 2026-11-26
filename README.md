@@ -44,7 +44,7 @@ The book download links point to the single PDF asset attached to GitHub Release
 
 ### Brand assets and social previews
 
-- `public/favicon.svg` is the single source of truth for the browser mark. The same favicon is used by the personal site, blog, book microsite, analytics dashboard and blog CMS.
+- `public/favicon.svg` is the single source of truth for the browser mark. Its outer canvas is transparent, with the AK monogram and brass accent centered inside the aubergine square. The same vector and derived raster variants are used by the personal site, blog, book microsite, analytics dashboard and blog CMS.
 - `npm run assets` validates the locally bundled Estedad variable font, writes the vector favicon and derives the Next.js 512px icon and 180px Apple touch icon. The generated PNG copies are ignored by Git and created automatically before `dev` and production builds.
 - The homepage Open Graph image is generated at `/og/og.jpg`; the book has its own 1200×630 preview at `/Mian-e-Ma/assets/mian-e-ma-social-preview.jpg`; article previews are generated per published slug at build time.
 - Uploaded article OG/hero images remain content managed in Supabase Storage. The generator accepts only HTTPS media URLs from the configured public blog-media bucket, blocks redirects, and enforces an 8 MB limit. Those author-managed images are not deleted or replaced by the global brand refresh.
