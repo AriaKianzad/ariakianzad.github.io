@@ -434,7 +434,7 @@ assert.ok(listingPage.includes('settings.tagline || "یادداشت‌هایی �
 assert.ok(listingPage.includes('import HeroVisual from "@/components/hero-visual"') && listingPage.includes("<HeroVisual />"), "blog archive must reuse the homepage signal animation");
 assert.ok(!listingPage.includes("یادداشت‌ها و مقاله‌ها") && !listingPage.includes("ایده‌ها، تحقیق و نگاه شخصی") && !listingPage.includes("آرشیو نوشته‌ها"), "blog archive must remove the three redundant microcopy labels");
 assert.ok(listingPage.includes("blog-intro-copy") && listingPage.includes("blog-intro-visual"), "blog intro must separate its title from the animation area");
-assert.ok(heroVisualComponent.includes("data-hero-visual") && signalScene.includes('getPropertyValue("--blog-accent")'), "shared hero scene must support the blog colour palette");
+assert.ok(heroVisualComponent.includes("data-hero-visual") && signalScene.includes('new THREE.Color("#7b3f58")') && !signalScene.includes('getPropertyValue("--blog-accent")'), "shared hero scene must use the homepage palette consistently on the blog");
 assert.ok(heroBootstrap.includes("MutationObserver") && heroBootstrap.includes("syncRoots"), "hero scene must initialize after client-side route changes");
 assert.ok(publicHeader.includes("<span>آریا کیانزاد</span>"), "blog header brand must show the author's name");
 assert.ok(blogCss.includes(".blog-theme .blog-header-blog-link {") && blogCss.includes('grid-template-areas:"visual copy"') && blogCss.includes("position:absolute;"), "blog header and hero must retain their desktop/mobile layout contracts");
