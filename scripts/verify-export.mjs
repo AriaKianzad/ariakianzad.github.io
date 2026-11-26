@@ -160,6 +160,9 @@ for (const file of files) {
   if (!html.includes('href="/favicon.svg"')) {
     problems.push(rel + ": the shared site favicon is missing");
   }
+  if (!existsSync(join(outDir, "favicon.svg"))) {
+    problems.push("favicon.svg: shared vector icon is missing from the export");
+  }
   if (/<[a-z][^>]*\sstyle\s*=/i.test(html)) {
     problems.push(rel + ": inline style attributes are blocked by the strict CSP; use a hashed style block");
   }
