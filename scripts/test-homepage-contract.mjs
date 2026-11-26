@@ -214,11 +214,12 @@ assert.ok(!/(#080d0b|#0b110e|#070b09|#c6e887|#879d63|#bdcba9)/i.test(homepageSvg
 
 
 
-assert.ok(faviconSource.includes('fill="#f3f0e8"') &&
-  faviconSource.includes('fill="#7b3f58"') &&
+assert.ok(!faviconSource.includes('fill="#f3f0e8"') &&
+  faviconSource.includes('<rect x="16" y="16" width="480" height="480" rx="132" fill="#7b3f58"/>') &&
+  faviconSource.includes('stroke="#fbf9f4"') &&
   faviconSource.includes('fill="#d6a443"') &&
-  faviconSource.includes('<path d="M150 365 220 148'),
-  "the shared vector favicon must use the current brand mark and palette");
+  faviconSource.includes('<path d="M108 356 181 155'),
+  "the shared favicon must have a transparent outer canvas, a full-bleed plum tile and a centered cream AK monogram with a brass dot");
 assert.ok(assetGenerator.includes('writeFileSync(join(ROOT, "public", "favicon.svg")') &&
   !assetGenerator.includes('public", "og", "og.png'),
   "favicon source must be generated centrally and the legacy PNG social card must not return");
