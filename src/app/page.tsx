@@ -123,7 +123,7 @@ export default function HomePage() {
             ))}
           </ol>
           <p className="expertise__footnote">
-            The deliverable isn't the starting point. Getting the question right is.
+            The deliverable isn&apos;t the starting point. Getting the question right is.
             <FlowArrow />
           </p>
         </div>
