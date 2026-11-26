@@ -22,17 +22,13 @@ export default function BlogLayout({ children }: { children: ReactNode }) {
   const settings = getBlogSettings();
   const language = settings.default_language === "en" ? "en" : "fa";
   const direction = language === "fa" ? "rtl" : "ltr";
-  const accentCandidate = settings.accent_color || "#7b3f58";
-  const accent = /^#[0-9a-fA-F]{6}$/.test(accentCandidate) && accentCandidate.toLowerCase() !== "#a86f54"
-    ? accentCandidate
-    : "#7b3f58";
   const boundedNumber = (value: number, min: number, max: number, fallback: number) => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
   };
   const headingScale = boundedNumber(settings.heading_scale, 0.85, 1.2, 1);
   const lineHeight = boundedNumber(settings.body_line_height, 1.6, 2.4, 1.95);
-  const themeStyles = `.blog-theme{--blog-accent:${accent};--blog-heading-scale:${headingScale};--blog-line-height:${lineHeight}}`;
+  const themeStyles = `.blog-theme{--blog-heading-scale:${headingScale};--blog-line-height:${lineHeight}}`;
   return (
     <div
       lang={language}
