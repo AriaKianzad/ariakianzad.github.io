@@ -20,6 +20,10 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
   if (!item) return { title: "دسته‌بندی پیدا نشد | آریا کیانزاد", robots: { index: false, follow: false } };
 
   const settings = getBlogSettings();
+  const savedBlogOgImage = settings.default_og_image || "";
+  const blogOgImage = /(?:^|\/)og\/og\.png(?:[?#]|$)/i.test(savedBlogOgImage)
+    ? site.url + "/og/og.jpg"
+    : savedBlogOgImage || site.url + "/og/og.jpg";
   const seo = settings.category_seo?.[category];
   const postCount = getPostsByCategory(category).length;
   const fallbackDescription = "یادداشت‌ها و مقاله‌های من دربارهٔ " + item.name + ".";
@@ -38,11 +42,11 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
     robots: { index, follow },
     openGraph: settings.open_graph_enabled ? {
       type: "website", url: canonical, siteName: "Aria Kianzad", title: ogTitle, description: ogDescription,
-      images: [{ url: settings.default_og_image || site.url + "/og/og.jpg", width: 1200, height: 630 }],
+      images: [{ url: blogOgImage, width: 1200, height: 630 }],
     } : undefined,
     twitter: {
       card: settings.twitter_card_type, title: ogTitle, description: ogDescription,
-      images: [settings.default_og_image || site.url + "/og/og.jpg"],
+      images: [blogOgImage],
     },
   };
 }
