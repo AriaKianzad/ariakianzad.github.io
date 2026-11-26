@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import type { CSSProperties } from "react";
 import Link from "next/link";
 import { site } from "@/lib/site";
 import { getBlogPost, getBlogPosts, getBlogSettings, readingTime, formatBlogDate, formatBlogDateParts, getBlogCategoryName, getPostCategorySlugs, getPrimaryCategorySlug } from "@/lib/blog-data";
@@ -127,17 +126,26 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
     });
   };
   const publishedDateParts = formatBlogDateParts(post.published_at, post.language);
-  const articleLineHeight = post.language === "fa" ? (settings.body_line_height || 1.95) : 1.7;
+  const configuredLineHeight = Number(settings.body_line_height);
+  const articleLineHeight = post.language === "fa"
+    ? Number.isFinite(configuredLineHeight)
+      ? Math.min(2.4, Math.max(1.6, configuredLineHeight))
+      : 1.95
+    : 1.7;
   const articleParagraphGap = post.language === "fa" ? articleLineHeight * 1.05 : 1.45;
-  const articleStyle = {
-    "--post-accent": post.accent_color || settings.accent_color,
-    "--blog-line-height": articleLineHeight,
-    "--blog-paragraph-gap": articleParagraphGap + "em",
-  } as CSSProperties;
+  const rawAccent = typeof post.accent_color === "string" && post.accent_color
+    ? post.accent_color
+    : settings.accent_color;
+  const postAccent = typeof rawAccent === "string" && /^#[0-9a-fA-F]{6}$/.test(rawAccent) &&
+    rawAccent.toLowerCase() !== "#a86f54"
+    ? rawAccent
+    : "#7b3f58";
+  const articleStyles = `.blog-article-main{--post-accent:${postAccent};--blog-line-height:${articleLineHeight};--blog-paragraph-gap:${articleParagraphGap}em}`;
   return (
     <>
       <BlogHeader />
-      <main id="main" tabIndex={-1} className="blog-article-main" lang={language} dir={direction} style={articleStyle}>
+      <style>{articleStyles}</style>
+      <main id="main" tabIndex={-1} className="blog-article-main" lang={language} dir={direction}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
         {faqSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema).replace(/</g, "\\u003c") }} /> : null}
         {settings.breadcrumbs_enabled ? (
@@ -159,7 +167,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
                 {post.hero_image_caption ? <figcaption>{post.hero_image_caption}</figcaption> : null}
               </figure>
             ) : <div className="blog-article-visual-empty" aria-hidden="true" />}
-            <div className="blog-article-meta" dir={direction} style={{ direction }}>
+            <div className="blog-article-meta" dir={direction}>
               <span>آریا کیانزاد</span>
               <time dateTime={post.published_at || ""} dir={language === "fa" ? "rtl" : "ltr"} lang={language === "fa" ? "fa-IR" : "en"} className="blog-published-date">
                 {publishedDateParts ? (
@@ -273,6 +281,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
         ) : null}
       </main>
       <BlogFooter />
+      <script src="/blog-copy.js" defer />
     </>
   );
 }

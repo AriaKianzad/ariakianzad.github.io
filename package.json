@@ -21,8 +21,8 @@
     "test:analytics": "node scripts/test-google-analytics-contract.mjs",
     "test:security-scan": "node scripts/test-security-scan.mjs",
     "test:build-safety": "node scripts/test-build-safety.mjs",
-    "prebuild": "node scripts/fetch-blog-content.mjs && node scripts/generate-blog-og.mjs",
-    "predev": "node scripts/fetch-blog-content.mjs && node scripts/generate-blog-og.mjs",
+    "prebuild": "npm run assets && node scripts/fetch-blog-content.mjs && node scripts/generate-blog-og.mjs",
+    "predev": "npm run assets && node scripts/fetch-blog-content.mjs && node scripts/generate-blog-og.mjs",
     "test:blog": "node scripts/test-blog-contract.mjs"
   },
   "dependencies": {

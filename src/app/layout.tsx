@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { estedad, geistMono } from "./fonts";
-import { rootMetadata } from "@/lib/metadata";
+import { rootMetadata, socialImage } from "@/lib/metadata";
 import { site, socials, knowsAbout, rexo } from "@/lib/site";
 import { SiteChrome } from "@/components/SiteChrome";
 import "./globals.css";
@@ -49,7 +49,7 @@ const structuredData = {
       email: "mailto:" + site.email,
       jobTitle: site.title,
       description: site.description,
-      image: site.url + "/og/og.png",
+      image: site.url + socialImage.url,
       sameAs: socials.map((entry) => entry.href),
       knowsAbout: [...knowsAbout],
       worksFor: { "@id": rexoId },
@@ -80,10 +80,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <script src="/boot.js" />
         <script src="/ui.js" defer />
-        <script src="/blog-contact.js" defer />
-        <script src="/blog-copy.js" defer />
-        <script src="/blog-listing.js" defer />
-        <script type="module" src="/_hero/hero-visual.js" />
         <SiteChrome>{children}</SiteChrome>
         <section
           id="analytics-consent"

@@ -11,7 +11,9 @@ const expected = ["instagram", "linkedin", "telegram", "unsplash", "x", "youtube
 const files = readdirSync(dir).filter((file) => file.endsWith(".svg"));
 const available = new Set(files.map((file) => file.replace(/\.svg$/, "")));
 const missing = expected.filter((name) => !available.has(name));
+const unexpected = [...available].filter((name) => !expected.includes(name));
 if (missing.length) throw new Error("Missing icon source(s): " + missing.join(", "));
+if (unexpected.length) throw new Error("Unused social icon source(s): " + unexpected.join(", "));
 
 const out = {};
 for (const name of expected) {

@@ -13,11 +13,15 @@ if (!response.ok) throw new Error("Could not fetch published blog payload (HTTP 
 const payload = await response.json();
 if (!payload || !Array.isArray(payload.posts) || typeof payload.settings !== "object") throw new Error("Published blog payload has an unexpected structure.");
 const s = payload.settings || {};
+const rawAccent = typeof s.accent_color === "string" && /^#[0-9a-f]{6}$/i.test(s.accent_color)
+  ? s.accent_color
+  : "#7b3f58";
+const accentColor = rawAccent.toLowerCase() === "#a86f54" ? "#7b3f58" : rawAccent;
 const result = {
   settings: {
     title:s.title||"نوشته‌ها", tagline:s.tagline||"یادداشت‌هایی درباره برند، معنا و ارتباط",
     description:s.description||"", canonical_url:s.canonical_url||"", background_theme:s.background_theme||"paper",
-    accent_color:s.accent_color||"#a86f54", card_style:s.card_style||"editorial",
+    accent_color:accentColor, card_style:s.card_style||"editorial",
     layout_style:s.layout_style||"editorial", content_width:s.content_width||"reading",
     posts_per_page:Math.min(24,Math.max(3,Number(s.posts_per_page||9))),
     show_search:s.show_search!==false, show_categories:s.show_categories!==false,
@@ -27,7 +31,8 @@ const result = {
     default_language:s.default_language||"fa", heading_scale:Number(s.heading_scale||1),
     body_line_height:Number(s.body_line_height||1.95), intro_title:s.intro_title||"",
     intro_body:s.intro_body||"", default_meta_title:s.default_meta_title||"وبلاگ آریا کیانزاد",
-    default_meta_description:s.default_meta_description||"", default_og_image:s.default_og_image||"",
+    default_meta_description:s.default_meta_description||"",
+    default_og_image:typeof s.default_og_image==="string" && !/(?:^|\/)og\/og\.png(?:[?#]|$)/i.test(s.default_og_image) ? s.default_og_image : "",
     footer_note:s.footer_note||"", categories:Array.isArray(s.categories)?s.categories:[],
     category_seo:s.category_seo||{},
     default_og_title:s.default_og_title||"", default_og_description:s.default_og_description||"",

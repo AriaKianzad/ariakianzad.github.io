@@ -4,9 +4,9 @@ export function initSignalScene(host: HTMLElement) {
   const blogTheme = host.closest<HTMLElement>(".blog-theme");
   const isBlog = Boolean(blogTheme);
   const blogAccent = blogTheme
-    ? window.getComputedStyle(blogTheme).getPropertyValue("--blog-accent").trim() || "#a86f54"
+    ? window.getComputedStyle(blogTheme).getPropertyValue("--blog-accent").trim() || "#7b3f58"
     : null;
-  const accentColor = new THREE.Color(blogAccent || (isBlog ? "#a86f54" : "#7b3f58"));
+  const accentColor = new THREE.Color(blogAccent || (isBlog ? "#7b3f58" : "#7b3f58"));
   const accentSoftColor = accentColor.clone().lerp(new THREE.Color(isBlog ? "#e7d8c9" : "#ecd08d"), 0.42);
   const secondaryColor = new THREE.Color(isBlog ? "#718b86" : "#d6a443");
   const canvas = host.querySelector<HTMLCanvasElement>("[data-signal-canvas]");

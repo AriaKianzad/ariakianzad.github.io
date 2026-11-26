@@ -157,13 +157,20 @@ for (const file of files) {
   const html = readFileSync(file, "utf8");
   const rel = file.slice(outDir.length + 1);
 
+  if (!html.includes('href="/favicon.svg"')) {
+    problems.push(rel + ": the shared site favicon is missing");
+  }
+  if (/<[a-z][^>]*\sstyle\s*=/i.test(html)) {
+    problems.push(rel + ": inline style attributes are blocked by the strict CSP; use a hashed style block");
+  }
+
   if (rel === "Mian-e-Ma/index.html") {
     const policies = [...html.matchAll(/<meta\b(?=[^>]*\bhttp-equiv=["']Content-Security-Policy["'])[^>]*>/gi)];
     if (policies.length !== 1) {
       problems.push("Mian-e-Ma/index.html: expected exactly one Content-Security-Policy meta tag");
     }
     if (!html.includes('href="/icon.png"') || !html.includes('href="/apple-icon.png"')) {
-      problems.push("Mian-e-Ma/index.html: personal-site favicon and Apple touch icon must be used");
+      problems.push("Mian-e-Ma/index.html: shared raster favicon variants must be used");
     }
   }
 
@@ -235,10 +242,10 @@ const required = [
   "404.html",
   "boot.js",
   "ui.js",
+  "favicon.svg",
   "icon.png",
   "apple-icon.png",
   join("_hero", "hero-visual.js"),
-  join("og", "og.png"),
   join("og", "og.jpg"),
   join("blog", "index.html"),
   join("blog", "feed.xml"),

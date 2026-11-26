@@ -22,8 +22,9 @@ function trustedMediaUrl(value){
 }
 await mkdir(outputDir,{recursive:true});
 for(const name of await readdir(outputDir)){if(/\.(jpe?g|png)$/i.test(name))await rm(resolve(outputDir,name),{force:true});}
-const candidate=data.settings?.accent_color||"#a86f54";
-const accent=/^#[0-9a-fA-F]{6}$/.test(candidate)?candidate:"#a86f54";
+const storedAccent=data.settings?.accent_color;
+const candidate=typeof storedAccent==="string"&&/^#[0-9a-fA-F]{6}$/.test(storedAccent)?storedAccent:"#7b3f58";
+const accent=candidate.toLowerCase()==="#a86f54"?"#7b3f58":candidate;
 function xml(value){return String(value).replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c]));}
 for(const post of data.posts||[]){
   const target=resolve(outputDir,post.slug+".jpg");
@@ -44,13 +45,13 @@ for(const post of data.posts||[]){
   const title=xml(String(post.title||"Aria Kianzad").slice(0,70));
   const svg=[
     '<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">',
-    '<rect width="1200" height="630" fill="#f4f1e9"/>',
-    '<circle cx="80" cy="90" r="230" fill="#e8e4da"/><circle cx="1140" cy="590" r="290" fill="#e9e5da"/>',
+    '<rect width="1200" height="630" fill="#f3f0e8"/>',
+    '<circle cx="80" cy="90" r="230" fill="#e7e0d6"/><circle cx="1140" cy="590" r="290" fill="#fbf9f4"/>',
     '<rect x="104" y="110" width="7" height="100" fill="'+accent+'"/>',
-    '<text x="1080" y="150" text-anchor="end" font-family="Arial,sans-serif" font-size="22" letter-spacing="5" fill="#777f77">ARIA KIANZAD / WRITING</text>',
-    '<text x="1080" y="330" text-anchor="end" direction="rtl" font-family="Estedad,sans-serif" font-size="62" font-weight="700" fill="#1d3432">'+title+'</text>',
-    '<path d="M120 510 H1080" stroke="#d8d5ca" stroke-width="2"/>',
-    '<text x="1080" y="568" text-anchor="end" font-family="Arial,sans-serif" font-size="18" letter-spacing="4" fill="#777f77">BRAND STRATEGY · PERSONAL BRANDING</text></svg>'
+    '<text x="1080" y="150" text-anchor="end" font-family="Arial,sans-serif" font-size="22" letter-spacing="5" fill="#655b64">ARIA KIANZAD / WRITING</text>',
+    '<text x="1080" y="330" text-anchor="end" direction="rtl" font-family="Estedad,sans-serif" font-size="62" font-weight="700" fill="#28242b">'+title+'</text>',
+    '<path d="M120 510 H1080" stroke="#7b3f58" stroke-opacity=".24" stroke-width="2"/>',
+    '<text x="1080" y="568" text-anchor="end" font-family="Arial,sans-serif" font-size="18" letter-spacing="4" fill="#807780">BRAND STRATEGY · PERSONAL BRANDING</text></svg>'
   ].join("");
   await sharp(Buffer.from(svg)).jpeg({quality:88,mozjpeg:true}).toFile(target);
 }

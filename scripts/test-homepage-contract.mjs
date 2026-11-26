@@ -70,6 +70,15 @@ const [
   bookStyles,
   socialGenerator,
   notFoundContent,
+  blogLayout,
+  blogArticle,
+  blogContact,
+  blogPage,
+  faviconSource,
+  adminDashboard,
+  adminBlogDashboard,
+  assetGenerator,
+  exportVerifier,
 ] = await Promise.all([
   read("src/app/page.tsx"),
   read("src/content/home.ts"),
@@ -93,6 +102,15 @@ const [
   read("public/Mian-e-Ma/styles.css"),
   read("scripts/generate-social-previews.mjs"),
   read("src/app/NotFoundContent.tsx"),
+  read("src/app/blog/layout.tsx"),
+  read("src/app/blog/[slug]/page.tsx"),
+  read("src/app/blog/contact/page.tsx"),
+  read("src/app/blog/page.tsx"),
+  read("public/favicon.svg"),
+  read("public/admin/index.html"),
+  read("public/admin/blog/index.html"),
+  read("scripts/generate-assets.mjs"),
+  read("scripts/verify-export.mjs"),
 ]);
 
 // The homepage remains a semantic, server-rendered page with one primary heading.
@@ -118,7 +136,7 @@ assert.ok(metadata.includes('card: "summary_large_image"'),
   "homepage must expose a large Twitter/X card");
 const bookOgImage = bookPage.match(/<meta property="og:image" content="([^"]+)"/)?.[1] ?? "";
 const bookTwitterImage = bookPage.match(/<meta name="twitter:image" content="([^"]+)"/)?.[1] ?? "";
-assert.equal(bookOgImage, "https://ariakianzad.github.io/Mian-e-Ma/assets/mian-e-ma-social-preview.jpg?v=20261122-5",
+assert.equal(bookOgImage, "https://ariakianzad.github.io/Mian-e-Ma/assets/mian-e-ma-social-preview.jpg?v=20261126-1",
   "book page must use its own dedicated social image");
 assert.equal(bookTwitterImage, bookOgImage, "Open Graph and Twitter/X must use the same book preview image");
 assert.ok(bookPage.includes('<meta property="og:image:width" content="1200">') &&
@@ -194,7 +212,60 @@ assert.ok(homepageSvgSource.includes('stop-color="#f3f0e8"') &&
 assert.ok(!/(#080d0b|#0b110e|#070b09|#c6e887|#879d63|#bdcba9)/i.test(homepageSvgSource),
   "homepage social preview must not retain the previous dark-lime palette");
 
+
+
+assert.ok(faviconSource.includes('fill="#f3f0e8"') &&
+  faviconSource.includes('fill="#7b3f58"') &&
+  faviconSource.includes('fill="#d6a443"') &&
+  faviconSource.includes('<path d="M150 365 220 148'),
+  "the shared vector favicon must use the current brand mark and palette");
+assert.ok(assetGenerator.includes('writeFileSync(join(ROOT, "public", "favicon.svg")') &&
+  !assetGenerator.includes('public", "og", "og.png'),
+  "favicon source must be generated centrally and the legacy PNG social card must not return");
+assert.ok(metadata.includes('url: "/og/og.jpg"') &&
+  !layout.includes('/og/og.png'),
+  "JSON-LD and social metadata must reference the same current JPEG preview");
+for (const html of [adminDashboard, adminBlogDashboard, bookPage]) {
+  assert.ok(html.includes('href="/favicon.svg"') &&
+    html.includes('href="/icon.png"') &&
+    html.includes('href="/apple-icon.png"'),
+    "the shared favicon set must be used in every standalone page");
+}
+assert.ok(metadata.includes('url: "/favicon.svg"') &&
+  blogLayout.includes('url: "/favicon.svg"'),
+  "Next.js metadata must use the shared vector favicon on the homepage and blog");
+assert.ok(!blogLayout.includes("blog-favicon.svg") &&
+  !layout.includes("blog-favicon.svg"),
+  "the old blog-only favicon must no longer be referenced");
+
+assert.ok(blogLayout.includes("<style>{themeStyles}</style>") &&
+  blogArticle.includes("<style>{articleStyles}</style>") &&
+  !blogLayout.includes("style={") &&
+  !blogArticle.includes("style={"),
+  "dynamic blog styles must be emitted as CSP-hashed style blocks, not style attributes");
+assert.ok(exportVerifier.includes("inline style attributes are blocked by the strict CSP") &&
+  exportVerifier.includes('href="/favicon.svg"'),
+  "export verification must reject inline styles and missing shared favicons");
+
+assert.ok(!layout.includes('/blog-contact.js') &&
+  !layout.includes('/blog-copy.js') &&
+  !layout.includes('/blog-listing.js') &&
+  !layout.includes('/_hero/hero-visual.js'),
+  "route-specific scripts must not be loaded from the global layout");
+assert.ok(blogLayout.includes('/blog-listing.js') &&
+  blogArticle.includes('/blog-copy.js') &&
+  blogContact.includes('/blog-contact.js') &&
+  blogPage.includes('/_hero/hero-visual.js') &&
+  page.includes('/_hero/hero-visual.js'),
+  "blog, contact and hero scripts must be loaded on the routes that use them");
+
+
 const bookSvgSource = socialGenerator.split("const bookSvg = `")[1]?.split("</svg>`;")[0] ?? "";
+const bookPreviewColors = ["#f3f0e8", "#7b3f58", "#d6a443", "#4a2637"];
+assert.ok(bookPreviewColors.every((color) => bookSvgSource.includes(color)),
+  "book social preview must use the current paper, plum, brass and ink palette");
+assert.ok(!/(#36534f|#244241|#78958f)/i.test(bookSvgSource),
+  "book social preview must not retain the previous teal palette");
 assert.equal(
   [...bookSvgSource.matchAll(/<text class="fa"[^>]*text-anchor="end" direction="rtl"/g)].length,
   6,
@@ -238,7 +309,10 @@ assert.ok(sections.includes("overflow-wrap: anywhere"), "long contact details mu
 assert.ok(!hero.includes('"use client"'), "hero markup must remain a server component");
 assert.ok(hero.includes('data-hero-visual'), "static hero root must expose its enhancement hook");
 assert.ok(hero.includes('data-signal-canvas'), "static hero must expose the canvas for the renderer");
-assert.ok(layout.includes('type="module" src="/_hero/hero-visual.js"'), "standalone hero module must be included in the layout");
+assert.ok(page.includes('type="module" src="/_hero/hero-visual.js"') &&
+  blogPage.includes('type="module" src="/_hero/hero-visual.js"') &&
+  !layout.includes('type="module" src="/_hero/hero-visual.js"'),
+  "standalone hero module must be loaded only on the homepage and blog archive routes that render it");
 assert.ok(heroEntry.includes('import("./signal-scene")'), "Three.js scene must remain a dynamic ESM chunk");
 assert.ok(heroEntry.includes("IntersectionObserver"), "scene must load only near the hero viewport");
 assert.ok(heroEntry.includes("prefers-reduced-motion: reduce"), "entrypoint must respect reduced-motion preference");

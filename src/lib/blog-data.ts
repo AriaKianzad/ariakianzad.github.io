@@ -38,7 +38,7 @@ export type BlogSettings={
 const defaults:BlogSettings={
   title:"نوشته‌ها",tagline:"یادداشت‌هایی درباره برند، معنا و ارتباط",
   description:"اینجا درباره استراتژی برند، جایگاه‌یابی، ارتباطات و پرسونال برندینگ می‌نویسم؛ با تمرکز بر معنا، رفتار آدم‌ها و تصمیم‌هایی که پشت برندها قرار دارن.",canonical_url:"https://ariakianzad.github.io/blog/",
-  background_theme:"paper",accent_color:"#a86f54",card_style:"editorial",layout_style:"editorial",
+  background_theme:"paper",accent_color:"#7b3f58",card_style:"editorial",layout_style:"editorial",
   content_width:"reading",posts_per_page:9,show_search:true,show_categories:true,show_featured:true,
   show_reading_time:true,show_toc:true,show_related_posts:true,show_share:true,enable_rss:true,
   default_language:"fa",heading_scale:1,body_line_height:1.95,intro_title:"از استراتژی برند تا ارتباطات روزمره",
@@ -61,8 +61,13 @@ function load():Payload{
   if(cache)return cache;
   try{
     const parsed=JSON.parse(readFileSync(join(process.cwd(),".cache","blog-content.json"),"utf8"));
+    const storedAccent = typeof parsed.settings?.accent_color === "string" && /^#[0-9a-f]{6}$/i.test(parsed.settings.accent_color)
+      ? parsed.settings.accent_color
+      : defaults.accent_color;
+    const accentColor = storedAccent.toLowerCase() === "#a86f54" ? "#7b3f58" : storedAccent;
     cache={
       settings:{...defaults,...(parsed.settings||{}),
+        accent_color:accentColor,
         categories:Array.isArray(parsed.settings?.categories)?parsed.settings.categories:defaults.categories,
         category_seo:parsed.settings?.category_seo||{},
         ad_banners:Array.isArray(parsed.settings?.ad_banners)?parsed.settings.ad_banners:defaults.ad_banners,

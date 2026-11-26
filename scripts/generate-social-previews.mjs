@@ -93,8 +93,8 @@ const coverData = `data:image/png;base64,${coverForCard.toString("base64")}`;
 const bookSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 1200 630">
   <defs>
     <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#fafaf5"/>
-      <stop offset="1" stop-color="#f2f3ec"/>
+      <stop offset="0" stop-color="#fbf9f4"/>
+      <stop offset="1" stop-color="#f3f0e8"/>
     </linearGradient>
     <filter id="coverShadow" x="-20%" y="-15%" width="145%" height="145%">
       <feGaussianBlur in="SourceAlpha" stdDeviation="11" result="blur"/>
@@ -107,23 +107,23 @@ const bookSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height
     </style>
   </defs>
   <rect width="1200" height="630" fill="url(#paper)"/>
-  <rect x="40" y="40" width="1120" height="550" rx="4" fill="none" stroke="#36534f" stroke-opacity=".18"/>
-  <path d="M82 120H1118" stroke="#36534f" stroke-opacity=".20"/>
-  <path d="M82 520H1118" stroke="#36534f" stroke-opacity=".12"/>
-  <g opacity=".10" fill="none" stroke="#78958f" stroke-width="1.2">
+  <rect x="40" y="40" width="1120" height="550" rx="4" fill="none" stroke="#7b3f58" stroke-opacity=".18"/>
+  <path d="M82 120H1118" stroke="#7b3f58" stroke-opacity=".20"/>
+  <path d="M82 520H1118" stroke="#7b3f58" stroke-opacity=".12"/>
+  <g opacity=".10" fill="none" stroke="#d6a443" stroke-width="1.2">
     <path d="M630 220C655 158 735 124 807 145C890 168 930 244 922 316C913 394 842 477 777 513"/>
     <path d="M652 246C686 196 731 183 775 192C834 205 879 257 879 320C879 375 838 432 793 469"/>
     <path d="M694 167C722 219 726 257 709 297C691 339 701 390 746 447"/>
   </g>
   <!-- RTL text is end-anchored at x=770, keeping the copy column clear of the cover beginning at x=850. -->
-  <text class="fa" x="770" y="154" text-anchor="end" direction="rtl" font-size="22" fill="#556b69">نسخۀ دیجیتال، برای مطالعۀ رایگان</text>
-  <text class="fa" x="770" y="218" text-anchor="end" direction="rtl" font-size="64" font-weight="700" fill="#244241">میان ما</text>
-  <rect x="678" y="258" width="92" height="4" rx="2" fill="#78958f"/>
-  <text class="fa" x="770" y="314" text-anchor="end" direction="rtl" font-size="34" font-weight="700" fill="#244241">شناخت رابطه، صمیمیت و</text>
-  <text class="fa" x="770" y="358" text-anchor="end" direction="rtl" font-size="34" font-weight="700" fill="#244241">مسئولیت‌پذیری عاطفی</text>
-  <text class="fa" x="770" y="412" text-anchor="end" direction="rtl" font-size="26" fill="#556b69">برای فهم بهترِ گفت‌وگو، تعهد و آنچه</text>
-  <text class="fa" x="770" y="449" text-anchor="end" direction="rtl" font-size="26" fill="#556b69">میان دو نفر شکل می‌گیرد.</text>
-  <text x="82" y="557" font-family="monospace" font-size="12" letter-spacing=".6" fill="#647b76">MIAN-E-MA  /  BETWEEN US</text>
+  <text class="fa" x="770" y="154" text-anchor="end" direction="rtl" font-size="22" fill="#655b64">نسخۀ دیجیتال، برای مطالعۀ رایگان</text>
+  <text class="fa" x="770" y="218" text-anchor="end" direction="rtl" font-size="64" font-weight="700" fill="#4a2637">میان ما</text>
+  <rect x="678" y="258" width="92" height="4" rx="2" fill="#d6a443"/>
+  <text class="fa" x="770" y="314" text-anchor="end" direction="rtl" font-size="34" font-weight="700" fill="#4a2637">شناخت رابطه، صمیمیت و</text>
+  <text class="fa" x="770" y="358" text-anchor="end" direction="rtl" font-size="34" font-weight="700" fill="#4a2637">مسئولیت‌پذیری عاطفی</text>
+  <text class="fa" x="770" y="412" text-anchor="end" direction="rtl" font-size="26" fill="#655b64">برای فهم بهترِ گفت‌وگو، تعهد و آنچه</text>
+  <text class="fa" x="770" y="449" text-anchor="end" direction="rtl" font-size="26" fill="#655b64">میان دو نفر شکل می‌گیرد.</text>
+  <text x="82" y="557" font-family="monospace" font-size="12" letter-spacing=".6" fill="#807780">MIAN-E-MA  /  BETWEEN US</text>
   <image href="${coverData}" x="850" y="77" width="285" height="361" preserveAspectRatio="xMidYMid meet" filter="url(#coverShadow)"/>
 </svg>`;
 

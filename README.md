@@ -26,7 +26,7 @@ All public pages and both admin interfaces are static frontends. The personal ho
 | Site analytics | Google Analytics 4 and Google Search Console, queried server-side |
 | Consent | First-party consent panel; the Google tag loads only after consent |
 
-The Next.js application is exported as static files. The deployed website does not run a Next.js server, has no Next.js API routes and performs no request-time server rendering. The build removes the unused Next.js hydration payload, then esbuild produces a same-origin /_hero/hero-visual.js entrypoint and a hashed Three.js scene chunk. The postbuild step also generates independent 1200×630 JPEG social previews for the homepage and book page. The book preview uses the book cover and line-art; Open Graph and Twitter/X metadata point to that dedicated image. The entrypoint is loaded from the same origin and imports the scene only when the hero approaches the viewport. No 3D code, shader, texture or font is fetched from a third-party CDN. If WebGL is unavailable or the visitor prefers reduced motion, a CSS-built static visual remains. The homepage copy and structured data stay in static HTML, while public/boot.js and public/ui.js provide progressive enhancement. The dashboard is not a hidden or private deployment: its HTML and JavaScript are public. Access to its data is enforced by Supabase, not by the dashboard URL or its noindex metadata.
+The Next.js application is exported as static files. The deployed website does not run a Next.js server, has no Next.js API routes and performs no request-time server rendering. The build removes the unused Next.js hydration payload, then esbuild produces a same-origin /_hero/hero-visual.js entrypoint and a hashed Three.js scene chunk. The postbuild step generates independent 1200×630 JPEG social previews for the homepage and book page. The homepage card follows the paper/aubergine/brass identity; the book card retains the book cover and line-art while using the refreshed palette. Article preview fallbacks use the current plum-and-brass editorial colors. Open Graph, Twitter/X and the homepage Person image reference the intended generated assets. The entrypoint is loaded from the same origin and imports the scene only when the hero approaches the viewport. No 3D code, shader, texture or font is fetched from a third-party CDN. If WebGL is unavailable or the visitor prefers reduced motion, a CSS-built static visual remains. The homepage copy and structured data stay in static HTML, while public/boot.js and public/ui.js provide progressive enhancement. The dashboard is not a hidden or private deployment: its HTML and JavaScript are public. Access to its data is enforced by Supabase, not by the dashboard URL or its noindex metadata.
 
 ### Main routes
 
@@ -38,9 +38,16 @@ The Next.js application is exported as static files. The deployed website does n
 - /admin/blog/: authenticated editorial CMS. Its static frontend is public code; privileged actions are checked by Supabase.
 - /robots.txt, /sitemap.xml, /llms.txt: public discovery and metadata files.
 
-The redesigned homepage is organized around research and insight, positioning and identity, content and communication, a four-step method, Rexo, writing, about and contact. It uses a restrained dark editorial system, Estedad typography, a locally bundled 3D signal sculpture in the hero, scroll-triggered section entrances and subtle interactive diagrams. Motion respects `prefers-reduced-motion`; the hero has a CSS fallback and is not required to read or navigate the page.
+The homepage is organized around research and insight, positioning and identity, content and communication, a four-step method, Rexo, writing, about and contact. Its current visual system pairs warm paper (`#F3F0E8`), aubergine (`#7B3F58`) and brass (`#D6A443`) with Estedad typography. The hero and two floating in-section scenes use locally bundled, code-split Three.js. Scroll-triggered entrances and subtle interaction respect `prefers-reduced-motion`; CSS fallbacks keep the visuals non-essential to reading and navigation.
 
 The book download links point to the single PDF asset attached to GitHub Release mian-e-ma-v1. The duplicate PDF formerly copied into the GitHub Pages tree has been removed so there is no second public download path that bypasses the Release download counter. The Release download_count is the source of truth for total file downloads. It counts download requests reported by GitHub, not unique readers or confirmed reading sessions.
+
+### Brand assets and social previews
+
+- `public/favicon.svg` is the single source of truth for the browser mark. The same favicon is used by the personal site, blog, book microsite, analytics dashboard and blog CMS.
+- `npm run assets` validates the locally bundled Estedad variable font, writes the vector favicon and derives the Next.js 512px icon and 180px Apple touch icon. The generated PNG copies are ignored by Git and created automatically before `dev` and production builds.
+- The homepage Open Graph image is generated at `/og/og.jpg`; the book has its own 1200×630 preview at `/Mian-e-Ma/assets/mian-e-ma-social-preview.jpg`; article previews are generated per published slug at build time.
+- Uploaded article OG/hero images remain content managed in Supabase Storage. The generator accepts only HTTPS media URLs from the configured public blog-media bucket, blocks redirects, and enforces an 8 MB limit. Those author-managed images are not deleted or replaced by the global brand refresh.
 
 ## Analytics and dashboard
 
@@ -111,7 +118,7 @@ Useful checks and production commands:
     npm run build
     npm run preview
 
-The production build runs the static-export cleanup, compiles the standalone lazy hero module and its hashed scene chunk, then verifies the export. The preview server serves the generated out/ directory on loopback and applies the repository's static-host headers for local testing.
+The production build validates and generates the shared favicon before Next.js runs, fetches the public blog snapshot, generates article social previews, performs the static export, strips unused Next.js runtime output, compiles the route-scoped lazy hero modules and hashed Three.js chunks, then verifies the export. The preview server serves the generated out/ directory on loopback and applies the repository's static-host headers for local testing.
 
 Additional asset and packaging tasks:
 
@@ -119,7 +126,7 @@ Additional asset and packaging tasks:
     npm run social-icons
     npm run hosting
 
-- assets regenerates the social card and app icons from local source assets.
+- assets validates the shipped Estedad variable font and regenerates the shared SVG favicon plus the Next.js and Apple raster icon variants.
 - social-icons rebuilds the checked-in icon path map from assets-src/icons/.
 - hosting creates and verifies an optional cPanel ZIP bundle. It requires Windows PowerShell and .NET's ZIP writer. The builder uses a unique temporary workspace, rejects symlinks and unsafe archive paths, and refuses to overwrite an existing hosting-bundle.zip.
 
@@ -131,7 +138,7 @@ GitHub Actions builds and deploys the main branch to GitHub Pages. Pull requests
 - scans the working tree for high-confidence credential patterns, including legacy Supabase service-role JWTs; the regression test exercises a synthetic JWT and confirms that token values are never printed;
 - runs synthetic-token and hosting-build safety regressions, plus the analytics-consent, homepage, Supabase and Google Analytics/Search Console contract tests;
 - runs npm audit, TypeScript and ESLint checks;
-- verifies generated social icon paths and build scripts;
+- verifies the six social icon paths, checks the shared favicon source and runs the security, CSP, type, lint and static-export contracts;
 - creates and validates the static export;
 - smoke-tests the local preview, including a path-traversal request;
 - deploys only from the non-PR workflow path.
@@ -150,7 +157,7 @@ NEXT_PUBLIC_SITE_URL is a public URL, not a secret.
 
 ### Security headers and hosting limits
 
-The repository keeps response-header policies in public/_headers (for compatible static hosts such as Cloudflare Pages) and public/.htaccess (for Apache/cPanel). GitHub Pages does **not** process either file, so the static HTML pages also carry a Content Security Policy meta tag. The build adds hashes for any required inline style blocks and verifies the policy.
+The repository keeps response-header policies in public/_headers (for compatible static hosts such as Cloudflare Pages) and public/.htaccess (for Apache/cPanel). GitHub Pages does **not** process either file, so the static HTML pages also carry a Content Security Policy meta tag. The build adds SHA-256 hashes for required inline `<style>` blocks, rejects HTML `style=` attributes, and verifies the resulting policy. Dynamic blog theme variables are emitted through those hashed style blocks; `unsafe-inline` is not enabled.
 
 A CSP meta tag cannot set every HTTP response header. Directives such as frame-ancestors, HSTS, X-Frame-Options, Referrer-Policy and Permissions-Policy require response-header support. They are therefore available on compatible hosts through the header configuration, but should not be assumed to be active on GitHub Pages.
 
@@ -193,7 +200,8 @@ The three protected functions use the exact Supabase JS version declared in thei
       analytics-consent.js Consent-aware Google Analytics loader
       _headers             Security headers for compatible static hosts
       .htaccess             Apache/cPanel security and hosting configuration
-      og/                  Generated social-sharing image
+      favicon.svg          Shared vector favicon source
+      og/                  Generated homepage and article social-sharing images
       boot.js, ui.js        Progressive enhancement and interface behavior
 
     supabase/

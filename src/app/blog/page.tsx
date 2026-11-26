@@ -7,6 +7,10 @@ import HeroVisual from "@/components/hero-visual";
 
 const blogSettings = getBlogSettings();
 const blogCanonicalUrl = blogSettings.canonical_url || site.url + "/blog/";
+const savedBlogOgImage = blogSettings.default_og_image || "";
+const blogOgImage = /(?:^|\/)og\/og\.png(?:[?#]|$)/i.test(savedBlogOgImage)
+  ? site.url + "/og/og.jpg"
+  : savedBlogOgImage || site.url + "/og/og.jpg";
 
 export const metadata: Metadata = {
   title: blogSettings.default_meta_title || "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد",
@@ -20,9 +24,9 @@ export const metadata: Metadata = {
     type: "website", url: blogCanonicalUrl, siteName: "Aria Kianzad",
     title: blogSettings.default_og_title || "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد",
     description: blogSettings.default_og_description || blogSettings.description,
-    images: [{ url: blogSettings.default_og_image || site.url + "/og/og.jpg", width: 1200, height: 630 }],
+    images: [{ url: blogOgImage, width: 1200, height: 630 }],
   } : undefined,
-  twitter: { card: blogSettings.twitter_card_type, title: blogSettings.default_og_title || blogSettings.default_meta_title, description: blogSettings.default_og_description || blogSettings.default_meta_description, images: [blogSettings.default_og_image || site.url + "/og/og.jpg"] },
+  twitter: { card: blogSettings.twitter_card_type, title: blogSettings.default_og_title || blogSettings.default_meta_title, description: blogSettings.default_og_description || blogSettings.default_meta_description, images: [blogOgImage] },
 };
 
 export default function BlogIndexPage() {
@@ -69,6 +73,7 @@ export default function BlogIndexPage() {
         </section>
       </main>
       <BlogFooter />
+      <script type="module" src="/_hero/hero-visual.js" />
     </>
   );
 }

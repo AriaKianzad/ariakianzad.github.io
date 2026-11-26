@@ -47,3 +47,7 @@ supabase/.branches/
 /public/og/blog/*.jpg
 /public/og/blog/*.jpeg
 /public/og/blog/*.png
+
+# Generated Next.js raster icons; canonical vector source is public/favicon.svg.
+/src/app/icon.png
+/src/app/apple-icon.png

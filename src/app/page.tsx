@@ -298,6 +298,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      <script type="module" src="/_hero/hero-visual.js" />
       <script type="module" src="/_hero/home-scenes.js" />
     </>
   );
