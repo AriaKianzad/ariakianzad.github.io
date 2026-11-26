@@ -63,6 +63,7 @@ export default function BlogContactPage() {
         </section>
       </main>
       <BlogFooter />
+      <script src="/blog-contact.js" defer />
     </>
   );
 }
