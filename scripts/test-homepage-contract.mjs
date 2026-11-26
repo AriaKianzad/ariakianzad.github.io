@@ -330,9 +330,9 @@ assert.ok(page.includes("<HeroVisual />") && blogPage.includes("<HeroVisual />")
 assert.ok(heroScene.includes('new THREE.IcosahedronGeometry(0.92, 5)') &&
   heroScene.includes('new THREE.Color("#563347")') &&
   heroScene.includes('new THREE.Color("#d6a443")') &&
-  !/isBlog|blogTheme|blogAccent|0x718b86|#28483e|new THREE\\.SphereGeometry\\(0\\.92/.test(heroScene),
+  !/isBlog|blogTheme|blogAccent|0x718b86|#28483e|new THREE\.SphereGeometry\(0\.92/.test(heroScene),
   "homepage and blog must share the same 3D geometry, materials, palette and motion configuration");
-assert.ok(!/\\.blog-theme \\.blog-intro-visual \\.hero-visual__(?:fallback|label|coordinate)|\\.blog-theme \\.blog-intro-visual \\.signal-canvas/.test(blogStyles),
+assert.ok(!/\.blog-theme \.blog-intro-visual \.hero-visual__(?:fallback|label|coordinate)|\.blog-theme \.blog-intro-visual \.signal-canvas/.test(blogStyles),
   "blog layout must not restyle or suppress the shared hero artwork, labels or canvas");
 assert.ok(homeScenes.includes('size: compact ? 0.024 : 0.022') &&
   homeScenes.includes('size: compact ? 0.014 : 0.013'),
