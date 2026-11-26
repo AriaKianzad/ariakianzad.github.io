@@ -110,7 +110,13 @@ function parseLegacyNumberedHeadingList(lines:string[],start:number):{items:Lega
   return items.length?{items,endIndex:cursor-1}:null;
 }
 function arabicIndicNumber(value:string){
-  return Number(value.replace(/[۰-۹٠-٩]/g,(digit)=>String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)>=0?"۰۱۲۳۴۵۶۷۸۹".indexOf(digit):"٠١٢٣٤٥٦٧٨٩".indexOf(digit))));
+  return Number(value.replace(/[0-9۰-۹٠-٩]/g,(digit)=>{
+    if(/[0-9]/.test(digit))return digit;
+    const persian="۰۱۲۳۴۵۶۷۸۹".indexOf(digit);
+    if(persian>=0)return String(persian);
+    const arabic="٠١٢٣٤٥٦٧٨٩".indexOf(digit);
+    return arabic>=0?String(arabic):digit;
+  }));
 }
 export function extractToc(markdown:string):TocItem[]{
   const lines=markdown.replace(/\r\n/g,"\n").split("\n");
@@ -220,7 +226,7 @@ export function renderMarkdown(markdown:string):string{
   const heading=(level:number,title:string)=>out.push(headingHtml(level,title));
   const continuationIndent=(line:string)=>{
     const current=listStack[listStack.length-1],match=String(line||"").match(/^(\s+)\S/);
-    return Boolean(current?.itemOpen&&match&&match[1].replace(/\t/g,"  ").length>=(current.depth+1)*2);
+    return Boolean(current?.itemOpen&&match&&match[1].replace(/\t/g,"  ").length>=current.depth*2+1);
   };
   const renderLegacyNumberedHeadingList=(items:LegacyNumberedHeadingItem[])=>{
     const start=arabicIndicNumber(items[0].number);
