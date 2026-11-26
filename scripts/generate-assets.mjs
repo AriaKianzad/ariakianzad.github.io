@@ -6,8 +6,8 @@
  *   src/app/icon.png        512x512 browser/Next.js icon
  *   src/app/apple-icon.png  180x180 Apple touch icon
  *
- * Text is converted to Estedad glyph paths with opentype.js, so raster
- * rendering never depends on system fonts being installed.
+ * The compact AK monogram is drawn as vector geometry, so the icon
+ * remains crisp at small sizes and does not depend on local system fonts.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
