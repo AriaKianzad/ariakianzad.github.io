@@ -173,6 +173,7 @@ jobs:
           test -s out/Mian-e-Ma/assets/mian-e-ma-social-preview.jpg
           test -s out/Mian-e-Ma/assets/rexo-agency-logo-white.png
           test -s out/Mian-e-Ma/assets/OFL.txt
+          grep -Fq 'href="/favicon.svg"' out/Mian-e-Ma/index.html
           grep -Fq 'href="/icon.png"' out/Mian-e-Ma/index.html
           grep -Fq 'href="/apple-icon.png"' out/Mian-e-Ma/index.html
           test "$(grep -c 'http-equiv="Content-Security-Policy"' out/Mian-e-Ma/index.html)" -eq 1
