@@ -249,12 +249,33 @@ const pointSizes = pointMaterialBlocks.flatMap((block) =>
 );
 assert.ok(pointSizes.length >= 3 && pointSizes.every((size) => size > 0 && size <= 0.05),
   "homepage point materials must not create oversized square overlays");
-assert.ok(globals.includes("--accent-vivid: #7d83ff;") &&
-  sections.includes("var(--accent-vivid)") &&
-  homeScenes.includes('new THREE.Color("#7d83ff")'),
-  "electric-indigo accent must be present across homepage content and motion");
-assert.ok(!/(#ff8a70|#ffb29e|255,\s*138,\s*112)/i.test(globals + sections + homeScenes),
-  "rejected warm-coral accent must be fully removed from the homepage");
+assert.ok(globals.includes("--accent: #7b3f58;") &&
+  globals.includes("--signal: #d6a443;") &&
+  globals.includes("color-scheme: light") &&
+  sections.includes("var(--accent)") &&
+  homeScenes.includes('new THREE.Color("#7b3f58")'),
+  "the new plum-and-brass editorial palette must be used across the homepage");
+assert.ok(!/(#c6e887|#7d83ff|#ff8a70|198,\s*232,\s*135|125,\s*131,\s*255)/i.test(globals + sections + homeScenes),
+  "previous homepage palettes must be fully removed");
+assert.ok(page.includes('className="home-scene-slot home-scene-slot--orbit"') &&
+  page.includes('className="home-scene-slot home-scene-slot--flow"'),
+  "each internal animation must live in its own inter-section slot");
+const manifestoEnd = page.indexOf("</section>", page.indexOf('className="manifesto section"'));
+const orbitSlot = page.indexOf('className="home-scene-slot home-scene-slot--orbit"');
+const expertiseStart = page.indexOf('<section className="expertise section"');
+const methodEnd = page.indexOf("</section>", page.indexOf('className="method section"'));
+const flowSlot = page.indexOf('className="home-scene-slot home-scene-slot--flow"');
+const rexoStart = page.indexOf('<section className="rexo-section"');
+assert.ok(orbitSlot > manifestoEnd && orbitSlot < expertiseStart,
+  "orbit scene must be centered between manifesto and expertise sections");
+assert.ok(flowSlot > methodEnd && flowSlot < rexoStart,
+  "flow scene must be centered between method and Rexo sections");
+const orbitSlotCss = sections.split(".home-scene-slot {")[1]?.split("}")[0] ?? "";
+assert.ok(orbitSlotCss.includes("padding-block") && !orbitSlotCss.includes("border"),
+  "floating scenes must use balanced vertical padding without a frame");
+assert.ok(sections.includes(".home-scene {") && sections.includes("overflow: visible;") &&
+  !sections.includes("border-block: 1px solid var(--line);"),
+  "floating scenes must not be enclosed by top or bottom rules");
 assert.ok(heroScene.includes("visibilitychange"), "scene animation must pause when the tab is hidden");
 assert.ok(heroScene.includes("renderer.dispose()"), "WebGL resources must be disposed during cleanup");
 assert.ok(heroEntry.includes("prefers-reduced-motion: reduce"), "entrypoint must enforce reduced-motion preference");
