@@ -13,6 +13,11 @@ export function GET() {
   const settings = getBlogSettings();
   const blogUrl = settings.canonical_url || site.url + "/blog/";
   const posts = getBlogPosts();
+  const latestBuildTimestamp = posts
+    .map((post) => Date.parse(post.updated_at || post.published_at))
+    .filter((timestamp) => Number.isFinite(timestamp))
+    .reduce((latest, timestamp) => Math.max(latest, timestamp), 0);
+  const lastBuildDate = new Date(latestBuildTimestamp || Date.now()).toUTCString();
   const items = posts.map((post) => {
     const articleUrl = post.canonical_url || site.url + "/blog/" + post.slug + "/";
     return [
@@ -29,6 +34,7 @@ export function GET() {
   const body = '<?xml version="1.0" encoding="UTF-8"?>' +
     '<rss version="2.0"><channel><title>' + xml(settings.title) + '</title>' +
     '<link>' + xml(blogUrl) + '</link><description>' + xml(settings.description) + '</description>' +
+    '<lastBuildDate>' + lastBuildDate + '</lastBuildDate>' +
     '<language>' + (settings.default_language === "fa" ? "fa-ir" : "en-us") + '</language>' +
     items + '</channel></rss>';
   return new Response(body, { headers: { "Content-Type": "application/rss+xml; charset=utf-8", "Cache-Control": "public, max-age=3600" } });
