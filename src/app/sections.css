@@ -486,6 +486,11 @@ html[data-js] .hero-intro {
   padding-top: clamp(2.6rem, 4.1vw, 4.2rem);
 }
 
+.expertise .section-index,
+.notes .section-index {
+  color: var(--accent-vivid);
+}
+
 .expertise__intro,
 .method__intro,
 .notes__intro {
