@@ -66,6 +66,10 @@ body, body * { font-family: Estedad, Tahoma, sans-serif !important; }
 .editor-richtext ul { list-style:disc; }
 .editor-richtext[dir="rtl"] ol { list-style-type:persian; }
 .editor-richtext[dir="ltr"] ol { list-style-type:decimal; }
+.editor-richtext[dir="rtl"] ol ol,.editor-richtext[dir="ltr"] ol ol,
+.markdown-preview article[dir="rtl"] ol ol,.markdown-preview article[dir="ltr"] ol ol { list-style-type:lower-alpha; }
+.editor-richtext[dir="rtl"] ol ol ol,.editor-richtext[dir="ltr"] ol ol ol,
+.markdown-preview article[dir="rtl"] ol ol ol,.markdown-preview article[dir="ltr"] ol ol ol { list-style-type:lower-roman; }
 .editor-richtext li { margin:.35em 0; padding-inline-start:.25em; }
 .editor-richtext li>h2,.editor-richtext li>h3,.editor-richtext li>h4 { margin:.2em 0 .35em; }
 .editor-richtext strong,.markdown-preview strong { font-weight:800; }
