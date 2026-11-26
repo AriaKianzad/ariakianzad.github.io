@@ -3,7 +3,7 @@ const MAX_BODY_BYTES = 12 * 1024;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": SITE_ORIGIN,
-  "Access-Control-Allow-Headers": "apikey, content-type",
+  "Access-Control-Allow-Headers": "apikey, authorization, content-type, x-client-info, x-supabase-api-version",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Max-Age": "86400",
   "Vary": "Origin",
@@ -107,18 +107,21 @@ async function fingerprint(ip: string, secret: string): Promise<string> {
   return Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, "0")).join("");
 }
 
-async function verifyTurnstileToken(token: string, clientAddress: string): Promise<boolean> {
+async function verifyTurnstileToken(token: string, clientAddress: string | null): Promise<boolean> {
+  // Turnstile is opt-in. The static form has no widget unless the public
+  // site key is supplied at build time, so a server secret alone must never
+  // make every ordinary form submission fail.
+  const enabled = readSecret("CLOUDFLARE_TURNSTILE_ENABLED") === "true";
+  if (!enabled) return token.length === 0;
+
   const secret = readSecret("CLOUDFLARE_TURNSTILE_SECRET_KEY");
-  // Until both the public site key and this server-only secret are configured,
-  // the existing honeypot and IP rate limit remain active.
-  if (!secret) return token.length === 0;
+  if (!secret) {
+    throw new ServiceUnavailableError("پیکربندی بررسی امنیتی کامل نیست. لطفاً کمی بعد دوباره تلاش کنید.");
+  }
   if (!token || token.length > 2048) return false;
 
-  const form = new URLSearchParams({
-    secret,
-    response: token,
-    remoteip: clientAddress,
-  });
+  const form = new URLSearchParams({ secret, response: token });
+  if (clientAddress) form.set("remoteip", clientAddress);
 
   let response: Response;
   try {
@@ -244,17 +247,25 @@ Deno.serve(async (request: Request) => {
     }
 
     const address = clientIp(request);
-    if (!address) {
-      return json({ error: "امکان بررسی امن درخواست در حال حاضر وجود نداره. لطفاً کمی بعد دوباره تلاش کنید." }, 503);
-    }
-
     const turnstileToken = field(body, "cf-turnstile-response", 2048);
     if (!await verifyTurnstileToken(turnstileToken, address)) {
       return json({ error: "لطفاً بررسی امنیتی رو کامل کنید و دوباره درخواست رو بفرستید." }, 403);
     }
 
-    const permitted = await consumeRateLimit(address, supabaseUrl, serviceKey);
-    if (!permitted) return json({ error: "تعداد درخواست‌ها از این شبکه بیش از حد مجازه. لطفاً یک ساعت دیگه دوباره تلاش کنید." }, 429);
+    // Rate-limit by IP when Cloudflare supplies it, and always by a keyed
+    // email fingerprint. The email is never stored in the rate-limit table.
+    // This keeps the form usable if the ingress IP header is unavailable
+    // without placing all visitors into one shared "unknown" bucket.
+    const rateLimitIdentities = [
+      ...(address ? ["ip:" + address] : []),
+      "email:" + email,
+    ];
+    for (const identity of rateLimitIdentities) {
+      const permitted = await consumeRateLimit(identity, supabaseUrl, serviceKey);
+      if (!permitted) {
+        return json({ error: "تعداد درخواست‌ها از این شبکه یا ایمیل بیش از حد مجازه. لطفاً یک ساعت دیگه دوباره تلاش کنید." }, 429);
+      }
+    }
 
     const requestLabel = requestLabels[requestType];
     const durationLabel = requestType === "sponsorship" ? (durationLabels[sponsorshipDuration] || "—") : "—";
