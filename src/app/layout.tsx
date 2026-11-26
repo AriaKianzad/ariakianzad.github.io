@@ -10,8 +10,8 @@ import "./sections.css";
 export const metadata: Metadata = rootMetadata();
 
 export const viewport: Viewport = {
-  themeColor: "#090d0c",
-  colorScheme: "dark",
+  themeColor: "#f3f0e8",
+  colorScheme: "light",
 };
 
 const personId = site.url + "/#person";
