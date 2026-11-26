@@ -140,12 +140,14 @@
 .blog-prose strong{font-weight:800}
 .blog-prose ul,.blog-prose ol{margin:0 0 1.5em;padding-inline-start:1.5em;list-style-position:outside}
 .blog-prose ul{list-style-type:disc}
-.blog-prose ol{list-style-type:decimal}
+.blog-prose[dir="rtl"] ol{list-style-type:persian}
+.blog-prose[dir="ltr"] ol{list-style-type:decimal}
 .blog-prose ul ul{list-style-type:circle}
 .blog-prose ul ul ul{list-style-type:square}
 .blog-prose ol ol{list-style-type:lower-alpha}
 .blog-prose ol ol ol{list-style-type:lower-roman}
 .blog-prose li{display:list-item;padding-inline-start:.3em;margin:.4em 0}
+.blog-prose li>h2,.blog-prose li>h3,.blog-prose li>h4{margin:.2em 0 .35em}
 .blog-prose li::marker{color:var(--blog-accent);font-weight:800}
 .blog-prose li>ul,.blog-prose li>ol{margin-block:.45em .2em}
 .blog-prose em{font-style:italic}

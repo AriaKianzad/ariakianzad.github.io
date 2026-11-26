@@ -373,6 +373,24 @@ const renderedLists = markdownRuntime.exports.renderMarkdown(nestedListMarkdown)
 const normalizedLists = renderedLists.replace(/\s+(?=<)/g,"");
 assert.ok(normalizedLists.includes("<ul><li>مورد اصلی<ul><li>زیرمورد اول</li><li>زیرمورد دوم</li></ul></li><li>مورد بعدی</li></ul>"), "nested unordered lists must retain their hierarchy and close correctly: "+normalizedLists);
 assert.ok(normalizedLists.includes("<ol><li>مرحلۀ اول</li><li>مرحلۀ دوم</li></ol>"), "blank-separated numbered items must remain in one ordered list");
+const numberedHeadingListMarkdown = [
+  "1. ### مرحلۀ اول",
+  "",
+  "2. ### مرحلۀ دوم",
+  "",
+  "3. ### مرحلۀ سوم",
+  "",
+  "4. ### مرحلۀ چهارم",
+].join("\n");
+const renderedNumberedHeadingList = markdownRuntime.exports.renderMarkdown(numberedHeadingListMarkdown);
+const normalizedNumberedHeadingList = renderedNumberedHeadingList.replace(/\s+(?=<)/g,"");
+assert.equal((normalizedNumberedHeadingList.match(/<ol>/g)||[]).length,1,"numbered H3 items must remain in one ordered list so the browser can count 1 through 4");
+assert.equal((normalizedNumberedHeadingList.match(/<li>/g)||[]).length,4,"all four numbered headings must remain list items");
+assert.equal((normalizedNumberedHeadingList.match(/<h3 id=/g)||[]).length,4,"each numbered list item must retain its semantic H3 heading");
+const numberedHeadingToc = markdownRuntime.exports.extractToc(numberedHeadingListMarkdown);
+assert.equal(numberedHeadingToc.length,4,"numbered H3 list items must remain available to the article table of contents");
+assert.equal(numberedHeadingToc[0].title,"مرحلۀ اول","the TOC must extract the title from a numbered heading item");
+assert.ok(normalizedNumberedHeadingList.includes('<li><h3 id="'+numberedHeadingToc[0].id+'">مرحلۀ اول</h3></li>'),"numbered list heading IDs must match the table of contents");
 
 const formatMarkdown = [
   "## تیتر دوم",
@@ -417,17 +435,36 @@ assert.ok(renderedUnderscoredLink.includes("<strong>مقالۀ مرتبط</stron
 const renderedUnderscoredImage = markdownRuntime.exports.renderMarkdown('![my_image_alt](https://example.com/my_image_file.png "my_image_title")');
 assert.ok(renderedUnderscoredImage.includes('src="https://example.com/my_image_file.png"') && renderedUnderscoredImage.includes('alt="my_image_alt"') && renderedUnderscoredImage.includes('title="my_image_title"'), "underscores in image URLs, alt text and titles must be preserved");
 
+const listSerializerSource = adminApp.slice(adminApp.indexOf("function inlineToMarkdown"),adminApp.indexOf("function blockToMarkdown"));
+const listSerializerContext = {Node:{TEXT_NODE:3,ELEMENT_NODE:1},safeHref:(value)=>value};
+new Script(listSerializerSource+"\nthis.testListToMarkdown=listToMarkdown;",{filename:"admin-list-serializer.js"}).runInNewContext(listSerializerContext);
+const makeTextNode=(value)=>({nodeType:3,nodeValue:value});
+const makeHeadingNode=(value)=>({nodeType:1,tagName:"H3",childNodes:[makeTextNode(value)]});
+const makeListItem=(heading)=>({nodeType:1,tagName:"LI",childNodes:[heading],getAttribute:()=>null});
+const numberedHeadingDom={tagName:"OL",children:[makeListItem(makeHeadingNode("مرحلۀ اول")),makeListItem(makeHeadingNode("مرحلۀ دوم"))],getAttribute:()=>null};
+assert.equal(listSerializerContext.testListToMarkdown(numberedHeadingDom,0),"1. ### مرحلۀ اول\n\n2. ### مرحلۀ دوم","the editor serializer must retain H3 semantics and sequential list markers when saving list items");
+assert.ok(adminApp.includes("function selectedEditorListItems()") && adminApp.includes("function formatListItemHeading") && adminApp.includes('command==="formatBlock"&&/^H[234]$/.test(value||"")') && adminApp.includes('$("#preview-content").dir=direction'),"applying H2-H4 to selected list items must preserve their surrounding UL/OL structure and previews must follow the article language direction");
 const inlineSerializer = adminApp.slice(adminApp.indexOf("function inlineToMarkdown"),adminApp.indexOf("function listToMarkdown"));
 const blockSerializer = adminApp.slice(adminApp.indexOf("function blockToMarkdown"),adminApp.indexOf("function editorToMarkdown"));
 assert.ok(["tag===\"strong\"","tag===\"em\"","tag===\"u\"","tag===\"del\"","tag===\"code\"","tag===\"a\"","tag===\"img\""].every((token)=>inlineSerializer.includes(token)), "the editor serializer must preserve emphasis, underline, deletion, code, links and images");
 assert.ok(["tag===\"figure\"","/^h[1-6]$/","tag===\"p\"","tag===\"ul\"","tag===\"ol\"","tag===\"blockquote\"","tag===\"pre\"","tag===\"hr\"","tag===\"table\""].every((token)=>blockSerializer.includes(token)), "the editor serializer must preserve all supported block structures");
 const cmsPreviewRenderer = adminApp.slice(adminApp.indexOf("function renderPreviewMarkdown"),adminApp.indexOf("function inlineToMarkdown"));
 assert.ok(cmsPreviewRenderer.includes("const parseListItem=") && cmsPreviewRenderer.includes("listStack") && cmsPreviewRenderer.includes("if(!parseListItem(") && cmsPreviewRenderer.includes("appendListItem(item)"), "the CMS preview must preserve blank-separated and nested list structure");
+const cmsPreviewContext = {
+  escapeHtml:(value)=>String(value).replace(/[&<>"']/g,(char)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char])),
+  previewInline:(value)=>String(value),
+  renderPreviewFigure:()=>"",
+};
+new Script(cmsPreviewRenderer+"\nthis.testRenderPreviewMarkdown=renderPreviewMarkdown;",{filename:"admin-list-preview.js"}).runInNewContext(cmsPreviewContext);
+const renderedCmsNumberedHeadings = cmsPreviewContext.testRenderPreviewMarkdown(numberedHeadingListMarkdown).replace(/\s+(?=<)/g,"");
+assert.equal((renderedCmsNumberedHeadings.match(/<ol>/g)||[]).length,1,"the admin preview must keep all numbered headings in one OL");
+assert.equal((renderedCmsNumberedHeadings.match(/<li>/g)||[]).length,4,"the admin preview must keep all four list items");
+assert.equal((renderedCmsNumberedHeadings.match(/<h3>/g)||[]).length,4,"the admin preview must show H3 semantics inside each numbered list item");
 
-assert.ok(blogCss.includes(".blog-prose ul{list-style-type:disc}") && blogCss.includes(".blog-prose ol{list-style-type:decimal}") && blogCss.includes(".blog-prose li::marker"), "public article lists must explicitly restore bullets and numbering after the portfolio-wide list reset");
+assert.ok(blogCss.includes(".blog-prose ul{list-style-type:disc}") && blogCss.includes('.blog-prose[dir="rtl"] ol{list-style-type:persian}') && blogCss.includes('.blog-prose[dir="ltr"] ol{list-style-type:decimal}') && blogCss.includes(".blog-prose li::marker"), "public article lists must explicitly restore bullets and Persian numbering after the portfolio-wide list reset");
 assert.ok(["h2","h3","h4","p","strong","em","u","del","a","blockquote","pre","code","img","hr"].every((tag)=>blogCss.includes(".blog-prose "+tag)), "public article CSS must style every semantic text format emitted by the Markdown renderer");
 assert.ok(blogCss.includes(".blog-theme .blog-related .blog-card-copy{padding:26px 28px 22px}") && blogCss.includes("padding-block:72px clamp(48px,6vw,88px)"), "related article cards must keep internal breathing room and remain separated from the footer");
-assert.ok(adminCss.includes(".editor-richtext strong") && adminCss.includes(".editor-richtext em") && adminCss.includes(".editor-richtext u") && adminCss.includes(".editor-richtext del") && adminCss.includes(".editor-richtext ul { list-style:disc; }") && adminCss.includes(".markdown-preview article ol { list-style-type:decimal; }"), "the CMS editing surface and live Markdown preview must both style inline formats and list markers");
+assert.ok(adminCss.includes(".editor-richtext strong") && adminCss.includes(".editor-richtext em") && adminCss.includes(".editor-richtext u") && adminCss.includes(".editor-richtext del") && adminCss.includes(".editor-richtext ul { list-style:disc; }") && adminCss.includes('.editor-richtext[dir="rtl"] ol { list-style-type:persian; }') && adminCss.includes('.editor-richtext[dir="ltr"] ol { list-style-type:decimal; }') && adminCss.includes('.markdown-preview article[dir="rtl"] ol { list-style-type:persian; }') && adminCss.includes('.markdown-preview article[dir="ltr"] ol { list-style-type:decimal; }'), "the CMS editing surface and live Markdown preview must both style inline formats and use Persian ordered-list markers");
 
 assert.ok(siteChrome.includes("usePathname") && siteChrome.includes("isBlog"), "blog routes must not inherit the portfolio chrome");
 assert.ok(listingPage.includes('settings.tagline || "یادداشت‌هایی درباره برند، معنا و ارتباط"'), "blog archive H1 must use the descriptive tagline");
@@ -584,7 +621,7 @@ assert.ok(adminApp.includes('relation="follow",target=external?"_blank":"_self"'
 assert.ok(!adminApp.slice(adminApp.indexOf("function clipboardHeadingLevel"),adminApp.indexOf("function cleanClipboardNode")).includes('querySelectorAll?.("[style]")'), "Google Docs heading detection must not promote an entire paragraph based on a single styled child run");
 
 assert.ok(adminApp.includes('explicitRelation==="follow"') && adminApp.includes('if(relation!=="follow"||explicitRelation==="follow")'), "an explicitly selected follow relation must survive Markdown serialization and subsequent editing");
-assert.ok(adminHtml.includes('app.js?v=20261126-1'), "the admin editor script must use a new cache key when its link defaults change");
+assert.ok(adminHtml.includes('app.js?v=20261126-2') && adminHtml.includes('blog.css?v=20261126-1'), "the admin editor scripts and styles must use fresh cache keys after list-formatting changes");
 assert.ok(adminApp.includes('["follow","nofollow","sponsored","ugc"].includes(value)') && adminApp.includes('["nofollow","sponsored","ugc"].includes(v)') && adminApp.includes('const external=/^https?:\\/\\//i.test(href)'), "clipboard and editor link settings must preserve explicit nofollow, sponsored and UGC values while defaulting unmarked links to follow");
 
 

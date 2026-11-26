@@ -93,7 +93,9 @@ export function extractToc(markdown:string):TocItem[]{
     items.push({id:count?base+"-"+(count+1):base,title:plainInline(title),level});
   };
   for(let index=0;index<lines.length;index++){
-    const line=lines[index].replace(/^\s{0,3}/,"");
+    const line=lines[index].trimStart();
+    const listHeading=line.match(/^(?:[-*+]|\d+[.)])\s+(#{1,4})\s+(.+)$/);
+    if(listHeading){add(listHeading[1].length,listHeading[2].trim());continue;}
     const heading=line.match(/^(#{1,4})\s+(.+?)\s*#*$/);
     if(heading){add(heading[1].length,heading[2].trim());continue;}
     if(line.trim()&&index+1<lines.length){
@@ -127,12 +129,18 @@ function isTableDivider(line:string,columns:number){
   const cells=tableCells(line);
   return cells.length===columns&&columns>=2&&cells.every((cell)=>/^:?-{3,}:?$/.test(cell));
 }
-type MarkdownListItem={depth:number;type:"ul"|"ol";content:string};
+type MarkdownListItem={depth:number;type:"ul"|"ol";content:string;headingLevel:number|null};
 function parseMarkdownListItem(line:string):MarkdownListItem|null{
   const match=line.match(/^(\s*)([-*+]|\d+[.)])\s+(.+)$/);
   if(!match)return null;
   const indent=match[1].replace(/\t/g,"  ").length;
-  return {depth:Math.floor(indent/2),type:/^\d/.test(match[2])?"ol":"ul",content:match[3]};
+  const rawContent=match[3],heading=rawContent.match(/^(#{1,4})\s+(.+)$/);
+  return {
+    depth:Math.floor(indent/2),
+    type:/^\d/.test(match[2])?"ol":"ul",
+    content:heading?heading[2]:rawContent,
+    headingLevel:heading?Math.min(4,Math.max(2,heading[1].length)):null
+  };
 }
 export function renderMarkdown(markdown:string):string{
   const lines=markdown.replace(/\r\n/g,"\n").split("\n"),out:string[]=[];
@@ -170,13 +178,16 @@ export function renderMarkdown(markdown:string):string{
       out.push("</li>");
       current.itemOpen=false;
     }
-    out.push("<li>"+inline(item.content));
+    const content=item.headingLevel?headingHtml(item.headingLevel,item.content):inline(item.content);
+    out.push("<li>"+content);
     current.itemOpen=true;
   };
-  const heading=(level:number,title:string)=>{
-    const actual=Math.max(2,level),base=slugHeading(title),count=seen.get(base)||0;seen.set(base,count+1);
-    const id=count?base+"-"+(count+1):base;out.push("<h"+actual+' id="'+esc(id)+'">'+inline(title)+"</h"+actual+">");
+  const headingHtml=(level:number,title:string)=>{
+    const actual=Math.min(4,Math.max(2,level)),base=slugHeading(title),count=seen.get(base)||0;seen.set(base,count+1);
+    const id=count?base+"-"+(count+1):base;
+    return "<h"+actual+' id="'+esc(id)+'">'+inline(title)+"</h"+actual+">";
   };
+  const heading=(level:number,title:string)=>out.push(headingHtml(level,title));
   for(let index=0;index<lines.length;index++){
     const line=lines[index];
     if(code){

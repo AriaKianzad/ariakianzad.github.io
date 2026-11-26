@@ -584,7 +584,13 @@
       const match=String(line||"").match(/^(\s*)([-*+]|\d+[.)])\s+(.+)$/);
       if(!match)return null;
       const indent=match[1].replace(/\t/g,"  ").length;
-      return {depth:Math.floor(indent/2),type:/^\d/.test(match[2])?"ol":"ul",content:match[3]};
+      const heading=match[3].match(/^(#{1,4})\s+(.+)$/);
+      return {
+        depth:Math.floor(indent/2),
+        type:/^\d/.test(match[2])?"ol":"ul",
+        content:heading?heading[2]:match[3],
+        headingLevel:heading?Math.min(4,Math.max(2,heading[1].length)):0
+      };
     };
     const appendListItem=(item)=>{
       let depth=item.depth;
@@ -610,7 +616,10 @@
         output.push("</li>");
         current.itemOpen=false;
       }
-      output.push("<li>"+previewInline(item.content));
+      const content=item.headingLevel
+        ?"<h"+item.headingLevel+">"+previewInline(item.content)+"</h"+item.headingLevel+">"
+        :previewInline(item.content);
+      output.push("<li>"+content);
       current.itemOpen=true;
     };
     const lines=String(markdown||"").replace(/\r\n/g,"\n").split("\n");
@@ -688,19 +697,34 @@
     }
     return inner;
   }
+  function listItemBlockToMarkdown(node) {
+    if(node.nodeType!==Node.ELEMENT_NODE)return inlineToMarkdown(node);
+    const tag=node.tagName.toLowerCase();
+    if(/^h[2-4]$/.test(tag)){
+      return "#".repeat(Number(tag.slice(1)))+" "+Array.from(node.childNodes).map(inlineToMarkdown).join("").trim();
+    }
+    if(tag==="p"||tag==="div"){
+      const children=Array.from(node.childNodes);
+      const hasBlocks=children.some((child)=>child.nodeType===Node.ELEMENT_NODE&&(/^H[2-4]$/.test(child.tagName)||["P","DIV"].includes(child.tagName)));
+      return hasBlocks?children.map(listItemBlockToMarkdown).filter(Boolean).join("\n"):children.map(inlineToMarkdown).join("");
+    }
+    return inlineToMarkdown(node);
+  }
   function listToMarkdown(list,depth) {
     const ordered=list.tagName.toLowerCase()==="ol",indent="  ".repeat(depth);
-    let number=1;
+    let number=Math.max(1,Number(list.getAttribute("start"))||1);
     return Array.from(list.children).filter((node)=>node.tagName==="LI").map((item)=>{
       const parts=[],nested=[];
       Array.from(item.childNodes).forEach((child)=>{
         if(child.nodeType===Node.ELEMENT_NODE&&["UL","OL"].includes(child.tagName))nested.push(listToMarkdown(child,depth+1));
-        else if(child.nodeType===Node.ELEMENT_NODE&&["P","DIV"].includes(child.tagName))parts.push(Array.from(child.childNodes).map(inlineToMarkdown).join(""));
-        else parts.push(inlineToMarkdown(child));
+        else parts.push(listItemBlockToMarkdown(child));
       });
+      const explicitValue=Number(item.getAttribute("value"));
+      if(ordered&&Number.isInteger(explicitValue)&&explicitValue>0)number=explicitValue;
       const marker=ordered?(number++)+".":"-";
-      return indent+marker+" "+parts.join("").trim()+"\n"+nested.join("\n");
-    }).join("\n");
+      const content=parts.join("\n").trim();
+      return indent+marker+" "+content+(nested.length?"\n"+nested.join("\n"):"");
+    }).join("\n\n");
   }
   function blockToMarkdown(node) {
     if(node.nodeType===Node.TEXT_NODE)return node.nodeValue?.trim()?node.nodeValue.trim()+"\n\n":"";
@@ -918,6 +942,46 @@
     if(node.nodeType===Node.TEXT_NODE)node=node.parentElement;
     return node instanceof Element?node.closest("h2,h3,h4,blockquote,li,p,div"):null;
   }
+  function selectedEditorListItems() {
+    const editor=$("#post-content"),selection=window.getSelection();
+    if(!selection||!selection.rangeCount||!editor.contains(selection.anchorNode))return [];
+    const findItem=(node)=>{
+      if(node?.nodeType===Node.TEXT_NODE)node=node.parentElement;
+      const item=node instanceof Element?node.closest("li"):null;
+      return item&&editor.contains(item)?item:null;
+    };
+    const anchor=findItem(selection.anchorNode),focus=findItem(selection.focusNode);
+    if(anchor&&focus&&anchor.parentElement===focus.parentElement&&["UL","OL"].includes(anchor.parentElement.tagName)){
+      const siblings=Array.from(anchor.parentElement.children).filter((node)=>node.tagName==="LI");
+      const start=siblings.indexOf(anchor),end=siblings.indexOf(focus);
+      if(start>=0&&end>=0)return siblings.slice(Math.min(start,end),Math.max(start,end)+1);
+    }
+    return anchor?[anchor]:focus?[focus]:[];
+  }
+  function listItemContentBlock(item,preferred) {
+    const allowed=["P","DIV","H2","H3","H4"];
+    if(preferred&&item.contains(preferred)&&allowed.includes(preferred.tagName))return preferred;
+    return Array.from(item.children).find((child)=>allowed.includes(child.tagName))||null;
+  }
+  function formatListItemHeading(item,tag,remove,preferred) {
+    const block=listItemContentBlock(item,preferred);
+    const replacement=document.createElement(remove?"p":tag.toLowerCase());
+    if(block){
+      while(block.firstChild)replacement.appendChild(block.firstChild);
+      if(!replacement.childNodes.length)replacement.appendChild(document.createElement("br"));
+      block.replaceWith(replacement);
+      return true;
+    }
+    const nestedList=Array.from(item.children).find((child)=>["UL","OL"].includes(child.tagName))||null;
+    while(item.firstChild&&item.firstChild!==nestedList){
+      const child=item.firstChild;
+      if(child.nodeType===Node.TEXT_NODE&&!child.nodeValue.trim()){item.removeChild(child);continue;}
+      replacement.appendChild(child);
+    }
+    if(!replacement.childNodes.length)replacement.appendChild(document.createElement("br"));
+    item.insertBefore(replacement,nestedList);
+    return true;
+  }
   function getSelectedBlockquote() {
     const editor=$("#post-content"),selection=window.getSelection();
     if(!selection||!selection.rangeCount)return null;
@@ -963,8 +1027,10 @@
   function updatePreview() {
     const title=$("#post-title").value||"عنوان مقاله";
     const content=editorToMarkdown($("#post-content"));
-    $("#google-preview").dir=$("#post-language").value==="fa"?"rtl":"ltr";
-    $("#post-content").dir=$("#post-language").value==="fa"?"rtl":"ltr";
+    const direction=$("#post-language").value==="fa"?"rtl":"ltr";
+    $("#google-preview").dir=direction;
+    $("#post-content").dir=direction;
+    $("#preview-content").dir=direction;
     $("#preview-content").innerHTML="<h1>"+escapeHtml(title)+"</h1>"+renderPreviewMarkdown(content);
   }
   function updateSeo() {
@@ -1723,6 +1789,16 @@
           const blockquote=getSelectedBlockquote();
           if(blockquote)unwrapBlockquote(blockquote);
           else document.execCommand("formatBlock",false,"BLOCKQUOTE");
+        }else if(command==="formatBlock"&&/^H[234]$/.test(value||"")){
+          const listItems=selectedEditorListItems();
+          if(listItems.length){
+            const selectedBlock=currentEditorBlock();
+            const allActive=listItems.every((item)=>listItemContentBlock(item,item.contains(selectedBlock)?selectedBlock:null)?.tagName===value);
+            listItems.forEach((item)=>formatListItemHeading(item,value,allActive,item.contains(selectedBlock)?selectedBlock:null));
+          }else{
+            const active=currentEditorBlock()?.tagName===value;
+            document.execCommand("formatBlock",false,active?"P":value);
+          }
         }else if(command==="formatBlock"){
           const active=currentEditorBlock()?.tagName===value;
           document.execCommand("formatBlock",false,active?"P":value);
