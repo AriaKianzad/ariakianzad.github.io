@@ -560,7 +560,7 @@
     value=value.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>'<img src="'+escapeHtml(safeHref(url.replace(/&amp;/g,"&")))+'" alt="'+alt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">');
     value=value.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
       const href=safeHref(url.replace(/&amp;/g,"&")),external=/^https?:\/\//i.test(href);
-      const relation=(String(options||"").match(/rel=(follow|nofollow|sponsored|ugc)/i)||[])[1]||(external?"nofollow":"follow");
+      const relation=(String(options||"").match(/rel=(follow|nofollow|sponsored|ugc)/i)||[])[1]||"follow";
       const target=(String(options||"").match(/target=(_blank|_self)/i)||[])[1]||(external?"_blank":"_self");
       const rel=[...(relation!=="follow"?[relation]:[]),...(target==="_blank"?["noopener","noreferrer"]:[])].join(" ");
       return '<a href="'+escapeHtml(href)+'"'+(title?' title="'+escapeHtml(title)+'"':"")+' target="'+target+'" data-link-rel="'+relation+'" data-link-target="'+target+'"'+(rel?' rel="'+rel+'"':"")+">"+label+"</a>";
@@ -679,7 +679,7 @@
       if(href==="#")return inner;
       const external=/^https?:\/\//i.test(href);
       const explicitRelation=element.dataset.linkRel;
-      const relation=explicitRelation||((element.getAttribute("rel")||"").split(/\s+/).find((v)=>["nofollow","sponsored","ugc"].includes(v))||(external?"nofollow":"follow"));
+      const relation=explicitRelation||((element.getAttribute("rel")||"").split(/\s+/).find((v)=>["nofollow","sponsored","ugc"].includes(v))||"follow");
       const target=element.dataset.linkTarget||element.getAttribute("target")||(external?"_blank":"_self");
       const options=[];
       if(relation!=="follow"||explicitRelation==="follow")options.push("rel="+relation);
@@ -819,7 +819,7 @@
       if(href==="#"){const fragment=document.createDocumentFragment();children().forEach((child)=>fragment.appendChild(child));return fragment;}
       clean.setAttribute("href",href);
       const external=/^https?:\/\//i.test(href);
-      const rel=(source.getAttribute("rel")||"").split(/\s+/).find((value)=>["follow","nofollow","sponsored","ugc"].includes(value))||(external?"nofollow":"follow");
+      const rel=(source.getAttribute("rel")||"").split(/\s+/).find((value)=>["follow","nofollow","sponsored","ugc"].includes(value))||"follow";
       const target=source.getAttribute("target")==="_self"?"_self":source.getAttribute("target")==="_blank"?"_blank":(external?"_blank":"_self");
       clean.dataset.linkRel=rel;clean.dataset.linkTarget=target;clean.setAttribute("target",target);
       if(target==="_blank")clean.setAttribute("rel",([rel==="follow"?[]:[rel],"noopener","noreferrer"].flat()).join(" "));
@@ -873,7 +873,7 @@
       const relationLabel=document.createElement("label");relationLabel.textContent="نوع لینک";
       const relation=document.createElement("select");relation.setAttribute("aria-label","نوع لینک برای "+(anchor.textContent||"پیوند "+(index+1)));
       [["follow","عادی · دنبال‌شونده"],["nofollow","دنبال‌نشونده"],["sponsored","تبلیغاتی"],["ugc","محتوای کاربر"]].forEach(([value,title])=>{const option=document.createElement("option");option.value=value;option.textContent=title;relation.appendChild(option);});
-      relation.value=anchor.dataset.linkRel||((anchor.rel||"").split(/\s+/).find((v)=>["nofollow","sponsored","ugc"].includes(v))||(/^https?:\/\//i.test(anchor.href)?"nofollow":"follow"));
+      relation.value=anchor.dataset.linkRel||((anchor.rel||"").split(/\s+/).find((v)=>["nofollow","sponsored","ugc"].includes(v))||"follow");
       relation.addEventListener("change",()=>{anchor.dataset.linkRel=relation.value;anchor.rel=[...(relation.value==="follow"?[]:[relation.value]),...(anchor.target==="_blank"?["noopener","noreferrer"]:[])].join(" ");markEditorDirty();updatePreview();updateSeo();});
       const targetLabel=document.createElement("label");targetLabel.textContent="بازشدن";
       const target=document.createElement("select");target.setAttribute("aria-label","نحوۀ بازشدن "+(anchor.textContent||"پیوند "+(index+1)));
@@ -891,12 +891,12 @@
     if(!raw)return;
     const href=safeHref(raw);
     if(href==="#"){toast("این نوع آدرس برای پیوند مجاز نیست.",true);return;}
-    const external=/^https?:\/\//i.test(href),relation=external?"nofollow":"follow",target=external?"_blank":"_self";
+    const external=/^https?:\/\//i.test(href),relation="follow",target=external?"_blank":"_self";
     if(selected){document.execCommand("createLink",false,href);}
     else{
       const label=window.prompt("متن نمایشی پیوند را وارد کن:","مشاهدۀ منبع");
       if(!label)return;
-      insertHtmlAtCaret('<a href="'+escapeHtml(href)+'" target="'+target+'" data-link-rel="'+relation+'" data-link-target="'+target+'"'+(external?' rel="nofollow noopener noreferrer"':'')+'>'+escapeHtml(label)+"</a>");
+      insertHtmlAtCaret('<a href="'+escapeHtml(href)+'" target="'+target+'" data-link-rel="'+relation+'" data-link-target="'+target+'"'+(external?' rel="noopener noreferrer"':'')+'>'+escapeHtml(label)+"</a>");
       markEditorDirty();
       updatePreview();updateSeo();refreshLinkManager();
       return;

@@ -580,11 +580,12 @@ assert.ok(articlePage.includes('banner.id !== "banner-3"') && articlePage.includ
 assert.ok(blogCss.includes("aspect-ratio:8.5 / 1") && blogCss.includes("object-fit:contain") && blogCss.includes(".blog-in-article-ad.is-desktop-only"), "the article-end banner must preserve its full artwork and hide on mobile only when configured");
 assert.ok(adminCss.includes(".ad-management-preview.is-article-end {aspect-ratio:8.5 / 1}") && adminCss.includes(".ad-mobile-toggle"), "the CMS must preview the horizontal banner ratio and expose the mobile toggle");
 assert.ok(responsiveAdMigration.includes('"banner-3"') && responsiveAdMigration.includes("'show_on_mobile'") && responsiveAdMigration.includes("between 3 and 8"), "the migration must seed the third slot and backfill mobile visibility without overwriting configured banners");
-assert.ok(adminApp.includes('relation=external?"nofollow":"follow"') && adminApp.includes('anchor.dataset.linkRel=relation'), "new external links must default to nofollow while explicit follow choices remain persistent");
+assert.ok(adminApp.includes('relation="follow",target=external?"_blank":"_self"') && adminApp.includes('anchor.dataset.linkRel=relation') && adminApp.includes('||"follow";'), "all unconfigured editor links must default to follow while explicit link relations remain persistent");
 assert.ok(!adminApp.slice(adminApp.indexOf("function clipboardHeadingLevel"),adminApp.indexOf("function cleanClipboardNode")).includes('querySelectorAll?.("[style]")'), "Google Docs heading detection must not promote an entire paragraph based on a single styled child run");
 
 assert.ok(adminApp.includes('explicitRelation==="follow"') && adminApp.includes('if(relation!=="follow"||explicitRelation==="follow")'), "an explicitly selected follow relation must survive Markdown serialization and subsequent editing");
-assert.ok(adminApp.includes('["follow","nofollow","sponsored","ugc"].includes(value)') && adminApp.includes('const external=/^https?:\\/\\//i.test(href)'), "clipboard sanitization must preserve explicit follow while defaulting pasted external links to nofollow");
+assert.ok(adminHtml.includes('app.js?v=20261126-1'), "the admin editor script must use a new cache key when its link defaults change");
+assert.ok(adminApp.includes('["follow","nofollow","sponsored","ugc"].includes(value)') && adminApp.includes('["nofollow","sponsored","ugc"].includes(v)') && adminApp.includes('const external=/^https?:\\/\\//i.test(href)'), "clipboard and editor link settings must preserve explicit nofollow, sponsored and UGC values while defaulting unmarked links to follow");
 
 
 const collectPostSource = adminApp.slice(adminApp.indexOf("function collectPost()"), adminApp.indexOf("function updateEditorStatus"));
