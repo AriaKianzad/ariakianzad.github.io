@@ -241,7 +241,7 @@ export default function HomePage() {
               >
                 <span className="note-card__type">{item.type}</span>
                 <span className="note-card__number">0{index + 1}</span>
-                <span className="note-card__title">{item.title}</span>
+                <h3 className="note-card__title">{item.title}</h3>
                 <span className="note-card__description">{item.description}</span>
                 <span className="note-card__action">
                   {item.action} <ExtArrow />

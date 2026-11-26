@@ -214,7 +214,6 @@ ol {
   line-height: 1.25;
   text-decoration: none;
   transition:
-    transform var(--duration) var(--ease-out),
     color var(--duration) ease,
     background-color var(--duration) ease,
     border-color var(--duration) ease,
@@ -222,7 +221,7 @@ ol {
 }
 
 .button:hover {
-  transform: translateY(-3px);
+  transform: none;
 }
 
 .button--primary {
@@ -232,8 +231,8 @@ ol {
 }
 
 .button--primary:hover {
-  background: var(--accent-soft);
-  box-shadow: 0 12px 34px rgba(123, 63, 88, 0.22);
+  background: var(--accent-dark);
+  box-shadow: 0 10px 24px rgba(74, 38, 55, 0.2);
 }
 
 .button--text {
@@ -249,11 +248,11 @@ ol {
 .button__arrow {
   font-size: 1.15em;
   line-height: 1;
-  transition: transform var(--duration) var(--ease-out);
+  transition: transform 220ms var(--ease-out);
 }
 
 .button--primary:hover .button__arrow {
-  transform: translate(3px, -3px);
+  transform: translate(2px, -2px);
 }
 
 /* Scroll-triggered reveal. Content remains visible when JavaScript is off. */

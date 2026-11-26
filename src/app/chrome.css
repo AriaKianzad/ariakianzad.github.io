@@ -210,7 +210,7 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
 .site-footer {
   position: relative;
   padding-block: clamp(3.5rem, 6vw, 6rem) 2rem;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--panel-line);
   background:
     radial-gradient(ellipse at 85% 0%, rgba(214, 164, 67, 0.16), transparent 42%),
     var(--panel-dark);
@@ -222,7 +222,7 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
   justify-content: space-between;
   gap: 2rem;
   padding-bottom: 2.4rem;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--panel-line);
 }
 
 .site-footer__identity {
@@ -231,7 +231,7 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
 }
 
 .site-footer__wordmark {
-  color: var(--ink);
+  color: var(--panel-ink);
   font-size: clamp(1.5rem, 2.5vw, 2.3rem);
   font-weight: 520;
   letter-spacing: -0.04em;
@@ -239,10 +239,10 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
 }
 
 .site-footer__identity p {
-  color: var(--muted);
+  color: var(--panel-muted);
   font-family: var(--font-mono);
-  font-size: var(--step-xs);
-  letter-spacing: 0.06em;
+  font-size: var(--step-sm);
+  letter-spacing: 0.04em;
 }
 
 .site-footer__links {
@@ -256,14 +256,14 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--ink-soft);
+  color: var(--panel-ink-soft);
   font-size: var(--step-sm);
   text-decoration: none;
   transition: color var(--duration) ease;
 }
 
 .site-footer__links a:hover {
-  color: var(--accent);
+  color: var(--signal-soft);
 }
 
 .site-footer__links svg {
@@ -284,7 +284,7 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
   height: 43px;
   place-items: center;
   border: 1px solid transparent;
-  color: var(--muted);
+  color: var(--panel-muted);
   transition:
     border-color var(--duration) ease,
     background-color var(--duration) ease,
@@ -298,10 +298,10 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
 }
 
 .social-link:hover {
-  transform: translateY(-3px);
-  border-color: var(--line-strong);
-  background: rgba(214, 164, 67, 0.12);
-  color: var(--signal-dark);
+  transform: translateY(-2px);
+  border-color: var(--panel-line);
+  background: rgba(214, 164, 67, 0.14);
+  color: var(--signal-soft);
 }
 
 .site-footer__base {
@@ -315,10 +315,10 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
 
 .site-footer__legal,
 .back-to-top {
-  color: var(--muted);
+  color: var(--panel-muted);
   font-family: var(--font-mono);
-  font-size: var(--step-xs);
-  letter-spacing: 0.05em;
+  font-size: 0.76rem;
+  letter-spacing: 0.045em;
   text-decoration: none;
 }
 
@@ -327,7 +327,7 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
 }
 
 .back-to-top:hover {
-  color: var(--accent);
+  color: var(--signal-soft);
 }
 
 @media (max-width: 980px) {

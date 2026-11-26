@@ -54,7 +54,7 @@ export const expertise = {
       title: "Content & communication",
       body:
         "I turn that direction into a clear communication system, from messaging and storytelling to content strategy, creative copywriting and search-focused content.",
-      tags: ["Content strategy", "Storytelling", "Copywriting", "SEO content"],
+      tags: ["Content strategy", "Storytelling", "Copywriting"],
     },
   ],
 } as const;
@@ -144,11 +144,11 @@ export const contactSection = {
   body:
     "Tell me what you're working on, what's not quite clicking, or what you want people to understand. We can start there and work out what the project actually needs.",
   email: "kianzadaria@gmail.com",
-  cta: { label: "Email Aria", href: "mailto:kianzadaria@gmail.com" },
+  cta: { label: "Email Me", href: "mailto:kianzadaria@gmail.com" },
   copyLabel: "Copy email",
 } as const;
 
 export const footer = {
   note: "Brand strategy / Positioning / Communication",
-  copyright: `© ${new Date().getFullYear()} Aria Kianzad. All rights reserved.`,
+  copyright: "© 2027 Aria Kianzad. All rights reserved.",
 } as const;

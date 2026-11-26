@@ -302,6 +302,75 @@ assert.ok(apacheConfig.includes('env=aria_hashed_asset'),
   "Apache immutable cache rule must be restricted to hashed assets");
 
 
+
+// Public homepage copy and heading semantics.
+assert.ok(!content.includes('"SEO content"'), "the SEO content expertise tag must be removed");
+assert.ok(content.includes('cta: { label: "Email Me"') && page.includes('className="contact__email"'),
+  "the contact CTA must use the Email Me label");
+assert.ok(content.includes('copyright: "© 2027 Aria Kianzad. All rights reserved."'),
+  "the homepage footer year must be fixed to 2027");
+assert.ok(page.includes('<h3 className="note-card__title">{item.title}</h3>'),
+  "the personal blog card title must be a semantic H3");
+assert.equal([...page.matchAll(/<h1[ >]/g)].length, 1, "the homepage must contain exactly one H1");
+const headingLevels = [...page.matchAll(/<h([1-6])[ >]/g)].map(([, level]) => Number(level));
+assert.ok(headingLevels.length > 0 && headingLevels[0] === 1 &&
+  headingLevels.every((level, index) => index === 0 || level <= headingLevels[index - 1] + 1),
+  "homepage headings must follow a logical hierarchy without skipped levels");
+// H4 is not needed: the current H3 elements are leaf-level subsections.
+assert.ok(!page.includes("<h4"), "no H4 is needed without a subsection nested under an H3");
+
+// Footer text uses dedicated light-on-dark tokens and meets WCAG AA.
+assert.ok(chrome.includes("color: var(--panel-ink);") &&
+  chrome.includes("color: var(--panel-muted);") &&
+  chrome.includes("color: var(--panel-ink-soft);") &&
+  chrome.includes("border-bottom: 1px solid var(--panel-line);"),
+  "footer text and dividers must use the dark-panel tokens");
+const readColorToken = (name) => {
+  const declaration = globals.split(name + ": ")[1];
+  const match = declaration?.match(/^(#[0-9a-f]{6})/i);
+  assert.ok(match, `missing color token ${name}`);
+  return match[1];
+};
+const rgbLinear = (hex) => [1, 3, 5].map((offset) => {
+  const channel = Number.parseInt(hex.slice(offset, offset + 2), 16) / 255;
+  return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+});
+const luminance = (hex) => {
+  const [r, g, b] = rgbLinear(hex);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const contrastRatio = (foreground, background) => {
+  const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+  return (values[0] + 0.05) / (values[1] + 0.05);
+};
+const footerBackground = readColorToken("--panel-dark");
+assert.ok(contrastRatio(readColorToken("--panel-muted"), footerBackground) >= 4.5 &&
+  contrastRatio(readColorToken("--panel-ink"), footerBackground) >= 4.5 &&
+  contrastRatio(readColorToken("--panel-ink-soft"), footerBackground) >= 4.5,
+  "footer normal text colors must meet WCAG AA contrast against the dark panel");
+assert.ok(chrome.includes("@media (max-width: 780px)") &&
+  chrome.includes(".site-footer__top") &&
+  chrome.includes("flex-wrap: wrap;"),
+  "footer layout must retain its stacked and wrapping responsive treatment");
+
+// The primary CTA stays in place on hover; only its arrow moves subtly.
+const primaryButtonCss = globals.split(".button {")[1]?.split("/* Scroll-triggered reveal")[0] ?? "";
+assert.ok(primaryButtonCss.includes("transform: none;") &&
+  !primaryButtonCss.includes("translateY(-3px)") &&
+  primaryButtonCss.includes("background: var(--accent-dark)") &&
+  primaryButtonCss.includes("transform: translate(2px, -2px);"),
+  "primary CTA hover must avoid the previous floating lift and keep arrow motion subtle");
+
+// Keep canonical, robots, social and entity metadata intact.
+assert.ok(metadata.includes('alternates: { canonical: "/" }') &&
+  metadata.includes("robots:") &&
+  metadata.includes('card: "summary_large_image"'),
+  "homepage canonical, robots and social metadata must remain defined");
+assert.ok(layout.includes('"@type": "ProfilePage"') &&
+  layout.includes('"@type": "Person"') &&
+  layout.includes('"@type": "WebSite"'),
+  "homepage structured data graph must keep its page, person and website entities");
+
 // Animation must degrade gracefully and remain responsive.
 assert.ok(globals.includes("@media (prefers-reduced-motion: reduce)"), "global reduced-motion fallback missing");
 assert.ok(sections.includes("@media (max-width: 760px)"), "tablet/mobile responsive breakpoint missing");
