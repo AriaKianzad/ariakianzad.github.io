@@ -648,7 +648,7 @@
     const lines=String(markdown||"").replace(/\r\n/g,"\n").split("\n");
     const continuationIndent=(line)=>{
       const current=listStack[listStack.length-1],match=String(line||"").match(/^(\s+)\S/);
-      return Boolean(current?.itemOpen&&match&&match[1].replace(/\t/g,"  ").length>=(current.depth+1)*2);
+      return Boolean(current?.itemOpen&&match&&match[1].replace(/\t/g,"  ").length>=current.depth*2+1);
     };
     const renderLegacyHeadingList=(items)=>{
       output.push("<ol>");
