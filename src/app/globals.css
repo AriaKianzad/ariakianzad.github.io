@@ -164,7 +164,7 @@ ol {
   flex: 0 0 auto;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 0 4px rgba(198, 232, 135, 0.09);
+  box-shadow: 0 0 0 4px rgba(123, 63, 88, 0.1);
   content: "";
 }
 
