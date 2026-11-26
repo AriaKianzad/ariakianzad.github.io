@@ -1,18 +1,15 @@
 /**
- * Generates the site's bitmap assets from vendored, official sources:
+ * Generates the shared brand favicon and Next.js raster icon variants.
  *
- *   assets-src/Estedad-Regular.ttf   (Estedad v8.5 static, official release)
- *   assets-src/Estedad-SemiBold.ttf  (Estedad v8.5 static, official release)
+ * The vector source is committed at public/favicon.svg. The PNG files are
+ * generated before dev/build and intentionally ignored by Git:
+ *   src/app/icon.png        512x512 browser/Next.js icon
+ *   src/app/apple-icon.png  180x180 Apple touch icon
  *
- * Outputs (committed; re-run with `npm run assets` after editing):
- *   public/og/og.png        1200x630 social card
- *   src/app/icon.png        512x512 favicon
- *   src/app/apple-icon.png  180x180 apple touch icon
- *
- * Text is converted to SVG paths with opentype.js (Estedad glyph outlines),
- * so rendering never depends on system fonts being installed.
+ * Text is converted to Estedad glyph paths with opentype.js, so raster
+ * rendering never depends on system fonts being installed.
  */
-import { readFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import opentype from "opentype.js";
 import sharp from "sharp";
@@ -21,18 +18,16 @@ import wawoff2Module from "wawoff2";
 const wawoff2 = wawoff2Module.default ?? wawoff2Module;
 
 const ROOT = process.cwd();
-const BG = "#090d0c";
-const TEXT = "#edf0e8";
-const MUTED = "#89958a";
-const ACCENT = "#c6e887";
-const LINE = "#26332b";
+const PAPER = "#f3f0e8";
+const PLUM = "#7b3f58";
+const BRASS = "#d6a443";
+const MARK = "#fbf9f4";
 
 const toBufferSource = (data) =>
   data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
 
 const loadFont = (file) => opentype.parse(toBufferSource(readFileSync(join(ROOT, "assets-src", file))));
 
-const regular = loadFont("Estedad-Regular.ttf");
 const semiBold = loadFont("Estedad-SemiBold.ttf");
 
 /* ------------------------------------------------------------------ */
@@ -69,56 +64,28 @@ const textPath = (font, text, x, y, size, fill) =>
 const advance = (font, text, size) => font.getAdvanceWidth(text, size);
 
 /* ------------------------------------------------------------------ */
-/* Social card (1200x630)                                              */
-/* ------------------------------------------------------------------ */
-
-const W = 1200;
-const H = 630;
-
-const nameSize = 116;
-const nameAdv = advance(semiBold, "Aria Kianzad", nameSize);
-const nameX = (W - nameAdv) / 2;
-
-const tagline = "Brand Strategy / Personal Branding";
-const taglineSize = 38;
-const taglineAdv = advance(regular, tagline, taglineSize);
-const taglineX = (W - taglineAdv) / 2;
-
-const emailSize = 23;
-const url = "ariakianzad.github.io";
-const urlSize = 21;
-const urlAdv = advance(regular, url, urlSize);
-
-const ogSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-<rect width="${W}" height="${H}" fill="${BG}"/>
-${textPath(semiBold, "Aria Kianzad", nameX, 300, nameSize, TEXT)}
-<rect x="${(W - 84) / 2}" y="336" width="84" height="4" fill="${ACCENT}"/>
-${textPath(regular, tagline, taglineX, 424, taglineSize, MUTED)}
-<rect x="90" y="500" width="${W - 180}" height="1" fill="${LINE}"/>
-${textPath(regular, "kianzadaria@gmail.com", 90, 556, emailSize, MUTED)}
-${textPath(regular, url, W - 90 - urlAdv, 556, urlSize, MUTED)}
-</svg>`;
-
-mkdirSync(join(ROOT, "public", "og"), { recursive: true });
-await sharp(Buffer.from(ogSvg)).png().toFile(join(ROOT, "public", "og", "og.png"));
-console.log("public/og/og.png written (1200x630)");
-
-/* ------------------------------------------------------------------ */
 /* Favicon + apple icon                                                */
 /* ------------------------------------------------------------------ */
 
 const iconSvg = (size) => {
-  const markSize = size * 0.5;
-  const text = "AK";
-  const adv = advance(semiBold, text, markSize);
-  const x = (size - adv) / 2;
-  const y = size * 0.5 + markSize * 0.36;
+  const inset = size * 0.055;
+  const tileSize = size - inset * 2;
+  const markSize = size * 0.46;
+  const mark = "AK";
+  const markWidth = advance(semiBold, mark, markSize);
+  const markX = (size - markWidth) / 2;
+  const markY = size * 0.5 + markSize * 0.34;
+  const cornerRadius = size * 0.18;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-<rect width="${size}" height="${size}" fill="${BG}"/>
-${textPath(semiBold, text, x, y, markSize, ACCENT)}
+<rect width="${size}" height="${size}" fill="${PAPER}"/>
+<rect x="${inset}" y="${inset}" width="${tileSize}" height="${tileSize}" rx="${cornerRadius}" fill="${PLUM}"/>
+${textPath(semiBold, mark, markX, markY, markSize, MARK)}
+<circle cx="${size * 0.79}" cy="${size * 0.22}" r="${size * 0.045}" fill="${BRASS}"/>
 </svg>`;
 };
 
-await sharp(Buffer.from(iconSvg(512))).png().toFile(join(ROOT, "src", "app", "icon.png"));
+const vectorIcon = iconSvg(512);
+writeFileSync(join(ROOT, "public", "favicon.svg"), vectorIcon, "utf8");
+await sharp(Buffer.from(vectorIcon)).png().toFile(join(ROOT, "src", "app", "icon.png"));
 await sharp(Buffer.from(iconSvg(180))).png().toFile(join(ROOT, "src", "app", "apple-icon.png"));
-console.log("src/app/icon.png (512) and src/app/apple-icon.png (180) written");
+console.log("public/favicon.svg, src/app/icon.png (512), and src/app/apple-icon.png (180) generated");
