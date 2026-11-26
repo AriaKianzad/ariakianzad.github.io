@@ -37,10 +37,10 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
-      - name: Verify generated social card and application icons
+      - name: Verify generated brand favicon
         run: |
           npm run assets
-          git diff --exit-code -- public/og/og.png src/app/icon.png src/app/apple-icon.png
+          git diff --exit-code -- public/favicon.svg
 
       - name: Verify generated social icon map
         run: |
@@ -101,9 +101,17 @@ jobs:
           set -euo pipefail
           test -s out/index.html
           grep -Fq '<meta name="google-site-verification" content="UhIDVQ1toOjgUhS7bONWQB-lmnoRW5gbZkI1ZRpjpo8"/>' out/index.html
+          grep -Fq 'href="/favicon.svg"' out/index.html
+          grep -Fq 'href="/favicon.svg"' out/blog/index.html
+          grep -Fq 'href="/favicon.svg"' out/Mian-e-Ma/index.html
+          grep -Fq 'href="/favicon.svg"' out/admin/index.html
+          grep -Fq 'href="/favicon.svg"' out/admin/blog/index.html
           test -s out/404.html
+          test -s out/favicon.svg
           test -s out/icon.png
           test -s out/apple-icon.png
+          test ! -e out/blog-favicon.svg
+          test ! -e out/og/og.png
           test -s out/_hero/hero-visual.js
           test -d out/_hero/chunks
           find out/_hero/chunks -type f -name '*.js' -print -quit | grep -q .
