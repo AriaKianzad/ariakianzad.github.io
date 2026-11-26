@@ -220,7 +220,7 @@ assert.ok(faviconSource.includes('fill="#7b3f58"') &&
   faviconSource.includes('transform="translate(-26 24.5)"') &&
   faviconSource.includes('<rect x="28" y="28" width="456" height="456" rx="92"') &&
   !faviconSource.includes('fill="#f3f0e8"') &&
-  !/<rect\\b[^>]*\\bwidth=["']512["']/.test(faviconSource),
+  !faviconSource.includes('<rect width="512"'),
   "the shared favicon must use the current mark, have transparent outer canvas, and omit the old paper backplate");
 
 const faviconPreview = new Resvg(faviconSource).render();
