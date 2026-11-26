@@ -420,12 +420,12 @@ assert.equal((normalizedMalformedHeadingList.match(/<h3 id=/g)||[]).length,4,"al
 assert.equal((normalizedMalformedHeadingList.match(/<p>/g)||[]).length,4,"each recovered heading must retain its own explanatory paragraph inside the list item");
 const malformedHeadingToc=markdownRuntime.exports.extractToc(malformedHeadingListMarkdown);
 assert.equal(malformedHeadingToc.length,4,"recovered numbered H3 headings must appear in the table of contents");
-assert.deepEqual(malformedHeadingToc.map((item)=>item.title),[
+assert.equal(malformedHeadingToc.map((item)=>item.title).join("\n"),[
   "یک مرجع روشن برای هویت برند بسازید",
   "اطلاعات برند رو در منابع مختلف هماهنگ نگه دارید",
   "محتوا رو برای سؤال واقعی مخاطب طراحی کنید",
   "دسترسی فنی رو جداگانه بررسی کنید",
-],"the TOC must restore the original Persian numbered H3 titles without their numbering glyphs");
+].join("\n"),"the TOC must restore the original Persian numbered H3 titles without their numbering glyphs");
 
 const continuedNumberedListMarkdown=[
   "1. **نرخ حضور:**",
