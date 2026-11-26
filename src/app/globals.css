@@ -1,27 +1,29 @@
 /* ==========================================================================
    Aria Kianzad / Design system
-   Editorial strategy, quiet contrast and two deliberate signal colours.
+   Warm editorial paper, aubergine ink and a measured brass signal.
    ========================================================================== */
 
 :root {
-  --bg: #090d0c;
-  --bg-raised: #101714;
-  --bg-soft: #151d18;
-  --ink: #edf0e8;
-  --ink-soft: #c5ccc0;
-  --muted: #89958a;
-  --line: rgba(225, 235, 214, 0.13);
-  --line-strong: rgba(225, 235, 214, 0.26);
-  --accent: #c6e887;
-  --accent-soft: #def2b4;
-  --accent-dark: #283b24;
-  --accent-vivid: #7d83ff;
-  --accent-vivid-soft: #b9bdff;
-  --accent-vivid-deep: #454bc5;
-  --paper: #e9ebdf;
-  --paper-ink: #18211b;
-  --paper-muted: #58645a;
-  --paper-line: rgba(24, 33, 27, 0.16);
+  --bg: #f3f0e8;
+  --bg-raised: #fbf9f4;
+  --bg-soft: #e7e0d6;
+  --ink: #28242b;
+  --ink-soft: #554f57;
+  --muted: #807780;
+  --line: rgba(40, 36, 43, 0.13);
+  --line-strong: rgba(40, 36, 43, 0.27);
+  --accent: #7b3f58;
+  --accent-soft: #a66c81;
+  --accent-dark: #4a2637;
+  --signal: #d6a443;
+  --signal-soft: #ecd08d;
+  --signal-dark: #805a18;
+  --panel-dark: #302731;
+  --panel-dark-soft: #3d3340;
+  --panel-ink: #f4f0e8;
+  --panel-ink-soft: #e1d7dc;
+  --panel-muted: #c0b2bd;
+  --panel-line: rgba(244, 240, 232, 0.18);
 
   --font-sans: var(--font-estedad), "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -38,15 +40,14 @@
   --shell: 1360px;
   --gutter: clamp(1.2rem, 4.7vw, 5rem);
   --header-h: 82px;
-  --section-space: clamp(6.5rem, 10vw, 10.5rem);
+  --section-space: clamp(5.4rem, 8.6vw, 9rem);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
-  --duration-fast: 180ms;
   --duration-fast: 180ms;
   --duration: 340ms;
   --duration-slow: 800ms;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 *,
@@ -88,15 +89,15 @@ body::before {
   pointer-events: none;
   opacity: 0.22;
   background-image:
-    linear-gradient(rgba(217, 231, 199, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(217, 231, 199, 0.035) 1px, transparent 1px);
-  background-size: 72px 72px;
-  mask-image: linear-gradient(to bottom, black, transparent 76%);
+    linear-gradient(rgba(123, 63, 88, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(123, 63, 88, 0.035) 1px, transparent 1px);
+  background-size: 76px 76px;
+  mask-image: linear-gradient(to bottom, black, transparent 78%);
 }
 
 ::selection {
-  color: var(--bg);
-  background: var(--accent);
+  color: var(--ink);
+  background: var(--signal);
 }
 
 img,
@@ -226,13 +227,13 @@ ol {
 
 .button--primary {
   background: var(--accent);
-  color: #11170f;
-  box-shadow: 0 8px 28px rgba(198, 232, 135, 0.12);
+  color: var(--bg-raised);
+  box-shadow: 0 8px 28px rgba(123, 63, 88, 0.16);
 }
 
 .button--primary:hover {
   background: var(--accent-soft);
-  box-shadow: 0 12px 34px rgba(198, 232, 135, 0.18);
+  box-shadow: 0 12px 34px rgba(123, 63, 88, 0.22);
 }
 
 .button--text {
@@ -292,13 +293,13 @@ html[data-js] [data-reveal].is-visible:nth-child(5) { transition-delay: 360ms; }
 @media (max-width: 700px) {
   :root {
     --header-h: 72px;
-    --section-space: clamp(5.2rem, 17vw, 7rem);
+    --section-space: clamp(4.8rem, 14vw, 6.8rem);
     --gutter: clamp(1.1rem, 5vw, 1.7rem);
   }
 
   body::before {
-    background-size: 52px 52px;
-    opacity: 0.14;
+    background-size: 54px 54px;
+    opacity: 0.18;
   }
 }
 
