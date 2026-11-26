@@ -309,7 +309,10 @@ assert.ok(sections.includes("overflow-wrap: anywhere"), "long contact details mu
 assert.ok(!hero.includes('"use client"'), "hero markup must remain a server component");
 assert.ok(hero.includes('data-hero-visual'), "static hero root must expose its enhancement hook");
 assert.ok(hero.includes('data-signal-canvas'), "static hero must expose the canvas for the renderer");
-assert.ok(layout.includes('type="module" src="/_hero/hero-visual.js"'), "standalone hero module must be included in the layout");
+assert.ok(page.includes('type="module" src="/_hero/hero-visual.js"') &&
+  blogPage.includes('type="module" src="/_hero/hero-visual.js"') &&
+  !layout.includes('type="module" src="/_hero/hero-visual.js"'),
+  "standalone hero module must be loaded only on the homepage and blog archive routes that render it");
 assert.ok(heroEntry.includes('import("./signal-scene")'), "Three.js scene must remain a dynamic ESM chunk");
 assert.ok(heroEntry.includes("IntersectionObserver"), "scene must load only near the hero viewport");
 assert.ok(heroEntry.includes("prefers-reduced-motion: reduce"), "entrypoint must respect reduced-motion preference");
