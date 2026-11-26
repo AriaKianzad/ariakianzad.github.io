@@ -133,14 +133,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
       : 1.95
     : 1.7;
   const articleParagraphGap = post.language === "fa" ? articleLineHeight * 1.05 : 1.45;
-  const rawAccent = typeof post.accent_color === "string" && post.accent_color
-    ? post.accent_color
-    : settings.accent_color;
-  const postAccent = typeof rawAccent === "string" && /^#[0-9a-fA-F]{6}$/.test(rawAccent) &&
-    rawAccent.toLowerCase() !== "#a86f54"
-    ? rawAccent
-    : "#7b3f58";
-  const articleStyles = `.blog-article-main{--post-accent:${postAccent};--blog-line-height:${articleLineHeight};--blog-paragraph-gap:${articleParagraphGap}em}`;
+  const articleStyles = `.blog-article-main{--post-accent:var(--blog-accent);--blog-line-height:${articleLineHeight};--blog-paragraph-gap:${articleParagraphGap}em}`;
   return (
     <>
       <BlogHeader />
