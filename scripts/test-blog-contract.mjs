@@ -493,10 +493,11 @@ const listSerializerSource = adminApp.slice(adminApp.indexOf("function inlineToM
 const listSerializerContext = {Node:{TEXT_NODE:3,ELEMENT_NODE:1},safeHref:(value)=>value};
 new Script(listSerializerSource+"\nthis.testListToMarkdown=listToMarkdown;",{filename:"admin-list-serializer.js"}).runInNewContext(listSerializerContext);
 const makeTextNode=(value)=>({nodeType:3,nodeValue:value});
-const makeHeadingNode=(value)=>({nodeType:1,tagName:"H3",childNodes:[makeTextNode(value)]});
-const makeListItem=(heading)=>({nodeType:1,tagName:"LI",childNodes:[heading],getAttribute:()=>null});
-const numberedHeadingDom={tagName:"OL",children:[makeListItem(makeHeadingNode("مرحلۀ اول")),makeListItem(makeHeadingNode("مرحلۀ دوم"))],getAttribute:()=>null};
-assert.equal(listSerializerContext.testListToMarkdown(numberedHeadingDom,0),"1. ### مرحلۀ اول\n\n2. ### مرحلۀ دوم","the editor serializer must retain H3 semantics and sequential list markers when saving list items");
+const makeHeadingNode=(value)=>({nodeType:1,tagName:"H3",childNodes:[{nodeType:1,tagName:"STRONG",childNodes:[makeTextNode(value)]}]});
+const makeParagraphNode=(value)=>({nodeType:1,tagName:"P",childNodes:[makeTextNode(value)]});
+const makeListItem=(heading,paragraph)=>({nodeType:1,tagName:"LI",childNodes:[heading,paragraph],getAttribute:()=>null});
+const numberedHeadingDom={tagName:"OL",children:[makeListItem(makeHeadingNode("مرحلۀ اول"),makeParagraphNode("توضیح اول")),makeListItem(makeHeadingNode("مرحلۀ دوم"),makeParagraphNode("توضیح دوم"))],getAttribute:()=>null};
+assert.equal(listSerializerContext.testListToMarkdown(numberedHeadingDom,0),"1. ### **مرحلۀ اول**\n  توضیح اول\n\n2. ### **مرحلۀ دوم**\n  توضیح دوم","the editor serializer must retain heading style, bold text, sequential numbering and continued paragraphs when saving list items");
 assert.ok(adminApp.includes("function selectedEditorListItems()") && adminApp.includes("function formatListItemHeading") && adminApp.includes('command==="formatBlock"&&/^H[234]$/.test(value||"")') && adminApp.includes('$("#preview-content").dir=direction'),"applying H2-H4 to selected list items must preserve their surrounding UL/OL structure and previews must follow the article language direction");
 const inlineSerializer = adminApp.slice(adminApp.indexOf("function inlineToMarkdown"),adminApp.indexOf("function listToMarkdown"));
 const blockSerializer = adminApp.slice(adminApp.indexOf("function blockToMarkdown"),adminApp.indexOf("function editorToMarkdown"));
@@ -514,6 +515,13 @@ const renderedCmsNumberedHeadings = cmsPreviewContext.testRenderPreviewMarkdown(
 assert.equal((renderedCmsNumberedHeadings.match(/<ol>/g)||[]).length,1,"the admin preview must keep all numbered headings in one OL");
 assert.equal((renderedCmsNumberedHeadings.match(/<li>/g)||[]).length,4,"the admin preview must keep all four list items");
 assert.equal((renderedCmsNumberedHeadings.match(/<h3>/g)||[]).length,4,"the admin preview must show H3 semantics inside each numbered list item");
+const renderedCmsMalformedHeadings=cmsPreviewContext.testRenderPreviewMarkdown(malformedHeadingListMarkdown).replace(/\s+(?=<)/g,"");
+assert.equal((renderedCmsMalformedHeadings.match(/<ol>/g)||[]).length,1,"the admin editor must repair legacy split heading markers into one ordered list");
+assert.equal((renderedCmsMalformedHeadings.match(/<h3>/g)||[]).length,4,"the admin editor must reconstruct all four H3 heading styles");
+assert.equal((renderedCmsMalformedHeadings.match(/<p>/g)||[]).length,4,"the admin editor must keep each heading item's explanatory paragraph");
+const renderedCmsContinuedList=cmsPreviewContext.testRenderPreviewMarkdown(continuedNumberedListMarkdown).replace(/\s+(?=<)/g,"");
+assert.equal((renderedCmsContinuedList.match(/<ol>/g)||[]).length,1,"the admin editor must keep one-space continuation paragraphs inside a single ordered list");
+assert.equal((renderedCmsContinuedList.match(/<li>/g)||[]).length,4,"the admin editor must keep each metric label and its description in one list item");
 
 assert.ok(blogCss.includes(".blog-prose ul{list-style-type:disc}") && blogCss.includes('.blog-prose[dir="rtl"] ol{list-style-type:persian}') && blogCss.includes('.blog-prose[dir="ltr"] ol{list-style-type:decimal}') && blogCss.includes('.blog-prose[dir="rtl"] ol ol,.blog-prose[dir="ltr"] ol ol{list-style-type:lower-alpha}') && blogCss.includes('.blog-prose[dir="rtl"] ol ol ol,.blog-prose[dir="ltr"] ol ol ol{list-style-type:lower-roman}') && blogCss.includes(".blog-prose li::marker"), "public article lists must use direction-aware top-level numbering while preserving alphabetic and Roman nested levels");
 assert.ok(["h2","h3","h4","p","strong","em","u","del","a","blockquote","pre","code","img","hr"].every((tag)=>blogCss.includes(".blog-prose "+tag)), "public article CSS must style every semantic text format emitted by the Markdown renderer");
