@@ -2052,3 +2052,28 @@ body:has(.blog-theme) .analytics-preferences:hover {
 @media(max-width:700px) {
   .blog-theme .blog-toc-desktop {display:none}
 }
+
+/* Keep a bold lead or semantic heading and its first list description on one line. */
+.blog-prose li>strong:first-child,
+.blog-prose li>h2,
+.blog-prose li>h3,
+.blog-prose li>h4 {
+  margin-inline-end:.35em;
+}
+.blog-prose li>h2,
+.blog-prose li>h3,
+.blog-prose li>h4 {
+  display:inline;
+  margin-block:0;
+  font-size:inherit;
+  line-height:inherit;
+  letter-spacing:normal;
+}
+.blog-prose li>strong + p,
+.blog-prose li>h2 + p,
+.blog-prose li>h3 + p,
+.blog-prose li>h4 + p {
+  display:inline;
+  margin:0;
+  line-height:inherit;
+}

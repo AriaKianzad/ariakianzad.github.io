@@ -444,6 +444,8 @@ const renderedContinuedNumberedList=markdownRuntime.exports.renderMarkdown(conti
 assert.equal((renderedContinuedNumberedList.match(/<ol>/g)||[]).length,1,"one-space continuation paragraphs must not split numbered lists");
 assert.equal((renderedContinuedNumberedList.match(/<li>/g)||[]).length,4,"continued numbered descriptions must stay in their original list items");
 assert.equal((renderedContinuedNumberedList.match(/<p>/g)||[]).length,4,"each numbered metric must keep its explanatory paragraph");
+assert.equal((renderedContinuedNumberedList.match(/<\/strong><p>/g)||[]).length,4,"each numbered metric must keep its explanatory paragraph directly after the bold label");
+
 
 const continuedBulletListMarkdown=[
   "- **سطح اول، حضور:**",
@@ -697,7 +699,9 @@ assert.ok(adminApp.includes('relation="follow",target=external?"_blank":"_self"'
 assert.ok(!adminApp.slice(adminApp.indexOf("function clipboardHeadingLevel"),adminApp.indexOf("function cleanClipboardNode")).includes('querySelectorAll?.("[style]")'), "Google Docs heading detection must not promote an entire paragraph based on a single styled child run");
 
 assert.ok(adminApp.includes('explicitRelation==="follow"') && adminApp.includes('if(relation!=="follow"||explicitRelation==="follow")'), "an explicitly selected follow relation must survive Markdown serialization and subsequent editing");
-assert.ok(adminHtml.includes('app.js?v=20261126-3') && adminHtml.includes('blog.css?v=20261126-1'), "the admin editor script must use a fresh cache key after the legacy list restoration fix");
+assert.ok(adminHtml.includes('app.js?v=20261126-3') && adminHtml.includes('blog.css?v=20261126-2'), "the admin editor assets must use current cache keys after list formatting changes");
+assert.ok(blogCss.includes(".blog-prose li>strong:first-child") && blogCss.includes(".blog-prose li>h3 + p") && blogCss.includes("display:inline") && blogCss.includes("font-size:inherit"), "public list labels and their descriptions must stay on one visual line while preserving semantic headings");
+assert.ok(adminCss.includes(".editor-richtext li>strong:first-child") && adminCss.includes(".markdown-preview li>strong + p") && adminCss.includes(".editor-richtext li>h3 + p") && adminCss.includes("display:inline"), "the rich-text editor and Markdown preview must match the public inline list layout");
 assert.ok(adminApp.includes('["follow","nofollow","sponsored","ugc"].includes(value)') && adminApp.includes('["nofollow","sponsored","ugc"].includes(v)') && adminApp.includes('const external=/^https?:\\/\\//i.test(href)'), "clipboard and editor link settings must preserve explicit nofollow, sponsored and UGC values while defaulting unmarked links to follow");
 
 
