@@ -199,7 +199,7 @@ function init(root: HTMLElement): (() => void) | undefined {
     const height = Math.max(1, Math.round(rect.height));
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    camera.position.z = width < 620 ? 7.5 : 6.5;
+    camera.position.z = width < 620 ? (root.dataset.homeScene === "flow" ? 10.5 : 7.5) : 6.5;
     camera.updateProjectionMatrix();
     render();
   };
