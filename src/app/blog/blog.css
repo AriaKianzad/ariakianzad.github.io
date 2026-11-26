@@ -1779,7 +1779,7 @@ body:has(.blog-theme) .analytics-consent {
   backdrop-filter: blur(14px);
 }
 body:has(.blog-theme) .analytics-consent__copy strong { color: #28242b; }
-body:has(.blog-theme) .analytics-consent__copy p { color: #596863; }
+body:has(.blog-theme) .analytics-consent__copy p { color: #807780; }
 body:has(.blog-theme) .analytics-consent__accept {
   border-color: #28242b;
   background: #28242b;
