@@ -140,7 +140,8 @@
 .blog-prose strong{font-weight:800}
 .blog-prose ul,.blog-prose ol{margin:0 0 1.5em;padding-inline-start:1.5em;list-style-position:outside}
 .blog-prose ul{list-style-type:disc}
-.blog-prose ol{list-style-type:persian}
+.blog-prose[dir="rtl"] ol{list-style-type:persian}
+.blog-prose[dir="ltr"] ol{list-style-type:decimal}
 .blog-prose ul ul{list-style-type:circle}
 .blog-prose ul ul ul{list-style-type:square}
 .blog-prose ol ol{list-style-type:lower-alpha}
