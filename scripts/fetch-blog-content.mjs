@@ -13,11 +13,15 @@ if (!response.ok) throw new Error("Could not fetch published blog payload (HTTP 
 const payload = await response.json();
 if (!payload || !Array.isArray(payload.posts) || typeof payload.settings !== "object") throw new Error("Published blog payload has an unexpected structure.");
 const s = payload.settings || {};
+const rawAccent = typeof s.accent_color === "string" && /^#[0-9a-f]{6}$/i.test(s.accent_color)
+  ? s.accent_color
+  : "#7b3f58";
+const accentColor = rawAccent.toLowerCase() === "#a86f54" ? "#7b3f58" : rawAccent;
 const result = {
   settings: {
     title:s.title||"نوشته‌ها", tagline:s.tagline||"یادداشت‌هایی درباره برند، معنا و ارتباط",
     description:s.description||"", canonical_url:s.canonical_url||"", background_theme:s.background_theme||"paper",
-    accent_color:(s.accent_color||"").toLowerCase()==="#a86f54"?"#7b3f58":(s.accent_color||"#7b3f58"), card_style:s.card_style||"editorial",
+    accent_color:accentColor, card_style:s.card_style||"editorial",
     layout_style:s.layout_style||"editorial", content_width:s.content_width||"reading",
     posts_per_page:Math.min(24,Math.max(3,Number(s.posts_per_page||9))),
     show_search:s.show_search!==false, show_categories:s.show_categories!==false,
