@@ -85,7 +85,7 @@ assert.ok(contact.includes('name: "HMAC"') && contact.includes('crypto.subtle.si
 assert.ok(!contact.includes('crypto.subtle.digest("SHA-256"'), "blog-contact must not use a plain hash of the IP and secret");
 assert.ok(contact.includes("p_fingerprint: ipHash") && !contact.includes("p_ip:"), "blog-contact must send only the keyed fingerprint to the database rate limiter");
 assert.ok(contact.includes("CLOUDFLARE_TURNSTILE_SECRET_KEY") && contact.includes("/turnstile/v0/siteverify") && contact.includes('result.action === "blog_contact"'), "blog-contact must verify Turnstile tokens with Cloudflare Siteverify");
-assert.ok(contact.includes("ServiceUnavailableError") && contact.includes("if (!address)"), "unavailable anti-abuse checks must fail closed with a service-unavailable response");
+assert.ok(contact.includes("ServiceUnavailableError") && contact.includes("CLOUDFLARE_TURNSTILE_ENABLED") && contact.includes("const rateLimitIdentities = [") && contact.includes('"email:" + email'), "Turnstile must fail closed when explicitly enabled but misconfigured, while rate limiting must use an email fallback when the trusted IP is unavailable");
 assert.ok(contact.includes('origin !== SITE_ORIGIN') && contact.includes("MAX_BODY_BYTES") && contact.includes("companyFax"), "the public contact endpoint must retain its Origin, body-size and honeypot controls");
 assert.ok(contact.includes('scriptUrl.hostname !== "script.google.com"') && contact.includes("GOOGLE_APPS_SCRIPT_TOKEN"), "the contact relay must use only the expected HTTPS Google Apps Script host and a server-only token");
 assert.ok(config.includes("[functions.blog-contact]") && config.includes("verify_jwt = false"), "the contact endpoint must preserve its intentional public-function JWT mode");
