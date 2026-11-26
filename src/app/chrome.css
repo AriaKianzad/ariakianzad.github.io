@@ -728,7 +728,7 @@ nav[data-open] .menu-btn__icon::after { transform: rotate(-45deg); }
   padding: 0.5rem 0.8rem;
   border: 1px solid var(--line-strong);
   border-radius: 2px;
-  background: rgba(13, 19, 16, 0.94);
+  background: rgba(251, 249, 244, 0.96);
   color: var(--ink-soft);
   font-family: var(--font-mono);
   font-size: 0.65rem;
