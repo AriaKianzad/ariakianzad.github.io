@@ -18,7 +18,6 @@ import wawoff2Module from "wawoff2";
 const wawoff2 = wawoff2Module.default ?? wawoff2Module;
 
 const ROOT = process.cwd();
-const PAPER = "#f3f0e8";
 const PLUM = "#7b3f58";
 const BRASS = "#d6a443";
 const MARK = "#fbf9f4";
@@ -55,11 +54,12 @@ console.log("wght axis and Latin coverage verified; generating assets");
 /* ------------------------------------------------------------------ */
 
 const iconSvg = (size) => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">
-<rect width="512" height="512" fill="${PAPER}"/>
 <rect x="28" y="28" width="456" height="456" rx="92" fill="${PLUM}"/>
-<path d="M150 365 220 148 292 365 M174 292H270 M322 148V365 M322 258 390 148 M322 258 394 365"
-  fill="none" stroke="${MARK}" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
-<circle cx="408" cy="104" r="20" fill="${BRASS}"/>
+<g transform="translate(-26 24.5)">
+  <path d="M150 365 220 148 292 365 M174 292H270 M322 148V365 M322 258 390 148 M322 258 394 365"
+    fill="none" stroke="${MARK}" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="408" cy="104" r="20" fill="${BRASS}"/>
+</g>
 </svg>`;
 
 const vectorIcon = iconSvg(512);
