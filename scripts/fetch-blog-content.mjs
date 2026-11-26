@@ -17,7 +17,7 @@ const result = {
   settings: {
     title:s.title||"نوشته‌ها", tagline:s.tagline||"یادداشت‌هایی درباره برند، معنا و ارتباط",
     description:s.description||"", canonical_url:s.canonical_url||"", background_theme:s.background_theme||"paper",
-    accent_color:s.accent_color||"#a86f54", card_style:s.card_style||"editorial",
+    accent_color:(s.accent_color||"").toLowerCase()==="#a86f54"?"#7b3f58":(s.accent_color||"#7b3f58"), card_style:s.card_style||"editorial",
     layout_style:s.layout_style||"editorial", content_width:s.content_width||"reading",
     posts_per_page:Math.min(24,Math.max(3,Number(s.posts_per_page||9))),
     show_search:s.show_search!==false, show_categories:s.show_categories!==false,
