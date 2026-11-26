@@ -248,7 +248,7 @@ export function renderMarkdown(markdown:string):string{
   };
   for(let index=0;index<lines.length;index++){
     const line=lines[index];
-    const legacyList=parseLegacyNumberedHeadingList(lines,index);
+    const legacyList=code?null:parseLegacyNumberedHeadingList(lines,index);
     if(legacyList){closeP();closeL();renderLegacyNumberedHeadingList(legacyList.items);index=legacyList.endIndex;continue;}
     if(code){
       if(/^\x60{3}\s*$/.test(line)){out.push('<pre><code'+(language?' class="language-'+esc(language)+'"':"")+'>'+esc(code.join("\n"))+"</code></pre>");code=null;language="";}
