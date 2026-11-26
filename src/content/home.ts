@@ -4,11 +4,11 @@
  */
 
 export const hero = {
-  eyebrow: "Brand strategy / Positioning / Communication",
+  eyebrow: "Brand strategy / Creative copywriting / Personal branding",
   titleLead: "Find the difference.",
   titleAccent: "Make it matter.",
   lede:
-    "I'm Aria Kianzad. I help brands turn research and insight into a distinct position, then translate that thinking into identity and communication people can understand, remember and choose.",
+    "I'm Aria Kianzad, a brand strategist and creative copywriter. I help brands get clear on what makes them different, then turn that into a clear position, a distinct voice and words people remember.",
   primaryCta: { label: "Start a conversation", href: "mailto:kianzadaria@gmail.com" },
   secondaryCta: { label: "Explore my approach", href: "/#method" },
   signals: [
@@ -20,9 +20,9 @@ export const hero = {
 
 export const manifesto = {
   eyebrow: "The point of view",
-  heading: "Clarity is not the opposite of ambition. It is how a brand earns attention.",
+  heading: "Clarity isn't the opposite of ambition. It's how a brand earns attention.",
   body:
-    "The market is full of messages competing to be noticed. The useful question is not how to say more. It is what deserves to be said, who needs to hear it, and why it should matter to them.",
+    "Every market is full of brands trying to get noticed. The real question is what's worth saying, who needs to hear it, and why they'd care.",
   closing: "Brands grow when they communicate with intention, not volume.",
 } as const;
 
@@ -30,14 +30,14 @@ export const expertise = {
   eyebrow: "Where I work",
   heading: "Strategy first. Everything else follows.",
   intro:
-    "A strong brand is not a collection of disconnected deliverables. It is a clear idea, understood by the right people and expressed consistently.",
+    "A strong brand isn't a pile of disconnected deliverables. It's a clear position, brought to life through identity, storytelling and the way the business communicates.",
   items: [
     {
       number: "01",
       code: "DISCOVER",
       title: "Research & insight",
       body:
-        "Understand the people, category and context around a business. I look at customer behaviour, market dynamics and the competitive landscape before deciding what a brand should say.",
+        "Before deciding what a brand should say, I want to understand the people around it: how customers behave, what the market rewards and where competitors are all saying the same thing.",
       tags: ["Consumer insight", "Market research", "Competitive analysis"],
     },
     {
@@ -45,7 +45,7 @@ export const expertise = {
       code: "DEFINE",
       title: "Positioning & identity",
       body:
-        "Find the difference a brand can credibly own, why it matters, and how that position should shape its identity, voice and place in the market.",
+        "Get clear on the difference a brand can genuinely own, why it matters to its audience and how it should shape the brand's identity, voice and place in the market.",
       tags: ["Brand positioning", "Brand identity", "Verbal identity"],
     },
     {
@@ -53,7 +53,7 @@ export const expertise = {
       code: "EXPRESS",
       title: "Content & communication",
       body:
-        "Turn strategic direction into a coherent communication system, from messaging and storytelling to content strategy, copywriting and search-led content.",
+        "I turn that direction into a clear communication system, from messaging and storytelling to content strategy, creative copywriting and search-focused content.",
       tags: ["Content strategy", "Storytelling", "Copywriting", "SEO content"],
     },
   ],
@@ -63,30 +63,30 @@ export const method = {
   eyebrow: "The working method",
   heading: "The most important work happens before the first line.",
   intro:
-    "I don't begin with a format or a predetermined deliverable. I begin by understanding the decision a brand needs to make.",
+    "I don't start with a format or a headline. First, I need to understand what the brand is trying to solve, who it's speaking to and what needs to change.",
   steps: [
     {
       number: "01",
       title: "Listen",
-      body: "Understand the business, its ambitions, its constraints and the question that brought us here.",
+      body: "Get clear on the business, what it's trying to do, what can't change and the question that needs an answer.",
       output: "The real problem",
     },
     {
       number: "02",
       title: "Investigate",
-      body: "Study the audience, category, competition and behaviour around the brand. Separate assumptions from useful signals.",
+      body: "Look at the audience, category, competition and behaviour around the brand. The point is to separate what we assume from what we can actually use.",
       output: "A sharper view",
     },
     {
       number: "03",
       title: "Position",
-      body: "Define the difference worth owning, the people it matters to and the reason they should care.",
+      body: "Find the difference the brand can credibly own, who it matters to and why anyone should care.",
       output: "A clear direction",
     },
     {
       number: "04",
       title: "Express",
-      body: "Translate the position into identity, messaging and communication people can recognise and understand.",
+      body: "Bring the position to life through identity, messaging and communication people can recognise and understand.",
       output: "A coherent system",
     },
   ],
@@ -97,9 +97,9 @@ export const rexoSection = {
   meta: "Founded in 2024",
   heading: "A place for ideas to become real.",
   body:
-    "I founded Rexo to bring strategic thinking and creative execution into the same conversation. The work starts by understanding what makes a business different, deciding why that difference matters, and giving it a coherent way to show up.",
+    "I started Rexo to bring strategic thinking and creative work into the same conversation. We start by understanding what makes a business different, why that difference matters and how it should show up.",
   secondary:
-    "Rexo works across brand strategy, creative direction, identity and campaigns. The scope follows the problem, not the other way around.",
+    "The work spans brand strategy, creative direction, identity and campaigns. The brief shapes the work, not a fixed list of services.",
   diagram: [
     { number: "01", label: "Understand", note: "The business and its context" },
     { number: "02", label: "Position", note: "The difference worth owning" },
@@ -115,23 +115,15 @@ export const notes = {
   eyebrow: "Ideas in progress",
   heading: "Thinking is part of the work.",
   body:
-    "I write about the choices behind brands: positioning, communication, content and the small details that change how people understand a business.",
+    "I use my own blog to think through brand strategy, positioning, communication and the choices that shape how people see a business.",
   items: [
     {
-      type: "Persian editorial platform",
-      title: "RexoMag",
+      type: "Personal blog",
+      title: "My personal blog",
       description:
-        "A Persian publication for practical ideas on branding, content and business.",
-      href: "https://rexo.agency/mag",
-      action: "Explore RexoMag",
-    },
-    {
-      type: "Essays and notes",
-      title: "Medium",
-      description:
-        "Longer thoughts on brand strategy, positioning, storytelling and communication.",
-      href: "https://medium.com/@AriaKianzad",
-      action: "Read on Medium",
+        "I write about brand strategy, positioning, creative work and the words that help people make sense of a brand. It's where I explore the thinking behind the work, one idea at a time.",
+      href: "/blog/",
+      action: "Read the blog",
     },
   ],
 } as const;
@@ -140,17 +132,17 @@ export const about = {
   eyebrow: "A little context",
   heading: "Curious about what makes people understand.",
   paragraphs: [
-    "I'm Aria Kianzad, a brand strategist and personal branding consultant. I'm interested in the gap between what a business is and what people understand about it. My work begins with research, customer behaviour and market context, then moves into positioning and the way that position gets communicated.",
-    "My path started closer to technology. It left me with a habit of looking for patterns, asking better questions and not taking the first answer at face value. Today, that same curiosity shapes how I think about brands.",
-    "I founded Rexo in 2024 to bring strategy and creative execution closer together. Alongside that work, I write about branding, communication and the decisions that shape perception.",
+    "I'm Aria Kianzad, a brand strategist and creative copywriter. I work with brands and people to get clear on what makes them distinct, then shape how that difference comes through in positioning, identity and communication. Personal branding is part of that work: making sure the way you show up feels like you, and makes sense to the people you want to reach.",
+    "I started out closer to technology. That experience left me curious about patterns, behaviour and the questions hiding behind the obvious answers. I still bring that way of thinking into brand work, just with a different set of tools.",
+    "I founded Rexo in 2024 to bring strategy and creative execution closer together. I also write on my own blog about branding, communication and the choices that shape perception.",
   ],
 } as const;
 
 export const contactSection = {
   eyebrow: "Start here",
-  heading: "Have a brand question worth getting clear on?",
+  heading: "Got a brand question you're trying to untangle?",
   body:
-    "Tell me what you're building, what feels unresolved, or what you want people to understand. We can start with the question before deciding on the answer.",
+    "Tell me what you're working on, what's not quite clicking, or what you want people to understand. We can start there and work out what the project actually needs.",
   email: "kianzadaria@gmail.com",
   cta: { label: "Email Aria", href: "mailto:kianzadaria@gmail.com" },
   copyLabel: "Copy email",

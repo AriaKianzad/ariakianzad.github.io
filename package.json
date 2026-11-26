@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "node scripts/strip-next-runtime.mjs && esbuild src/client/hero-visual.ts --bundle --splitting --format=esm --target=es2020 --outdir=out/_hero --entry-names=hero-visual --chunk-names=chunks/[name]-[hash] && esbuild --allow-overwrite --minify out/boot.js out/ui.js --outdir=out && node scripts/generate-social-previews.mjs && node scripts/verify-export.mjs",
+    "postbuild": "node scripts/strip-next-runtime.mjs && esbuild src/client/hero-visual.ts src/client/home-scenes.ts --bundle --splitting --format=esm --target=es2020 --outdir=out/_hero --entry-names=[name] --chunk-names=chunks/[name]-[hash] && esbuild --allow-overwrite --minify out/boot.js out/ui.js --outdir=out && node scripts/generate-social-previews.mjs && node scripts/verify-export.mjs",
     "hosting": "node scripts/make-hosting-bundle.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
