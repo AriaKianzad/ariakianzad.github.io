@@ -16,6 +16,14 @@ const pageDescription =
 export function rootMetadata(): Metadata {
   return {
     metadataBase: new URL(site.url),
+    icons: {
+      icon: [
+        { url: "/favicon.svg", type: "image/svg+xml" },
+        { url: "/icon.png", type: "image/png", sizes: "512x512" },
+      ],
+      shortcut: ["/favicon.svg"],
+      apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+    },
     title: pageTitle,
     description: pageDescription,
     applicationName: site.name,
