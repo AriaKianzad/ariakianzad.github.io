@@ -3,8 +3,8 @@ import * as THREE from "three";
 type Motion = (time: number, delta: number) => void;
 const lime = new THREE.Color("#c6e887");
 const pale = new THREE.Color("#e0e8c9");
-const warm = new THREE.Color("#ff8a70");
-const warmSoft = new THREE.Color("#ffb29e");
+const vivid = new THREE.Color("#7d83ff");
+const vividSoft = new THREE.Color("#b9bdff");
 
 function orbitScene(world: THREE.Group): Motion {
   const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.66, 3),
@@ -15,7 +15,7 @@ function orbitScene(world: THREE.Group): Motion {
   const rings = [
     [1.22, 0.009, lime, 0.88, 0.94, 0.18, -0.35],
     [1.55, 0.006, pale, 0.48, 0.28, 1.08, 0.16],
-    [1.04, 0.005, warm, 0.72, 1.42, -0.5, 0.82],
+    [1.04, 0.005, vivid, 0.76, 1.42, -0.5, 0.82],
   ].map(([radius, tube, color, opacity, rx, ry, rz]) => {
     const ring = new THREE.Mesh(new THREE.TorusGeometry(radius as number, tube as number, 8, 180),
       new THREE.MeshBasicMaterial({ color: color as THREE.Color, transparent: true, opacity: opacity as number }));
@@ -25,7 +25,7 @@ function orbitScene(world: THREE.Group): Motion {
   });
 
   const nodeGeo = new THREE.SphereGeometry(0.035, 12, 12);
-  const nodeMats = [new THREE.MeshBasicMaterial({ color: lime }), new THREE.MeshBasicMaterial({ color: pale }), new THREE.MeshBasicMaterial({ color: warm })];
+  const nodeMats = [new THREE.MeshBasicMaterial({ color: lime }), new THREE.MeshBasicMaterial({ color: pale }), new THREE.MeshBasicMaterial({ color: vivid })];
   const nodes: THREE.Mesh[] = [];
   const points: THREE.Vector3[] = [];
   for (let i = 0; i < 11; i += 1) {
@@ -99,7 +99,7 @@ function flowScene(world: THREE.Group, compact: boolean, viewportWidth: number):
   dotsGeo.setAttribute("position", new THREE.BufferAttribute(dots, 3));
   world.add(new THREE.Points(dotsGeo, new THREE.PointsMaterial({
     color: pale,
-    size: compact ? 1.5 : 1.2,
+    size: compact ? 0.024 : 0.022,
     transparent: true,
     opacity: 0.72,
     depthWrite: false,
@@ -119,7 +119,7 @@ function flowScene(world: THREE.Group, compact: boolean, viewportWidth: number):
     new THREE.MeshBasicMaterial({ color: lime, transparent: true, opacity: 0.86 })));
 
   const beadGeo = new THREE.SphereGeometry(compact ? 0.09 : 0.075, 18, 18);
-  const beads = [warm, pale, warmSoft].map(color => {
+  const beads = [vivid, pale, vividSoft].map(color => {
     const bead = new THREE.Mesh(beadGeo, new THREE.MeshBasicMaterial({ color }));
     world.add(bead);
     return bead;
@@ -138,7 +138,7 @@ function flowScene(world: THREE.Group, compact: boolean, viewportWidth: number):
   particleGeo.setAttribute("position", new THREE.Float32BufferAttribute(particles, 3));
   world.add(new THREE.Points(particleGeo, new THREE.PointsMaterial({
     color: pale,
-    size: compact ? 1.2 : 1,
+    size: compact ? 0.014 : 0.013,
     transparent: true,
     opacity: 0.48,
   })));

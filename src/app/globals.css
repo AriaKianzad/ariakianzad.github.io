@@ -1,6 +1,6 @@
 /* ==========================================================================
    Aria Kianzad / Design system
-   Editorial strategy, quiet contrast and one deliberate signal colour.
+   Editorial strategy, quiet contrast and two deliberate signal colours.
    ========================================================================== */
 
 :root {
@@ -15,8 +15,9 @@
   --accent: #c6e887;
   --accent-soft: #def2b4;
   --accent-dark: #283b24;
-  --accent-warm: #ff8a70;
-  --accent-warm-soft: #ffb29e;
+  --accent-vivid: #7d83ff;
+  --accent-vivid-soft: #b9bdff;
+  --accent-vivid-deep: #454bc5;
   --paper: #e9ebdf;
   --paper-ink: #18211b;
   --paper-muted: #58645a;
