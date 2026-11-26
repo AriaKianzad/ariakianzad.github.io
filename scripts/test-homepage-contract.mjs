@@ -186,6 +186,14 @@ assert.ok(socialGenerator.includes('join(root, "assets-src/Estedad-Regular.ttf")
   socialGenerator.includes('join(root, "assets-src/Estedad-SemiBold.ttf")') &&
   !socialGenerator.includes("data:font/ttf;base64"),
   "social previews must load the bundled Estedad faces directly instead of relying on unsupported embedded @font-face data");
+const homepageSvgSource = socialGenerator.split("const homepageSvg = `")[1]?.split("</svg>`")[0] ?? "";
+assert.ok(homepageSvgSource.includes('stop-color="#f3f0e8"') &&
+  homepageSvgSource.includes('fill="#d6a443"') &&
+  homepageSvgSource.includes('fill="#7b3f58"'),
+  "homepage social preview must use the new paper, plum and brass palette");
+assert.ok(!/(#080d0b|#0b110e|#070b09|#c6e887|#879d63|#bdcba9)/i.test(homepageSvgSource),
+  "homepage social preview must not retain the previous dark-lime palette");
+
 const bookSvgSource = socialGenerator.split("const bookSvg = `")[1]?.split("</svg>`;")[0] ?? "";
 assert.equal(
   [...bookSvgSource.matchAll(/<text class="fa"[^>]*text-anchor="end" direction="rtl"/g)].length,
