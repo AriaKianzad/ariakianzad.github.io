@@ -391,6 +391,60 @@ const numberedHeadingToc = markdownRuntime.exports.extractToc(numberedHeadingLis
 assert.equal(numberedHeadingToc.length,4,"numbered H3 list items must remain available to the article table of contents");
 assert.equal(numberedHeadingToc[0].title,"مرحلۀ اول","the TOC must extract the title from a numbered heading item");
 assert.ok(normalizedNumberedHeadingList.includes('<li><h3 id="'+numberedHeadingToc[0].id+'">مرحلۀ اول</h3></li>'),"numbered list heading IDs must match the table of contents");
+const malformedHeadingListMarkdown = [
+  "### **",
+  "۱. یک مرجع روشن برای هویت برند بسازید**",
+  "",
+  "پاراگراف اول توضیح این مورد.",
+  "",
+  "### **",
+  "۲. اطلاعات برند رو در منابع مختلف هماهنگ نگه دارید**",
+  "",
+  "پاراگراف دوم توضیح این مورد.",
+  "",
+  "### **",
+  "۳. محتوا رو برای سؤال واقعی مخاطب طراحی کنید**",
+  "",
+  "پاراگراف سوم توضیح این مورد.",
+  "",
+  "### **",
+  "۴. دسترسی فنی رو جداگانه بررسی کنید**",
+  "",
+  "پاراگراف چهارم توضیح این مورد.",
+].join("\n");
+const renderedMalformedHeadingList = markdownRuntime.exports.renderMarkdown(malformedHeadingListMarkdown);
+const normalizedMalformedHeadingList = renderedMalformedHeadingList.replace(/\s+(?=<)/g,"");
+assert.equal((normalizedMalformedHeadingList.match(/<ol/g)||[]).length,1,"split H3 title markers and Persian numerals must be repaired as one ordered list");
+assert.equal((normalizedMalformedHeadingList.match(/<li>/g)||[]).length,4,"all four recovered heading items must stay in the same list");
+assert.equal((normalizedMalformedHeadingList.match(/<h3 id=/g)||[]).length,4,"all four recovered headings must render as semantic H3 elements");
+assert.equal((normalizedMalformedHeadingList.match(/<p>/g)||[]).length,4,"each recovered heading must retain its own explanatory paragraph inside the list item");
+const malformedHeadingToc=markdownRuntime.exports.extractToc(malformedHeadingListMarkdown);
+assert.equal(malformedHeadingToc.length,4,"recovered numbered H3 headings must appear in the table of contents");
+assert.deepEqual(malformedHeadingToc.map((item)=>item.title),[
+  "یک مرجع روشن برای هویت برند بسازید",
+  "اطلاعات برند رو در منابع مختلف هماهنگ نگه دارید",
+  "محتوا رو برای سؤال واقعی مخاطب طراحی کنید",
+  "دسترسی فنی رو جداگانه بررسی کنید",
+],"the TOC must restore the original Persian numbered H3 titles without their numbering glyphs");
+
+const continuedNumberedListMarkdown=[
+  "1. **نرخ حضور:**",
+  " برند در چه سهمی از پرسش‌های مرتبط ظاهر می‌شه؟",
+  "",
+  "2. **دقت اطلاعات:**",
+  " چند مورد از ادعاهای قابل‌بررسی درباره‌ی برند درست هستن؟",
+  "",
+  "3. **کیفیت ارجاع:**",
+  " آیا صفحه‌های رسمی و منابع معتبر به‌درستی به‌عنوان منبع معرفی می‌شن؟",
+  "",
+  "4. **اثر تجاری:**",
+  " آیا این حضور به بازدید مرتبط یا اقدام معناداری منجر می‌شه؟",
+].join("\n");
+const renderedContinuedNumberedList=markdownRuntime.exports.renderMarkdown(continuedNumberedListMarkdown).replace(/\s+(?=<)/g,"");
+assert.equal((renderedContinuedNumberedList.match(/<ol>/g)||[]).length,1,"one-space continuation paragraphs must not split numbered lists");
+assert.equal((renderedContinuedNumberedList.match(/<li>/g)||[]).length,4,"continued numbered descriptions must stay in their original list items");
+assert.equal((renderedContinuedNumberedList.match(/<p>/g)||[]).length,4,"each numbered metric must keep its explanatory paragraph");
+
 
 const formatMarkdown = [
   "## تیتر دوم",
@@ -621,7 +675,7 @@ assert.ok(adminApp.includes('relation="follow",target=external?"_blank":"_self"'
 assert.ok(!adminApp.slice(adminApp.indexOf("function clipboardHeadingLevel"),adminApp.indexOf("function cleanClipboardNode")).includes('querySelectorAll?.("[style]")'), "Google Docs heading detection must not promote an entire paragraph based on a single styled child run");
 
 assert.ok(adminApp.includes('explicitRelation==="follow"') && adminApp.includes('if(relation!=="follow"||explicitRelation==="follow")'), "an explicitly selected follow relation must survive Markdown serialization and subsequent editing");
-assert.ok(adminHtml.includes('app.js?v=20261126-2') && adminHtml.includes('blog.css?v=20261126-1'), "the admin editor scripts and styles must use fresh cache keys after list-formatting changes");
+assert.ok(adminHtml.includes('app.js?v=20261126-3') && adminHtml.includes('blog.css?v=20261126-1'), "the admin editor script must use a fresh cache key after the legacy list restoration fix");
 assert.ok(adminApp.includes('["follow","nofollow","sponsored","ugc"].includes(value)') && adminApp.includes('["nofollow","sponsored","ugc"].includes(v)') && adminApp.includes('const external=/^https?:\\/\\//i.test(href)'), "clipboard and editor link settings must preserve explicit nofollow, sponsored and UGC values while defaulting unmarked links to follow");
 
 
