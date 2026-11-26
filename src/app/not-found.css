@@ -119,6 +119,8 @@
 .not-found-main .not-found-content { max-width:900px; }
 .not-found-main .not-found-number { color:rgba(40,36,43,.065); }
 .not-found-main .not-found-eyebrow { color:#805a18; }
+.not-found-main .not-found-eyebrow span { background:#d6a443; }
+.not-found-main .not-found-back:hover { color:#7b3f58; }
 .not-found-main .not-found-description { color:#554f57; }
 .not-found-main .not-found-secondary { border-color:rgba(40,36,43,.25); color:#28242b; }
 .not-found-main .not-found-primary { background:#7b3f58; color:#fbf9f4; }
