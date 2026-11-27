@@ -336,6 +336,14 @@ assert.ok(
   externalRepeatedPathLink.includes('href="https://example.com/a//b/"'),
   "URL normalization must not rewrite external paths",
 );
+const protocolRelativeLink = markdownRuntime.exports.renderMarkdown(
+  "[external](//ariakianzad.github.io//blog/category/brand-and-business/)",
+);
+assert.ok(
+  !protocolRelativeLink.includes('href="//ariakianzad.github.io') &&
+    !protocolRelativeLink.includes('href="https://ariakianzad.github.io//'),
+  "protocol-relative URLs must remain rejected",
+);
 assert.ok(markdownSource.includes("function plainInline(") && markdownSource.includes("title:plainInline(title)") && markdownSource.includes("line.match(/^(#{1,4})"), "TOC extraction must convert Markdown heading labels to plain text and keep heading ID counters aligned with rendered headings");
 const tocMarkdown = [
   "# تیتر تکراری",
