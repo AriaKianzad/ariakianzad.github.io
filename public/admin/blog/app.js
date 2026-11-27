@@ -698,7 +698,22 @@
       const heading=line.match(/^\s{0,3}(#{1,4})\s+(.+)$/);
       if(heading){close();closeList();const level=Math.max(2,heading[1].length);output.push("<h"+level+">"+previewInline(heading[2])+"</h"+level+">");continue;}
       const quote=line.match(/^>\s?(.*)$/);
-      if(quote){close();closeList();output.push("<blockquote><p>"+previewInline(quote[1])+"</p></blockquote>");continue;}
+      if(quote){
+        close();closeList();
+        const quoteParagraphs=[[]];
+        while(index<lines.length){
+          const quotedLine=lines[index].match(/^>\s?(.*)$/);
+          if(!quotedLine)break;
+          const content=quotedLine[1].trim();
+          if(content)quoteParagraphs[quoteParagraphs.length-1].push(content);
+          else if(quoteParagraphs[quoteParagraphs.length-1].length)quoteParagraphs.push([]);
+          index++;
+        }
+        while(quoteParagraphs.length&&!quoteParagraphs[quoteParagraphs.length-1].length)quoteParagraphs.pop();
+        output.push("<blockquote>"+quoteParagraphs.map((parts)=>"<p>"+previewInline(parts.join(" "))+"</p>").join("")+"</blockquote>");
+        index--;
+        continue;
+      }
       const item=parseListItem(line);
       if(item){close();appendListItem(item);continue;}
       if(continuationIndent(line)){paragraph.push(line.trim());continue;}
@@ -789,8 +804,13 @@
     if(tag==="p")return Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
     if(tag==="ul"||tag==="ol")return listToMarkdown(element,0)+"\n\n";
     if(tag==="blockquote"){
-      const inner=Array.from(element.childNodes).map((child)=>child.nodeType===Node.ELEMENT_NODE&&["P","DIV"].includes(child.tagName)?Array.from(child.childNodes).map(inlineToMarkdown).join(""):inlineToMarkdown(child)).join("\n");
-      return inner.split("\n").map((line)=>"> "+line).join("\n")+"\n\n";
+      const parts=Array.from(element.childNodes).map((child)=>
+        child.nodeType===Node.ELEMENT_NODE&&["P","DIV"].includes(child.tagName)
+          ?Array.from(child.childNodes).map(inlineToMarkdown).join("")
+          :inlineToMarkdown(child)
+      ).filter((part)=>part.trim());
+      const quotedParts=parts.map((part)=>part.split("\n").map((line)=>"> "+line).join("\n"));
+      return quotedParts.join("\n>\n")+"\n\n";
     }
     if(tag==="pre")return "\x60\x60\x60\n"+(element.textContent||"").replace(/\n+$/,"")+"\n\x60\x60\x60\n\n";
     if(tag==="hr")return "---\n\n";
