@@ -10,7 +10,7 @@ function normalizeSameOriginPath(candidate:string){
   try{
     const url=new URL(candidate,origin);
     if(url.origin!==origin||!["http:","https:"].includes(url.protocol))return candidate;
-    const pathname=url.pathname.replace(/\\/{2,}/g,"/");
+    const pathname=url.pathname.replace(/\/{2,}/g,"/");
     if(pathname===url.pathname)return candidate;
     url.pathname=pathname;
     if(candidate.startsWith("/")&&candidate[1]!=="/"&&candidate[1]!==String.fromCharCode(92)){
@@ -25,11 +25,15 @@ function allowedUrl(value:string){
   const candidate=value.trim();
   if(!candidate)return "#";
   if(candidate.startsWith("#"))return candidate;
-  const normalized=normalizeSameOriginPath(candidate);
-  if(normalized.startsWith("/")&&normalized[1]!=="/"&&normalized[1]!==String.fromCharCode(92))return normalized;
+  if(candidate.startsWith("/")&&candidate[1]!=="/"&&candidate[1]!==String.fromCharCode(92)){
+    return normalizeSameOriginPath(candidate);
+  }
+  if(candidate.startsWith("/")||candidate.startsWith(String.fromCharCode(92)))return "#";
   try{
-    const url=new URL(normalized);
-    if(["http:","https:","mailto:"].includes(url.protocol)&&!url.username&&!url.password)return normalized;
+    const url=new URL(candidate);
+    if(["http:","https:","mailto:"].includes(url.protocol)&&!url.username&&!url.password){
+      return ["http:","https:"].includes(url.protocol)?normalizeSameOriginPath(candidate):candidate;
+    }
   }catch{}
   return "#";
 }
