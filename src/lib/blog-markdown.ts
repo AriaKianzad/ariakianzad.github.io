@@ -316,7 +316,24 @@ export function renderMarkdown(markdown:string):string{
     }
     const h=line.match(/^\s{0,3}(#{1,4})\s+(.+?)\s*#*$/);if(h){closeP();closeL();heading(h[1].length,h[2].trim());continue;}
     if(/^\s*(---+|___+|\*\*\*+)\s*$/.test(line)){closeP();closeL();out.push("<hr>");continue;}
-    const quote=line.match(/^\s*>\s?(.*)$/);if(quote){closeP();closeL();out.push("<blockquote><p>"+inline(quote[1])+"</p></blockquote>");continue;}
+    const quote=line.match(/^\s*>\s?(.*)$/);
+    if(quote){
+      closeP();closeL();
+      const quoteParagraphs:string[][]=[[]];
+      while(index<lines.length){
+        const quotedLine=lines[index].match(/^\s*>\s?(.*)$/);
+        if(!quotedLine)break;
+        const content=quotedLine[1].trim();
+        if(content)quoteParagraphs[quoteParagraphs.length-1].push(content);
+        else if(quoteParagraphs[quoteParagraphs.length-1].length)quoteParagraphs.push([]);
+        index++;
+      }
+      while(quoteParagraphs.length&&!quoteParagraphs[quoteParagraphs.length-1].length)quoteParagraphs.pop();
+      const quoteHtml=quoteParagraphs.map((parts)=>"<p>"+inline(parts.join(" "))+"</p>").join("");
+      out.push("<blockquote>"+quoteHtml+"</blockquote>");
+      index--;
+      continue;
+    }
     const item=parseMarkdownListItem(line);
     if(item){closeP();appendListItem(item);continue;}
     if(continuationIndent(line)){paragraph.push(line.trim());continue;}
