@@ -650,3 +650,8 @@ body, body * { font-family: Estedad, Tahoma, sans-serif !important; }
   margin:0;
   line-height:inherit;
 }
+
+
+/* Keep separate paragraphs readable inside a single quotation block. */
+.editor-richtext blockquote > p + p,
+.markdown-preview blockquote > p + p { margin-top:.8em; }
