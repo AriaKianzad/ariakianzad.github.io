@@ -216,6 +216,7 @@ assert.ok(blogCss.includes("@media(prefers-reduced-motion:reduce)") && blogCss.i
 assert.ok(adminCss.includes("@media(prefers-reduced-motion:reduce)") && adminCss.includes("animation-duration:.01ms") && adminCss.includes("transition-duration:.01ms"), "the blog CMS must honour reduced-motion preferences");
 const verifyExport = await read("scripts/verify-export.mjs");
 assert.ok(verifyExport.includes(".cache/blog-content.json") && verifyExport.includes("published article is missing") && verifyExport.includes("published article link is missing"), "post-build verification must compare the generated sitemap and RSS against every current published article");
+assert.ok(verifyExport.includes("target has repeated slashes in its path") && verifyExport.includes("anchor"), "post-build verification must inspect internal anchor destinations and reject repeated slashes");
 assert.ok(sitemap.includes("getBlogPosts()") && sitemap.includes("/blog/"), "sitemap must include published articles and blog archive");
 assert.ok(sitemap.includes("/blog/contact/"), "sitemap must include the public contact page");
 assert.ok(robots.includes('disallow: ["/admin/", "/admin/blog/"]'), "robots.txt must disallow both admin areas");
