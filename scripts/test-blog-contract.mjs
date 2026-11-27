@@ -216,6 +216,7 @@ assert.ok(blogCss.includes("@media(prefers-reduced-motion:reduce)") && blogCss.i
 assert.ok(adminCss.includes("@media(prefers-reduced-motion:reduce)") && adminCss.includes("animation-duration:.01ms") && adminCss.includes("transition-duration:.01ms"), "the blog CMS must honour reduced-motion preferences");
 const verifyExport = await read("scripts/verify-export.mjs");
 assert.ok(verifyExport.includes(".cache/blog-content.json") && verifyExport.includes("published article is missing") && verifyExport.includes("published article link is missing"), "post-build verification must compare the generated sitemap and RSS against every current published article");
+assert.ok(verifyExport.includes("target has repeated slashes in its path") && verifyExport.includes("anchor"), "post-build verification must inspect internal anchor destinations and reject repeated slashes");
 assert.ok(sitemap.includes("getBlogPosts()") && sitemap.includes("/blog/"), "sitemap must include published articles and blog archive");
 assert.ok(sitemap.includes("/blog/contact/"), "sitemap must include the public contact page");
 assert.ok(robots.includes('disallow: ["/admin/", "/admin/blog/"]'), "robots.txt must disallow both admin areas");
@@ -312,7 +313,38 @@ new Script(markdownCompiled, { filename: "src/lib/blog-markdown.ts" }).runInNewC
   exports: markdownRuntime.exports,
   module: { exports: markdownRuntime.exports },
   URL,
+  process: { env: { NEXT_PUBLIC_SITE_URL: "https://ariakianzad.github.io" } },
 });
+const normalizedAbsoluteCategoryLink = markdownRuntime.exports.renderMarkdown(
+  "[دسته](https://ariakianzad.github.io//blog/category/brand-and-business/)",
+);
+assert.ok(
+  normalizedAbsoluteCategoryLink.includes('href="https://ariakianzad.github.io/blog/category/brand-and-business/"') &&
+    !normalizedAbsoluteCategoryLink.includes("ariakianzad.github.io//blog/"),
+  "same-origin absolute Markdown links must collapse repeated path slashes",
+);
+const normalizedRelativeCategoryLink = markdownRuntime.exports.renderMarkdown(
+  "[دسته](/blog//category/brand-and-business/)",
+);
+assert.ok(
+  normalizedRelativeCategoryLink.includes('href="/blog/category/brand-and-business/"'),
+  "same-origin relative Markdown links must collapse repeated path slashes",
+);
+const externalRepeatedPathLink = markdownRuntime.exports.renderMarkdown(
+  "[external](https://example.com/a//b/)",
+);
+assert.ok(
+  externalRepeatedPathLink.includes('href="https://example.com/a//b/"'),
+  "URL normalization must not rewrite external paths",
+);
+const protocolRelativeLink = markdownRuntime.exports.renderMarkdown(
+  "[external](//ariakianzad.github.io//blog/category/brand-and-business/)",
+);
+assert.ok(
+  !protocolRelativeLink.includes('href="//ariakianzad.github.io') &&
+    !protocolRelativeLink.includes('href="https://ariakianzad.github.io//'),
+  "protocol-relative URLs must remain rejected",
+);
 assert.ok(markdownSource.includes("function plainInline(") && markdownSource.includes("title:plainInline(title)") && markdownSource.includes("line.match(/^(#{1,4})"), "TOC extraction must convert Markdown heading labels to plain text and keep heading ID counters aligned with rendered headings");
 const tocMarkdown = [
   "# تیتر تکراری",

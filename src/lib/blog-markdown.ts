@@ -1,14 +1,39 @@
 export type TocItem={id:string;title:string;level:number};
 export function slugHeading(value:string){return value.trim().toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu,"").replace(/\s+/g,"-").replace(/-+/g,"-")||"section";}
 function esc(value:string){return value.replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]||c));}
+function normalizeSameOriginPath(candidate:string){
+  const fallbackOrigin="https://ariakianzad.github.io";
+  let origin=fallbackOrigin;
+  try{
+    origin=new URL(process.env.NEXT_PUBLIC_SITE_URL||fallbackOrigin).origin;
+  }catch{}
+  try{
+    const url=new URL(candidate,origin);
+    if(url.origin!==origin||!["http:","https:"].includes(url.protocol))return candidate;
+    const pathname=url.pathname.replace(/\/{2,}/g,"/");
+    if(pathname===url.pathname)return candidate;
+    url.pathname=pathname;
+    if(candidate.startsWith("/")&&candidate[1]!=="/"&&candidate[1]!==String.fromCharCode(92)){
+      return url.pathname+url.search+url.hash;
+    }
+    return url.href;
+  }catch{
+    return candidate;
+  }
+}
 function allowedUrl(value:string){
   const candidate=value.trim();
   if(!candidate)return "#";
   if(candidate.startsWith("#"))return candidate;
-  if(candidate.startsWith("/")&&candidate[1]!=="/"&&candidate[1]!==String.fromCharCode(92))return candidate;
+  if(candidate.startsWith("/")&&candidate[1]!=="/"&&candidate[1]!==String.fromCharCode(92)){
+    return normalizeSameOriginPath(candidate);
+  }
+  if(candidate.startsWith("/")||candidate.startsWith(String.fromCharCode(92)))return "#";
   try{
     const url=new URL(candidate);
-    if(["http:","https:","mailto:"].includes(url.protocol)&&!url.username&&!url.password)return candidate;
+    if(["http:","https:","mailto:"].includes(url.protocol)&&!url.username&&!url.password){
+      return ["http:","https:"].includes(url.protocol)?normalizeSameOriginPath(candidate):candidate;
+    }
   }catch{}
   return "#";
 }
