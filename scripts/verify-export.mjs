@@ -81,7 +81,7 @@ const siteOrigin = (() => {
 })();
 
 /** Resolve same-origin references relative to the HTML file that contains them. */
-const toLocalPath = (ref, relativeFile) => {
+const toLocalPath = (ref, relativeFile, kind) => {
   if (typeof ref !== "string" || ref.length === 0) return null;
   try {
     const origin = siteOrigin || "https://local.invalid";
@@ -89,8 +89,11 @@ const toLocalPath = (ref, relativeFile) => {
     const resolved = new URL(ref, base);
     if (resolved.origin !== base.origin) return null;
     const pathname = decodeURIComponent(resolved.pathname);
-    if (!pathname.startsWith("/") || pathname.includes("\0") || pathname.includes("\\")) return null;
-    return pathname;
+    if (!pathname.startsWith("/") || pathname.includes("\0") || pathname.includes("\\\\")) return null;
+    if (/\\/{2,}/.test(pathname)) {
+      problems.push(relativeFile + ": " + kind + " target has repeated slashes in its path: " + ref);
+    }
+    return pathname.replace(/\\/{2,}/g, "/");
   } catch {
     return null;
   }
@@ -102,7 +105,7 @@ const isInsideExport = (candidate) => {
 };
 
 const checkRef = (rel, ref, kind) => {
-  const pathname = toLocalPath(ref, rel);
+  const pathname = toLocalPath(ref, rel, kind);
   if (pathname === null) return;
 
   const cleanPath = pathname.replace(/^\/+/, "");
@@ -201,6 +204,7 @@ for (const file of files) {
   }
 
   const refPatterns = [
+    [/<a\b[^>]*\bhref\s*=\s*["']([^"']+)["']/g, "anchor"],
     [/<link\b[^>]*\bhref\s*=\s*["']([^"']+)["']/g, "link"],
     [/<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/g, "img"],
     [/<source\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/g, "source"],
