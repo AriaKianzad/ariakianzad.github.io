@@ -25,6 +25,7 @@ const structuredData = {
       "@type": "WebSite",
       "@id": siteId,
       name: site.name,
+      alternateName: "آریا کیانزاد",
       url: site.url,
       inLanguage: site.locale,
       publisher: { "@id": personId },
