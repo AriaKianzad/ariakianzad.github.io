@@ -381,28 +381,28 @@ assert.equal((multiParagraphQuote.match(/<blockquote>/g) || []).length, 1, "blan
 assert.equal((multiParagraphQuote.match(/<p>/g) || []).length, 2, "blank quoted lines must preserve paragraph boundaries inside the blockquote");
 
 // Execute the actual CMS preview renderer with minimal safe helpers.
-const previewStart = adminApp.indexOf("function previewInline(text) {");
-const serializerStart = adminApp.indexOf("function inlineToMarkdown(node) {", previewStart);
-assert.ok(previewStart >= 0 && serializerStart > previewStart, "CMS preview renderer source must be discoverable for regression testing");
-const previewSource = adminApp.slice(previewStart, serializerStart);
-const previewContext = {
+const quotePreviewStart = adminApp.indexOf("function previewInline(text) {");
+const quoteSerializerStart = adminApp.indexOf("function inlineToMarkdown(node) {", quotePreviewStart);
+assert.ok(quotePreviewStart >= 0 && quoteSerializerStart > quotePreviewStart, "CMS preview renderer source must be discoverable for regression testing");
+const quotePreviewSource = adminApp.slice(quotePreviewStart, quoteSerializerStart);
+const quotePreviewContext = {
   escapeHtml: (value) => String(value).replace(/[&<>"']/g, (character) => ({
     "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;",
   })[character]),
   safeHref: (value) => String(value || "#"),
   renderPreviewFigure: () => null,
 };
-new Script(previewSource + "\nthis.renderPreviewForTest=renderPreviewMarkdown;", { filename: "CMS blockquote preview" }).runInNewContext(previewContext);
-const cmsPreviewQuote = previewContext.renderPreviewForTest(multiLineQuote);
+new Script(quotePreviewSource + "\nthis.renderPreviewForTest=renderPreviewMarkdown;", { filename: "CMS blockquote preview" }).runInNewContext(quotePreviewContext);
+const cmsPreviewQuote = quotePreviewContext.renderPreviewForTest(multiLineQuote);
 assert.equal((cmsPreviewQuote.match(/<blockquote>/g) || []).length, 1, "the CMS live preview must group consecutive quote lines into one blockquote");
 assert.ok(cmsPreviewQuote.includes('<a href="https://ariakianzad.github.io/blog/category/brand-and-business/"'), "the CMS preview must keep the inline link inside the grouped quote");
 
 // Execute the actual editor serializer against a small DOM-shaped quotation node.
-const serializerEnd = adminApp.indexOf("function editorToMarkdown(editor)", serializerStart);
-assert.ok(serializerEnd > serializerStart, "CMS editor serializer source must be discoverable for regression testing");
-const serializerSource = adminApp.slice(serializerStart, serializerEnd);
-const serializerContext = { Node: { TEXT_NODE: 3, ELEMENT_NODE: 1 }, safeHref: (value) => String(value || "#") };
-new Script(serializerSource + "\nthis.serializeBlockForTest=blockToMarkdown;", { filename: "CMS blockquote serializer" }).runInNewContext(serializerContext);
+const quoteSerializerEnd = adminApp.indexOf("function editorToMarkdown(editor)", quoteSerializerStart);
+assert.ok(quoteSerializerEnd > quoteSerializerStart, "CMS editor serializer source must be discoverable for regression testing");
+const quoteSerializerSource = adminApp.slice(quoteSerializerStart, quoteSerializerEnd);
+const quoteSerializerContext = { Node: { TEXT_NODE: 3, ELEMENT_NODE: 1 }, safeHref: (value) => String(value || "#") };
+new Script(quoteSerializerSource + "\nthis.serializeBlockForTest=blockToMarkdown;", { filename: "CMS blockquote serializer" }).runInNewContext(quoteSerializerContext);
 const textNode = (value) => ({ nodeType: 3, nodeValue: value });
 const elementNode = (tag, children = [], attributes = {}, dataset = {}) => ({
   nodeType: 1, tagName: tag.toUpperCase(), childNodes: children, dataset,
@@ -417,7 +417,7 @@ const editorQuote = elementNode("blockquote", [
     textNode(" رو تغییر بدید."),
   ]),
 ]);
-const serializedEditorQuote = serializerContext.serializeBlockForTest(editorQuote);
+const serializedEditorQuote = quoteSerializerContext.serializeBlockForTest(editorQuote);
 assert.ok(
   serializedEditorQuote.startsWith("> تمام ادعاهای اصلی روایت رو در یک ستون بنویسید. [++کسب‌وکار++](https://ariakianzad.github.io/blog/category/brand-and-business/)") &&
     serializedEditorQuote.includes(" رو تغییر بدید."),
@@ -427,7 +427,7 @@ const multiParagraphEditorQuote = elementNode("blockquote", [
   elementNode("p", [textNode("بند اول نقل‌قول")]),
   elementNode("p", [textNode("بند دوم نقل‌قول")]),
 ]);
-const serializedMultiParagraphQuote = serializerContext.serializeBlockForTest(multiParagraphEditorQuote);
+const serializedMultiParagraphQuote = quoteSerializerContext.serializeBlockForTest(multiParagraphEditorQuote);
 assert.ok(
   serializedMultiParagraphQuote.includes("> بند اول نقل‌قول\n>\n> بند دوم نقل‌قول"),
   "the editor must preserve paragraph breaks inside one Markdown blockquote using a blank quote marker",
