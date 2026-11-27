@@ -89,7 +89,7 @@ const toLocalPath = (ref, relativeFile, kind) => {
     const resolved = new URL(ref, base);
     if (resolved.origin !== base.origin) return null;
     const pathname = decodeURIComponent(resolved.pathname);
-    if (!pathname.startsWith("/") || pathname.includes("\0") || pathname.includes("\\\\")) return null;
+    if (!pathname.startsWith("/") || pathname.includes("\0") || pathname.includes("\\")) return null;
     if (/\/{2,}/.test(pathname)) {
       problems.push(relativeFile + ": " + kind + " target has repeated slashes in its path: " + ref);
     }
