@@ -345,6 +345,93 @@ assert.ok(
     !protocolRelativeLink.includes('href="https://ariakianzad.github.io//'),
   "protocol-relative URLs must remain rejected",
 );
+
+const multiLineQuote = [
+  "> تمام ادعاهای اصلی روایت رو در یک ستون بنویسید",
+  "> در ستون کناری، مدرک عملی هرکدوم رو قرار بدید.",
+  "> شاید باید ادعا رو دقیق‌تر کنید، شاید هم لازم باشه قبل از بازنویسی متن، بخشی از تجربۀ واقعی",
+  "> [++کسب‌وکار++](https://ariakianzad.github.io/blog/category/brand-and-business/){rel=follow}",
+  "> رو تغییر بدید.",
+  "",
+  "این پاراگراف باید بیرون از نقل‌قول باقی بمونه.",
+].join("\n");
+const renderedMultiLineQuote = markdownRuntime.exports.renderMarkdown(multiLineQuote);
+assert.equal((renderedMultiLineQuote.match(/<blockquote>/g) || []).length, 1, "consecutive Markdown quote lines must render as one blockquote");
+const renderedQuoteBlock = renderedMultiLineQuote.slice(
+  renderedMultiLineQuote.indexOf("<blockquote>"),
+  renderedMultiLineQuote.indexOf("</blockquote>") + "</blockquote>".length,
+);
+assert.equal((renderedQuoteBlock.match(/<p>/g) || []).length, 1, "consecutive quote lines without a blank quote marker must remain one paragraph");
+assert.ok(
+  renderedQuoteBlock.includes('<a href="https://ariakianzad.github.io/blog/category/brand-and-business/"') &&
+    renderedQuoteBlock.indexOf("تجربۀ واقعی") < renderedQuoteBlock.indexOf("<a ") &&
+    renderedQuoteBlock.indexOf("<a ") < renderedQuoteBlock.indexOf("رو تغییر بدید"),
+  "an inline link split across quoted source lines must stay inside the same quotation paragraph",
+);
+assert.ok(
+  renderedMultiLineQuote.includes("</blockquote>\n<p>این پاراگراف باید بیرون از نقل‌قول باقی بمونه.</p>"),
+  "a paragraph following a blockquote must remain outside the quotation",
+);
+const multiParagraphQuote = markdownRuntime.exports.renderMarkdown([
+  "> بند اول نقل‌قول",
+  ">",
+  "> بند دوم نقل‌قول",
+].join("\n"));
+assert.equal((multiParagraphQuote.match(/<blockquote>/g) || []).length, 1, "blank quoted lines must not split one blockquote into separate blocks");
+assert.equal((multiParagraphQuote.match(/<p>/g) || []).length, 2, "blank quoted lines must preserve paragraph boundaries inside the blockquote");
+
+// Execute the actual CMS preview renderer with minimal safe helpers.
+const previewStart = adminApp.indexOf("function previewInline(text) {");
+const serializerStart = adminApp.indexOf("function inlineToMarkdown(node) {", previewStart);
+assert.ok(previewStart >= 0 && serializerStart > previewStart, "CMS preview renderer source must be discoverable for regression testing");
+const previewSource = adminApp.slice(previewStart, serializerStart);
+const previewContext = {
+  escapeHtml: (value) => String(value).replace(/[&<>"']/g, (character) => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;",
+  })[character]),
+  safeHref: (value) => String(value || "#"),
+  renderPreviewFigure: () => null,
+};
+new Script(previewSource + "\nthis.renderPreviewForTest=renderPreviewMarkdown;", { filename: "CMS blockquote preview" }).runInNewContext(previewContext);
+const cmsPreviewQuote = previewContext.renderPreviewForTest(multiLineQuote);
+assert.equal((cmsPreviewQuote.match(/<blockquote>/g) || []).length, 1, "the CMS live preview must group consecutive quote lines into one blockquote");
+assert.ok(cmsPreviewQuote.includes('<a href="https://ariakianzad.github.io/blog/category/brand-and-business/"'), "the CMS preview must keep the inline link inside the grouped quote");
+
+// Execute the actual editor serializer against a small DOM-shaped quotation node.
+const serializerEnd = adminApp.indexOf("function editorToMarkdown(editor)", serializerStart);
+assert.ok(serializerEnd > serializerStart, "CMS editor serializer source must be discoverable for regression testing");
+const serializerSource = adminApp.slice(serializerStart, serializerEnd);
+const serializerContext = { Node: { TEXT_NODE: 3, ELEMENT_NODE: 1 }, safeHref: (value) => String(value || "#") };
+new Script(serializerSource + "\nthis.serializeBlockForTest=blockToMarkdown;", { filename: "CMS blockquote serializer" }).runInNewContext(serializerContext);
+const textNode = (value) => ({ nodeType: 3, nodeValue: value });
+const elementNode = (tag, children = [], attributes = {}, dataset = {}) => ({
+  nodeType: 1, tagName: tag.toUpperCase(), childNodes: children, dataset,
+  getAttribute(name) { return attributes[name] ?? null; },
+});
+const editorQuote = elementNode("blockquote", [
+  elementNode("p", [
+    textNode("تمام ادعاهای اصلی روایت رو در یک ستون بنویسید. "),
+    elementNode("a", [
+      elementNode("u", [textNode("کسب‌وکار")]),
+    ], { href: "https://ariakianzad.github.io/blog/category/brand-and-business/", target: "_blank", rel: "noopener noreferrer" }, { linkRel: "follow", linkTarget: "_blank" }),
+    textNode(" رو تغییر بدید."),
+  ]),
+]);
+const serializedEditorQuote = serializerContext.serializeBlockForTest(editorQuote);
+assert.ok(
+  serializedEditorQuote.startsWith("> تمام ادعاهای اصلی روایت رو در یک ستون بنویسید. [++کسب‌وکار++](https://ariakianzad.github.io/blog/category/brand-and-business/)") &&
+    serializedEditorQuote.includes(" رو تغییر بدید."),
+  "the editor must serialize the quote and its linked phrase as one continuous Markdown blockquote",
+);
+const multiParagraphEditorQuote = elementNode("blockquote", [
+  elementNode("p", [textNode("بند اول نقل‌قول")]),
+  elementNode("p", [textNode("بند دوم نقل‌قول")]),
+]);
+const serializedMultiParagraphQuote = serializerContext.serializeBlockForTest(multiParagraphEditorQuote);
+assert.ok(
+  serializedMultiParagraphQuote.includes("> بند اول نقل‌قول\n>\n> بند دوم نقل‌قول"),
+  "the editor must preserve paragraph breaks inside one Markdown blockquote using a blank quote marker",
+);
 assert.ok(markdownSource.includes("function plainInline(") && markdownSource.includes("title:plainInline(title)") && markdownSource.includes("line.match(/^(#{1,4})"), "TOC extraction must convert Markdown heading labels to plain text and keep heading ID counters aligned with rendered headings");
 const tocMarkdown = [
   "# تیتر تکراری",
@@ -731,7 +818,7 @@ assert.ok(adminApp.includes('relation="follow",target=external?"_blank":"_self"'
 assert.ok(!adminApp.slice(adminApp.indexOf("function clipboardHeadingLevel"),adminApp.indexOf("function cleanClipboardNode")).includes('querySelectorAll?.("[style]")'), "Google Docs heading detection must not promote an entire paragraph based on a single styled child run");
 
 assert.ok(adminApp.includes('explicitRelation==="follow"') && adminApp.includes('if(relation!=="follow"||explicitRelation==="follow")'), "an explicitly selected follow relation must survive Markdown serialization and subsequent editing");
-assert.ok(adminHtml.includes('app.js?v=20261126-4') && adminHtml.includes('blog.css?v=20261126-3'), "the admin editor assets must use current cache keys after numbered-list keyboard changes");
+assert.ok(adminHtml.includes('app.js?v=20261127-1') && adminHtml.includes('blog.css?v=20261127-1'), "the admin editor assets must use current cache keys after numbered-list keyboard changes");
 assert.ok(adminApp.includes("function handleNumberedHeadingEnter(event)") && adminApp.includes('$("#post-content").addEventListener("keydown",handleNumberedHeadingEnter)') && adminApp.includes('list?.tagName!=="OL"') && adminApp.includes("numberedListItemHasHeading(item)") && adminApp.includes("trailing.extractContents()") && adminApp.includes('const nextItem=document.createElement("li")'), "Enter inside a numbered heading item must create continuation paragraphs in the same LI and only create the next LI from an empty continuation");
 assert.ok(blogCss.includes(".blog-prose li>h3") && blogCss.includes("display:block") && blogCss.includes(".blog-prose li>h3 + p") && adminCss.includes(".editor-richtext li>h3") && adminCss.includes(".editor-richtext li>h3 + p") && adminCss.includes("display:block"), "numbered H3 headings and their descriptions must remain separate visual blocks inside one list item");
 assert.ok(adminHtml.includes("وقتی به خط خالی رسیدی، یک Enter دیگه شمارۀ بعدی رو می‌سازه"), "the editor must explain how to continue the current numbered item and start the next one");
