@@ -312,7 +312,30 @@ new Script(markdownCompiled, { filename: "src/lib/blog-markdown.ts" }).runInNewC
   exports: markdownRuntime.exports,
   module: { exports: markdownRuntime.exports },
   URL,
+  process: { env: { NEXT_PUBLIC_SITE_URL: "https://ariakianzad.github.io" } },
 });
+const normalizedAbsoluteCategoryLink = markdownRuntime.exports.renderMarkdown(
+  "[دسته](https://ariakianzad.github.io//blog/category/brand-and-business/)",
+);
+assert.ok(
+  normalizedAbsoluteCategoryLink.includes('href="https://ariakianzad.github.io/blog/category/brand-and-business/"') &&
+    !normalizedAbsoluteCategoryLink.includes("ariakianzad.github.io//blog/"),
+  "same-origin absolute Markdown links must collapse repeated path slashes",
+);
+const normalizedRelativeCategoryLink = markdownRuntime.exports.renderMarkdown(
+  "[دسته](/blog//category/brand-and-business/)",
+);
+assert.ok(
+  normalizedRelativeCategoryLink.includes('href="/blog/category/brand-and-business/"'),
+  "same-origin relative Markdown links must collapse repeated path slashes",
+);
+const externalRepeatedPathLink = markdownRuntime.exports.renderMarkdown(
+  "[external](https://example.com/a//b/)",
+);
+assert.ok(
+  externalRepeatedPathLink.includes('href="https://example.com/a//b/"'),
+  "URL normalization must not rewrite external paths",
+);
 assert.ok(markdownSource.includes("function plainInline(") && markdownSource.includes("title:plainInline(title)") && markdownSource.includes("line.match(/^(#{1,4})"), "TOC extraction must convert Markdown heading labels to plain text and keep heading ID counters aligned with rendered headings");
 const tocMarkdown = [
   "# تیتر تکراری",
