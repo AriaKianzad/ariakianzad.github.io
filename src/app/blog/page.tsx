@@ -37,7 +37,8 @@ export default function BlogIndexPage() {
   const listing = featured ? posts.filter((post) => post.slug !== featured.slug) : posts;
   const schema = {
     "@context": "https://schema.org", "@type": "Blog",
-    name: settings.title, description: settings.description,
+    name: settings.title,
+    description: settings.description || settings.default_meta_description || undefined,
     url: settings.canonical_url || site.url + "/blog/", inLanguage: settings.default_language === "fa" ? "fa-IR" : "en",
     publisher: { "@type": "Person", name: "Aria Kianzad", url: site.url },
   };

@@ -49,7 +49,7 @@ The blog has its own editorial category pages, article metadata, canonical URLs,
 Aria Kianzad is the author of the Persian book «میانِ ما», published by مجله رکسو. It explores relationships, emotional intimacy, commitment, communication and emotional responsibility.
 
 - Book page: https://ariakianzad.github.io/Mian-e-Ma/
-- Direct PDF: https://ariakianzad.github.io/Mian-e-Ma/assets/Mian-e-Ma.pdf
+- Direct PDF: https://github.com/AriaKianzad/ariakianzad.github.io/releases/download/mian-e-ma-v1/Mian-e-Ma.pdf
 - Language: Persian (fa-IR)
 - Publisher: مجله رکسو
 - Author: آریا کیانزاد
