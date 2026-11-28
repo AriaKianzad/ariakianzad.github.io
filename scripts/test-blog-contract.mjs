@@ -492,6 +492,28 @@ const renderedLists = markdownRuntime.exports.renderMarkdown(nestedListMarkdown)
 const normalizedLists = renderedLists.replace(/\s+(?=<)/g,"");
 assert.ok(normalizedLists.includes("<ul><li>مورد اصلی<ul><li>زیرمورد اول</li><li>زیرمورد دوم</li></ul></li><li>مورد بعدی</li></ul>"), "nested unordered lists must retain their hierarchy and close correctly: "+normalizedLists);
 assert.ok(normalizedLists.includes("<ol><li>مرحلۀ اول</li><li>مرحلۀ دوم</li></ol>"), "blank-separated numbered items must remain in one ordered list");
+
+const persianDigitList = markdownRuntime.exports.renderMarkdown([
+  "۱. **مرحلۀ اول**",
+  "   توضیح مرحلۀ اول.",
+  "",
+  "۲. **مرحلۀ دوم**",
+  "   توضیح مرحلۀ دوم.",
+].join("\n")).replace(/\\s+(?=<)/g,"");
+assert.equal((persianDigitList.match(/<ol>/g)||[]).length,1,"Persian-digit ordered markers must render as one ordered list");
+assert.equal((persianDigitList.match(/<ul>/g)||[]).length,0,"Persian-digit ordered markers must never be downgraded to bullets");
+assert.equal((persianDigitList.match(/<li>/g)||[]).length,2,"Persian-digit list items must remain separate");
+assert.equal((persianDigitList.match(/<p>/g)||[]).length,2,"each Persian-digit item must keep its continuation paragraph");
+const arabicIndicDigitList = markdownRuntime.exports.renderMarkdown([
+  "١. **المرحلة الأولى**",
+  "   وصف المرحلة الأولى.",
+  "",
+  "٢. **المرحلة الثانية**",
+  "   وصف المرحلة الثانية.",
+].join("\n")).replace(/\\s+(?=<)/g,"");
+assert.equal((arabicIndicDigitList.match(/<ol>/g)||[]).length,1,"Arabic-Indic ordered markers must render as one ordered list");
+assert.equal((arabicIndicDigitList.match(/<ul>/g)||[]).length,0,"Arabic-Indic ordered markers must not be downgraded to bullets");
+
 const numberedHeadingListMarkdown = [
   "1. ### مرحلۀ اول",
   "",
@@ -636,6 +658,10 @@ assert.equal(listSerializerContext.testListToMarkdown(numberedHeadingDom,0),"1. 
 assert.ok(adminApp.includes("function selectedEditorListItems()") && adminApp.includes("function formatListItemHeading") && adminApp.includes('command==="formatBlock"&&/^H[234]$/.test(value||"")') && adminApp.includes('$("#preview-content").dir=direction'),"applying H2-H4 to selected list items must preserve their surrounding UL/OL structure and previews must follow the article language direction");
 const inlineSerializer = adminApp.slice(adminApp.indexOf("function inlineToMarkdown"),adminApp.indexOf("function listToMarkdown"));
 const blockSerializer = adminApp.slice(adminApp.indexOf("function blockToMarkdown"),adminApp.indexOf("function editorToMarkdown"));
+assert.ok(blockSerializer.includes('const blockTags=new Set(["DIV","SECTION","H2","H3","H4","UL","OL","BLOCKQUOTE","TABLE","PRE","HR","FIGURE"])') &&
+  blockSerializer.includes("?blockToMarkdown(child)") && blockSerializer.includes('if(tag==="p")'),
+  "paragraph wrappers containing a block list must serialize the list structurally rather than flattening its markers");
+
 assert.ok(["tag===\"strong\"","tag===\"em\"","tag===\"u\"","tag===\"del\"","tag===\"code\"","tag===\"a\"","tag===\"img\""].every((token)=>inlineSerializer.includes(token)), "the editor serializer must preserve emphasis, underline, deletion, code, links and images");
 assert.ok(["tag===\"figure\"","/^h[1-6]$/","tag===\"p\"","tag===\"ul\"","tag===\"ol\"","tag===\"blockquote\"","tag===\"pre\"","tag===\"hr\"","tag===\"table\""].every((token)=>blockSerializer.includes(token)), "the editor serializer must preserve all supported block structures");
 const cmsPreviewRenderer = adminApp.slice(adminApp.indexOf("function renderPreviewMarkdown"),adminApp.indexOf("function inlineToMarkdown"));
@@ -650,6 +676,17 @@ const renderedCmsNumberedHeadings = cmsPreviewContext.testRenderPreviewMarkdown(
 assert.equal((renderedCmsNumberedHeadings.match(/<ol>/g)||[]).length,1,"the admin preview must keep all numbered headings in one OL");
 assert.equal((renderedCmsNumberedHeadings.match(/<li>/g)||[]).length,4,"the admin preview must keep all four list items");
 assert.equal((renderedCmsNumberedHeadings.match(/<h3>/g)||[]).length,4,"the admin preview must show H3 semantics inside each numbered list item");
+const renderedCmsPersianList=cmsPreviewContext.testRenderPreviewMarkdown([
+  "۱. **مرحلۀ اول**",
+  "   توضیح مرحلۀ اول.",
+  "",
+  "۲. **مرحلۀ دوم**",
+  "   توضیح مرحلۀ دوم.",
+].join("\\n")).replace(/\\s+(?=<)/g,"");
+assert.equal((renderedCmsPersianList.match(/<ol>/g)||[]).length,1,"CMS preview must treat Persian-digit markers as an ordered list");
+assert.equal((renderedCmsPersianList.match(/<ul>/g)||[]).length,0,"CMS preview must not convert Persian-digit ordered lists into bullets");
+assert.equal((renderedCmsPersianList.match(/<li>/g)||[]).length,2,"CMS preview must preserve each Persian-digit list item");
+
 const renderedCmsMalformedHeadings=cmsPreviewContext.testRenderPreviewMarkdown(malformedHeadingListMarkdown).replace(/\s+(?=<)/g,"");
 assert.equal((renderedCmsMalformedHeadings.match(/<ol>/g)||[]).length,1,"the admin editor must repair legacy split heading markers into one ordered list");
 assert.equal((renderedCmsMalformedHeadings.match(/<h3>/g)||[]).length,4,"the admin editor must reconstruct all four H3 heading styles");
@@ -818,7 +855,7 @@ assert.ok(adminApp.includes('relation="follow",target=external?"_blank":"_self"'
 assert.ok(!adminApp.slice(adminApp.indexOf("function clipboardHeadingLevel"),adminApp.indexOf("function cleanClipboardNode")).includes('querySelectorAll?.("[style]")'), "Google Docs heading detection must not promote an entire paragraph based on a single styled child run");
 
 assert.ok(adminApp.includes('explicitRelation==="follow"') && adminApp.includes('if(relation!=="follow"||explicitRelation==="follow")'), "an explicitly selected follow relation must survive Markdown serialization and subsequent editing");
-assert.ok(adminHtml.includes('app.js?v=20261127-1') && adminHtml.includes('blog.css?v=20261127-1'), "the admin editor assets must use current cache keys after numbered-list keyboard changes");
+assert.ok(adminHtml.includes('app.js?v=20261128-1') && adminHtml.includes('blog.css?v=20261128-1'), "the admin editor assets must use current cache keys after numbered-list keyboard changes");
 assert.ok(adminApp.includes("function handleNumberedHeadingEnter(event)") && adminApp.includes('$("#post-content").addEventListener("keydown",handleNumberedHeadingEnter)') && adminApp.includes('list?.tagName!=="OL"') && adminApp.includes("numberedListItemHasHeading(item)") && adminApp.includes("trailing.extractContents()") && adminApp.includes('const nextItem=document.createElement("li")'), "Enter inside a numbered heading item must create continuation paragraphs in the same LI and only create the next LI from an empty continuation");
 assert.ok(blogCss.includes(".blog-prose li>h3") && blogCss.includes("display:block") && blogCss.includes(".blog-prose li>h3 + p") && adminCss.includes(".editor-richtext li>h3") && adminCss.includes(".editor-richtext li>h3 + p") && adminCss.includes("display:block"), "numbered H3 headings and their descriptions must remain separate visual blocks inside one list item");
 assert.ok(adminHtml.includes("وقتی به خط خالی رسیدی، یک Enter دیگه شمارۀ بعدی رو می‌سازه"), "the editor must explain how to continue the current numbered item and start the next one");
