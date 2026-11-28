@@ -99,10 +99,10 @@ assert.ok(adminEdge.includes('"/actions/workflows/deploy.yml/dispatches"') &&
   adminEdge.includes('body: JSON.stringify({ ref: "main" })'),
   "CMS publication must dispatch the main-branch build workflow");
 assert.ok(workflow.includes("workflow_dispatch:") &&
-  workflow.includes("node scripts/test-blog-editor-contract.mjs"),
+  workflow.includes("npm run test:editor"),
   "the deployment workflow must support CMS dispatch and run editor regression tests");
 assert.ok(workflow.includes("test -s out/admin/blog/editor-core.js") &&
-  workflow.includes("node --check public/admin/blog/editor-core.js"),
+  workflow.includes("find scripts public -type f") && workflow.includes("node --check"),
   "the deployment artifact must include a syntactically valid editor engine");
 assert.ok(fetchBlog.includes("get_public_blog_payload") &&
   sitemap.includes("getBlogCategories()") &&
