@@ -1354,7 +1354,7 @@
       $("#inline-image-caption").value="";
     }else if(image){
       preview.src=image.src;
-      $("#inline-image-alt").value=image.alt||"";
+      $("#inline-image-alt").value=image.dataset.altMissing==="true"?"":image.alt||"";
       $("#inline-image-title").value=image.title||"";
       $("#inline-image-caption").value=figure.querySelector("figcaption")?.textContent||"";
     }
@@ -1416,7 +1416,7 @@
     try{
       if(editingInlineImageFigure){
         const image=editingInlineImageFigure.querySelector("img");
-        image.alt=alt;
+        image.alt=alt;delete image.dataset.altMissing;
         if(title)image.title=title;else image.removeAttribute("title");
         const previous=editingInlineImageFigure.querySelector("figcaption");
         if(caption){

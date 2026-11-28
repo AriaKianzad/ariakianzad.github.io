@@ -8,7 +8,7 @@ export function extractMarkdownImages(markdown) {
   const lines = String(markdown || "").replace(/\r\n/g, "\n").split("\n");
 
   for (const line of lines) {
-    const fence = line.match(/^ {0,3}(\`{3,})/);
+    const fence = line.match(/^ {0,3}(\x60{3,})/);
     if (fenceLength) {
       if (fence && fence[1].length >= fenceLength) fenceLength = 0;
       continue;
