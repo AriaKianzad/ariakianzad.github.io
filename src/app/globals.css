@@ -4,26 +4,26 @@
    ========================================================================== */
 
 :root {
-  --bg: #f3f0e8;
-  --bg-raised: #fbf9f4;
-  --bg-soft: #e7e0d6;
-  --ink: #28242b;
-  --ink-soft: #554f57;
-  --muted: #807780;
-  --line: rgba(40, 36, 43, 0.13);
-  --line-strong: rgba(40, 36, 43, 0.27);
-  --accent: #7b3f58;
-  --accent-soft: #a66c81;
-  --accent-dark: #4a2637;
-  --signal: #d6a443;
-  --signal-soft: #ecd08d;
-  --signal-dark: #805a18;
-  --panel-dark: #302731;
-  --panel-dark-soft: #3d3340;
-  --panel-ink: #f4f0e8;
-  --panel-ink-soft: #e1d7dc;
-  --panel-muted: #c0b2bd;
-  --panel-line: rgba(244, 240, 232, 0.18);
+  --bg: #FBFBF7;
+  --bg-raised: #FFFFFF;
+  --bg-soft: #F0E8EB;
+  --ink: #251B20;
+  --ink-soft: #5A4A51;
+  --muted: #7D6D74;
+  --line: rgba(37, 27, 32, 0.13);
+  --line-strong: rgba(37, 27, 32, 0.27);
+  --accent: #782C44;
+  --accent-soft: #A45A70;
+  --accent-dark: #4B1D2C;
+  --signal: #E3B72F;
+  --signal-soft: #F4D976;
+  --signal-dark: #72530B;
+  --panel-dark: #2A1921;
+  --panel-dark-soft: #3B222D;
+  --panel-ink: #FBFBF7;
+  --panel-ink-soft: #E9DFE3;
+  --panel-muted: #C9B6BE;
+  --panel-line: rgba(251, 251, 247, 0.18);
 
   --font-sans: var(--font-estedad), "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -89,8 +89,8 @@ body::before {
   pointer-events: none;
   opacity: 0.22;
   background-image:
-    linear-gradient(rgba(123, 63, 88, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(123, 63, 88, 0.035) 1px, transparent 1px);
+    linear-gradient(rgba(120, 44, 68, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 44, 68, 0.035) 1px, transparent 1px);
   background-size: 76px 76px;
   mask-image: linear-gradient(to bottom, black, transparent 78%);
 }
@@ -164,7 +164,7 @@ ol {
   flex: 0 0 auto;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 0 4px rgba(123, 63, 88, 0.1);
+  box-shadow: 0 0 0 4px rgba(120, 44, 68, 0.1);
   content: "";
 }
 
@@ -227,12 +227,12 @@ ol {
 .button--primary {
   background: var(--accent);
   color: var(--bg-raised);
-  box-shadow: 0 8px 28px rgba(123, 63, 88, 0.16);
+  box-shadow: 0 8px 28px rgba(120, 44, 68, 0.16);
 }
 
 .button--primary:hover {
   background: var(--accent-dark);
-  box-shadow: 0 10px 24px rgba(74, 38, 55, 0.2);
+  box-shadow: 0 10px 24px rgba(75, 29, 44, 0.2);
 }
 
 .button--text {

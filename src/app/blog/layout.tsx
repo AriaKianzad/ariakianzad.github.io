@@ -6,16 +6,16 @@ import "./blog.css";
 export const metadata: Metadata = {
   icons: {
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+      { url: "/favicon.svg?v=20261128-1", type: "image/svg+xml" },
+      { url: "/icon.png?v=20261128-1", type: "image/png", sizes: "512x512" },
     ],
-    shortcut: ["/favicon.svg"],
-    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+    shortcut: ["/favicon.svg?v=20261128-1"],
+    apple: [{ url: "/apple-icon.png?v=20261128-1", type: "image/png", sizes: "180x180" }],
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f3f0e8",
+  themeColor: "#FBFBF7",
 };
 
 export default function BlogLayout({ children }: { children: ReactNode }) {

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { site } from "./site";
 
 export const socialImage = {
-  url: "/og/og.jpg",
+  url: "/og/og.jpg?v=20261128-1",
   width: 1200,
   height: 630,
   type: "image/jpeg",
@@ -18,11 +18,11 @@ export function rootMetadata(): Metadata {
     metadataBase: new URL(site.url),
     icons: {
       icon: [
-        { url: "/favicon.svg", type: "image/svg+xml" },
-        { url: "/icon.png", type: "image/png", sizes: "512x512" },
+        { url: "/favicon.svg?v=20261128-1", type: "image/svg+xml" },
+        { url: "/icon.png?v=20261128-1", type: "image/png", sizes: "512x512" },
       ],
-      shortcut: ["/favicon.svg"],
-      apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+      shortcut: ["/favicon.svg?v=20261128-1"],
+      apple: [{ url: "/apple-icon.png?v=20261128-1", type: "image/png", sizes: "180x180" }],
     },
     title: pageTitle,
     description: pageDescription,

@@ -4,8 +4,8 @@
   flex-direction:column;
   justify-content:space-between;
   padding:clamp(24px,5vw,64px);
-  background:#f4f1e9;
-  color:#172624;
+  background:#FBFBF7;
+  color:#251B20;
   font-family:var(--font-estedad),Estedad,Tahoma,sans-serif;
 }
 .not-found-blog { direction:rtl; }
@@ -30,16 +30,16 @@
   width:42px;
   height:42px;
   place-items:center;
-  border:1px solid rgba(23,38,36,.25);
+  border:1px solid rgba(37, 27, 32,.25);
   border-radius:50%;
   font-size:20px;
   font-weight:800;
 }
 .not-found-brand strong,.not-found-brand small { display:block; }
 .not-found-brand strong { font-size:14px; }
-.not-found-brand small { margin-top:2px; color:#66736e; font-size:10px; }
-.not-found-back { color:#66736e; font-size:11px; text-decoration:none; }
-.not-found-back:hover { color:#a86f54; }
+.not-found-brand small { margin-top:2px; color:#5A4A51; font-size:10px; }
+.not-found-back { color:#5A4A51; font-size:11px; text-decoration:none; }
+.not-found-back:hover { color:#782C44; }
 .not-found-content {
   position:relative;
   width:min(760px,100%);
@@ -47,7 +47,7 @@
   z-index:1;
 }
 .not-found-number {
-  color:rgba(23,38,36,.055);
+  color:rgba(37, 27, 32,.055);
   font:800 clamp(130px,26vw,300px)/.8 var(--font-geist-mono),monospace;
   letter-spacing:-.1em;
   user-select:none;
@@ -63,11 +63,11 @@
   align-items:center;
   gap:9px;
   margin:0 0 18px;
-  color:#a86f54;
+  color:#782C44;
   font-size:11px;
   font-weight:700;
 }
-.not-found-eyebrow span { width:7px; height:7px; border-radius:50%; background:#a86f54; }
+.not-found-eyebrow span { width:7px; height:7px; border-radius:50%; background:#782C44; }
 .not-found-content h1 {
   max-width:670px;
   margin:0 0 14px;
@@ -79,7 +79,7 @@
 .not-found-description {
   max-width:520px;
   margin:0;
-  color:#66736e;
+  color:#5A4A51;
   font-size:15px;
   line-height:2.1;
 }
@@ -100,10 +100,10 @@
   text-decoration:none;
   transition:background .2s ease,color .2s ease,border-color .2s ease;
 }
-.not-found-primary { background:#172624; color:#f4f1e9; }
-.not-found-primary:hover { background:#a86f54; }
-.not-found-secondary { border:1px solid rgba(23,38,36,.2); color:#172624; }
-.not-found-secondary:hover { border-color:#a86f54; color:#a86f54; }
+.not-found-primary { background:#251B20; color:#FBFBF7; }
+.not-found-primary:hover { background:#782C44; }
+.not-found-secondary { border:1px solid rgba(37, 27, 32,.2); color:#251B20; }
+.not-found-secondary:hover { border-color:#782C44; color:#782C44; }
 .not-found-footer {
   display:flex;
   justify-content:space-between;
@@ -111,20 +111,20 @@
   width:min(1180px,100%);
   margin:0 auto;
   padding-top:16px;
-  border-top:1px solid rgba(23,38,36,.13);
-  color:#87918c;
+  border-top:1px solid rgba(37, 27, 32,.13);
+  color:#7D6D74;
   font-size:10px;
 }
-.not-found-main { background:#f3f0e8; color:#28242b; }
+.not-found-main { background:#FBFBF7; color:#251B20; }
 .not-found-main .not-found-content { max-width:900px; }
-.not-found-main .not-found-number { color:rgba(40,36,43,.065); }
-.not-found-main .not-found-eyebrow { color:#805a18; }
-.not-found-main .not-found-eyebrow span { background:#d6a443; }
-.not-found-main .not-found-back:hover { color:#7b3f58; }
-.not-found-main .not-found-description { color:#554f57; }
-.not-found-main .not-found-secondary { border-color:rgba(40,36,43,.25); color:#28242b; }
-.not-found-main .not-found-primary { background:#7b3f58; color:#fbf9f4; }
-.not-found-main .not-found-primary:hover { background:#d6a443; color:#28242b; }
+.not-found-main .not-found-number { color:rgba(37, 27, 32,.065); }
+.not-found-main .not-found-eyebrow { color:#72530B; }
+.not-found-main .not-found-eyebrow span { background:#E3B72F; }
+.not-found-main .not-found-back:hover { color:#782C44; }
+.not-found-main .not-found-description { color:#5A4A51; }
+.not-found-main .not-found-secondary { border-color:rgba(37, 27, 32,.25); color:#251B20; }
+.not-found-main .not-found-primary { background:#782C44; color:#FFFFFF; }
+.not-found-main .not-found-primary:hover { background:#E3B72F; color:#251B20; }
 @media(max-width:600px) {
   .not-found-page { padding:22px 20px; }
   .not-found-topline { align-items:flex-start; }

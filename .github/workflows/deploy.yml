@@ -101,11 +101,11 @@ jobs:
           set -euo pipefail
           test -s out/index.html
           grep -Fq '<meta name="google-site-verification" content="UhIDVQ1toOjgUhS7bONWQB-lmnoRW5gbZkI1ZRpjpo8"/>' out/index.html
-          grep -Fq 'href="/favicon.svg"' out/index.html
-          grep -Fq 'href="/favicon.svg"' out/blog/index.html
-          grep -Fq 'href="/favicon.svg"' out/Mian-e-Ma/index.html
-          grep -Fq 'href="/favicon.svg"' out/admin/index.html
-          grep -Fq 'href="/favicon.svg"' out/admin/blog/index.html
+          grep -Fq 'href="/favicon.svg' out/index.html
+          grep -Fq 'href="/favicon.svg' out/blog/index.html
+          grep -Fq 'href="/favicon.svg' out/Mian-e-Ma/index.html
+          grep -Fq 'href="/favicon.svg' out/admin/index.html
+          grep -Fq 'href="/favicon.svg' out/admin/blog/index.html
           test -s out/404.html
           test -s out/favicon.svg
           test -s out/icon.png
@@ -173,9 +173,9 @@ jobs:
           test -s out/Mian-e-Ma/assets/mian-e-ma-social-preview.jpg
           test -s out/Mian-e-Ma/assets/rexo-agency-logo-white.png
           test -s out/Mian-e-Ma/assets/OFL.txt
-          grep -Fq 'href="/favicon.svg"' out/Mian-e-Ma/index.html
-          grep -Fq 'href="/icon.png"' out/Mian-e-Ma/index.html
-          grep -Fq 'href="/apple-icon.png"' out/Mian-e-Ma/index.html
+          grep -Fq 'href="/favicon.svg' out/Mian-e-Ma/index.html
+          grep -Fq 'href="/icon.png' out/Mian-e-Ma/index.html
+          grep -Fq 'href="/apple-icon.png' out/Mian-e-Ma/index.html
           test "$(grep -c 'http-equiv="Content-Security-Policy"' out/Mian-e-Ma/index.html)" -eq 1
           ! grep -R -Fq 'rexo-mag-logo.png' out/Mian-e-Ma/
           ! grep -Fq 'مجله رکسو (RexoMag)' out/Mian-e-Ma/index.html

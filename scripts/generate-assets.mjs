@@ -18,9 +18,9 @@ import wawoff2Module from "wawoff2";
 const wawoff2 = wawoff2Module.default ?? wawoff2Module;
 
 const ROOT = process.cwd();
-const PLUM = "#7b3f58";
-const BRASS = "#d6a443";
-const MARK = "#fbf9f4";
+const PLUM = "#782C44";
+const BRASS = "#E3B72F";
+const MARK = "#FBFBF7";
 
 const toBufferSource = (data) =>
   data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
@@ -69,4 +69,5 @@ const vectorIcon = iconSvg(512);
 writeFileSync(join(ROOT, "public", "favicon.svg"), vectorIcon, "utf8");
 await sharp(Buffer.from(vectorIcon)).png().toFile(join(ROOT, "src", "app", "icon.png"));
 await sharp(Buffer.from(iconSvg(180))).png().toFile(join(ROOT, "src", "app", "apple-icon.png"));
+
 console.log("public/favicon.svg, src/app/icon.png (512), and src/app/apple-icon.png (180) generated");

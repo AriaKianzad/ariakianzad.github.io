@@ -4,9 +4,9 @@ export function initSignalScene(host: HTMLElement) {
   // The same scene, palette and motion are used on the homepage and blog.
   // Only the blog's more compact frame receives additional camera breathing room.
   const isCompactBlogFrame = host.closest<HTMLElement>(".blog-intro-visual") !== null;
-  const accentColor = new THREE.Color("#7b3f58");
-  const accentSoftColor = accentColor.clone().lerp(new THREE.Color("#ecd08d"), 0.42);
-  const secondaryColor = new THREE.Color("#d6a443");
+  const accentColor = new THREE.Color("#782C44");
+  const accentSoftColor = accentColor.clone().lerp(new THREE.Color("#F4D976"), 0.42);
+  const secondaryColor = new THREE.Color("#E3B72F");
   const canvas = host.querySelector<HTMLCanvasElement>("[data-signal-canvas]");
   if (!canvas) return;
 
@@ -24,7 +24,7 @@ export function initSignalScene(host: HTMLElement) {
   }
 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-  renderer.setClearColor(0xf3f0e8, 0);
+  renderer.setClearColor(0xfbfbf7, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -45,7 +45,7 @@ export function initSignalScene(host: HTMLElement) {
   keyLight.position.set(3.5, 4, 4);
   scene.add(keyLight);
 
-  scene.add(new THREE.AmbientLight(0x9b8790, 0.82));
+  scene.add(new THREE.AmbientLight(0x7d6d74, 0.82));
 
   const rimLight = new THREE.DirectionalLight(secondaryColor, 2.2);
   rimLight.position.set(-4, -2, -3);
@@ -53,7 +53,7 @@ export function initSignalScene(host: HTMLElement) {
 
   const coreGeometry = new THREE.IcosahedronGeometry(0.92, 5);
   const coreMaterial = new THREE.MeshPhysicalMaterial({
-    color: new THREE.Color("#563347"),
+    color: new THREE.Color("#4B1D2C"),
     metalness: 0.72,
     roughness: 0.2,
     clearcoat: 0.82,
@@ -157,7 +157,7 @@ export function initSignalScene(host: HTMLElement) {
     new THREE.Float32BufferAttribute(particlePositions, 3),
   );
   const particleMaterial = new THREE.PointsMaterial({
-    color: 0x947884,
+    color: 0xA45A70,
     size: 0.012,
     transparent: true,
     opacity: 0.55,

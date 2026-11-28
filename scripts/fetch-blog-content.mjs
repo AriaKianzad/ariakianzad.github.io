@@ -15,8 +15,8 @@ if (!payload || !Array.isArray(payload.posts) || typeof payload.settings !== "ob
 const s = payload.settings || {};
 const rawAccent = typeof s.accent_color === "string" && /^#[0-9a-f]{6}$/i.test(s.accent_color)
   ? s.accent_color
-  : "#7b3f58";
-const accentColor = rawAccent.toLowerCase() === "#a86f54" ? "#7b3f58" : rawAccent;
+  : "#782C44";
+const accentColor = ["#7b3f58", "#a86f54"].includes(rawAccent.toLowerCase()) ? "#782c44" : rawAccent;
 const result = {
   settings: {
     title:s.title||"نوشته‌ها", tagline:s.tagline||"یادداشت‌هایی درباره برند، معنا و ارتباط",
