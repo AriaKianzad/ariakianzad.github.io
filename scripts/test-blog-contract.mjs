@@ -662,6 +662,37 @@ assert.ok(blockSerializer.includes('const blockTags=new Set(["DIV","SECTION","H2
   blockSerializer.includes("?blockToMarkdown(child)") && blockSerializer.includes('if(tag==="p")'),
   "paragraph wrappers containing a block list must serialize the list structurally rather than flattening its markers");
 
+const blockListSerializerContext={Node:{TEXT_NODE:3,ELEMENT_NODE:1},safeHref:(value)=>String(value||"#")};
+new Script(listSerializerSource+"\\n"+blockSerializer+"\\nthis.testBlockToMarkdown=blockToMarkdown;",{filename:"admin-list-roundtrip.js"}).runInNewContext(blockListSerializerContext);
+const makeSerializerNode=(tag,children=[],attributes={})=>({
+  nodeType:1,tagName:tag.toUpperCase(),childNodes:children,
+  children:children.filter((child)=>child.nodeType===1),
+  getAttribute(name){return attributes[name]??null;},
+  querySelector(){return null;},
+});
+const makeSerializerText=(value)=>({nodeType:3,nodeValue:value});
+const wrappedOrderedList=makeSerializerNode("p",[
+  makeSerializerNode("ol",[
+    makeSerializerNode("li",[
+      makeSerializerNode("p",[makeSerializerNode("strong",[makeSerializerText("نکتۀ اول")])]),
+      makeSerializerNode("p",[makeSerializerText("توضیح اول")]),
+    ]),
+    makeSerializerNode("li",[
+      makeSerializerNode("p",[makeSerializerNode("strong",[makeSerializerText("نکتۀ دوم")])]),
+      makeSerializerNode("p",[makeSerializerText("توضیح دوم")]),
+    ]),
+  ]),
+]);
+const serializedWrappedOrderedList=blockListSerializerContext.testBlockToMarkdown(wrappedOrderedList);
+assert.ok(
+  serializedWrappedOrderedList.includes("1. **نکتۀ اول**") &&
+    serializedWrappedOrderedList.includes("2. **نکتۀ دوم**") &&
+    serializedWrappedOrderedList.includes("توضیح اول") &&
+    serializedWrappedOrderedList.includes("توضیح دوم"),
+  "the full editor serializer must preserve ordered-list markers and each item's paragraphs when the browser nests OL inside P",
+);
+
+
 assert.ok(["tag===\"strong\"","tag===\"em\"","tag===\"u\"","tag===\"del\"","tag===\"code\"","tag===\"a\"","tag===\"img\""].every((token)=>inlineSerializer.includes(token)), "the editor serializer must preserve emphasis, underline, deletion, code, links and images");
 assert.ok(["tag===\"figure\"","/^h[1-6]$/","tag===\"p\"","tag===\"ul\"","tag===\"ol\"","tag===\"blockquote\"","tag===\"pre\"","tag===\"hr\"","tag===\"table\""].every((token)=>blockSerializer.includes(token)), "the editor serializer must preserve all supported block structures");
 const cmsPreviewRenderer = adminApp.slice(adminApp.indexOf("function renderPreviewMarkdown"),adminApp.indexOf("function inlineToMarkdown"));
