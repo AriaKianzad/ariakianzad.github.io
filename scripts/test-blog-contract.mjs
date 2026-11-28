@@ -682,7 +682,7 @@ const renderedCmsPersianList=cmsPreviewContext.testRenderPreviewMarkdown([
   "",
   "۲. **مرحلۀ دوم**",
   "   توضیح مرحلۀ دوم.",
-].join("\\n")).replace(/\\s+(?=<)/g,"");
+].join("\n")).replace(/\\s+(?=<)/g,"");
 assert.equal((renderedCmsPersianList.match(/<ol>/g)||[]).length,1,"CMS preview must treat Persian-digit markers as an ordered list");
 assert.equal((renderedCmsPersianList.match(/<ul>/g)||[]).length,0,"CMS preview must not convert Persian-digit ordered lists into bullets");
 assert.equal((renderedCmsPersianList.match(/<li>/g)||[]).length,2,"CMS preview must preserve each Persian-digit list item");
