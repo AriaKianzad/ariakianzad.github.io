@@ -3,6 +3,26 @@ import { getBlogSettings } from "@/lib/blog-data";
 import { socials } from "@/lib/site";
 import { SocialIcon } from "@/components/icons";
 
+function BlogSocialIcon({ id }: { id: string }) {
+  if (id !== "telegram") return <SocialIcon id={id} />;
+
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.65"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M22 2 11 13" />
+      <path d="m22 2-7 20-4-9-9-4 20-7Z" />
+    </svg>
+  );
+}
+
 const socialLabels: Record<string, string> = {
   youtube: "یوتیوب", instagram: "اینستاگرام", linkedin: "لینکدین", x: "ایکس", unsplash: "آنسپلیش", telegram: "تلگرام",
 };
@@ -14,7 +34,11 @@ export function BlogHeader() {
       <header className="blog-header" dir="rtl">
         <div className="blog-container blog-header-inner">
           <Link className="blog-header-blog-link" href="/blog/" aria-label="وبلاگ آریا کیانزاد">
-            <span className="blog-brand-mark" aria-hidden="true">آ</span>
+            <svg className="blog-brand-mark" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+              <rect x="1.5" y="1.5" width="45" height="45" rx="12.5" fill="#7b3f58" />
+              <text x="23.5" y="25.5" fill="#fbf9f4" fontFamily="Estedad, sans-serif" fontSize="28" fontWeight="750" textAnchor="middle" dominantBaseline="middle">آ</text>
+              <circle cx="38.5" cy="9.5" r="2.8" fill="#d6a443" />
+            </svg>
             <span>آریا کیانزاد</span>
           </Link>
           <Link className="blog-back-link" href="/">
@@ -45,7 +69,7 @@ export function BlogFooter() {
           <div className="blog-socials" aria-label="شبکه‌های اجتماعی">
             {socials.map((entry) => (
               <a key={entry.id} href={entry.href} target="_blank" rel="noopener noreferrer" aria-label={socialLabels[entry.id] || "شبکۀ اجتماعی"} title={socialLabels[entry.id] || "شبکۀ اجتماعی"}>
-                <SocialIcon id={entry.id} />
+                <BlogSocialIcon id={entry.id} />
               </a>
             ))}
           </div>
