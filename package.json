@@ -23,7 +23,8 @@
     "test:build-safety": "node scripts/test-build-safety.mjs",
     "prebuild": "npm run assets && node scripts/fetch-blog-content.mjs && node scripts/generate-blog-og.mjs",
     "predev": "npm run assets && node scripts/fetch-blog-content.mjs && node scripts/generate-blog-og.mjs",
-    "test:blog": "node scripts/test-blog-contract.mjs"
+    "test:blog": "node scripts/test-blog-contract.mjs",
+    "test:editor": "node scripts/test-blog-editor-contract.mjs"
   },
   "dependencies": {
     "next": "16.4.6",
