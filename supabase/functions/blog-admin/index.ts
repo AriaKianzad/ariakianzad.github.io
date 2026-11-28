@@ -239,7 +239,7 @@ function normalizePost(input: Record<string, unknown>) {
     toc_enabled: input?.toc_enabled !== false,
     drop_cap: Boolean(input?.drop_cap),
     content_width: input?.content_width === "wide" ? "wide" : "reading",
-    accent_color: hexColor(input?.accent_color, "#a86f54"),
+    accent_color: hexColor(input?.accent_color, "#782C44"),
     faqs: faqsValue(input?.faqs),
   };
 }
@@ -592,7 +592,7 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
       tagline: textValue(input.tagline, 180, "زیرعنوان"),
       description: textValue(input.description, 500, "توضیحات"),
       background_theme: typeof input.background_theme === "string" && themes.includes(input.background_theme) ? input.background_theme : "paper",
-      accent_color: hexColor(input.accent_color, "#a86f54"),
+      accent_color: hexColor(input.accent_color, "#782C44"),
       card_style: typeof input.card_style === "string" && cards.includes(input.card_style) ? input.card_style : "editorial",
       layout_style: typeof input.layout_style === "string" && layouts.includes(input.layout_style) ? input.layout_style : "editorial",
       content_width: typeof input.content_width === "string" && widths.includes(input.content_width) ? input.content_width : "reading",
