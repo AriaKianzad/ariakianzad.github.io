@@ -234,8 +234,8 @@ for (const html of [adminDashboard, adminBlogDashboard, bookPage]) {
     html.includes('href="/apple-icon.png'),
     "the shared favicon set must be used in every standalone page");
 }
-assert.ok(metadata.includes('url: "/favicon.svg"') &&
-  blogLayout.includes('url: "/favicon.svg"'),
+assert.ok(metadata.includes('url: "/favicon.svg?v=20261128-1"') &&
+  blogLayout.includes('url: "/favicon.svg?v=20261128-1"'),
   "Next.js metadata must use the shared vector favicon on the homepage and blog");
 assert.ok(!blogLayout.includes("blog-favicon.svg") &&
   !layout.includes("blog-favicon.svg"),
