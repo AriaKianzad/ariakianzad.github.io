@@ -9,8 +9,8 @@ const blogSettings = getBlogSettings();
 const blogCanonicalUrl = blogSettings.canonical_url || site.url + "/blog/";
 const savedBlogOgImage = blogSettings.default_og_image || "";
 const blogOgImage = /(?:^|\/)og\/og\.png(?:[?#]|$)/i.test(savedBlogOgImage)
-  ? site.url + "/og/og.jpg"
-  : savedBlogOgImage || site.url + "/og/og.jpg";
+  ? site.url + "/og/og.jpg?v=20261128-1"
+  : savedBlogOgImage || site.url + "/og/og.jpg?v=20261128-1";
 
 export const metadata: Metadata = {
   title: blogSettings.default_meta_title || "یادداشت‌هایی درباره برند، معنا و ارتباط | آریا کیانزاد",
