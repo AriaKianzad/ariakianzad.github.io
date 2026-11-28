@@ -144,7 +144,7 @@ assert.ok(html.includes('id="ga4-realtime-users"') && html.includes('id="ga4-rea
   "Realtime metric elements must exist");
 assert.ok(html.includes('id="ga4-updated"') && html.includes('id="ga4-realtime-updated"'),
   "GA4 update timestamps must be visible");
-assert.ok(html.includes("admin.css?v=20261122-5"), "dashboard stylesheet cache key must be refreshed");
+assert.ok(html.includes("admin.css?v=20261128-1"), "dashboard stylesheet cache key must be refreshed");
 assert.ok(html.includes("app.js?v=20261122-6"), "dashboard script cache key must be refreshed");
 
 console.log("Google reporting contract passed: true zero values remain zero, empty/partial reports are explicit, errors are surfaced, and date windows are visible.");
