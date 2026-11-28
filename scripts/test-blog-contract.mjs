@@ -663,7 +663,7 @@ assert.ok(blockSerializer.includes('const blockTags=new Set(["DIV","SECTION","H2
   "paragraph wrappers containing a block list must serialize the list structurally rather than flattening its markers");
 
 const blockListSerializerContext={Node:{TEXT_NODE:3,ELEMENT_NODE:1},safeHref:(value)=>String(value||"#")};
-new Script(listSerializerSource+"\\n"+blockSerializer+"\\nthis.testBlockToMarkdown=blockToMarkdown;",{filename:"admin-list-roundtrip.js"}).runInNewContext(blockListSerializerContext);
+new Script(listSerializerSource+"\n"+blockSerializer+"\nthis.testBlockToMarkdown=blockToMarkdown;",{filename:"admin-list-roundtrip.js"}).runInNewContext(blockListSerializerContext);
 const makeSerializerNode=(tag,children=[],attributes={})=>({
   nodeType:1,tagName:tag.toUpperCase(),childNodes:children,
   children:children.filter((child)=>child.nodeType===1),
