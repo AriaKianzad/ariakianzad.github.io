@@ -698,7 +698,7 @@ assert.ok(
 
 assert.ok(["tag===\"strong\"","tag===\"em\"","tag===\"u\"","tag===\"del\"","tag===\"code\"","tag===\"a\"","tag===\"img\""].every((token)=>inlineSerializer.includes(token)), "the editor serializer must preserve emphasis, underline, deletion, code, links and images");
 assert.ok(["tag===\"figure\"","/^h[1-6]$/","tag===\"p\"","tag===\"ul\"","tag===\"ol\"","tag===\"blockquote\"","tag===\"pre\"","tag===\"hr\"","tag===\"table\""].every((token)=>blockSerializer.includes(token)), "the editor serializer must preserve all supported block structures");
-const cmsInlineSource = adminApp.slice(adminApp.indexOf("function previewInline"),adminApp.indexOf("function renderPreviewFigure"));
+const cmsInlineSource = adminApp.slice(adminApp.indexOf("function previewInline"),adminApp.indexOf("function renderPreviewMarkdown"));
 const cmsInlineContext = {
   escapeHtml:(value)=>String(value).replace(/[&<>"']/g,(char)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char])),
   safeHref:(value)=>String(value||"#"),
