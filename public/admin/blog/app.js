@@ -452,7 +452,7 @@
       "#post-toc":"toc_enabled","#post-dropcap":"drop_cap","#post-width":"content_width","#post-accent":"accent_color",
     };
     Object.entries(fields).forEach(([selector,key])=>{
-      const value=key==="accent_color"&&String(post[key]||"").toLowerCase()==="#782C44"?"#782C44":post[key];
+      const value=key==="accent_color"&&["#a86f54","#7b3f58"].includes(String(post[key]||"").toLowerCase())?"#782C44":post[key];
       setField(selector,value);
     });
     renderPostCategoryControls(post.categories,post.primary_category||post.category||"");
@@ -1656,7 +1656,7 @@
     set("setting-title",settings.title);set("setting-tagline",settings.tagline);set("setting-description",settings.description);
     set("setting-intro-title",settings.intro_title);set("setting-intro-body",settings.intro_body);set("setting-footer",settings.footer_note);
     const storedAccent=String(settings.accent_color||"").toLowerCase();
-    set("setting-accent",storedAccent==="#782C44"?"#782C44":(settings.accent_color||"#782C44"));
+    set("setting-accent",["#a86f54","#7b3f58"].includes(storedAccent)?"#782C44":(settings.accent_color||"#782C44"));
     set("setting-card-style",settings.card_style);set("setting-layout",settings.layout_style);
     set("setting-width",settings.content_width);set("setting-language",settings.default_language);set("setting-per-page",settings.posts_per_page);
     set("setting-heading-scale",settings.heading_scale);set("setting-line-height",settings.body_line_height);
