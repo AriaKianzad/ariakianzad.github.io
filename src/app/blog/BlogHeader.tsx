@@ -36,7 +36,7 @@ export function BlogHeader() {
           <Link className="blog-header-blog-link" href="/blog/" aria-label="وبلاگ آریا کیانزاد">
             <svg className="blog-brand-mark" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
               <rect x="1.5" y="1.5" width="45" height="45" rx="12.5" fill="#782C44" />
-              <text x="23.5" y="25.5" fill="#FFFFFF" fontFamily="Estedad, sans-serif" fontSize="28" fontWeight="750" textAnchor="middle" dominantBaseline="middle">آ</text>
+              <text x="23.5" y="25.5" fill="#FBFBF7" fontFamily="Estedad, sans-serif" fontSize="28" fontWeight="750" textAnchor="middle" dominantBaseline="middle">آ</text>
               <circle cx="38.5" cy="9.5" r="2.8" fill="#E3B72F" />
             </svg>
             <span>آریا کیانزاد</span>
