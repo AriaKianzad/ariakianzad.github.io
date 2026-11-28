@@ -499,7 +499,7 @@ const persianDigitList = markdownRuntime.exports.renderMarkdown([
   "",
   "۲. **مرحلۀ دوم**",
   "   توضیح مرحلۀ دوم.",
-].join("\n")).replace(/\\s+(?=<)/g,"");
+].join("\n")).replace(/\s+(?=<)/g,"");
 assert.equal((persianDigitList.match(/<ol>/g)||[]).length,1,"Persian-digit ordered markers must render as one ordered list");
 assert.equal((persianDigitList.match(/<ul>/g)||[]).length,0,"Persian-digit ordered markers must never be downgraded to bullets");
 assert.equal((persianDigitList.match(/<li>/g)||[]).length,2,"Persian-digit list items must remain separate");
@@ -510,7 +510,7 @@ const arabicIndicDigitList = markdownRuntime.exports.renderMarkdown([
   "",
   "٢. **المرحلة الثانية**",
   "   وصف المرحلة الثانية.",
-].join("\n")).replace(/\\s+(?=<)/g,"");
+].join("\n")).replace(/\s+(?=<)/g,"");
 assert.equal((arabicIndicDigitList.match(/<ol>/g)||[]).length,1,"Arabic-Indic ordered markers must render as one ordered list");
 assert.equal((arabicIndicDigitList.match(/<ul>/g)||[]).length,0,"Arabic-Indic ordered markers must not be downgraded to bullets");
 
@@ -682,7 +682,7 @@ const renderedCmsPersianList=cmsPreviewContext.testRenderPreviewMarkdown([
   "",
   "۲. **مرحلۀ دوم**",
   "   توضیح مرحلۀ دوم.",
-].join("\n")).replace(/\\s+(?=<)/g,"");
+].join("\n")).replace(/\s+(?=<)/g,"");
 assert.equal((renderedCmsPersianList.match(/<ol>/g)||[]).length,1,"CMS preview must treat Persian-digit markers as an ordered list");
 assert.equal((renderedCmsPersianList.match(/<ul>/g)||[]).length,0,"CMS preview must not convert Persian-digit ordered lists into bullets");
 assert.equal((renderedCmsPersianList.match(/<li>/g)||[]).length,2,"CMS preview must preserve each Persian-digit list item");
