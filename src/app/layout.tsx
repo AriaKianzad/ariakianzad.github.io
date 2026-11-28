@@ -10,7 +10,7 @@ import "./sections.css";
 export const metadata: Metadata = rootMetadata();
 
 export const viewport: Viewport = {
-  themeColor: "#f3f0e8",
+  themeColor: "#FBFBF7",
   colorScheme: "light",
 };
 

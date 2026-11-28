@@ -1,16 +1,16 @@
 import * as THREE from "three";
 
 type Motion = (time: number, delta: number) => void;
-const plum = new THREE.Color("#7b3f58");
-const plumSoft = new THREE.Color("#b48798");
-const brass = new THREE.Color("#d6a443");
-const brassSoft = new THREE.Color("#ecd08d");
-const ink = new THREE.Color("#4b4149");
+const plum = new THREE.Color("#782C44");
+const plumSoft = new THREE.Color("#A45A70");
+const brass = new THREE.Color("#E3B72F");
+const brassSoft = new THREE.Color("#F4D976");
+const ink = new THREE.Color("#5A4A51");
 
 function orbitScene(world: THREE.Group): Motion {
   const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.66, 3),
-    new THREE.MeshPhysicalMaterial({ color: "#563347", metalness: 0.48, roughness: 0.24, clearcoat: 1,
-      emissive: "#2b1d27", emissiveIntensity: 0.34 }));
+    new THREE.MeshPhysicalMaterial({ color: "#4B1D2C", metalness: 0.48, roughness: 0.24, clearcoat: 1,
+      emissive: "#251B20", emissiveIntensity: 0.34 }));
   world.add(core);
 
   const rings = [
@@ -87,7 +87,7 @@ function flowScene(world: THREE.Group, compact: boolean, viewportWidth: number):
   const plane = new THREE.PlaneGeometry(width, height, segmentsX, segmentsY);
   const positions = plane.attributes.position as THREE.BufferAttribute;
   const surface = new THREE.Mesh(plane, new THREE.MeshBasicMaterial({
-    color: "#806473",
+    color: "#7D6D74",
     wireframe: true,
     transparent: true,
     opacity: compact ? 0.68 : 0.58,
@@ -186,8 +186,8 @@ function init(root: HTMLElement): (() => void) | undefined {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 40);
   camera.position.z = 6.5;
-  scene.add(new THREE.HemisphereLight(0xfff8ee, 0x624553, 1.35));
-  const key = new THREE.DirectionalLight(0xfff3df, 2.2);
+  scene.add(new THREE.HemisphereLight(0xfffbf7, 0x4b1d2c, 1.35));
+  const key = new THREE.DirectionalLight(0xfffbe9, 2.2);
   key.position.set(2.5, 3.5, 4);
   scene.add(key);
   const world = new THREE.Group();

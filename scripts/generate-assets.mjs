@@ -18,9 +18,7 @@ import wawoff2Module from "wawoff2";
 const wawoff2 = wawoff2Module.default ?? wawoff2Module;
 
 const ROOT = process.cwd();
-const PLUM = "#7b3f58";
-const BRASS = "#d6a443";
-const MARK = "#fbf9f4";
+const SOURCE_ICON_PATH = join(ROOT, "assets-src", "aria-kianzad-favicon.png");
 
 const toBufferSource = (data) =>
   data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
@@ -50,23 +48,25 @@ if (missing.length > 0) {
 console.log("wght axis and Latin coverage verified; generating assets");
 
 /* ------------------------------------------------------------------ */
-/* Shared vector favicon + raster platform variants                    */
+/* Original logo artwork + browser/platform icon variants              */
 /* ------------------------------------------------------------------ */
 
-const iconSvg = (size) => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">
-<rect x="16" y="16" width="480" height="480" rx="132" fill="${PLUM}"/>
-<g fill="none" stroke="${MARK}" stroke-width="36" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M108 356 181 155 Q188 136 196 155 L270 356"/>
-  <path d="M137 287H250"/>
-  <path d="M313 155V356"/>
-  <path d="M313 267 402 155"/>
-  <path d="M313 267 404 356"/>
-</g>
-<circle cx="416" cy="110" r="26" fill="${BRASS}"/>
+const sourceIcon = readFileSync(SOURCE_ICON_PATH);
+const sourceMetadata = await sharp(sourceIcon).metadata();
+if (sourceMetadata.format !== "png" || sourceMetadata.width !== 512 || sourceMetadata.height !== 512) {
+  throw new Error("The canonical favicon source must be a 512x512 PNG.");
+}
+
+const sourceBase64 = sourceIcon.toString("base64");
+const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <image href="data:image/png;base64,${sourceBase64}" width="512" height="512" preserveAspectRatio="none"/>
 </svg>`;
 
-const vectorIcon = iconSvg(512);
-writeFileSync(join(ROOT, "public", "favicon.svg"), vectorIcon, "utf8");
-await sharp(Buffer.from(vectorIcon)).png().toFile(join(ROOT, "src", "app", "icon.png"));
-await sharp(Buffer.from(iconSvg(180))).png().toFile(join(ROOT, "src", "app", "apple-icon.png"));
-console.log("public/favicon.svg, src/app/icon.png (512), and src/app/apple-icon.png (180) generated");
+writeFileSync(join(ROOT, "public", "favicon.svg"), faviconSvg, "utf8");
+await sharp(sourceIcon).png().toFile(join(ROOT, "src", "app", "icon.png"));
+await sharp(sourceIcon)
+  .resize(180, 180, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+  .png()
+  .toFile(join(ROOT, "src", "app", "apple-icon.png"));
+
+console.log("Original Aria Kianzad logo generated as public/favicon.svg, 512px app icon and 180px Apple touch icon.");
