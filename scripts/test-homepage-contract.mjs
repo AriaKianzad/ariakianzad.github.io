@@ -136,10 +136,10 @@ assert.ok(siteChrome.includes('src="/brand-logo.png?v=20261128-2"') && siteChrom
   siteChrome.includes('<strong>Aria Kianzad</strong>') &&
   !siteChrome.includes('className="wordmark__mark" aria-hidden="true">AK'),
   "the portfolio header must render the original logo as an image while keeping the brand name as real text");
-assert.ok(bookPage.includes('class="brand-mark" src="/brand-logo.png?v=20261128-2" alt=""') &&
+assert.ok(bookPage.includes('class="brand-mark" src="/brand-logo.png?v=20261128-2" alt="لوگوی آریا کیانزاد"') &&
   !bookPage.includes('<svg class="brand-mark"') &&
   !bookPage.includes('>م</text>'),
-  "the book header must use the original logo image instead of an SVG text monogram");
+  "the book header must use the original logo image with descriptive alt text instead of an SVG text monogram");
 assert.ok(metadata.includes('url: "/og/og.jpg?v=20261128-1"') && metadata.includes('width: 1200') &&
   metadata.includes('height: 630') && metadata.includes('type: "image/jpeg"'),
   "homepage must use its own 1200x630 JPEG social image");
