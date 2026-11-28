@@ -310,6 +310,7 @@ assert.ok(cardComponent.includes('headingLevel = "h2"') && cardComponent.include
 assert.ok(listingClient.includes('headingLevel="h3"') && articlePage.includes('headingLevel="h3"'), "cards beneath archive and related-post H2 headings must use H3");
 assert.ok(blogCss.includes(".blog-card-copy h2,.blog-card-copy h3") && blogCss.includes(".blog-card-featured .blog-card-copy h2,.blog-card-featured .blog-card-copy h3"), "article cards must retain identical styles for H2 and H3 titles");
 assert.ok(adminApp.includes("editorToMarkdown") && adminApp.includes("refreshLinkManager"), "CMS must serialize rich text and expose per-link settings");
+assert.ok(adminApp.includes("function ensureMarkdownHeadingBreaks") && adminApp.includes("(?=#{2,4}"), "CMS must separate heading blocks from preceding paragraph text when serializing rich text");
 assert.ok(markdownSource.includes("rel=(follow|nofollow|sponsored|ugc)") && markdownSource.includes("target=(_blank|_self)") && markdownSource.includes('(external?"nofollow":"follow")'), "public Markdown renderer must preserve link relationship and target settings while defaulting external links to nofollow");
 assert.ok(markdownSource.includes('class="blog-table-scroll"') && markdownSource.includes('class="blog-table"') && markdownSource.includes("<thead>") && markdownSource.includes("<tbody>") && markdownSource.includes("<u>"), "public Markdown renderer must emit an accessible, styled table wrapper with semantic table sections and underline support");
 
@@ -323,6 +324,21 @@ new Script(markdownCompiled, { filename: "src/lib/blog-markdown.ts" }).runInNewC
   URL,
   process: { env: { NEXT_PUBLIC_SITE_URL: "https://ariakianzad.github.io" } },
 });
+
+const fiveH3Fixture = [
+  "### **۱. تیتر اول**",
+  "شرح تیتر اول.### **۲. تیتر دوم**",
+  "شرح تیتر دوم.### **۳. تیتر سوم**",
+  "شرح تیتر سوم.### **۴. تیتر چهارم**",
+  "شرح تیتر چهارم.### **۵. تیتر پنجم**",
+].join(String.fromCharCode(10,10));
+const headingGapPattern = new RegExp("([^"+String.fromCharCode(10)+"#])(?=#{2,4} +)", "g");
+const normalizedFiveH3Fixture = fiveH3Fixture.replace(headingGapPattern,"$1"+String.fromCharCode(10,10));
+const renderedFiveH3Fixture = markdownRuntime.exports.renderMarkdown(normalizedFiveH3Fixture);
+assert.equal(normalizedFiveH3Fixture.split("### ").length-1,5,"all five H3 headings must be separated into Markdown blocks");
+assert.equal(renderedFiveH3Fixture.split("<h3 ").length-1,5,"all five adjacent CMS H3 headings must render as semantic H3 elements");
+assert.equal(markdownRuntime.exports.extractToc(normalizedFiveH3Fixture).filter((item)=>item.level===3).length,5,"all five CMS H3 headings must be included in the table of contents");
+
 const normalizedAbsoluteCategoryLink = markdownRuntime.exports.renderMarkdown(
   "[دسته](https://ariakianzad.github.io//blog/category/brand-and-business/)",
 );
@@ -910,7 +926,7 @@ assert.ok(adminApp.includes('relation="follow",target=external?"_blank":"_self"'
 assert.ok(!adminApp.slice(adminApp.indexOf("function clipboardHeadingLevel"),adminApp.indexOf("function cleanClipboardNode")).includes('querySelectorAll?.("[style]")'), "Google Docs heading detection must not promote an entire paragraph based on a single styled child run");
 
 assert.ok(adminApp.includes('explicitRelation==="follow"') && adminApp.includes('if(relation!=="follow"||explicitRelation==="follow")'), "an explicitly selected follow relation must survive Markdown serialization and subsequent editing");
-assert.ok(adminHtml.includes('app.js?v=20261128-4') && adminHtml.includes('blog.css?v=20261128-2'), "the admin editor assets must use current cache keys after the image-alt validation update");
+assert.ok(adminHtml.includes('app.js?v=20261128-5') && adminHtml.includes('blog.css?v=20261128-2'), "the admin editor assets must use current cache keys after the heading-block serialization fix");
 assert.ok(adminApp.includes("function handleNumberedHeadingEnter(event)") && adminApp.includes('$("#post-content").addEventListener("keydown",handleNumberedHeadingEnter)') && adminApp.includes('list?.tagName!=="OL"') && adminApp.includes("numberedListItemHasHeading(item)") && adminApp.includes("trailing.extractContents()") && adminApp.includes('const nextItem=document.createElement("li")'), "Enter inside a numbered heading item must create continuation paragraphs in the same LI and only create the next LI from an empty continuation");
 assert.ok(blogCss.includes(".blog-prose li>h3") && blogCss.includes("display:block") && blogCss.includes(".blog-prose li>h3 + p") && adminCss.includes(".editor-richtext li>h3") && adminCss.includes(".editor-richtext li>h3 + p") && adminCss.includes("display:block"), "numbered H3 headings and their descriptions must remain separate visual blocks inside one list item");
 assert.ok(adminHtml.includes("وقتی به خط خالی رسیدی، یک Enter دیگه شمارۀ بعدی رو می‌سازه"), "the editor must explain how to continue the current numbered item and start the next one");
