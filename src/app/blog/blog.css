@@ -2118,3 +2118,18 @@ body:has(.blog-theme) .analytics-preferences:hover {
   width: 22px;
   height: 22px;
 }
+
+
+/* Center the blog footer navigation and social rows on narrow screens. */
+@media (max-width: 720px) {
+  .blog-footer-side {
+    width: 100%;
+    justify-items: stretch;
+  }
+
+  .blog-footer-links,
+  .blog-socials {
+    width: 100%;
+    justify-content: center;
+  }
+}
