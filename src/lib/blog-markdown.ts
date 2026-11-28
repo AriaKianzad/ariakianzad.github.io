@@ -198,7 +198,7 @@ function parseMarkdownListItem(line:string):MarkdownListItem|null{
   const rawContent=match[3],heading=rawContent.match(/^(#{1,4})\s+(.+)$/);
   return {
     depth:Math.floor(indent/2),
-    type:/^\d/.test(match[2])?"ol":"ul",
+    type:/^[0-9۰-۹٠-٩]/.test(match[2])?"ol":"ul",
     content:heading?heading[2]:rawContent,
     headingLevel:heading?Math.min(4,Math.max(2,heading[1].length)):null
   };
