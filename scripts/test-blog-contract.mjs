@@ -332,7 +332,7 @@ const fiveH3Fixture = [
   "شرح تیتر سوم.### **۴. تیتر چهارم**",
   "شرح تیتر چهارم.### **۵. تیتر پنجم**",
 ].join(String.fromCharCode(10,10));
-const headingGapPattern = new RegExp("([^"+String.fromCharCode(10)+"])(?=#{2,4} +)", "g");
+const headingGapPattern = new RegExp("([^"+String.fromCharCode(10)+"#])(?=#{2,4} +)", "g");
 const normalizedFiveH3Fixture = fiveH3Fixture.replace(headingGapPattern,"$1"+String.fromCharCode(10,10));
 const renderedFiveH3Fixture = markdownRuntime.exports.renderMarkdown(normalizedFiveH3Fixture);
 assert.equal(normalizedFiveH3Fixture.split("### ").length-1,5,"all five H3 headings must be separated into Markdown blocks");

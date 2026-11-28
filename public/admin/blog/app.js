@@ -845,7 +845,7 @@
     return Array.from(element.childNodes).map(inlineToMarkdown).join("");
   }
   function ensureMarkdownHeadingBreaks(markdown) {
-    return String(markdown||"").replace(/([^\n])(?=#{2,4}\s+)/g,"$1\n\n");
+    return String(markdown||"").replace(/([^\n#])(?=#{2,4}\s+)/g,"$1\n\n");
   }
   function editorToMarkdown(editor) {
     const markdown=Array.from(editor.childNodes).map(blockToMarkdown).join("").replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
