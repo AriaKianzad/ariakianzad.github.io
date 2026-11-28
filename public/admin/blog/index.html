@@ -6,8 +6,8 @@
 <link rel="icon" href="/favicon.svg?v=20261128-1" type="image/svg+xml"><link rel="alternate icon" href="/icon.png?v=20261128-1" type="image/png" sizes="512x512"><link rel="apple-touch-icon" href="/apple-icon.png?v=20261128-1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://bkohdqwecnvbmeaiuyyx.supabase.co; font-src 'self'; connect-src 'self' https://bkohdqwecnvbmeaiuyyx.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <title>مدیریت بلاگ | آریا کیانزاد</title>
-<link rel="stylesheet" href="./blog.css?v=20261128-2">
-<script src="../config.js?v=20261121-2"></script><script src="./app.js?v=20261128-5" defer></script>
+<link rel="stylesheet" href="./blog.css?v=20261128-3">
+<script src="../config.js?v=20261121-2"></script><script src="./editor-core.js?v=20261128-1" defer></script><script src="./app.js?v=20261128-6" defer></script>
 </head>
 <body>
 <main class="admin-root">
@@ -67,7 +67,7 @@
 </section>
 
 <section id="view-editor" class="view" hidden>
-<div class="editor-topbar"><div class="editor-topbar-state"><button id="back-to-posts" class="back-button" type="button">← بازگشت به مقاله‌ها</button><span id="editor-state" class="status-badge draft">پیش‌نویس</span><span id="editor-dirty-indicator" class="editor-dirty-indicator" role="status" aria-live="polite" hidden>تغییرات ذخیره‌نشده</span></div>
+<div class="editor-topbar"><div class="editor-topbar-state"><button id="back-to-posts" class="back-button" type="button">← بازگشت به مقاله‌ها</button><span id="editor-state" class="status-badge draft">پیش‌نویس</span><span id="editor-dirty-indicator" class="editor-dirty-indicator" role="status" aria-live="polite" hidden>تغییرات ذخیره‌نشده</span><span id="editor-save-status" class="editor-save-status" role="status" aria-live="polite">ذخیرۀ خودکار آماده است</span></div>
 <div class="editor-actions"><button id="preview-toggle" class="button button-light" type="button">پیش‌نمایش</button><button id="save-post" class="button button-light" type="button">ذخیرۀ پیش‌نویس</button><button id="publish-post" class="button button-dark" type="button">انتشار مقاله ↗</button></div></div>
 <form id="editor-form" class="editor-layout">
 <div class="editor-main">
@@ -87,20 +87,43 @@
 <label class="field-label block-label">خلاصۀ مقاله<textarea id="post-excerpt" data-field="excerpt" rows="2" maxlength="700" placeholder="خلاصه‌ای کوتاه برای کارت مقاله و توضیحات صفحه…"></textarea></label>
 </div>
 <div class="editor-toolbar">
-<span class="kicker">متن مقاله</span>
-<div class="format-tools" aria-label="ابزارهای قالب‌بندی">
+<div class="editor-toolbar-heading"><span class="kicker">متن مقاله</span><span id="editor-word-count" class="editor-word-count">۰ واژه</span></div>
+<div class="format-tools" role="toolbar" aria-label="ابزارهای ویرایش متن">
+<div class="toolbar-group" aria-label="تاریخچۀ ویرایش">
+<button type="button" data-command="undo" title="واگرد (Ctrl+Z)" aria-label="واگرد" disabled>↶</button>
+<button type="button" data-command="redo" title="انجام دوباره (Ctrl+Shift+Z)" aria-label="انجام دوباره" disabled>↷</button>
+</div>
+<div class="toolbar-group" aria-label="ساختار متن">
+<button type="button" data-command="formatBlock" data-value="P" title="پاراگراف" aria-label="پاراگراف" aria-pressed="false">متن</button>
 <button type="button" data-command="formatBlock" data-value="H2" title="تیتر دوم" aria-label="تیتر دوم" aria-pressed="false">تیتر ۲</button>
 <button type="button" data-command="formatBlock" data-value="H3" title="تیتر سوم" aria-label="تیتر سوم" aria-pressed="false">تیتر ۳</button>
 <button type="button" data-command="formatBlock" data-value="H4" title="تیتر چهارم" aria-label="تیتر چهارم" aria-pressed="false">تیتر ۴</button>
-<button type="button" data-command="bold" title="برجسته" aria-label="برجسته" aria-pressed="false">برجسته</button>
-<button type="button" data-command="italic" title="مورب" aria-label="مورب" aria-pressed="false">مورب</button>
-<button type="button" data-command="insertUnorderedList" title="فهرست نشانه‌دار" aria-label="فهرست نشانه‌دار" aria-pressed="false">فهرست</button>
-<button type="button" data-command="insertOrderedList" title="فهرست شماره‌دار" aria-label="فهرست شماره‌دار" aria-pressed="false">شماره‌دار</button>
+</div>
+<div class="toolbar-group" aria-label="قالب‌بندی نوشته">
+<button type="button" data-command="bold" title="برجسته (Ctrl+B)" aria-label="برجسته" aria-pressed="false"><strong>B</strong></button>
+<button type="button" data-command="italic" title="مورب (Ctrl+I)" aria-label="مورب" aria-pressed="false"><em>I</em></button>
+<button type="button" data-command="underline" title="زیرخط‌دار (Ctrl+U)" aria-label="زیرخط‌دار" aria-pressed="false"><u>U</u></button>
+<button type="button" data-command="strike" title="خط‌خورده" aria-label="خط‌خورده" aria-pressed="false"><s>S</s></button>
+</div>
+<div class="toolbar-group" aria-label="فهرست‌ها">
+<button type="button" data-command="insertUnorderedList" title="فهرست نشانه‌دار" aria-label="فهرست نشانه‌دار" aria-pressed="false">• فهرست</button>
+<button type="button" data-command="insertOrderedList" title="فهرست شماره‌دار" aria-label="فهرست شماره‌دار" aria-pressed="false">۱. شماره‌دار</button>
+</div>
+<div class="toolbar-group" aria-label="بلوک‌های محتوا">
 <button type="button" data-command="formatBlock" data-value="BLOCKQUOTE" title="نقل‌قول" aria-label="نقل‌قول" aria-pressed="false">نقل‌قول</button>
-<button type="button" id="insert-link" title="افزودن پیوند">↗</button><button type="button" id="insert-image" title="افزودن تصویر داخل مقاله">تصویر</button><input id="inline-image-file" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+<button type="button" data-command="insertCodeBlock" title="بلوک کد" aria-label="بلوک کد">{ }</button>
+<button type="button" data-command="insertTable" title="درج جدول" aria-label="درج جدول">جدول</button>
+<button type="button" data-command="insertHorizontalRule" title="خط جداکننده" aria-label="خط جداکننده">خط جدا</button>
+</div>
+<div class="toolbar-group" aria-label="رسانه و پیوند">
+<button type="button" id="insert-link" title="افزودن پیوند" aria-label="افزودن پیوند">↗ لینک</button>
+<button type="button" id="insert-image" title="افزودن تصویر داخل مقاله" aria-label="افزودن تصویر">تصویر</button>
+<input id="inline-image-file" type="file" accept="image/jpeg,image/png,image/webp" hidden>
 <button type="button" id="link-settings-toggle" title="تنظیم پیوندهای متن">تنظیم پیوندها</button>
-</div></div>
-<p class="paste-hint">از متن گوگل‌داکس مستقیم اینجا استفاده کن؛ تیترها، پاراگراف‌ها، بولت‌ها، شماره‌گذاری، برجسته‌سازی، نقل‌قول‌ها و لینک‌ها حفظ می‌شن. در فهرست شماره‌دار، Enter بعد از تیتر یا پاراگراف، توضیح رو داخل همان شماره ادامه می‌ده؛ وقتی به خط خالی رسیدی، یک Enter دیگه شمارۀ بعدی رو می‌سازه. تیتر اصلی مقاله رو جداگانه در بالای فرم وارد کن.</p>
+</div>
+</div>
+</div>
+<p class="paste-hint">متن رو مستقیم از گوگل‌داکس یا ورد جای‌گذاری کن. قالب‌بندی و لینک‌های مجاز حفظ می‌شن. در فهرست شماره‌دار، بعد از تیتر یا پاراگراف Enter می‌تونه توضیح رو داخل همون شماره نگه داره؛ وقتی به خط خالی رسیدی، یک Enter دیگه شمارۀ بعدی رو می‌سازه. برای سرعت بیشتر از میانبرهای Ctrl+B، Ctrl+I، Ctrl+U و Ctrl+Z هم استفاده کن. تیتر اصلی مقاله رو جداگانه در بالای فرم وارد کن.</p>
 <div id="editor-workarea" class="editor-workarea"><div id="post-content" class="editor-richtext" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" aria-label="متن مقاله" dir="rtl" data-placeholder="اینجا بنویس یا متن ساختاربندی‌شدۀ گوگل‌داکس رو جای‌گذاری کن…"></div>
 <div id="markdown-preview" class="markdown-preview" hidden><div class="preview-label">پیش‌نمایش زنده</div><article id="preview-content" class="blog-prose"></article></div></div>
 <section id="link-settings" class="link-settings" hidden aria-label="تنظیمات پیوندهای مقاله">
