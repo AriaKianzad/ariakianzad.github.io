@@ -160,7 +160,7 @@ for (const file of files) {
   const html = readFileSync(file, "utf8");
   const rel = file.slice(outDir.length + 1);
 
-  if (!html.includes('href="/favicon.svg"')) {
+  if (!html.includes('href="/favicon.svg')) {
     problems.push(rel + ": the shared site favicon is missing");
   }
   if (/<[a-z][^>]*\sstyle\s*=/i.test(html)) {
@@ -172,7 +172,7 @@ for (const file of files) {
     if (policies.length !== 1) {
       problems.push("Mian-e-Ma/index.html: expected exactly one Content-Security-Policy meta tag");
     }
-    if (!html.includes('href="/icon.png"') || !html.includes('href="/apple-icon.png"')) {
+    if (!html.includes('href="/icon.png') || !html.includes('href="/apple-icon.png')) {
       problems.push("Mian-e-Ma/index.html: shared raster favicon variants must be used");
     }
   }

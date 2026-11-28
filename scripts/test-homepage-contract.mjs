@@ -131,14 +131,14 @@ for (const heading of [
 assert.ok(page.includes("<HeroVisual />"), "the 3D hero must be mounted in the homepage");
 assert.ok(page.includes('data-reveal="up"'), "scroll-reveal hooks must exist in homepage sections");
 assert.ok(siteChrome.includes('href="/Mian-e-Ma/"'), "the Persian book remains discoverable from the portfolio footer");
-assert.ok(metadata.includes('url: "/og/og.jpg"') && metadata.includes('width: 1200') &&
+assert.ok(metadata.includes('url: "/og/og.jpg?v=20261128-1"') && metadata.includes('width: 1200') &&
   metadata.includes('height: 630') && metadata.includes('type: "image/jpeg"'),
   "homepage must use its own 1200x630 JPEG social image");
 assert.ok(metadata.includes('card: "summary_large_image"'),
   "homepage must expose a large Twitter/X card");
 const bookOgImage = bookPage.match(/<meta property="og:image" content="([^"]+)"/)?.[1] ?? "";
 const bookTwitterImage = bookPage.match(/<meta name="twitter:image" content="([^"]+)"/)?.[1] ?? "";
-assert.equal(bookOgImage, "https://ariakianzad.github.io/Mian-e-Ma/assets/mian-e-ma-social-preview.jpg?v=20261126-1",
+assert.equal(bookOgImage, "https://ariakianzad.github.io/Mian-e-Ma/assets/mian-e-ma-social-preview.jpg?v=20261128-1",
   "book page must use its own dedicated social image");
 assert.equal(bookTwitterImage, bookOgImage, "Open Graph and Twitter/X must use the same book preview image");
 assert.ok(bookPage.includes('<meta property="og:image:width" content="1200">') &&
@@ -207,9 +207,9 @@ assert.ok(socialGenerator.includes('join(root, "assets-src/Estedad-Regular.ttf")
   !socialGenerator.includes("data:font/ttf;base64"),
   "social previews must load the bundled Estedad faces directly instead of relying on unsupported embedded @font-face data");
 const homepageSvgSource = socialGenerator.split("const homepageSvg = `")[1]?.split("</svg>`")[0] ?? "";
-assert.ok(homepageSvgSource.includes('stop-color="#f3f0e8"') &&
-  homepageSvgSource.includes('fill="#d6a443"') &&
-  homepageSvgSource.includes('fill="#7b3f58"'),
+assert.ok(homepageSvgSource.includes('stop-color="#FBFBF7"') &&
+  homepageSvgSource.includes('fill="#E3B72F"') &&
+  homepageSvgSource.includes('fill="#782C44"'),
   "homepage social preview must use the new paper, plum and brass palette");
 assert.ok(!/(#080d0b|#0b110e|#070b09|#c6e887|#879d63|#bdcba9)/i.test(homepageSvgSource),
   "homepage social preview must not retain the previous dark-lime palette");
@@ -217,21 +217,21 @@ assert.ok(!/(#080d0b|#0b110e|#070b09|#c6e887|#879d63|#bdcba9)/i.test(homepageSvg
 
 
 assert.ok(!faviconSource.includes('fill="#f3f0e8"') &&
-  faviconSource.includes('<rect x="16" y="16" width="480" height="480" rx="132" fill="#7b3f58"/>') &&
-  faviconSource.includes('stroke="#fbf9f4"') &&
-  faviconSource.includes('fill="#d6a443"') &&
+  faviconSource.includes('<rect x="16" y="16" width="480" height="480" rx="132" fill="#782C44"/>') &&
+  faviconSource.includes('stroke="#FBFBF7"') &&
+  faviconSource.includes('fill="#E3B72F"') &&
   faviconSource.includes('<path d="M108 356 181 155'),
   "the shared favicon must have a transparent outer canvas, a full-bleed plum tile and a centered cream AK monogram with a brass dot");
 assert.ok(assetGenerator.includes('writeFileSync(join(ROOT, "public", "favicon.svg")') &&
   !assetGenerator.includes('public", "og", "og.png'),
   "favicon source must be generated centrally and the legacy PNG social card must not return");
-assert.ok(metadata.includes('url: "/og/og.jpg"') &&
+assert.ok(metadata.includes('url: "/og/og.jpg?v=20261128-1"') &&
   !layout.includes('/og/og.png'),
   "JSON-LD and social metadata must reference the same current JPEG preview");
 for (const html of [adminDashboard, adminBlogDashboard, bookPage]) {
-  assert.ok(html.includes('href="/favicon.svg"') &&
-    html.includes('href="/icon.png"') &&
-    html.includes('href="/apple-icon.png"'),
+  assert.ok(html.includes('href="/favicon.svg') &&
+    html.includes('href="/icon.png') &&
+    html.includes('href="/apple-icon.png'),
     "the shared favicon set must be used in every standalone page");
 }
 assert.ok(metadata.includes('url: "/favicon.svg"') &&
@@ -247,7 +247,7 @@ assert.ok(blogLayout.includes("<style>{themeStyles}</style>") &&
   !blogArticle.includes("style={"),
   "dynamic blog styles must be emitted as CSP-hashed style blocks, not style attributes");
 assert.ok(exportVerifier.includes("inline style attributes are blocked by the strict CSP") &&
-  exportVerifier.includes('href="/favicon.svg"'),
+  exportVerifier.includes('href="/favicon.svg'),
   "export verification must reject inline styles and missing shared favicons");
 
 assert.ok(!layout.includes('/blog-contact.js') &&
@@ -264,7 +264,7 @@ assert.ok(blogLayout.includes('/blog-listing.js') &&
 
 
 const bookSvgSource = socialGenerator.split("const bookSvg = `")[1]?.split("</svg>`;")[0] ?? "";
-const bookPreviewColors = ["#f3f0e8", "#7b3f58", "#d6a443", "#4a2637"];
+const bookPreviewColors = ["#FBFBF7", "#782C44", "#E3B72F", "#4B1D2C"];
 assert.ok(bookPreviewColors.every((color) => bookSvgSource.includes(color)),
   "book social preview must use the current paper, plum, brass and ink palette");
 assert.ok(!/(#36534f|#244241|#78958f)/i.test(bookSvgSource),
@@ -328,8 +328,8 @@ assert.ok(heroScene.includes("new THREE.WebGLRenderer"), "hero must render a rea
 assert.ok(page.includes("<HeroVisual />") && blogPage.includes("<HeroVisual />"),
   "homepage and blog archive must mount the same reusable hero component");
 assert.ok(heroScene.includes('new THREE.IcosahedronGeometry(0.92, 5)') &&
-  heroScene.includes('new THREE.Color("#563347")') &&
-  heroScene.includes('new THREE.Color("#d6a443")') &&
+  heroScene.includes('new THREE.Color("#4B1D2C")') &&
+  heroScene.includes('new THREE.Color("#E3B72F")') &&
   !/isBlog|blogTheme|blogAccent|0x718b86|#28483e|new THREE\.SphereGeometry\(0\.92/.test(heroScene),
   "homepage and blog must share the same 3D geometry, materials, palette and motion configuration");
 assert.ok(!/\.blog-theme \.blog-intro-visual \.hero-visual__(?:fallback|label|coordinate)|\.blog-theme \.blog-intro-visual \.signal-canvas/.test(blogStyles),
@@ -343,11 +343,11 @@ const pointSizes = pointMaterialBlocks.flatMap((block) =>
 );
 assert.ok(pointSizes.length >= 3 && pointSizes.every((size) => size > 0 && size <= 0.05),
   "homepage point materials must not create oversized square overlays");
-assert.ok(globals.includes("--accent: #7b3f58;") &&
-  globals.includes("--signal: #d6a443;") &&
+assert.ok(globals.includes("--accent: #782C44;") &&
+  globals.includes("--signal: #E3B72F;") &&
   globals.includes("color-scheme: light") &&
   sections.includes("var(--accent)") &&
-  homeScenes.includes('new THREE.Color("#7b3f58")'),
+  homeScenes.includes('new THREE.Color("#782C44")'),
   "the new plum-and-brass editorial palette must be used across the homepage");
 assert.ok(!/(#c6e887|#7d83ff|#ff8a70|198,\s*232,\s*135|125,\s*131,\s*255)/i.test(globals + sections + homeScenes),
   "previous homepage palettes must be fully removed");
