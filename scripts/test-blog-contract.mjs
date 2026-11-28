@@ -750,6 +750,11 @@ assert.ok(listingPage.includes("blog-intro-copy") && listingPage.includes("blog-
 assert.ok(heroVisualComponent.includes("data-hero-visual") && signalScene.includes('new THREE.Color("#782C44")') && !signalScene.includes('getPropertyValue("--blog-accent")'), "shared hero scene must use the homepage palette consistently on the blog");
 assert.ok(heroBootstrap.includes("MutationObserver") && heroBootstrap.includes("syncRoots"), "hero scene must initialize after client-side route changes");
 assert.ok(publicHeader.includes("<span>آریا کیانزاد</span>"), "blog header brand must show the author's name");
+assert.ok(publicHeader.includes('src="/brand-logo.png?v=20261128-1"') &&
+  publicHeader.includes('className="blog-brand-mark"') &&
+  !publicHeader.includes("<text") &&
+  publicHeader.includes('<span>آریا کیانزاد</span>'),
+  "the blog header must use the original logo image rather than an SVG text monogram");
 assert.ok(blogCss.includes(".blog-theme .blog-header-blog-link {") && blogCss.includes('grid-template-areas:"visual copy"') && blogCss.includes("position:absolute;"), "blog header and hero must retain their desktop/mobile layout contracts");
 assert.ok(listingPage.includes("blog-intro-description") && listingPage.includes("settings.description"), "blog homepage must show the configured homepage description separately from its SEO description");
 assert.ok(blogCss.includes(".blog-theme .blog-intro > .blog-intro-description") && blogCss.includes("grid-column:1 / -1") && blogCss.includes("max-width:none"), "homepage description must have a full-width responsive row on mobile and desktop");

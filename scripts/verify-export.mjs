@@ -167,6 +167,9 @@ for (const file of files) {
     problems.push(rel + ": inline style attributes are blocked by the strict CSP; use a hashed style block");
   }
 
+  if (["index.html", "blog/index.html", "Mian-e-Ma/index.html"].includes(rel) && !html.includes('src="/brand-logo.png?v=20261128-1"')) {
+    problems.push(rel + ": the original brand logo image is missing from the header");
+  }
   if (rel === "Mian-e-Ma/index.html") {
     const policies = [...html.matchAll(/<meta\b(?=[^>]*\bhttp-equiv=["']Content-Security-Policy["'])[^>]*>/gi)];
     if (policies.length !== 1) {
@@ -247,6 +250,7 @@ const required = [
   "boot.js",
   "ui.js",
   "favicon.svg",
+  "brand-logo.png",
   "icon.png",
   "apple-icon.png",
   join("_hero", "hero-visual.js"),
