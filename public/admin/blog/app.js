@@ -610,7 +610,7 @@
       const heading=match[3].match(/^(#{1,4})\s+(.+)$/);
       return {
         depth:Math.floor(indent/2),
-        type:/^\d/.test(match[2])?"ol":"ul",
+        type:/^[0-9۰-۹٠-٩]/.test(match[2])?"ol":"ul",
         content:heading?heading[2]:match[3],
         headingLevel:heading?Math.min(4,Math.max(2,heading[1].length)):0
       };
@@ -801,7 +801,17 @@
       return "!["+alt+"]("+src+(title?' "'+title+'"':"")+")"+(caption?' {caption="'+caption+'"}':"")+"\n\n";
     }
     if(/^h[1-6]$/.test(tag))return "#".repeat(tag==="h1"?2:Math.min(4,Math.max(2,Number(tag.slice(1)))))+" "+Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
-    if(tag==="p")return Array.from(element.childNodes).map(inlineToMarkdown).join("").trim()+"\n\n";
+    if(tag==="p"){
+      const children=Array.from(element.childNodes);
+      const blockTags=new Set(["DIV","SECTION","H2","H3","H4","UL","OL","BLOCKQUOTE","TABLE","PRE","HR","FIGURE"]);
+      if(children.some((child)=>child.nodeType===Node.ELEMENT_NODE&&blockTags.has(child.tagName))){
+        return children.map((child)=>child.nodeType===Node.ELEMENT_NODE&&blockTags.has(child.tagName)
+          ?blockToMarkdown(child)
+          :inlineToMarkdown(child)
+        ).join("").trim()+"\n\n";
+      }
+      return children.map(inlineToMarkdown).join("").trim()+"\n\n";
+    }
     if(tag==="ul"||tag==="ol")return listToMarkdown(element,0)+"\n\n";
     if(tag==="blockquote"){
       const parts=Array.from(element.childNodes).map((child)=>

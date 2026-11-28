@@ -71,6 +71,8 @@ body, body * { font-family: Estedad, Tahoma, sans-serif !important; }
 .editor-richtext[dir="rtl"] ol ol ol,.editor-richtext[dir="ltr"] ol ol ol,
 .markdown-preview article[dir="rtl"] ol ol ol,.markdown-preview article[dir="ltr"] ol ol ol { list-style-type:lower-roman; }
 .editor-richtext li { margin:.35em 0; padding-inline-start:.25em; }
+.editor-richtext li>p,.markdown-preview li>p { margin-block:0 .45em; }
+.editor-richtext li>p:last-child,.markdown-preview li>p:last-child { margin-block-end:0; }
 .editor-richtext li>h2,.editor-richtext li>h3,.editor-richtext li>h4 { margin:.2em 0 .35em; }
 .editor-richtext strong,.markdown-preview strong { font-weight:800; }
 .editor-richtext em,.markdown-preview em { font-style:italic; }
