@@ -553,11 +553,16 @@
   function renderPreviewFigure(line) {
     const image=parsePreviewImageLine(line);
     if(!image)return "";
-    return '<figure class="blog-inline-image"><img src="'+escapeHtml(image.src)+'" alt="'+escapeHtml(image.alt)+'"'+(image.title?' title="'+escapeHtml(image.title)+'"':"")+' loading="lazy" decoding="async">'+(image.caption?'<figcaption>'+escapeHtml(image.caption)+'</figcaption>':"")+"</figure>";
+    const missingAlt=!String(image.alt||"").trim();
+    const previewAlt=missingAlt?(String(image.caption||"").trim()||String(image.title||"").trim()||"تصویر در پیش‌نمایش مقاله"):image.alt;
+    return '<figure class="blog-inline-image"><img src="'+escapeHtml(image.src)+'" alt="'+escapeHtml(previewAlt)+'"'+(missingAlt?' data-alt-missing="true"':"")+(image.title?' title="'+escapeHtml(image.title)+'"':"")+' loading="lazy" decoding="async">'+(image.caption?'<figcaption>'+escapeHtml(image.caption)+'</figcaption>':"")+"</figure>";
   }
   function previewInline(text) {
     let value=escapeHtml(text);
-    value=value.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>'<img src="'+escapeHtml(safeHref(url.replace(/&amp;/g,"&")))+'" alt="'+(alt||"تصویر در پیش‌نمایش مقاله")+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">');
+    value=value.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>{
+      const missingAlt=!String(alt||"").trim();
+      return '<img src="'+escapeHtml(safeHref(url.replace(/&amp;/g,"&")))+'" alt="'+(missingAlt?"تصویر در پیش‌نمایش مقاله":alt)+'"'+(missingAlt?' data-alt-missing="true"':"")+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">';
+    });
     value=value.replace(/\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
       const href=safeHref(url.replace(/&amp;/g,"&")),external=/^https?:\/\//i.test(href);
       const hasLabel=String(label||"").trim().length>0;
@@ -731,7 +736,7 @@
     if(tag==="img") {
       const src=safeHref(element.getAttribute("src"));
       if(src==="#")return "";
-      const alt=String(element.getAttribute("alt")||"").replace(/\\/g,"\\\\").replace(/]/g,"\\]");
+      const alt=String(element.dataset.altMissing==="true"?"":element.getAttribute("alt")||"").replace(/\\/g,"\\\\").replace(/]/g,"\\]");
       const title=String(element.getAttribute("title")||"").trim().replace(/\\/g,"\\\\").replace(/"/g,'\\"').replace(/[\r\n]+/g," ");
       return "!["+alt+"]("+src+(title?' "'+title+'"':"")+")";
     }
@@ -796,7 +801,7 @@
       const src=safeHref(image.getAttribute("src"));
       if(src==="#")return "";
       const escapeAttribute=(value)=>String(value||"").replace(/\\/g,"\\\\").replace(/"/g,'\\"').replace(/[\r\n]+/g," ");
-      const alt=String(image.getAttribute("alt")||"").replace(/\\/g,"\\\\").replace(/]/g,"\\]");
+      const alt=String(image.dataset.altMissing==="true"?"":image.getAttribute("alt")||"").replace(/\\/g,"\\\\").replace(/]/g,"\\]");
       const title=escapeAttribute(image.getAttribute("title")||"");
       const caption=escapeAttribute(element.querySelector("figcaption")?.textContent||"");
       return "!["+alt+"]("+src+(title?' "'+title+'"':"")+")"+(caption?' {caption="'+caption+'"}':"")+"\n\n";
@@ -902,7 +907,10 @@
       if(src==="#")return null;
       const cleanImage=document.createElement("img");
       cleanImage.setAttribute("src",src);
-      cleanImage.setAttribute("alt",source.getAttribute("alt")||"");
+      const sourceAlt=source.getAttribute("alt")||"";
+      const missingAlt=!sourceAlt.trim();
+      cleanImage.setAttribute("alt",missingAlt?"تصویر واردشده؛ متن جایگزین توصیفی لازم است":sourceAlt);
+      if(missingAlt)cleanImage.dataset.altMissing="true";
       const title=source.getAttribute("title");
       if(title)cleanImage.setAttribute("title",title.slice(0,160));
       cleanImage.setAttribute("loading","lazy");
