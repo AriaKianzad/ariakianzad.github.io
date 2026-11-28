@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { site } from "./site";
 
 export const socialImage = {
-  url: "/og/og.jpg",
+  url: "/og/og.jpg?v=20261128-1",
   width: 1200,
   height: 630,
   type: "image/jpeg",
