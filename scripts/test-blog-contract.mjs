@@ -791,6 +791,7 @@ assert.ok(blogCss.includes('grid-template-areas:"visual copy"') && blogCss.inclu
 assert.ok(blogCss.includes("max-width:410px") && blogCss.includes("height:clamp(260px,28vw,340px)") && blogCss.includes("max-width:220px"), "desktop and mobile blog hero visual sizes must stay within compact bounds");
 assert.ok(blogCss.includes(`grid-template-areas:"hero" "meta"`) && blogCss.includes("background:rgba(251,249,244,.82)") && blogCss.includes("filter:brightness(.83) saturate(.9)") && blogCss.includes(".blog-article-meta {\n    grid-area:meta;\n    direction:rtl;"), "mobile article cover must keep the title readable without obscuring the featured image");
 assert.ok(blogCss.includes("direction:rtl; text-align:right") && blogCss.includes(".blog-socials"), "blog footer must use RTL alignment and social icon links");
+assert.ok(blogCss.includes(".blog-footer-links,\n.blog-socials {") && blogCss.includes("justify-content: center;"), "mobile blog footer navigation and social rows must be horizontally centered across the available viewport width");
 assert.ok(articlePage.indexOf("<h1>{post.title}</h1>") < articlePage.indexOf("<figure className=\"blog-hero-image\">"), "featured image must follow the article title");
 assert.ok(publicHeader.includes("SocialIcon") && !publicHeader.includes("mailto:") && !publicHeader.includes("/#about"), "blog footer must remove email/about links and include social icons");
 
