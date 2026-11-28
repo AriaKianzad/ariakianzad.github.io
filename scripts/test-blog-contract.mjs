@@ -750,7 +750,7 @@ assert.ok(listingPage.includes("blog-intro-copy") && listingPage.includes("blog-
 assert.ok(heroVisualComponent.includes("data-hero-visual") && signalScene.includes('new THREE.Color("#782C44")') && !signalScene.includes('getPropertyValue("--blog-accent")'), "shared hero scene must use the homepage palette consistently on the blog");
 assert.ok(heroBootstrap.includes("MutationObserver") && heroBootstrap.includes("syncRoots"), "hero scene must initialize after client-side route changes");
 assert.ok(publicHeader.includes("<span>آریا کیانزاد</span>"), "blog header brand must show the author's name");
-assert.ok(publicHeader.includes('src="/brand-logo.png?v=20261128-1"') &&
+assert.ok(publicHeader.includes('src="/brand-logo.png?v=20261128-2"') &&
   publicHeader.includes('className="blog-brand-mark"') &&
   !publicHeader.includes("<text") &&
   publicHeader.includes('<span>آریا کیانزاد</span>'),
