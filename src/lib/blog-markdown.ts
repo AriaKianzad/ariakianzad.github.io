@@ -71,13 +71,14 @@ function inline(value:string){
     const html='<img src="'+esc(allowedUrl(url.replace(/&amp;/g,"&")))+'" alt="'+alt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">';
     return protect(html);
   });
-  s=s.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
+  s=s.replace(/\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
     const href=allowedUrl(url.replace(/&amp;/g,"&")),external=/^https?:\/\//i.test(href);
+    const hasLabel=String(label||"").trim().length>0;
     const relation=(String(options||"").match(/rel=(follow|nofollow|sponsored|ugc)/i)||[])[1]||(external?"nofollow":"follow");
     const target=(String(options||"").match(/target=(_blank|_self)/i)||[])[1]||(external?"_blank":"");
     const rel=[...(relation!=="follow"?[relation]:[]),...(target==="_blank"?["noopener","noreferrer"]:[])].join(" ");
     const opening='<a href="'+esc(href)+'"'+(title?' title="'+esc(title)+'"':"")+(target?' target="'+target+'"':"")+(rel?' rel="'+rel+'"':"")+'>';
-    return protect(opening)+label+protect("</a>");
+    return (hasLabel?"":" ")+protect(opening)+(hasLabel?label:"مشاهده منبع")+protect("</a>")+(hasLabel?"":" ");
   });
   s=s.replace(/\x60([^\x60]+)\x60/g,"<code>$1</code>");
   s=s.replace(/\+\+([^+]+)\+\+/g,"<u>$1</u>").replace(/~~([^~]+)~~/g,"<del>$1</del>");

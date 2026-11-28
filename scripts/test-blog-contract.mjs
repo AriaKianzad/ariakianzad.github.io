@@ -198,6 +198,7 @@ assert.ok(listingPage.includes("getBlogPosts()") && listingPage.includes("BlogLi
 assert.ok(listingScript.includes("data-blog-listing") && listingScript.includes("includes(activeCategory)") && listingScript.includes("visibleLimit += pageSize"), "standalone listing script must provide search, category filtering and load-more behavior");
 assert.ok(blogLayout.includes('<script src="/blog-listing.js" defer />'), "static blog search behavior must load as a same-origin script on blog routes");
 assert.ok(listingPage.includes('"@type": "Blog"'), "the archive must include Blog structured data");
+assert.ok(listingPage.includes("description: settings.description || settings.default_meta_description || undefined"), "Blog structured data must fall back to the configured meta description when the editorial description is empty");
 assert.ok(articlePage.includes("generateStaticParams"), "published articles must be statically generated");
 assert.ok(articlePage.includes('{ slug: "__empty__" }') && articlePage.includes("robots: { index: false, follow: false }"), "empty article fallback must remain noindex");
 assert.ok(articlePage.includes('"@context": "https://schema.org"') && articlePage.includes('"@type": settings.schema_type'), "articles must use the configured structured data type");
@@ -219,7 +220,7 @@ assert.ok(verifyExport.includes(".cache/blog-content.json") && verifyExport.incl
 assert.ok(verifyExport.includes("target has repeated slashes in its path") && verifyExport.includes("anchor"), "post-build verification must inspect internal anchor destinations and reject repeated slashes");
 assert.ok(sitemap.includes("getBlogPosts()") && sitemap.includes("/blog/"), "sitemap must include published articles and blog archive");
 assert.ok(sitemap.includes("/blog/contact/"), "sitemap must include the public contact page");
-assert.ok(robots.includes('disallow: ["/admin/", "/admin/blog/"]'), "robots.txt must disallow both admin areas");
+assert.ok(robots.includes('allow: ["/"]') && !/disallow:\s*\[[^\]]*\/admin\//.test(robots), "robots.txt must let crawlers read the admin pages' noindex directives");
 assert.ok(!publicHeader.includes("/author/"), "no separate author archive should be generated");
 
 assert.ok(markdownSource.includes("function esc(") && markdownSource.includes("function allowedUrl("), "Markdown rendering must escape HTML and validate links");
@@ -643,6 +644,8 @@ const renderedUnderscoredLink = markdownRuntime.exports.renderMarkdown("[**مق�
 assert.ok(renderedUnderscoredLink.includes('href="' + underscoredUrl + '"'), "underscores in external URLs and query parameters must remain unchanged");
 assert.ok(renderedUnderscoredLink.includes('target="_blank"') && renderedUnderscoredLink.includes('rel="nofollow noopener noreferrer"'), "protected link tags must retain safe external-link attributes");
 assert.ok(renderedUnderscoredLink.includes("<strong>مقالۀ مرتبط</strong>"), "inline formatting inside a link label must still render");
+const renderedEmptyLabelLink = markdownRuntime.exports.renderMarkdown("[ ](https://www.justice.gov/usao-ndca/example){rel=follow}هولمز");
+assert.ok(renderedEmptyLabelLink.includes(">مشاهده منبع</a> هولمز"), "empty Markdown link labels must render as accessible visible text with spacing around the link");
 const renderedUnderscoredImage = markdownRuntime.exports.renderMarkdown('![my_image_alt](https://example.com/my_image_file.png "my_image_title")');
 assert.ok(renderedUnderscoredImage.includes('src="https://example.com/my_image_file.png"') && renderedUnderscoredImage.includes('alt="my_image_alt"') && renderedUnderscoredImage.includes('title="my_image_title"'), "underscores in image URLs, alt text and titles must be preserved");
 
@@ -695,6 +698,14 @@ assert.ok(
 
 assert.ok(["tag===\"strong\"","tag===\"em\"","tag===\"u\"","tag===\"del\"","tag===\"code\"","tag===\"a\"","tag===\"img\""].every((token)=>inlineSerializer.includes(token)), "the editor serializer must preserve emphasis, underline, deletion, code, links and images");
 assert.ok(["tag===\"figure\"","/^h[1-6]$/","tag===\"p\"","tag===\"ul\"","tag===\"ol\"","tag===\"blockquote\"","tag===\"pre\"","tag===\"hr\"","tag===\"table\""].every((token)=>blockSerializer.includes(token)), "the editor serializer must preserve all supported block structures");
+const cmsInlineSource = adminApp.slice(adminApp.indexOf("function previewInline"),adminApp.indexOf("function renderPreviewMarkdown"));
+const cmsInlineContext = {
+  escapeHtml:(value)=>String(value).replace(/[&<>"']/g,(char)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char])),
+  safeHref:(value)=>String(value||"#"),
+};
+new Script(cmsInlineSource+"\nthis.testPreviewInline=previewInline;",{filename:"admin-inline-preview.js"}).runInNewContext(cmsInlineContext);
+const renderedCmsEmptyLabel = cmsInlineContext.testPreviewInline("[ ](https://www.justice.gov/usao-ndca/example){rel=follow}هولمز");
+assert.ok(renderedCmsEmptyLabel.includes(">مشاهده منبع</a> هولمز"), "the CMS editing preview must replace empty link labels with accessible visible text");
 const cmsPreviewRenderer = adminApp.slice(adminApp.indexOf("function renderPreviewMarkdown"),adminApp.indexOf("function inlineToMarkdown"));
 assert.ok(cmsPreviewRenderer.includes("const parseListItem=") && cmsPreviewRenderer.includes("listStack") && cmsPreviewRenderer.includes("if(!parseListItem(") && cmsPreviewRenderer.includes("appendListItem(item)"), "the CMS preview must preserve blank-separated and nested list structure");
 const cmsPreviewContext = {
@@ -887,7 +898,7 @@ assert.ok(adminApp.includes('relation="follow",target=external?"_blank":"_self"'
 assert.ok(!adminApp.slice(adminApp.indexOf("function clipboardHeadingLevel"),adminApp.indexOf("function cleanClipboardNode")).includes('querySelectorAll?.("[style]")'), "Google Docs heading detection must not promote an entire paragraph based on a single styled child run");
 
 assert.ok(adminApp.includes('explicitRelation==="follow"') && adminApp.includes('if(relation!=="follow"||explicitRelation==="follow")'), "an explicitly selected follow relation must survive Markdown serialization and subsequent editing");
-assert.ok(adminHtml.includes('app.js?v=20261128-1') && adminHtml.includes('blog.css?v=20261128-1'), "the admin editor assets must use current cache keys after numbered-list keyboard changes");
+assert.ok(adminHtml.includes('app.js?v=20261128-2') && adminHtml.includes('blog.css?v=20261128-1'), "the admin editor assets must use current cache keys after the link-preview accessibility fix");
 assert.ok(adminApp.includes("function handleNumberedHeadingEnter(event)") && adminApp.includes('$("#post-content").addEventListener("keydown",handleNumberedHeadingEnter)') && adminApp.includes('list?.tagName!=="OL"') && adminApp.includes("numberedListItemHasHeading(item)") && adminApp.includes("trailing.extractContents()") && adminApp.includes('const nextItem=document.createElement("li")'), "Enter inside a numbered heading item must create continuation paragraphs in the same LI and only create the next LI from an empty continuation");
 assert.ok(blogCss.includes(".blog-prose li>h3") && blogCss.includes("display:block") && blogCss.includes(".blog-prose li>h3 + p") && adminCss.includes(".editor-richtext li>h3") && adminCss.includes(".editor-richtext li>h3 + p") && adminCss.includes("display:block"), "numbered H3 headings and their descriptions must remain separate visual blocks inside one list item");
 assert.ok(adminHtml.includes("وقتی به خط خالی رسیدی، یک Enter دیگه شمارۀ بعدی رو می‌سازه"), "the editor must explain how to continue the current numbered item and start the next one");
@@ -1037,3 +1048,13 @@ assert.ok(sitemap.includes("archiveLastModified") && sitemap.includes("categoryL
   "the sitemap must expose verifiable last-modified timestamps for the archive and category pages");
 assert.ok(rssRoute.includes("<lastBuildDate>") && rssRoute.includes("lastBuildDate"),
   "the static RSS feed must publish a lastBuildDate for the latest published update");
+const [llmsContent, adminDashboardHtml] = await Promise.all([
+  read("public/llms.txt"),
+  read("public/admin/index.html"),
+]);
+assert.ok(llmsContent.includes("https://github.com/AriaKianzad/ariakianzad.github.io/releases/download/mian-e-ma-v1/Mian-e-Ma.pdf") &&
+  !llmsContent.includes("https://ariakianzad.github.io/Mian-e-Ma/assets/Mian-e-Ma.pdf"),
+  "llms.txt must reference the published GitHub Release PDF rather than a non-existent site asset");
+assert.ok(adminHtml.includes('name="robots" content="noindex, nofollow, noarchive"') &&
+  adminDashboardHtml.includes('name="robots" content="noindex, nofollow, noarchive"'),
+  "both admin entry pages must retain noindex directives after robots.txt allows crawling");

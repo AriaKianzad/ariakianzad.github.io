@@ -558,12 +558,13 @@
   function previewInline(text) {
     let value=escapeHtml(text);
     value=value.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>'<img src="'+escapeHtml(safeHref(url.replace(/&amp;/g,"&")))+'" alt="'+alt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">');
-    value=value.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
+    value=value.replace(/\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
       const href=safeHref(url.replace(/&amp;/g,"&")),external=/^https?:\/\//i.test(href);
+      const hasLabel=String(label||"").trim().length>0;
       const relation=(String(options||"").match(/rel=(follow|nofollow|sponsored|ugc)/i)||[])[1]||"follow";
       const target=(String(options||"").match(/target=(_blank|_self)/i)||[])[1]||(external?"_blank":"_self");
       const rel=[...(relation!=="follow"?[relation]:[]),...(target==="_blank"?["noopener","noreferrer"]:[])].join(" ");
-      return '<a href="'+escapeHtml(href)+'"'+(title?' title="'+escapeHtml(title)+'"':"")+' target="'+target+'" data-link-rel="'+relation+'" data-link-target="'+target+'"'+(rel?' rel="'+rel+'"':"")+">"+label+"</a>";
+      return (hasLabel?"":" ")+'<a href="'+escapeHtml(href)+'"'+(title?' title="'+escapeHtml(title)+'"':"")+' target="'+target+'" data-link-rel="'+relation+'" data-link-target="'+target+'"'+(rel?' rel="'+rel+'"':"")+">"+(hasLabel?label:"مشاهده منبع")+"</a>"+(hasLabel?"":" ");
     });
     value=value.replace(/\x60([^\x60]+)\x60/g,"<code>$1</code>");
     value=value.replace(/\+\+([^+]+)\+\+/g,"<u>$1</u>").replace(/~~([^~]+)~~/g,"<del>$1</del>");

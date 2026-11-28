@@ -13,8 +13,9 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/blog/"],
-      disallow: ["/admin/", "/admin/blog/"],
+      // Admin pages carry a noindex meta directive. They must remain crawlable
+      // so search engines can read it; robots.txt is not an access-control layer.
+      allow: ["/"],
     },
     sitemap: sitemapUrls,
   };
