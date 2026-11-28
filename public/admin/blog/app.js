@@ -4,25 +4,68 @@
   const supabaseUrl = typeof config.supabaseUrl === "string" ? config.supabaseUrl.replace(/\/+$/,"") : "";
   const anonKey = typeof config.supabaseAnonKey === "string" ? config.supabaseAnonKey : "";
   const $ = (selector) => document.querySelector(selector);
-  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0, analyticsVisited:false, analyticsLastFetchedAt:0, adBanners:[], adClickCounts:{}, adClickCountsBusy:false, adClickCountsUnavailable:false, editorDirty:false, editorChangeVersion:0, postSaveBusy:false, publishBusy:false, statusBusy:false };
+  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0, analyticsVisited:false, analyticsLastFetchedAt:0, adBanners:[], adClickCounts:{}, adClickCountsBusy:false, adClickCountsUnavailable:false, editorDirty:false, editorChangeVersion:0, richEditor:null, autoSaveTimer:0, postSaveBusy:false, publishBusy:false, statusBusy:false };
   const statusLabels = { draft:"پیش‌نویس", published:"منتشرشده", archived:"بایگانی" };
   const validConfig = supabaseUrl === "https://bkohdqwecnvbmeaiuyyx.supabase.co" && anonKey.startsWith("sb_publishable_");
 
+  function setEditorSaveStatus(message,stateName="idle") {
+    const indicator=$("#editor-save-status");
+    if(!indicator)return;
+    indicator.textContent=message;
+    indicator.dataset.state=stateName;
+    indicator.removeAttribute("title");
+  }
   function updateEditorDirtyIndicator() {
     const indicator=$("#editor-dirty-indicator");
     if(!indicator)return;
     indicator.hidden=!state.editorDirty;
     indicator.textContent=state.editorDirty?"تغییرات ذخیره‌نشده":"همۀ تغییرات ذخیره شدن";
   }
+  function scheduleAutoSave() {
+    window.clearTimeout(state.autoSaveTimer);
+    setEditorSaveStatus("تغییرات ثبت شد؛ ذخیرۀ خودکار تا چند لحظه دیگه","queued");
+    state.autoSaveTimer=window.setTimeout(()=>void autoSavePost(),3200);
+  }
+  async function autoSavePost() {
+    if(!state.editorDirty||$("#view-editor")?.hidden)return;
+    if(state.postSaveBusy||state.publishBusy||state.statusBusy){
+      state.autoSaveTimer=window.setTimeout(()=>void autoSavePost(),1800);
+      return;
+    }
+    let post;
+    try{post=collectPost();}
+    catch(error){
+      setEditorSaveStatus("ذخیرۀ خودکار انجام نشد","error");
+      $("#editor-save-status").title=error.message;
+      return;
+    }
+    if(!post.title.trim()||!post.slug.trim()||!post.content.trim()){
+      setEditorSaveStatus("برای ذخیرۀ خودکار، عنوان، نامک و متن رو کامل کن","idle");
+      return;
+    }
+    setEditorSaveStatus("در حال ذخیرۀ خودکار…","saving");
+    try{
+      await savePost({silent:true,autosave:true});
+      if(!state.editorDirty)setEditorSaveStatus("پیش‌نویس به‌صورت خودکار ذخیره شد","saved");
+    }catch(error){
+      setEditorSaveStatus("ذخیرۀ خودکار ناموفق بود؛ ذخیرۀ دستی رو بررسی کن","error");
+      $("#editor-save-status").title=error.message;
+      console.warn("Blog editor autosave failed:",error);
+    }
+  }
   function markEditorDirty() {
     if($("#view-editor")?.hidden)return;
     state.editorChangeVersion+=1;
     state.editorDirty=true;
     updateEditorDirtyIndicator();
+    scheduleAutoSave();
   }
   function clearEditorDirty() {
+    window.clearTimeout(state.autoSaveTimer);
+    state.autoSaveTimer=0;
     state.editorDirty=false;
     updateEditorDirtyIndicator();
+    setEditorSaveStatus("همۀ تغییرات ذخیره شدن","saved");
   }
   function confirmLeaveEditor() {
     if($("#view-editor")?.hidden)return true;
@@ -456,7 +499,9 @@
       setField(selector,value);
     });
     renderPostCategoryControls(post.categories,post.primary_category||post.category||"");
-    $("#post-content").innerHTML=renderPreviewMarkdown(String(post.content||""));
+    const editorHtml=renderPreviewMarkdown(String(post.content||""));
+    if(state.richEditor)state.richEditor.setContent(editorHtml);
+    else $("#post-content").innerHTML=editorHtml;
     $("#post-tags").value=(post.tags||[]).join("، ");
     $("#post-faqs").value=(post.faqs||[]).map((faq)=>"پرسش: "+faq.question+"\nپاسخ: "+faq.answer).join("\n\n");
     updateImagePreview("hero-image-preview",post.hero_image_url,post.hero_image_alt);
@@ -950,6 +995,10 @@
     return wrapper.innerHTML;
   }
   function insertHtmlAtCaret(html) {
+    if(state.richEditor){
+      state.richEditor.insertHTML(html);
+      return;
+    }
     const editor=$("#post-content"),selection=window.getSelection();
     let range;
     if(selection&&selection.rangeCount&&editor.contains(selection.anchorNode))range=selection.getRangeAt(0);
@@ -996,30 +1045,24 @@
     });
   }
   function insertLink() {
-    const editor=$("#post-content");editor.focus();
+    const editor=$("#post-content");
+    state.richEditor?.captureSelection();
     const selected=window.getSelection()?.toString()||"";
     const raw=window.prompt("آدرس پیوند را وارد کن:","https://");
     if(!raw)return;
     const href=safeHref(raw);
     if(href==="#"){toast("این نوع آدرس برای پیوند مجاز نیست.",true);return;}
     const external=/^https?:\/\//i.test(href),relation="follow",target=external?"_blank":"_self";
-    if(selected){document.execCommand("createLink",false,href);}
-    else{
-      const label=window.prompt("متن نمایشی پیوند را وارد کن:","مشاهدۀ منبع");
-      if(!label)return;
-      insertHtmlAtCaret('<a href="'+escapeHtml(href)+'" target="'+target+'" data-link-rel="'+relation+'" data-link-target="'+target+'"'+(external?' rel="noopener noreferrer"':'')+'>'+escapeHtml(label)+"</a>");
-      markEditorDirty();
-      updatePreview();updateSeo();refreshLinkManager();
+    if(selected&&state.richEditor?.wrapSelection("a",{
+      href,target,rel:external?"noopener noreferrer":"",
+      "data-link-rel":relation,"data-link-target":target
+    })){
+      updatePreview();updateSeo();refreshLinkManager();updateFormatToolbar();
       return;
     }
-    const selection=window.getSelection(),node=selection?.anchorNode;
-    const anchor=node instanceof Element?node.closest("a"):node?.parentElement?.closest("a");
-    if(anchor){
-      anchor.dataset.linkRel=relation;anchor.dataset.linkTarget=target;
-      anchor.setAttribute("target",target);
-      anchor.rel=[...(relation==="follow"?[]:[relation]),...(target==="_blank"?["noopener","noreferrer"]:[])].join(" ");
-    }
-    markEditorDirty();
+    const label=window.prompt("متن نمایشی پیوند را وارد کن:","مشاهدۀ منبع");
+    if(!label)return;
+    insertHtmlAtCaret('<a href="'+escapeHtml(href)+'" target="'+target+'" data-link-rel="'+relation+'" data-link-target="'+target+'"'+(external?' rel="noopener noreferrer"':'')+'>'+escapeHtml(label)+"</a>");
     updatePreview();updateSeo();refreshLinkManager();
   }
   function moveEditorCaretToStart(block) {
@@ -1083,6 +1126,7 @@
       block.after(paragraph);
       moveEditorCaretToStart(paragraph);
     }
+    state.richEditor?.commit(false);
     markEditorDirty();
     updatePreview();
     updateSeo();
@@ -1165,17 +1209,14 @@
   function updateFormatToolbar() {
     const editor=$("#post-content");
     if(!editor||!editor.isConnected)return;
-    const block=currentEditorBlock();
-    const blockName=block?.tagName?.toLowerCase()||"";
+    const rich=state.richEditor;
     document.querySelectorAll(".format-tools [data-command]").forEach((button)=>{
-      const command=button.dataset.command,value=(button.dataset.value||"").toLowerCase();
-      let active=false;
-      try{
-        if(command==="formatBlock")active=value==="blockquote"?Boolean(getSelectedBlockquote()):blockName===value;
-        else active=document.queryCommandState(command);
-      }catch{}
-      button.classList.toggle("is-active",Boolean(active));
-      button.setAttribute("aria-pressed",active?"true":"false");
+      const command=button.dataset.command,value=button.dataset.value||"";
+      const active=Boolean(rich?.isActive(command,value));
+      button.classList.toggle("is-active",active);
+      if(button.hasAttribute("aria-pressed"))button.setAttribute("aria-pressed",active?"true":"false");
+      if(command==="undo")button.disabled=!rich?.canUndo();
+      if(command==="redo")button.disabled=!rich?.canRedo();
     });
   }
   function updatePreview() {
@@ -1186,6 +1227,10 @@
     $("#post-content").dir=direction;
     $("#preview-content").dir=direction;
     $("#preview-content").innerHTML="<h1>"+escapeHtml(title)+"</h1>"+renderPreviewMarkdown(content);
+    const wordCount=content.trim()?content.trim().split(/\s+/).length:0;
+    const wordCountLabel=wordCount.toLocaleString("fa-IR")+" واژه";
+    const counter=$("#editor-word-count");
+    if(counter)counter.textContent=wordCountLabel;
   }
   function missingMarkdownImageAlts(markdown) {
     const missing=[];
@@ -1231,6 +1276,7 @@
   }
   async function savePost(options={}) {
     if(state.postSaveBusy)throw new Error("ذخیرۀ مقاله در حال انجامه؛ کمی صبر کن.");
+    if(!options.autosave){window.clearTimeout(state.autoSaveTimer);state.autoSaveTimer=0;}
     const submittedVersion=state.editorChangeVersion;
     state.postSaveBusy=true;
     const buttons=["#save-post","#sidebar-save"].map((selector)=>$(selector));
@@ -1239,8 +1285,12 @@
       const post=collectPost();
       const result=await api("save_post",{post});
       state.currentPost=result.post;
-      if(state.editorChangeVersion===submittedVersion)clearEditorDirty();
-      else updateEditorDirtyIndicator();
+      if(state.editorChangeVersion===submittedVersion){
+        clearEditorDirty();
+        setEditorSaveStatus(options.autosave?"پیش‌نویس به‌صورت خودکار ذخیره شد":"پیش‌نویس ذخیره شد","saved");
+      }else{
+        updateEditorDirtyIndicator();
+      }
       await loadPosts();updateEditorStatus();
       if(options.silent!==true)toast("پیش‌نویس ذخیره شد.");
       return result.post;
@@ -1959,32 +2009,30 @@
     document.addEventListener("selectionchange",updateFormatToolbar);
     $("#post-content").addEventListener("paste",handleEditorPaste);
     $("#link-settings-toggle").addEventListener("click",()=>{const panel=$("#link-settings");panel.hidden=!panel.hidden;refreshLinkManager();});
-    document.querySelectorAll("[data-command]").forEach((button)=>{
-      button.addEventListener("mousedown",(event)=>event.preventDefault());
+    document.querySelectorAll(".format-tools [data-command]").forEach((button)=>{
+      button.addEventListener("mousedown",(event)=>{
+        state.richEditor?.captureSelection();
+        event.preventDefault();
+      });
       button.addEventListener("click",()=>{
-        const editor=$("#post-content");editor.focus();
-        const command=button.dataset.command,value=button.dataset.value||null;
-        if(command==="formatBlock"&&value==="BLOCKQUOTE"){
-          const blockquote=getSelectedBlockquote();
-          if(blockquote)unwrapBlockquote(blockquote);
-          else document.execCommand("formatBlock",false,"BLOCKQUOTE");
-        }else if(command==="formatBlock"&&/^H[234]$/.test(value||"")){
-          const listItems=selectedEditorListItems();
-          if(listItems.length){
-            const selectedBlock=currentEditorBlock();
-            const allActive=listItems.every((item)=>listItemContentBlock(item,item.contains(selectedBlock)?selectedBlock:null)?.tagName===value);
-            listItems.forEach((item)=>formatListItemHeading(item,value,allActive,item.contains(selectedBlock)?selectedBlock:null));
-          }else{
-            const active=currentEditorBlock()?.tagName===value;
-            document.execCommand("formatBlock",false,active?"P":value);
-          }
-        }else if(command==="formatBlock"){
-          const active=currentEditorBlock()?.tagName===value;
-          document.execCommand("formatBlock",false,active?"P":value);
-        }else{
-          document.execCommand(command,false,value);
+        const editor=state.richEditor;
+        if(!editor)return;
+        const command=button.dataset.command,value=button.dataset.value||"";
+        switch(command){
+          case "undo": editor.undo(); break;
+          case "redo": editor.redo(); break;
+          case "formatBlock": editor.formatBlock(value); break;
+          case "bold": editor.toggleMark("strong"); break;
+          case "italic": editor.toggleMark("em"); break;
+          case "underline": editor.toggleMark("u"); break;
+          case "strike": editor.toggleMark("del"); break;
+          case "insertUnorderedList": editor.toggleList("UL"); break;
+          case "insertOrderedList": editor.toggleList("OL"); break;
+          case "insertCodeBlock": editor.toggleCodeBlock(); break;
+          case "insertTable": editor.insertTable(3,3); break;
+          case "insertHorizontalRule": editor.insertHorizontalRule(); break;
+          default: return;
         }
-        markEditorDirty();
         updatePreview();updateSeo();refreshLinkManager();updateFormatToolbar();
       });
     });
@@ -2129,6 +2177,12 @@
     catch(error){state.accessToken="";state.refreshToken="";$("#login-password").value="";$("#login-message").textContent=error.message;}
     finally{setButton(button,false);}
   });
+  if(typeof window.BlogRichEditor==="function"){
+    state.richEditor=new window.BlogRichEditor($("#post-content"));
+  }else{
+    console.error("Blog rich-text editor core did not load.");
+    setEditorSaveStatus("هستۀ ویرایشگر بارگذاری نشد؛ صفحه رو بازخوانی کن","error");
+  }
   bindEvents();
   window.setInterval(()=>{
     const refreshInterval=60*60*1000;
