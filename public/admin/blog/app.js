@@ -4,7 +4,7 @@
   const supabaseUrl = typeof config.supabaseUrl === "string" ? config.supabaseUrl.replace(/\/+$/,"") : "";
   const anonKey = typeof config.supabaseAnonKey === "string" ? config.supabaseAnonKey : "";
   const $ = (selector) => document.querySelector(selector);
-  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0, analyticsVisited:false, analyticsLastFetchedAt:0, adBanners:[], adClickCounts:{}, adClickCountsBusy:false, adClickCountsUnavailable:false, editorDirty:false, editorChangeVersion:0, richEditor:null, autoSaveTimer:0, postSaveBusy:false, publishBusy:false, statusBusy:false };
+  const state = { accessToken:"", refreshToken:"", posts:[], currentPost:null, settings:null, busy:false, preview:false, articleAnalytics:null, analyticsBusy:false, analyticsEpoch:0, analyticsVisited:false, analyticsLastFetchedAt:0, adBanners:[], adBannersChangeVersion:0, adClickCounts:{}, adClickCountsBusy:false, adClickCountsUnavailable:false, editorDirty:false, editorChangeVersion:0, richEditor:null, autoSaveTimer:0, postSaveBusy:false, publishBusy:false, statusBusy:false };
   const statusLabels = { draft:"پیش‌نویس", published:"منتشرشده", archived:"بایگانی" };
   const validConfig = supabaseUrl === "https://bkohdqwecnvbmeaiuyyx.supabase.co" && anonKey.startsWith("sb_publishable_");
 
@@ -1924,20 +1924,80 @@
       setButton(button,false);
     }
   }
+  function validateAdBanners(banners) {
+    const fail=(message,bannerId,fieldName)=>({
+      message,
+      field:bannerId&&fieldName
+        ?[...$("#ad-banners-list").querySelectorAll("[data-ad-card]")]
+          .find((card)=>card.dataset.adCard===bannerId)
+          ?.querySelector('[data-ad-field="'+fieldName+'"]')||null
+        :null,
+    });
+    if(!Array.isArray(banners)||banners.length<3||banners.length>8){
+      return fail("سه جایگاه اصلی لازمه و در مجموع حداکثر هشت جایگاه می‌تونی داشته باشی.");
+    }
+    const ids=new Set();
+    for(const [index,banner] of banners.entries()){
+      const id=String(banner.id||"");
+      if(!/^banner-[1-9][0-9]*$/.test(id)||ids.has(id)){
+        return fail("شناسه یکی از جایگاه‌های تبلیغاتی معتبر یا یکتا نیست.",id,"label");
+      }
+      ids.add(id);
+      if(banner.enabled&&!banner.image_url){
+        return fail("برای فعال‌کردن جایگاه "+(index+1)+"، ابتدا تصویرش رو بارگذاری کن.",id,"enabled");
+      }
+      if(banner.enabled&&!String(banner.alt||"").trim()){
+        return fail("برای فعال‌کردن جایگاه "+(index+1)+"، متن جایگزین تصویر رو هم وارد کن.",id,"alt");
+      }
+      const destination=String(banner.link_url||"").trim();
+      if(destination){
+        if(!banner.image_url){
+          return fail("برای تنظیم پیوند مقصد جایگاه "+(index+1)+"، ابتدا تصویر بنر رو بارگذاری کن.",id,"image_url");
+        }
+        let url;
+        try{url=new URL(destination);}
+        catch{return fail("پیوند مقصد جایگاه "+(index+1)+" معتبر نیست؛ نشانی کامل رو وارد کن.",id,"link_url");}
+        if(url.protocol!=="https:"||url.username||url.password){
+          return fail("پیوند مقصد جایگاه "+(index+1)+" باید HTTPS باشه و نام کاربری یا رمز داخل آدرس نداشته باشه.",id,"link_url");
+        }
+      }
+    }
+    if(!ids.has("banner-3"))return fail("جایگاه سوم برای نمایش بنر انتهای مقاله باید حفظ بشه.");
+    return null;
+  }
+  function showAdBannerValidation(problem) {
+    const message=$("#ad-banners-message");
+    message.textContent=problem.message;
+    if(problem.field){
+      problem.field.setAttribute("aria-invalid","true");
+      problem.field.focus({preventScroll:true});
+      problem.field.closest("[data-ad-card]")?.scrollIntoView({behavior:"smooth",block:"center"});
+    }
+    toast(problem.message,true);
+  }
   async function saveAdBanners(event) {
     event.preventDefault();
     const button=$("#save-ad-banners");
     state.adBanners=collectAdBannersFromForm();
+    const problem=validateAdBanners(state.adBanners);
+    if(problem){showAdBannerValidation(problem);return;}
+    const submittedVersion=state.adBannersChangeVersion;
     setButton(button,true,"در حال ذخیره…");
     $("#ad-banners-message").textContent="در حال اعتبارسنجی تنظیمات و آماده‌سازی انتشار…";
     try{
       const result=await api("save_ad_banners",{banners:state.adBanners});
       state.settings={...(state.settings||{}),...(result.settings||{})};
-      state.adBanners=normalizeAdBanners(result.settings?.ad_banners||state.adBanners);
-      renderAdBannerSettings();
-      $("#ad-banners-message").textContent="تنظیمات ذخیره شد و ساخت نسخۀ عمومی آغاز شد.";
+      if(state.adBannersChangeVersion===submittedVersion){
+        state.adBanners=normalizeAdBanners(result.settings?.ad_banners||state.adBanners);
+        renderAdBannerSettings();
+        $("#ad-banners-message").textContent="تنظیمات ذخیره شد و ساخت نسخۀ عمومی آغاز شد.";
+        toast("بنرها ذخیره شدن؛ بعد از Build در همۀ مقاله‌ها به‌روزرسانی می‌شن.");
+      }else{
+        state.adBanners=collectAdBannersFromForm();
+        $("#ad-banners-message").textContent="نسخۀ ارسال‌شده ذخیره شد؛ تغییرات جدیدتری که بعد از شروع ذخیره انجام دادی هنوز ذخیره نشدن.";
+        toast("نسخۀ قبلی بنرها ذخیره شد؛ تغییرات جدیدتر هنوز ذخیره نشده‌ان.",true);
+      }
       await loadAdClickCounts(true);
-      toast("بنرها ذخیره شدن؛ بعد از Build در همۀ مقاله‌ها به‌روزرسانی می‌شن.");
     }catch(error){
       $("#ad-banners-message").textContent=error.message;
       toast(error.message,true);
@@ -2070,8 +2130,12 @@
     $("#archive-post").addEventListener("click",()=>void changeStatus("archive_post").catch((e)=>toast(e.message,true)));
     $("#hero-image-file").addEventListener("change",()=>void handleImage("hero-image-file","post-hero-url","hero-image-preview","#post-hero-alt"));
     $("#og-image-file").addEventListener("change",()=>void handleImage("og-image-file","post-og-url","og-image-preview","#post-og-title"));
-    $("#ad-banners-list").addEventListener("input",()=>{
+    $("#ad-banners-list").addEventListener("input",(event)=>{
+      const field=event.target.closest("[data-ad-field]");
+      if(field)field.removeAttribute("aria-invalid");
       state.adBanners=collectAdBannersFromForm();
+      state.adBannersChangeVersion+=1;
+      $("#ad-banners-message").textContent="تغییرات ذخیره‌نشده‌ست.";
     });
     $("#ad-banners-list").addEventListener("change",async(event)=>{
       const input=event.target.closest("[data-ad-file]");
@@ -2086,7 +2150,9 @@
         const banner=next.find((item)=>item.id===id);
         if(banner)banner.image_url=url;
         state.adBanners=next;
+        state.adBannersChangeVersion+=1;
         renderAdBannerSettings();
+        $("#ad-banners-message").textContent="تصویر بارگذاری شد؛ برای اعمال در سایت، تنظیمات بنرها رو ذخیره کن.";
         toast(file.type==="image/gif"?"GIF متحرک بارگذاری شد.":"تصویر بنر بارگذاری شد.");
       }catch(error){toast(error.message,true);}
       finally{input.disabled=false;input.value="";}
@@ -2101,13 +2167,28 @@
       const bannerNumber=current.findIndex((item)=>item.id===button.dataset.removeAd)+1;
       if(!window.confirm("جایگاه تبلیغاتی "+bannerNumber+" حذف بشه؟ بعد از ذخیرۀ جایگاه‌ها، شمارش کلیک همین جایگاه هم پاک می‌شه."))return;
       state.adBanners=current.filter((item)=>item.id!==button.dataset.removeAd);
+      state.adBannersChangeVersion+=1;
       renderAdBannerSettings();
+      $("#ad-banners-message").textContent="جایگاه حذف شد؛ تغییرات هنوز ذخیره نشدن.";
     });
     $("#add-ad-banner").addEventListener("click",()=>{
       state.adBanners=collectAdBannersFromForm();
-      if(state.adBanners.length>=8){toast("حداکثر هشت جایگاه تبلیغاتی مجازه.",true);return;}
-      state.adBanners.push(makeDefaultAdBanner(nextAdBannerIndex()));
+      if(state.adBanners.length>=8){
+        const message="حداکثر هشت جایگاه تبلیغاتی مجازه.";
+        $("#ad-banners-message").textContent=message;
+        toast(message,true);
+        return;
+      }
+      const newBanner=makeDefaultAdBanner(nextAdBannerIndex());
+      state.adBanners.push(newBanner);
+      state.adBannersChangeVersion+=1;
       renderAdBannerSettings();
+      const card=[...$("#ad-banners-list").querySelectorAll("[data-ad-card]")]
+        .find((item)=>item.dataset.adCard===newBanner.id);
+      card?.scrollIntoView({behavior:"smooth",block:"center"});
+      const firstField=card?.querySelector('[data-ad-field="label"]');
+      firstField?.focus({preventScroll:true});
+      $("#ad-banners-message").textContent="جایگاه جدید اضافه شد؛ اطلاعاتش رو تکمیل کن و ذخیره رو بزن.";
     });
     $("#ad-banners-form").addEventListener("submit",(event)=>void saveAdBanners(event));
     $("#setting-og-file").addEventListener("change",async(event)=>{
