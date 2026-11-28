@@ -335,7 +335,8 @@ const fiveH3Fixture = [
 const headingGapPattern = new RegExp("([^"+String.fromCharCode(10)+"])(?=#{2,4} +)", "g");
 const normalizedFiveH3Fixture = fiveH3Fixture.replace(headingGapPattern,"$1"+String.fromCharCode(10,10));
 const renderedFiveH3Fixture = markdownRuntime.exports.renderMarkdown(normalizedFiveH3Fixture);
-assert.equal((renderedFiveH3Fixture.match(/<h3\b/g)||[]).length,5,"all five adjacent CMS H3 headings must render as semantic H3 elements");
+assert.equal(normalizedFiveH3Fixture.split("### ").length-1,5,"all five H3 headings must be separated into Markdown blocks");
+assert.equal(renderedFiveH3Fixture.split("<h3 ").length-1,5,"all five adjacent CMS H3 headings must render as semantic H3 elements");
 assert.equal(markdownRuntime.exports.extractToc(normalizedFiveH3Fixture).filter((item)=>item.level===3).length,5,"all five CMS H3 headings must be included in the table of contents");
 
 const normalizedAbsoluteCategoryLink = markdownRuntime.exports.renderMarkdown(
