@@ -465,7 +465,7 @@
   function updateImagePreview(id,url,alt) {
     const box=$("#"+id);box.replaceChildren();
     if(!url){const span=document.createElement("span");span.textContent="تصویری انتخاب نشده.";box.appendChild(span);return;}
-    const img=document.createElement("img");img.src=url;img.alt=alt||"";box.appendChild(img);
+    const img=document.createElement("img");img.src=url;img.alt=String(alt||"").trim()||"پیش‌نمایش تصویر؛ متن جایگزین هنوز ثبت نشده";box.appendChild(img);
   }
   function parseFaqs(value) {
     return value.split(/\n\s*\n/).map((block)=>{
@@ -557,7 +557,7 @@
   }
   function previewInline(text) {
     let value=escapeHtml(text);
-    value=value.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>'<img src="'+escapeHtml(safeHref(url.replace(/&amp;/g,"&")))+'" alt="'+alt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">');
+    value=value.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>'<img src="'+escapeHtml(safeHref(url.replace(/&amp;/g,"&")))+'" alt="'+(alt||"تصویر در پیش‌نمایش مقاله")+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">');
     value=value.replace(/\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
       const href=safeHref(url.replace(/&amp;/g,"&")),external=/^https?:\/\//i.test(href);
       const hasLabel=String(label||"").trim().length>0;
@@ -1175,6 +1175,19 @@
     $("#preview-content").dir=direction;
     $("#preview-content").innerHTML="<h1>"+escapeHtml(title)+"</h1>"+renderPreviewMarkdown(content);
   }
+  function missingMarkdownImageAlts(markdown) {
+    const missing=[];
+    let fenceLength=0;
+    for(const line of String(markdown||"").replace(/\r\n/g,"\n").split("\n")){
+      const fence=line.match(/^ {0,3}(\x60{3,})/);
+      if(fenceLength){if(fence&&fence[1].length>=fenceLength)fenceLength=0;continue;}
+      if(fence){fenceLength=fence[1].length;continue;}
+      for(const match of line.matchAll(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)){
+        if(!String(match[1]||"").trim())missing.push(match[2]);
+      }
+    }
+    return missing;
+  }
   function updateSeo() {
     const title=$("#post-title").value.trim(), slug=$("#post-slug").value.trim();
     const seoTitle=$("#post-seo-title").value.trim()||title;
@@ -1190,7 +1203,7 @@
       {label:"کلمۀ کلیدی در ابتدای متن",pass:!!keyword&&firstParagraph.toLocaleLowerCase().includes(keyword)},
       {label:"ساختار تیترهای مقاله",pass:(content.match(/^#{2,4}\s/gm)||[]).length>=2},
       {label:"متن جایگزین تصویر",pass:!$("#post-hero-url").value||!!$("#post-hero-alt").value.trim()},
-      {label:"متن جایگزین برای همۀ تصاویر درون‌متنی",pass:Array.from($("#post-content").querySelectorAll("img")).every((image)=>!!image.alt.trim())},
+      {label:"متن جایگزین برای همۀ تصاویر درون‌متنی",pass:missingMarkdownImageAlts(content).length===0},
       {label:"تصویر اجتماعی اختصاصی",pass:!!$("#post-og-url").value||!!$("#post-hero-url").value},
       {label:"Canonical URL معتبر یا خودکار",pass:!$("#post-canonical").value.trim()||$("#post-canonical").value.startsWith("https://ariakianzad.github.io/blog/")},
     ];
@@ -1230,6 +1243,17 @@
     const buttons=["#publish-post","#sidebar-publish"].map((selector)=>$(selector));
     buttons.forEach((button)=>setButton(button,true,"در حال انتشار…"));
     try{
+      const draft=collectPost();
+      const missingInlineAlts=missingMarkdownImageAlts(draft.content);
+      const missingHeroAlt=Boolean(draft.hero_image_url)&&!String(draft.hero_image_alt||"").trim();
+      if(missingHeroAlt||missingInlineAlts.length){
+        const issues=[];
+        if(missingHeroAlt)issues.push("برای تصویر اصلی مقاله متن جایگزین توصیفی وارد کن.");
+        if(missingInlineAlts.length)issues.push("برای تمام تصاویر داخل متن مقاله متن جایگزین توصیفی وارد کن.");
+        toast(issues.join(" "),true);
+        if(missingHeroAlt)$("#post-hero-alt").focus();
+        return;
+      }
       const post=await savePost({silent:true});
       const result=await api("publish_post",{id:post.id});
       state.currentPost=result.post;await loadPosts();updateEditorStatus();
@@ -1736,7 +1760,7 @@
       const id=escapeHtml(banner.id||("banner-"+(index+1)));
       const isArticleEnd=banner.id==="banner-3";
       const placementLabel=isArticleEnd?"انتهای متن مقاله":"کنار فهرست مقاله";
-      const image=banner.image_url?'<img src="'+escapeHtml(banner.image_url)+'" alt="">':'<span class="ad-preview-placeholder">'+(isArticleEnd?"پیش‌نمایش بنر افقی ۸٫۵:۱":"پیش‌نمایش تصویر ۱:۱")+'</span>';
+      const image=banner.image_url?'<img src="'+escapeHtml(banner.image_url)+'" alt="'+escapeHtml(String(banner.alt||"").trim()||"پیش‌نمایش تصویر بنر؛ متن جایگزین هنوز ثبت نشده")+'">':'<span class="ad-preview-placeholder">'+(isArticleEnd?"پیش‌نمایش بنر افقی ۸٫۵:۱":"پیش‌نمایش تصویر ۱:۱")+'</span>';
       const options=relOptions.map(([value,label])=>'<option value="'+value+'" '+((banner.link_rel||"follow")===value?"selected":"")+'>'+label+'</option>').join("");
       const clickData=state.adClickCounts[banner.id];
       const clickCount=clickData?Number(clickData.click_count||0).toLocaleString("fa-IR"):(state.adClickCountsBusy?"…":"۰");

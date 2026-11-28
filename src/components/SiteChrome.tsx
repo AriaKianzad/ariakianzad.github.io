@@ -20,7 +20,7 @@ export function SiteChrome({ children }: { children: ReactNode }) {
         <div className="shell site-header__row">
           <a className="wordmark" href="/#top" aria-label="Aria Kianzad, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="wordmark__mark" src="/brand-logo.png?v=20261128-2" alt="" aria-hidden="true" width="42" height="42" decoding="async" />
+            <img className="wordmark__mark" src="/brand-logo.png?v=20261128-2" alt="لوگوی آریا کیانزاد" width="42" height="42" decoding="async" />
             <span className="wordmark__copy">
               <strong>Aria Kianzad</strong>
               <small>Brand strategy / Personal branding</small>

@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { getBlogImageAltIssues } from "./image-alt-validation.mjs";
 const configSource = await readFile(resolve("public/admin/config.js"), "utf8");
 const url = configSource.match(/supabaseUrl:\s*"([^"]+)"/)?.[1];
 const key = configSource.match(/supabaseAnonKey:\s*"([^"]+)"/)?.[1];
@@ -51,6 +52,10 @@ const result = {
   posts:payload.posts.filter((p)=>p&&typeof p.slug==="string"&&/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(p.slug)&&typeof p.content==="string"),
   fetchedAt:new Date().toISOString(),
 };
+const imageAltIssues = getBlogImageAltIssues(result.posts, result.settings);
+if (imageAltIssues.length) {
+  throw new Error("انتشار متوقف شد؛ تصاویر محتوایی باید متن جایگزین توصیفی داشته باشن:\n" + imageAltIssues.join("\n"));
+}
 const output=resolve(".cache/blog-content.json");
 await mkdir(dirname(output),{recursive:true});
 await writeFile(output,JSON.stringify(result,null,2)+"\n","utf8");

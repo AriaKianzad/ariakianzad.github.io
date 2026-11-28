@@ -15,8 +15,8 @@ export function BlogPostCard({ post, featured = false, showReadingTime = true, c
   return (
     <article className={"blog-card" + (featured ? " blog-card-featured" : "")} lang={post.language} dir={dir}
       data-blog-post-card data-category-slugs={categorySlugs.join(" ")} data-search-text={searchable}>
-      <Link className="blog-card-image" href={"/blog/" + post.slug + "/"} tabIndex={-1} aria-hidden="true">
-        <img src={image} alt={post.hero_image_alt || ""} loading="lazy" decoding="async" />
+      <Link className="blog-card-image" href={"/blog/" + post.slug + "/"}>
+        <img src={image} alt={post.hero_image_alt?.trim() || "تصویر معرفی مقاله: " + post.title} loading="lazy" decoding="async" />
         {post.featured ? <span className="blog-featured-label">منتخب</span> : null}
       </Link>
       <div className="blog-card-copy">

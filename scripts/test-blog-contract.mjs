@@ -188,6 +188,7 @@ assert.ok(scripts.prebuild.includes("generate-blog-og.mjs"), "prebuild must gene
 assert.ok(scripts.predev.includes("fetch-blog-content.mjs"), "local development must fetch public blog data");
 assert.ok(fetchScript.includes("/rest/v1/rpc/get_public_blog_payload"), "static content must use the restricted public RPC");
 assert.ok(fetchScript.includes(".cache/blog-content.json"), "build payload must remain in the ignored cache");
+assert.ok(fetchScript.includes("getBlogImageAltIssues") && fetchScript.includes("انتشار متوقف شد") && imageAltValidationSource.includes("extractMarkdownImages"), "static generation must reject published content images and active banners without alt text");
 assert.ok(!fetchScript.includes("blog_posts"), "the public build must not query private CMS tables directly");
 assert.ok(/resize\(\s*1200\s*,\s*630\s*,/.test(imageScript), "social images must be 1200x630");
 assert.ok(imageScript.includes("sharp(") && imageScript.includes("jpeg({quality:88"), "social images must be optimized in the build");
@@ -218,10 +219,12 @@ assert.ok(adminCss.includes("@media(prefers-reduced-motion:reduce)") && adminCss
 const verifyExport = await read("scripts/verify-export.mjs");
 assert.ok(verifyExport.includes(".cache/blog-content.json") && verifyExport.includes("published article is missing") && verifyExport.includes("published article link is missing"), "post-build verification must compare the generated sitemap and RSS against every current published article");
 assert.ok(verifyExport.includes("target has repeated slashes in its path") && verifyExport.includes("anchor"), "post-build verification must inspect internal anchor destinations and reject repeated slashes");
+assert.ok(verifyExport.includes("image requires non-empty descriptive alt text"), "the final static export must reject every img without a non-empty alt attribute");
 assert.ok(sitemap.includes("getBlogPosts()") && sitemap.includes("/blog/"), "sitemap must include published articles and blog archive");
 assert.ok(sitemap.includes("/blog/contact/"), "sitemap must include the public contact page");
 assert.ok(robots.includes('allow: ["/"]') && !/disallow:\s*\[[^\]]*\/admin\//.test(robots), "robots.txt must let crawlers read the admin pages' noindex directives");
 assert.ok(!publicHeader.includes("/author/"), "no separate author archive should be generated");
+assert.ok(siteChromeSource.includes('alt="لوگوی آریا کیانزاد"') && publicHeader.includes('alt="لوگوی آریا کیانزاد"') && bookPageSource.includes('alt="لوگوی آریا کیانزاد"') && bookPageSource.includes('alt="لوگوی آژانس خلاقیت رکسو"'), "site, blog and book logo images must have meaningful alt text");
 
 assert.ok(markdownSource.includes("function esc(") && markdownSource.includes("function allowedUrl("), "Markdown rendering must escape HTML and validate links");
 assert.ok(markdownSource.includes('new URL(candidate)') && markdownSource.includes('url.username') && markdownSource.includes('url.password'), "Markdown links must reject credential-bearing and unsupported URL schemes");
@@ -903,7 +906,7 @@ assert.ok(adminApp.includes('relation="follow",target=external?"_blank":"_self"'
 assert.ok(!adminApp.slice(adminApp.indexOf("function clipboardHeadingLevel"),adminApp.indexOf("function cleanClipboardNode")).includes('querySelectorAll?.("[style]")'), "Google Docs heading detection must not promote an entire paragraph based on a single styled child run");
 
 assert.ok(adminApp.includes('explicitRelation==="follow"') && adminApp.includes('if(relation!=="follow"||explicitRelation==="follow")'), "an explicitly selected follow relation must survive Markdown serialization and subsequent editing");
-assert.ok(adminHtml.includes('app.js?v=20261128-3') && adminHtml.includes('blog.css?v=20261128-2'), "the admin editor assets must use current cache keys after the link-preview accessibility fix");
+assert.ok(adminHtml.includes('app.js?v=20261128-4') && adminHtml.includes('blog.css?v=20261128-2'), "the admin editor assets must use current cache keys after the image-alt validation update");
 assert.ok(adminApp.includes("function handleNumberedHeadingEnter(event)") && adminApp.includes('$("#post-content").addEventListener("keydown",handleNumberedHeadingEnter)') && adminApp.includes('list?.tagName!=="OL"') && adminApp.includes("numberedListItemHasHeading(item)") && adminApp.includes("trailing.extractContents()") && adminApp.includes('const nextItem=document.createElement("li")'), "Enter inside a numbered heading item must create continuation paragraphs in the same LI and only create the next LI from an empty continuation");
 assert.ok(blogCss.includes(".blog-prose li>h3") && blogCss.includes("display:block") && blogCss.includes(".blog-prose li>h3 + p") && adminCss.includes(".editor-richtext li>h3") && adminCss.includes(".editor-richtext li>h3 + p") && adminCss.includes("display:block"), "numbered H3 headings and their descriptions must remain separate visual blocks inside one list item");
 assert.ok(adminHtml.includes("وقتی به خط خالی رسیدی، یک Enter دیگه شمارۀ بعدی رو می‌سازه"), "the editor must explain how to continue the current numbered item and start the next one");
@@ -917,6 +920,7 @@ assert.ok(collectPostSource.includes("post.robots_follow=true") && !adminHtml.in
 assert.ok(adminHtml.includes('role="tablist" aria-label="تنظیمات مقاله"') && adminHtml.includes('role="tab" aria-selected="true"') && adminHtml.includes('role="tabpanel"') && adminApp.includes('showTab(tabs[nextIndex].dataset.tab,true)') && adminApp.includes('button.setAttribute("aria-selected"'), "editor tabs must expose selected state, labelled panels and keyboard arrow navigation");
 assert.ok(adminHtml.includes('aria-current="page"') && adminHtml.includes('aria-controls="view-overview"') && adminApp.includes('button.setAttribute("aria-current","page")'), "the workspace navigation must expose the active view to assistive technology");
 assert.ok(adminApp.includes("state.postSaveBusy") && adminApp.includes("state.publishBusy") && adminApp.includes("state.statusBusy") && adminApp.includes("ذخیرۀ مقاله در حال انجامه"), "article save, publish and status actions must guard against duplicate submissions");
+assert.ok(adminApp.includes("missingMarkdownImageAlts") && adminApp.includes("تمام تصاویر داخل متن مقاله") && adminEdge.includes("validatePublishedImageAlts"), "the CMS and trusted publishing endpoint must block articles that include images without alt text");
 assert.ok(adminApp.includes("state.editorDirty") && adminApp.includes("confirmLeaveEditor") && adminApp.includes("beforeunload") && adminApp.includes("تغییرات این مقاله هنوز ذخیره نشدن") && adminHtml.includes('id="editor-dirty-indicator"') && adminCss.includes(".editor-dirty-indicator"), "the editor must indicate unsaved changes and confirm before navigation or tab close");
 assert.ok(adminApp.includes("state.editorChangeVersion===submittedVersion") && adminApp.includes("state.editorDirty){toast(\"ابتدا تغییرات مقاله رو ذخیره کن"), "saving must not clear changes typed while a request is in flight, and publication status changes must not discard unsaved edits");
 assert.ok(adminApp.includes("با این جست‌وجو یا فیلتر، مقاله‌ای پیدا نشد.") && adminApp.includes("هنوز مقاله‌ای ایجاد نکردی"), "the article list must distinguish a truly empty workspace from an empty search result");

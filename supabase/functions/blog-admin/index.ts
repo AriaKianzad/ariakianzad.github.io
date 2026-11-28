@@ -181,6 +181,31 @@ function faqsValue(value: unknown) {
   });
 }
 
+function validatePublishedImageAlts(post: Record<string, unknown>) {
+  const slug = String(post.slug || "بدون نامک");
+  if (String(post.hero_image_url || "").trim() && !String(post.hero_image_alt || "").trim()) {
+    throw new Error("برای انتشار مقالۀ " + slug + "، تصویر اصلی باید متن جایگزین توصیفی داشته باشه.");
+  }
+
+  let fenceLength = 0;
+  for (const line of String(post.content || "").replace(/\r\n/g, "\n").split("\n")) {
+    const fence = line.match(/^ {0,3}(\x60{3,})/);
+    if (fenceLength) {
+      if (fence && fence[1].length >= fenceLength) fenceLength = 0;
+      continue;
+    }
+    if (fence) {
+      fenceLength = fence[1].length;
+      continue;
+    }
+    for (const match of line.matchAll(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) {
+      if (!String(match[1] || "").trim()) {
+        throw new Error("برای انتشار مقالۀ " + slug + "، تمام تصاویر درون‌متنی باید متن جایگزین توصیفی داشته باشن.");
+      }
+    }
+  }
+}
+
 function normalizePost(input: Record<string, unknown>) {
   const slug = textValue(input?.slug, 120, "نامک", true).toLowerCase();
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
@@ -411,6 +436,7 @@ async function perform(action: string, body: Record<string, unknown>, client: Su
     if (!current.title || !current.slug || !current.content.trim()) {
       throw new Error("برای انتشار، عنوان، نامک و متن مقاله باید تکمیل باشن.");
     }
+    validatePublishedImageAlts(current);
     const publishedAt = current.published_at || new Date().toISOString();
     const publicSnapshot = snapshot({
       slug: current.slug, title: current.title, excerpt: current.excerpt, content: current.content,
