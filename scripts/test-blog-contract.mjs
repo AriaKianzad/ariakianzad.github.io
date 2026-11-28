@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { Script, runInNewContext } from "node:vm";
 import ts from "typescript";
+import { extractMarkdownImages, getBlogImageAltIssues } from "./image-alt-validation.mjs";
 
 const read = (path) => readFile(new URL("../" + path, import.meta.url), "utf8");
 const [
@@ -65,6 +66,9 @@ const [analyticsEdge, adBannerMigration, siteConfig, socialIcons, socialIconExtr
 ]);
 
 const blogChromeCss = await read("src/app/chrome.css");
+const siteChromeSource = await read("src/components/SiteChrome.tsx");
+const bookPageSource = await read("public/Mian-e-Ma/index.html");
+const imageAltValidationSource = await read("scripts/image-alt-validation.mjs");
 const categorySeoMigration = await read("supabase/migrations/20261123143405_add_category_level_seo.sql");
 const cultureRenameMigration = await read("supabase/migrations/20261125122854_rename_culture_display_name_to_culture_and_media.sql");
 const categoryTaxonomyMigration = await read("supabase/migrations/20261123194500_add_blog_category_taxonomy_and_advanced_seo.sql");
