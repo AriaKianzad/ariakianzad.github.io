@@ -156,7 +156,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
             </div>
             {post.hero_image_url ? (
               <figure className="blog-hero-image">
-                <img src={post.hero_image_url} alt={post.hero_image_alt || ""} fetchPriority="high" />
+                <img src={post.hero_image_url} alt={post.hero_image_alt?.trim() || "تصویر شاخص مقاله: " + post.title} fetchPriority="high" />
                 {post.hero_image_caption ? <figcaption>{post.hero_image_caption}</figcaption> : null}
               </figure>
             ) : <div className="blog-article-visual-empty" aria-hidden="true" />}
@@ -214,7 +214,8 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
                 const allowedRel = ["follow","nofollow","sponsored","ugc","nofollow sponsored","nofollow ugc","nofollow sponsored ugc"];
                 const relToken = allowedRel.includes(banner.link_rel) && banner.link_rel !== "follow" ? banner.link_rel : "";
                 const relValue = [relToken,"noopener","noreferrer"].filter(Boolean).join(" ");
-                const image = <img src={banner.image_url} alt={banner.alt || ""} loading="lazy" decoding="async" />;
+                const bannerAlt = banner.alt?.trim() || banner.label?.trim() || "بنر تبلیغاتی وبلاگ";
+                const image = <img src={banner.image_url} alt={bannerAlt} loading="lazy" decoding="async" />;
                 return (
                   <div className={"blog-ad-card" + (banner.show_on_mobile === false ? " is-desktop-only" : "")} key={banner.id}>
                     {banner.label?.trim() ? <span className="blog-ad-label">{banner.label}</span> : null}
@@ -241,10 +242,10 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
                       ["follow","nofollow","sponsored","ugc","nofollow sponsored","nofollow ugc","nofollow sponsored ugc"].includes(articleEndBanner.link_rel) && articleEndBanner.link_rel !== "follow" ? articleEndBanner.link_rel : "",
                       "noopener","noreferrer",
                     ].filter(Boolean).join(" ")} aria-label={articleEndBanner.alt || "مشاهدۀ بنر"}>
-                      <img src={articleEndBanner.image_url} alt={articleEndBanner.alt || ""} loading="lazy" decoding="async" />
+                      <img src={articleEndBanner.image_url} alt={articleEndBanner.alt?.trim() || articleEndBanner.label?.trim() || "بنر تبلیغاتی وبلاگ"} loading="lazy" decoding="async" />
                     </a>
                   ) : (
-                    <img src={articleEndBanner.image_url} alt={articleEndBanner.alt || ""} loading="lazy" decoding="async" />
+                    <img src={articleEndBanner.image_url} alt={articleEndBanner.alt?.trim() || articleEndBanner.label?.trim() || "بنر تبلیغاتی وبلاگ"} loading="lazy" decoding="async" />
                   )}
                 </div>
               </div>

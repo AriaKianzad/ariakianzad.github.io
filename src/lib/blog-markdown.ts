@@ -68,7 +68,8 @@ function inline(value:string){
   // Keep generated HTML tags out of the Markdown formatting regexes. The
   // link label stays in the source string so bold/italic inside it still works.
   s=s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,(_m,alt,url,title)=>{
-    const html='<img src="'+esc(allowedUrl(url.replace(/&amp;/g,"&")))+'" alt="'+alt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">';
+    const imageAlt=String(alt||title||"تصویر مرتبط با مقاله").trim();
+    const html='<img src="'+esc(allowedUrl(url.replace(/&amp;/g,"&")))+'" alt="'+imageAlt+'"'+(title?' title="'+title+'"':"")+' loading="lazy" decoding="async">';
     return protect(html);
   });
   s=s.replace(/\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?/g,(_m,label,url,title,options)=>{
@@ -308,7 +309,8 @@ export function renderMarkdown(markdown:string):string{
     const image=parseImageLine(line);
     if(image){
       closeP();closeL();
-      out.push('<figure class="blog-inline-image"><img src="'+esc(image.url)+'" alt="'+esc(image.alt)+'"'+(image.title?' title="'+esc(image.title)+'"':"")+' loading="lazy" decoding="async">'+(image.caption?'<figcaption>'+esc(image.caption)+'</figcaption>':"")+"</figure>");
+      const imageAlt=image.alt.trim()||image.caption.trim()||image.title.trim()||"تصویر مرتبط با مقاله";
+      out.push('<figure class="blog-inline-image"><img src="'+esc(image.url)+'" alt="'+esc(imageAlt)+'"'+(image.title?' title="'+esc(image.title)+'"':"")+' loading="lazy" decoding="async">'+(image.caption?'<figcaption>'+esc(image.caption)+'</figcaption>':"")+"</figure>");
       continue;
     }
     if(line.trim()&&index+1<lines.length){

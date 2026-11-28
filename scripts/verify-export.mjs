@@ -163,6 +163,15 @@ for (const file of files) {
   if (!html.includes('href="/favicon.svg')) {
     problems.push(rel + ": the shared site favicon is missing");
   }
+  for (const imageMatch of html.matchAll(/<img\b[^>]*>/gi)) {
+    const tag = imageMatch[0];
+    const alt = tag.match(/\balt\s*=\s*(["'])(.*?)\1/i)?.[2];
+    if (!alt || !alt.trim()) {
+      const src = tag.match(/\bsrc\s*=\s*(["'])(.*?)\1/i)?.[2] || "unknown image";
+      problems.push(rel + ": image requires non-empty descriptive alt text: " + src);
+    }
+  }
+
   if (/<[a-z][^>]*\sstyle\s*=/i.test(html)) {
     problems.push(rel + ": inline style attributes are blocked by the strict CSP; use a hashed style block");
   }
