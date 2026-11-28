@@ -78,7 +78,7 @@ assert.ok(editorApp.includes('case "undo": editor.undo()') &&
   editorApp.includes('editor.toggleList("OL")'),
   "toolbar actions must be delegated to the editor engine");
 assert.ok(editorApp.includes("function updatePreview()") &&
-  editorApp.includes("editorToMarkdown($("# + '"post-content"' + ")"),
+  editorApp.includes('editorToMarkdown($("#post-content")'),
   "the existing Markdown publishing pipeline and preview must remain connected");
 assert.ok(editorCss.includes(".editor-save-status[data-state=\"saved\"]") &&
   editorCss.includes(".editor-save-status[data-state=\"saving\"]") &&
