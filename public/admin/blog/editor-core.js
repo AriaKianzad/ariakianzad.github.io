@@ -268,29 +268,38 @@
           target.forEach((block) => quote.appendChild(block));
         }
       } else {
-        const blocks = this.selectedTopLevelBlocks(range);
-        const target = blocks.length ? blocks : (active ? [active] : []);
-        if (!target.length) {
-          const paragraph = document.createElement(tag.toLowerCase());
-          paragraph.appendChild(document.createElement("br"));
-          this.root.appendChild(paragraph);
-          this.placeCaretAtEnd();
-          this.commit(false);
-          this.dispatchInput();
-          return true;
-        }
-        const allActive = target.every((block) => block.tagName === tag);
-        target.forEach((block) => {
-          const listItem = block.closest("li");
-          const source = listItem && this.root.contains(listItem)
-            ? (block.matches("p,h2,h3,h4") ? block : listItem.querySelector(":scope > p,:scope > h2,:scope > h3,:scope > h4"))
-            : block;
-          if (!source || !source.matches("p,h2,h3,h4,div")) return;
+        const listItem = active?.closest("li");
+        if (listItem && this.root.contains(listItem)) {
+          const source = active.matches("p,h2,h3,h4")
+            ? active
+            : listItem.querySelector(":scope > p,:scope > h2,:scope > h3,:scope > h4");
+          if (!source) return false;
+          const allActive = source.tagName === tag;
           const replacement = document.createElement(allActive ? "p" : tag.toLowerCase());
           while (source.firstChild) replacement.appendChild(source.firstChild);
           if (!replacement.childNodes.length) replacement.appendChild(document.createElement("br"));
           source.replaceWith(replacement);
-        });
+        } else {
+          const blocks = this.selectedTopLevelBlocks(range);
+          const target = blocks.length ? blocks : (active ? [active] : []);
+          if (!target.length) {
+            const paragraph = document.createElement(tag.toLowerCase());
+            paragraph.appendChild(document.createElement("br"));
+            this.root.appendChild(paragraph);
+            this.placeCaretAtEnd();
+            this.commit(false);
+            this.dispatchInput();
+            return true;
+          }
+          const allActive = target.every((block) => block.tagName === tag);
+          target.forEach((block) => {
+            if (!block.matches("p,h2,h3,h4,div")) return;
+            const replacement = document.createElement(allActive ? "p" : tag.toLowerCase());
+            while (block.firstChild) replacement.appendChild(block.firstChild);
+            if (!replacement.childNodes.length) replacement.appendChild(document.createElement("br"));
+            block.replaceWith(replacement);
+          });
+        }
       }
       this.commit(false);
       this.dispatchInput();
@@ -403,8 +412,9 @@
     }
 
     insertHTML(html) {
-      const range = this.restoreSelection() || document.createRange();
-      if (!range.startContainer) {
+      let range = this.restoreSelection();
+      if (!range) {
+        range = document.createRange();
         range.selectNodeContents(this.root);
         range.collapse(false);
       }
