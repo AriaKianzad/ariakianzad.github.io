@@ -167,7 +167,7 @@ for (const file of files) {
     problems.push(rel + ": inline style attributes are blocked by the strict CSP; use a hashed style block");
   }
 
-  if (["index.html", "blog/index.html", "Mian-e-Ma/index.html"].includes(rel) && !html.includes('src="/brand-logo.png?v=20261128-1"')) {
+  if (["index.html", "blog/index.html", "Mian-e-Ma/index.html"].includes(rel) && !html.includes('src="/brand-logo.png?v=20261128-2"')) {
     problems.push(rel + ": the original brand logo image is missing from the header");
   }
   if (rel === "Mian-e-Ma/index.html") {

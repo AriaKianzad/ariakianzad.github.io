@@ -131,12 +131,12 @@ for (const heading of [
 assert.ok(page.includes("<HeroVisual />"), "the 3D hero must be mounted in the homepage");
 assert.ok(page.includes('data-reveal="up"'), "scroll-reveal hooks must exist in homepage sections");
 assert.ok(siteChrome.includes('href="/Mian-e-Ma/"'), "the Persian book remains discoverable from the portfolio footer");
-assert.ok(siteChrome.includes('src="/brand-logo.png?v=20261128-1"') && siteChrome.includes('<img className="wordmark__mark"') &&
+assert.ok(siteChrome.includes('src="/brand-logo.png?v=20261128-2"') && siteChrome.includes('<img className="wordmark__mark"') &&
   siteChrome.includes('className="wordmark__mark"') &&
   siteChrome.includes('<strong>Aria Kianzad</strong>') &&
   !siteChrome.includes('className="wordmark__mark" aria-hidden="true">AK'),
   "the portfolio header must render the original logo as an image while keeping the brand name as real text");
-assert.ok(bookPage.includes('class="brand-mark" src="/brand-logo.png?v=20261128-1" alt=""') &&
+assert.ok(bookPage.includes('class="brand-mark" src="/brand-logo.png?v=20261128-2" alt=""') &&
   !bookPage.includes('<svg class="brand-mark"') &&
   !bookPage.includes('>م</text>'),
   "the book header must use the original logo image instead of an SVG text monogram");

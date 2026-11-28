@@ -35,7 +35,7 @@ export function BlogHeader() {
         <div className="blog-container blog-header-inner">
           <Link className="blog-header-blog-link" href="/blog/" aria-label="وبلاگ آریا کیانزاد">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="blog-brand-mark" src="/brand-logo.png?v=20261128-1" alt="" aria-hidden="true" width="38" height="38" decoding="async" />
+            <img className="blog-brand-mark" src="/brand-logo.png?v=20261128-2" alt="" aria-hidden="true" width="38" height="38" decoding="async" />
             <span>آریا کیانزاد</span>
           </Link>
           <Link className="blog-back-link" href="/">

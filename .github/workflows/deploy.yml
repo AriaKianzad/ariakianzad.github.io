@@ -37,6 +37,9 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Verify complete brand logo image
+        run: node scripts/verify-brand-logo.mjs
+
       - name: Verify generated brand favicon
         run: |
           npm run assets
