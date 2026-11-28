@@ -332,6 +332,19 @@ new Script(markdownCompiled, { filename: "src/lib/blog-markdown.ts" }).runInNewC
   URL,
   process: { env: { NEXT_PUBLIC_SITE_URL: "https://ariakianzad.github.io" } },
 });
+
+const fiveH3Fixture = [
+  "### **۱. تیتر اول**",
+  "شرح تیتر اول.### **۲. تیتر دوم**",
+  "شرح تیتر دوم.### **۳. تیتر سوم**",
+  "شرح تیتر سوم.### **۴. تیتر چهارم**",
+  "شرح تیتر چهارم.### **۵. تیتر پنجم**",
+].join("\n\n");
+const normalizedFiveH3Fixture = headingBreakContext.ensureMarkdownHeadingBreaks(fiveH3Fixture);
+const renderedFiveH3Fixture = markdownRuntime.exports.renderMarkdown(normalizedFiveH3Fixture);
+assert.equal((renderedFiveH3Fixture.match(/<h3\b/g)||[]).length,5,"all five adjacent CMS H3 headings must render as semantic H3 elements");
+assert.equal(markdownRuntime.exports.extractToc(normalizedFiveH3Fixture).filter((item)=>item.level===3).length,5,"all five CMS H3 headings must be included in the table of contents");
+
 const normalizedAbsoluteCategoryLink = markdownRuntime.exports.renderMarkdown(
   "[دسته](https://ariakianzad.github.io//blog/category/brand-and-business/)",
 );
