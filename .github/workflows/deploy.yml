@@ -108,6 +108,7 @@ jobs:
           grep -Fq 'href="/favicon.svg' out/admin/blog/index.html
           test -s out/404.html
           test -s out/favicon.svg
+          test -s out/brand-logo.png
           test -s out/icon.png
           test -s out/apple-icon.png
           test ! -e out/blog-favicon.svg
