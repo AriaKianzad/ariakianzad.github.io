@@ -74,6 +74,9 @@ jobs:
       - name: Test personal blog and CMS contracts
         run: npm run test:blog
 
+      - name: Test professional blog editor
+        run: npm run test:editor
+
       - name: Audit dependencies
         run: npm audit --audit-level=high
 
@@ -139,6 +142,9 @@ jobs:
           test -s out/admin/blog/index.html
           test -s out/admin/blog/blog.css
           test -s out/admin/blog/app.js
+          test -s out/admin/blog/editor-core.js
+          grep -Fq 'editor-core.js' out/admin/blog/index.html
+          grep -Fq 'ذخیرۀ خودکار' out/admin/blog/index.html
           grep -Fq 'آمار بازدید مقاله‌ها' out/admin/blog/index.html
           grep -Fq 'id="view-analytics"' out/admin/blog/index.html
           test -s out/admin/index.html
