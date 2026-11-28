@@ -774,7 +774,7 @@
     close();closeList();return output.join("");
   }
     function inlineToMarkdown(node) {
-    if(node.nodeType===Node.TEXT_NODE)return node.nodeValue||"";
+    if(node.nodeType===Node.TEXT_NODE)return String(node.nodeValue||"").replace(/\u200b/g,"");
     if(node.nodeType!==Node.ELEMENT_NODE)return "";
     const element=node,tag=element.tagName.toLowerCase();
     if(tag==="br")return "\n";
