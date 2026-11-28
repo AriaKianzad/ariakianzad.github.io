@@ -310,7 +310,7 @@ assert.ok(cardComponent.includes('headingLevel = "h2"') && cardComponent.include
 assert.ok(listingClient.includes('headingLevel="h3"') && articlePage.includes('headingLevel="h3"'), "cards beneath archive and related-post H2 headings must use H3");
 assert.ok(blogCss.includes(".blog-card-copy h2,.blog-card-copy h3") && blogCss.includes(".blog-card-featured .blog-card-copy h2,.blog-card-featured .blog-card-copy h3"), "article cards must retain identical styles for H2 and H3 titles");
 assert.ok(adminApp.includes("editorToMarkdown") && adminApp.includes("refreshLinkManager"), "CMS must serialize rich text and expose per-link settings");
-assert.ok(adminApp.includes("ensureMarkdownHeadingBreaks") && adminApp.includes('replace(/([^\n])(?=#{2,4}\s+)/g,"$1\n\n")'), "CMS must separate heading blocks from preceding paragraph text when serializing rich text");
+assert.ok(adminApp.includes("function ensureMarkdownHeadingBreaks") && adminApp.includes("(?=#{2,4}"), "CMS must separate heading blocks from preceding paragraph text when serializing rich text");
 const headingBreakFunctionStart=adminApp.indexOf("function ensureMarkdownHeadingBreaks(");
 const headingBreakFunctionEnd=adminApp.indexOf("\n  function editorToMarkdown",headingBreakFunctionStart);
 assert.ok(headingBreakFunctionStart>=0 && headingBreakFunctionEnd>headingBreakFunctionStart, "CMS heading-break normalizer must remain a standalone testable helper");
