@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { getBlogSettings } from "@/lib/blog-data";
 import { socials } from "@/lib/site";
 import { SocialIcon } from "@/components/icons";
@@ -35,7 +34,8 @@ export function BlogHeader() {
       <header className="blog-header" dir="rtl">
         <div className="blog-container blog-header-inner">
           <Link className="blog-header-blog-link" href="/blog/" aria-label="وبلاگ آریا کیانزاد">
-            <Image className="blog-brand-mark" src="/brand-logo.png?v=20261128-1" alt="" aria-hidden={true} width={38} height={38} unoptimized />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="blog-brand-mark" src="/brand-logo.png?v=20261128-1" alt="" aria-hidden="true" width="38" height="38" decoding="async" />
             <span>آریا کیانزاد</span>
           </Link>
           <Link className="blog-back-link" href="/">

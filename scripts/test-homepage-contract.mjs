@@ -131,7 +131,7 @@ for (const heading of [
 assert.ok(page.includes("<HeroVisual />"), "the 3D hero must be mounted in the homepage");
 assert.ok(page.includes('data-reveal="up"'), "scroll-reveal hooks must exist in homepage sections");
 assert.ok(siteChrome.includes('href="/Mian-e-Ma/"'), "the Persian book remains discoverable from the portfolio footer");
-assert.ok(siteChrome.includes('src="/brand-logo.png?v=20261128-1"') &&
+assert.ok(siteChrome.includes('src="/brand-logo.png?v=20261128-1"') && siteChrome.includes('<img className="wordmark__mark"') &&
   siteChrome.includes('className="wordmark__mark"') &&
   siteChrome.includes('<strong>Aria Kianzad</strong>') &&
   !siteChrome.includes('className="wordmark__mark" aria-hidden="true">AK'),
